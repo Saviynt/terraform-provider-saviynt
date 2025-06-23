@@ -1,0 +1,148 @@
+{
+  "create": {
+    "connection_type": "SalesForce",
+    "connection_name": "Terraform_Salesforce_Connector",
+    "client_id": "XXXXX",
+    "client_secret": "XXXXX",
+    "redirect_uri": "https://XXXXX",
+    "instance_url": "https://XXXXX",
+    "object_to_be_imported": "Profile,Group,PermissionSet,Role",
+    "createaccountjson": {
+      "Alias": "$${user?.getFirstname()}",
+      "Email": "$${user?.getEmail()}",
+      "Username": "$${user?.getEmail()}",
+      "CommunityNickname": "$${user?.getFirstname()}",
+      "FirstName": "$${user?.getFirstname()}",
+      "LastName": "$${user?.getLastname()}",
+      "TimeZoneSidKey": "America/Los_Angeles",
+      "LocaleSidKey": "en_US",
+      "EmailEncodingKey": "ISO-8859-1",
+      "ProfileId": "$${profileId}",
+      "LanguageLocaleKey": "en_US",
+      "IsActive": true,
+      "FederationIdentifier": "$${user?.getEmail()}"
+    },
+    "status_threshold_config": {
+      "statusAndThresholdConfig": {
+        "accountThresholdValue": 100,
+        "statusColumn": "customproperty12",
+        "activeStatus": ["true"],
+        "deleteLinks": true,
+        "lockedStatusColumn": "customproperty28",
+        "lockedStatusMapping": {
+          "Locked": ["1"],
+          "Unlocked": ["0"]
+        }
+      }
+    }
+  },
+  "update": {
+    "connection_type": "SalesForce",
+    "connection_name": "Terraform_Salesforce_Connector",
+    "client_id": "XXXXX",
+    "client_secret": "XXXXX",
+    "redirect_uri": "https://XXXXX",
+    "instance_url": "https://XXXXX",
+    "object_to_be_imported": "Profile,Group,PermissionSet",
+    "createaccountjson": {
+      "Alias": "$${user?.getFirstname()}",
+      "Email": "$${user?.getEmail()}",
+      "Username": "$${user?.getEmail()}",
+      "CommunityNickname": "$${user?.getFirstname()}",
+      "FirstName": "$${user?.getFirstname()}",
+      "LastName": "$${user?.getLastname()}",
+      "TimeZoneSidKey": "America/Los_Angeles",
+      "LocaleSidKey": "en_US",
+      "EmailEncodingKey": "ISO-8859-1",
+      "ProfileId": "$${profileId}",
+      "LanguageLocaleKey": "en_US"
+    },
+    "status_threshold_config": {
+      "statusAndThresholdConfig": {
+        "accountThresholdValue": 100,
+        "statusColumn": "customproperty12",
+        "activeStatus": ["true"],
+        "deleteLinks": true,
+        "lockedStatusColumn": "customproperty28",
+        "lockedStatusMapping": {
+          "Locked": ["1"],
+          "Unlocked": ["0"]
+        }
+      }
+    }
+  },
+  "update_connection_name": {
+    "connection_type": "SalesForce",
+    "connection_name": "new_sample1",
+    "client_id": "XXXXX",
+    "client_secret": "XXXXX",
+    "redirect_uri": "https://XXXXX",
+    "instance_url": "https://XXXXX",
+    "object_to_be_imported": "Profile,Group,PermissionSet,Role",
+    "createaccountjson": {
+      "Alias": "$${user?.getFirstname()}",
+      "Email": "$${user?.getEmail()}",
+      "Username": "$${user?.getEmail()}",
+      "CommunityNickname": "$${user?.getFirstname()}",
+      "FirstName": "$${user?.getFirstname()}",
+      "LastName": "$${user?.getLastname()}",
+      "TimeZoneSidKey": "America/Los_Angeles",
+      "LocaleSidKey": "en_US",
+      "EmailEncodingKey": "ISO-8859-1",
+      "ProfileId": "$${profileId}",
+      "LanguageLocaleKey": "en_US",
+      "IsActive": true,
+      "FederationIdentifier": "$${user?.getEmail()}"
+    },
+    "status_threshold_config": {
+      "statusAndThresholdConfig": {
+        "accountThresholdValue": 100,
+        "statusColumn": "customproperty12",
+        "activeStatus": ["true"],
+        "deleteLinks": true,
+        "lockedStatusColumn": "customproperty28",
+        "lockedStatusMapping": {
+          "Locked": ["1"],
+          "Unlocked": ["0"]
+        }
+      }
+    }
+  },
+  "update_connection_type": {
+    "connection_type": "SAP",
+    "connection_name": "Terraform_Salesforce_Connector",
+    "client_id": "XXXXX",
+    "client_secret": "XXXXX",
+    "redirect_uri": "https://XXXXX",
+    "instance_url": "https://XXXXX",
+    "object_to_be_imported": "Profile,Group,PermissionSet,Role",
+    "createaccountjson": {
+      "Alias": "$${user?.getFirstname()}",
+      "Email": "$${user?.getEmail()}",
+      "Username": "$${user?.getEmail()}",
+      "CommunityNickname": "$${user?.getFirstname()}",
+      "FirstName": "$${user?.getFirstname()}",
+      "LastName": "$${user?.getLastname()}",
+      "TimeZoneSidKey": "America/Los_Angeles",
+      "LocaleSidKey": "en_US",
+      "EmailEncodingKey": "ISO-8859-1",
+      "ProfileId": "$${profileId}",
+      "LanguageLocaleKey": "en_US",
+      "IsActive": true,
+      "FederationIdentifier": "$${user?.getEmail()}"
+    },
+    "status_threshold_config": {
+      "statusAndThresholdConfig": {
+        "accountThresholdValue": 100,
+        "statusColumn": "customproperty12",
+        "activeStatus": ["true"],
+        "deleteLinks": true,
+        "lockedStatusColumn": "customproperty28",
+        "lockedStatusMapping": {
+          "Locked": ["1"],
+          "Unlocked": ["0"]
+        }
+      }
+    }
+  }
+}

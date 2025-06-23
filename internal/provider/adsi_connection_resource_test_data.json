@@ -1,0 +1,975 @@
+{
+    "create": {
+      "connection_type":       "ADSI",
+      "connection_name":       "Terraform_ADSI_Connector",
+      "url":                   "LDAP://dc01.child.domain1.com:636",
+      "password":              "*******",
+      "username":              "adminuser@domain1.com",
+      "connection_url":        "http://dc01.domain1.com:8090/api/v1/discover",
+      "provisioning_url":      "http://dc01.domain1.com:8090/api/v1/objects",
+      "forestlist":            "domain1.com,child.domain1.com",
+      "searchfilter":          "DC=domain1,DC=com###DC=child,DC=domain1,DC=com",
+      "objectfilter":          "(&(objectCategory=person)(objectClass=user))",
+      "user_attribute": "[FIRSTNAME::givenName#String,LASTNAME::sn#String,CUSTOMPROPERTY1::sAMAccountName#String,USERNAME::distinguishedName#String,DISPLAYNAME::cn#String,CUSTOMPROPERTY25::description#String]",
+      "statuskeyjson": {
+        "STATUS_ACTIVE":   ["512","544","66048"],
+        "STATUS_INACTIVE": ["546","514"]
+      },
+      "account_attribute": "[CUSTOMPROPERTY1::sAMAccountName#String,CUSTOMPROPERTY2::userPrincipalName#String]",
+          "status_threshold_config": {
+        "statusAndThresholdConfig": {
+          "statusColumn":                "customproperty24",
+          "activeStatus":                ["512","544","66048"],
+          "deleteLinks":                 false,
+          "accountThresholdValue":       50000,
+          "correlateInactiveAccounts":   true,
+          "inactivateAccountsNotInFile": false,
+          "deleteAccEntForActiveAccounts": false
+        }
+      },
+      "entitlement_attribute": "memberOf",
+      "accountnamerule": {
+        "AccountNameRule": {
+          "Attributes": [
+            {
+              "cn":        "ACCOUNTID",
+              "baseDN":    "$${baseDN}",
+              "RuleCheck": "$${user.lastname},${user.firstname}"
+            }
+          ]
+        }
+      },
+      "checkforunique": {
+        "CheckForUnique": {
+          "Attributes": [
+            {
+              "samaccountname": "customproperty1",
+              "RuleCheck":      "$${user.lastname}"
+            },
+            {
+              "userprincipalname": "customproperty2",
+              "RuleCheck":         "$${user.lastname}@domain1.com"
+            }
+          ]
+        }
+      },
+      "group_search_base_dn":  "OU=Groups,DC=domain1,DC=Com",
+      "group_import_mapping": {
+        "importGroupHierarchy":         "true",
+        "entitlementTypeName":          "memberOf",
+        "performGroupAccountLinking":   "true",
+        "groupObjectClass":             "(objectclass=group)",
+        "entitlementOwnerAttribute":    "managedBy",
+        "tableFieldAttribute":          "accountID",
+        "mapping":                      "memberHash:memberof_char"
+      },
+      "import_nested_membership": false,
+      "page_size":                1000,
+      "createaccountjson": {
+        "objects": [
+          {
+            "objectClasses": ["user","top","Person","OrganizationalPerson"],
+            "baseDn":        "OU=Groups,DC=domain1,DC=Com",
+            "password":      "*******",
+            "attributes": {
+              "sn":              "$${user.lastname}",
+              "sAMAccountName":  "$${task.accountName}",
+              "cn":              "$${task.accountName}",
+              "userAccountControl": 512
+            }
+          }
+        ]
+      },
+      "updateaccountjson": {
+        "objects": [
+          {
+            "objectClasses":    ["user"],
+            "distinguishedName": "$${account.accountID}",
+            "attributes": {
+              "displayName": "test-updated",
+              "streetAddress":"123 Main St"
+            }
+          }
+        ]
+      },
+      "addaccessjson": {
+        "objects": [
+          {
+            "objectClasses": ["user"],
+            "distinguishedName":"$${accountID}",
+            "addGroup": "$${entitlement_values}"
+          }
+        ],
+        "requestConfiguration": {
+          "grpMemExistenceChk": { "enable": true }
+        }
+      },
+      "removeaccessjson": {
+        "objects": [
+          {
+            "objectClasses": ["group"],
+            "distinguishedName":"$${accountID}",
+            "removeGroup": "$${entitlement_values}"
+          }
+        ],
+        "requestConfiguration": {
+          "grpMemExistenceChk": { "enable": true }
+        }
+      },
+      "enableaccountjson": {
+        "objects": [
+          {
+            "objectClasses": ["user"],
+            "distinguishedName":"$${account.accountID}",
+            "deleteAllGroups": false,
+            "attributes": { "userAccountControl": 512 }
+          }
+        ]
+      },
+      "disableaccountjson": {
+        "objects": [
+          {
+            "objectClasses": ["user"],
+            "distinguishedName":"$${account.accountID}",
+            "deleteAllGroups": false,
+            "attributes": { "userAccountControl": 514 }
+          }
+        ]
+      },
+      "removeaccountjson": {
+        "objects": [
+          {
+            "distinguishedName":"$${account.accountID}",
+            "removeAction":"DELETE",
+            "deleteChildObjects": false
+          }
+        ]
+      },
+      "resetandchangepasswrdjson": {
+        "objects":[
+          {
+            "objectClasses":["user"],
+            "password":"$${password}",
+            "attributes":{ "pwdLastSet":"$${pwdLastSet}" }
+          }
+        ]
+      },
+      "creategroupjson": {
+        "objects":[
+          {
+            "objectClasses":["group"],
+            "baseDn":"$${role.customproperty24}",
+            "attributes":{
+              "cn":"$${role.displayname}",
+              "name":"$${role.displayname}",
+              "description":"$${role.description}"
+            }
+          }
+        ]
+      },
+      "updategroupjson": {
+        "objects":[
+          {
+            "objectClasses":["group"],
+            "distinguishedName":"$${role.role_name}",
+            "attributes":{
+              "description":"$${role.description}"
+            }
+          }
+        ]
+      },
+      "removegroupjson": {
+        "objects":[
+          {
+            "distinguishedName":"$${role.role_name}",
+            "removeAction":"DELETE",
+            "deleteChildObjects": false
+          }
+        ]
+      },
+      "addaccessentitlementjson": {
+        "objects":[
+          {
+            "objectClasses":["group"],
+            "distinguishedName":"$${ent1Value.entitlement_value}",
+            "addGroup":"$${ent2Value.entitlement_value}"
+          }
+        ],
+        "requestConfiguration":{
+          "grpMemExistenceChk":{ "enable": true }
+        }
+      },
+      "removeaccessentitlementjson": {
+        "objects":[
+          {
+            "objectClasses":["group"],
+            "distinguishedName":"$${ent1Value.entitlement_value}",
+            "removeGroup":"$${ent2Value.entitlement_value}"
+          }
+        ],
+        "requestConfiguration":{
+          "grpMemExistenceChk":{ "enable": true }
+        }
+      },
+      "createserviceaccountjson": {
+        "objects":[
+          {
+            "objectClasses":["user","top","Person","OrganizationalPerson"],
+            "baseDn":"$${baseDN}",
+            "password":"$${password}",
+            "attributes":{
+              "sAMAccountName":"$${task.accountName}",
+              "cn":"$${task.accountName}"
+            }
+          }
+        ]
+      },
+      "updateserviceaccountjson": {
+        "objects":[
+          {
+            "objectClasses":["user","top"],
+            "distinguishedName":"$${account.accountID}",
+            "attributes":{ "pwdLastSet":0 }
+          }
+        ]
+      },
+      "removeserviceaccountjson": {
+        "objects":[
+          {
+            "distinguishedName":"$${account.accountID}",
+            "removeAction":"DELETE"
+          }
+        ]
+      }
+    },
+    "update": {
+        "connection_type":       "ADSI",
+        "connection_name":       "Terraform_ADSI_Connector",
+        "url":                   "LDAP://dc01.child.domain1.com:696",
+        "password":              "*******",
+        "username":              "adminuser@domain1.com",
+        "connection_url":        "http://dc01.domain1.com:8090/api/v1/discover",
+        "provisioning_url":      "http://dc01.domain1.com:8090/api/v1/objects",
+        "forestlist":            "domain1.com,child.domain1.com",
+        "searchfilter":          "DC=domain1,DC=com###DC=child,DC=domain1,DC=com",
+        "objectfilter":          "(&(objectCategory=person)(objectClass=user))",
+        "user_attribute": "[FIRSTNAME::givenName#String,LASTNAME::sn#String,CUSTOMPROPERTY1::sAMAccountName#String,USERNAME::distinguishedName#String,DISPLAYNAME::cn#String,CUSTOMPROPERTY25::description#String]",
+        "statuskeyjson": {
+          "STATUS_ACTIVE":   ["512","544","66048"],
+          "STATUS_INACTIVE": ["546","514"]
+        },
+        "account_attribute": "[CUSTOMPROPERTY1::sAMAccountName#String,CUSTOMPROPERTY2::userPrincipalName#String]",
+            "status_threshold_config": {
+          "statusAndThresholdConfig": {
+            "statusColumn":                "customproperty24",
+            "activeStatus":                ["512","544","66048"],
+            "deleteLinks":                 false,
+            "accountThresholdValue":       50000,
+            "correlateInactiveAccounts":   true,
+            "inactivateAccountsNotInFile": false,
+            "deleteAccEntForActiveAccounts": false
+          }
+        },
+        "entitlement_attribute": "memberOf",
+        "accountnamerule": {
+          "AccountNameRule": {
+            "Attributes": [
+              {
+                "cn":        "ACCOUNTID",
+                "baseDN":    "$${baseDN}",
+                "RuleCheck": "$${user.lastname},${user.firstname}"
+              }
+            ]
+          }
+        },
+        "checkforunique": {
+          "CheckForUnique": {
+            "Attributes": [
+              {
+                "samaccountname": "customproperty1",
+                "RuleCheck":      "$${user.lastname}"
+              },
+              {
+                "userprincipalname": "customproperty2",
+                "RuleCheck":         "$${user.lastname}@domain1.com"
+              }
+            ]
+          }
+        },
+        "group_search_base_dn":  "OU=Groups,DC=domain1,DC=Com",
+        "group_import_mapping": {
+          "importGroupHierarchy":         "true",
+          "entitlementTypeName":          "memberOf",
+          "performGroupAccountLinking":   "true",
+          "groupObjectClass":             "(objectclass=group)",
+          "entitlementOwnerAttribute":    "managedBy",
+          "tableFieldAttribute":          "accountID",
+          "mapping":                      "memberHash:memberof_char"
+        },
+        "import_nested_membership": false,
+        "page_size":                1000,
+        "createaccountjson": {
+          "objects": [
+            {
+              "objectClasses": ["user","top","Person","OrganizationalPerson"],
+              "baseDn":        "OU=Groups,DC=domain1,DC=Com",
+              "password":      "*******",
+              "attributes": {
+                "sn":              "$${user.lastname}",
+                "sAMAccountName":  "$${task.accountName}",
+                "cn":              "$${task.accountName}",
+                "userAccountControl": 512
+              }
+            }
+          ]
+        },
+        "updateaccountjson": {
+          "objects": [
+            {
+              "objectClasses":    ["user"],
+              "distinguishedName": "$${account.accountID}",
+              "attributes": {
+                "displayName": "test-updated",
+                "streetAddress":"123 Main St"
+              }
+            }
+          ]
+        },
+        "addaccessjson": {
+          "objects": [
+            {
+              "objectClasses": ["user"],
+              "distinguishedName":"$${accountID}",
+              "addGroup": "$${entitlement_values}"
+            }
+          ],
+          "requestConfiguration": {
+            "grpMemExistenceChk": { "enable": true }
+          }
+        },
+        "removeaccessjson": {
+          "objects": [
+            {
+              "objectClasses": ["group"],
+              "distinguishedName":"$${accountID}",
+              "removeGroup": "$${entitlement_values}"
+            }
+          ],
+          "requestConfiguration": {
+            "grpMemExistenceChk": { "enable": true }
+          }
+        },
+        "enableaccountjson": {
+          "objects": [
+            {
+              "objectClasses": ["user"],
+              "distinguishedName":"$${account.accountID}",
+              "deleteAllGroups": false,
+              "attributes": { "userAccountControl": 512 }
+            }
+          ]
+        },
+        "disableaccountjson": {
+          "objects": [
+            {
+              "objectClasses": ["user"],
+              "distinguishedName":"$${account.accountID}",
+              "deleteAllGroups": false,
+              "attributes": { "userAccountControl": 514 }
+            }
+          ]
+        },
+        "removeaccountjson": {
+          "objects": [
+            {
+              "distinguishedName":"$${account.accountID}",
+              "removeAction":"DELETE",
+              "deleteChildObjects": false
+            }
+          ]
+        },
+        "resetandchangepasswrdjson": {
+          "objects":[
+            {
+              "objectClasses":["user"],
+              "password":"$${password}",
+              "attributes":{ "pwdLastSet":"$${pwdLastSet}" }
+            }
+          ]
+        },
+        "creategroupjson": {
+          "objects":[
+            {
+              "objectClasses":["group"],
+              "baseDn":"$${role.customproperty24}",
+              "attributes":{
+                "cn":"$${role.displayname}",
+                "name":"$${role.displayname}",
+                "description":"$${role.description}"
+              }
+            }
+          ]
+        },
+        "updategroupjson": {
+          "objects":[
+            {
+              "objectClasses":["group"],
+              "distinguishedName":"$${role.role_name}",
+              "attributes":{
+                "description":"$${role.description}"
+              }
+            }
+          ]
+        },
+        "removegroupjson": {
+          "objects":[
+            {
+              "distinguishedName":"$${role.role_name}",
+              "removeAction":"DELETE",
+              "deleteChildObjects": false
+            }
+          ]
+        },
+        "addaccessentitlementjson": {
+          "objects":[
+            {
+              "objectClasses":["group"],
+              "distinguishedName":"$${ent1Value.entitlement_value}",
+              "addGroup":"$${ent2Value.entitlement_value}"
+            }
+          ],
+          "requestConfiguration":{
+            "grpMemExistenceChk":{ "enable": true }
+          }
+        },
+        "removeaccessentitlementjson": {
+          "objects":[
+            {
+              "objectClasses":["group"],
+              "distinguishedName":"$${ent1Value.entitlement_value}",
+              "removeGroup":"$${ent2Value.entitlement_value}"
+            }
+          ],
+          "requestConfiguration":{
+            "grpMemExistenceChk":{ "enable": true }
+          }
+        },
+        "createserviceaccountjson": {
+          "objects":[
+            {
+              "objectClasses":["user","top","Person","OrganizationalPerson"],
+              "baseDn":"$${baseDN}",
+              "password":"$${password}",
+              "attributes":{
+                "sAMAccountName":"$${task.accountName}",
+                "cn":"$${task.accountName}"
+              }
+            }
+          ]
+        },
+        "updateserviceaccountjson": {
+          "objects":[
+            {
+              "objectClasses":["user","top"],
+              "distinguishedName":"$${account.accountID}",
+              "attributes":{ "pwdLastSet":0 }
+            }
+          ]
+        },
+        "removeserviceaccountjson": {
+          "objects":[
+            {
+              "distinguishedName":"$${account.accountID}",
+              "removeAction":"DELETE"
+            }
+          ]
+        }
+    },
+    "update_connection_name": {
+        "connection_type":       "ADSI",
+        "connection_name":       "Terraform_ADSI_Connector_1",
+        "url":                   "LDAP://dc01.child.domain1.com:636",
+        "password":              "*******",
+        "username":              "adminuser@domain1.com",
+        "connection_url":        "http://dc01.domain1.com:8090/api/v1/discover",
+        "provisioning_url":      "http://dc01.domain1.com:8090/api/v1/objects",
+        "forestlist":            "domain1.com,child.domain1.com",
+        "searchfilter":          "DC=domain1,DC=com###DC=child,DC=domain1,DC=com",
+        "objectfilter":          "(&(objectCategory=person)(objectClass=user))",
+        "user_attribute": "[FIRSTNAME::givenName#String,LASTNAME::sn#String,CUSTOMPROPERTY1::sAMAccountName#String,USERNAME::distinguishedName#String,DISPLAYNAME::cn#String,CUSTOMPROPERTY25::description#String]",
+        "statuskeyjson": {
+          "STATUS_ACTIVE":   ["512","544","66048"],
+          "STATUS_INACTIVE": ["546","514"]
+        },
+        "account_attribute": "[CUSTOMPROPERTY1::sAMAccountName#String,CUSTOMPROPERTY2::userPrincipalName#String]",
+            "status_threshold_config": {
+          "statusAndThresholdConfig": {
+            "statusColumn":                "customproperty24",
+            "activeStatus":                ["512","544","66048"],
+            "deleteLinks":                 false,
+            "accountThresholdValue":       50000,
+            "correlateInactiveAccounts":   true,
+            "inactivateAccountsNotInFile": false,
+            "deleteAccEntForActiveAccounts": false
+          }
+        },
+        "entitlement_attribute": "memberOf",
+        "accountnamerule": {
+          "AccountNameRule": {
+            "Attributes": [
+              {
+                "cn":        "ACCOUNTID",
+                "baseDN":    "$${baseDN}",
+                "RuleCheck": "$${user.lastname},${user.firstname}"
+              }
+            ]
+          }
+        },
+        "checkforunique": {
+          "CheckForUnique": {
+            "Attributes": [
+              {
+                "samaccountname": "customproperty1",
+                "RuleCheck":      "$${user.lastname}"
+              },
+              {
+                "userprincipalname": "customproperty2",
+                "RuleCheck":         "$${user.lastname}@domain1.com"
+              }
+            ]
+          }
+        },
+        "group_search_base_dn":  "OU=Groups,DC=domain1,DC=Com",
+        "group_import_mapping": {
+          "importGroupHierarchy":         "true",
+          "entitlementTypeName":          "memberOf",
+          "performGroupAccountLinking":   "true",
+          "groupObjectClass":             "(objectclass=group)",
+          "entitlementOwnerAttribute":    "managedBy",
+          "tableFieldAttribute":          "accountID",
+          "mapping":                      "memberHash:memberof_char"
+        },
+        "import_nested_membership": false,
+        "page_size":                1000,
+        "createaccountjson": {
+          "objects": [
+            {
+              "objectClasses": ["user","top","Person","OrganizationalPerson"],
+              "baseDn":        "OU=Groups,DC=domain1,DC=Com",
+              "password":      "*******",
+              "attributes": {
+                "sn":              "$${user.lastname}",
+                "sAMAccountName":  "$${task.accountName}",
+                "cn":              "$${task.accountName}",
+                "userAccountControl": 512
+              }
+            }
+          ]
+        },
+        "updateaccountjson": {
+          "objects": [
+            {
+              "objectClasses":    ["user"],
+              "distinguishedName": "$${account.accountID}",
+              "attributes": {
+                "displayName": "test-updated",
+                "streetAddress":"123 Main St"
+              }
+            }
+          ]
+        },
+        "addaccessjson": {
+          "objects": [
+            {
+              "objectClasses": ["user"],
+              "distinguishedName":"$${accountID}",
+              "addGroup": "$${entitlement_values}"
+            }
+          ],
+          "requestConfiguration": {
+            "grpMemExistenceChk": { "enable": true }
+          }
+        },
+        "removeaccessjson": {
+          "objects": [
+            {
+              "objectClasses": ["group"],
+              "distinguishedName":"$${accountID}",
+              "removeGroup": "$${entitlement_values}"
+            }
+          ],
+          "requestConfiguration": {
+            "grpMemExistenceChk": { "enable": true }
+          }
+        },
+        "enableaccountjson": {
+          "objects": [
+            {
+              "objectClasses": ["user"],
+              "distinguishedName":"$${account.accountID}",
+              "deleteAllGroups": false,
+              "attributes": { "userAccountControl": 512 }
+            }
+          ]
+        },
+        "disableaccountjson": {
+          "objects": [
+            {
+              "objectClasses": ["user"],
+              "distinguishedName":"$${account.accountID}",
+              "deleteAllGroups": false,
+              "attributes": { "userAccountControl": 514 }
+            }
+          ]
+        },
+        "removeaccountjson": {
+          "objects": [
+            {
+              "distinguishedName":"$${account.accountID}",
+              "removeAction":"DELETE",
+              "deleteChildObjects": false
+            }
+          ]
+        },
+        "resetandchangepasswrdjson": {
+          "objects":[
+            {
+              "objectClasses":["user"],
+              "password":"$${password}",
+              "attributes":{ "pwdLastSet":"$${pwdLastSet}" }
+            }
+          ]
+        },
+        "creategroupjson": {
+          "objects":[
+            {
+              "objectClasses":["group"],
+              "baseDn":"$${role.customproperty24}",
+              "attributes":{
+                "cn":"$${role.displayname}",
+                "name":"$${role.displayname}",
+                "description":"$${role.description}"
+              }
+            }
+          ]
+        },
+        "updategroupjson": {
+          "objects":[
+            {
+              "objectClasses":["group"],
+              "distinguishedName":"$${role.role_name}",
+              "attributes":{
+                "description":"$${role.description}"
+              }
+            }
+          ]
+        },
+        "removegroupjson": {
+          "objects":[
+            {
+              "distinguishedName":"$${role.role_name}",
+              "removeAction":"DELETE",
+              "deleteChildObjects": false
+            }
+          ]
+        },
+        "addaccessentitlementjson": {
+          "objects":[
+            {
+              "objectClasses":["group"],
+              "distinguishedName":"$${ent1Value.entitlement_value}",
+              "addGroup":"$${ent2Value.entitlement_value}"
+            }
+          ],
+          "requestConfiguration":{
+            "grpMemExistenceChk":{ "enable": true }
+          }
+        },
+        "removeaccessentitlementjson": {
+          "objects":[
+            {
+              "objectClasses":["group"],
+              "distinguishedName":"$${ent1Value.entitlement_value}",
+              "removeGroup":"$${ent2Value.entitlement_value}"
+            }
+          ],
+          "requestConfiguration":{
+            "grpMemExistenceChk":{ "enable": true }
+          }
+        },
+        "createserviceaccountjson": {
+          "objects":[
+            {
+              "objectClasses":["user","top","Person","OrganizationalPerson"],
+              "baseDn":"$${baseDN}",
+              "password":"$${password}",
+              "attributes":{
+                "sAMAccountName":"$${task.accountName}",
+                "cn":"$${task.accountName}"
+              }
+            }
+          ]
+        },
+        "updateserviceaccountjson": {
+          "objects":[
+            {
+              "objectClasses":["user","top"],
+              "distinguishedName":"$${account.accountID}",
+              "attributes":{ "pwdLastSet":0 }
+            }
+          ]
+        },
+        "removeserviceaccountjson": {
+          "objects":[
+            {
+              "distinguishedName":"$${account.accountID}",
+              "removeAction":"DELETE"
+            }
+          ]
+        }
+    },
+    "update_connection_type": {
+        "connection_type":       "AD",
+        "connection_name":       "Terraform_ADSI_Connector",
+        "url":                   "LDAP://dc01.child.domain1.com:636",
+        "password":              "*******",
+        "username":              "adminuser@domain1.com",
+        "connection_url":        "http://dc01.domain1.com:8090/api/v1/discover",
+        "provisioning_url":      "http://dc01.domain1.com:8090/api/v1/objects",
+        "forestlist":            "domain1.com,child.domain1.com",
+        "searchfilter":          "DC=domain1,DC=com###DC=child,DC=domain1,DC=com",
+        "objectfilter":          "(&(objectCategory=person)(objectClass=user))",
+        "user_attribute": "[FIRSTNAME::givenName#String,LASTNAME::sn#String,CUSTOMPROPERTY1::sAMAccountName#String,USERNAME::distinguishedName#String,DISPLAYNAME::cn#String,CUSTOMPROPERTY25::description#String]",
+        "statuskeyjson": {
+          "STATUS_ACTIVE":   ["512","544","66048"],
+          "STATUS_INACTIVE": ["546","514"]
+        },
+        "account_attribute": "[CUSTOMPROPERTY1::sAMAccountName#String,CUSTOMPROPERTY2::userPrincipalName#String]",
+            "status_threshold_config": {
+          "statusAndThresholdConfig": {
+            "statusColumn":                "customproperty24",
+            "activeStatus":                ["512","544","66048"],
+            "deleteLinks":                 false,
+            "accountThresholdValue":       50000,
+            "correlateInactiveAccounts":   true,
+            "inactivateAccountsNotInFile": false,
+            "deleteAccEntForActiveAccounts": false
+          }
+        },
+        "entitlement_attribute": "memberOf",
+        "accountnamerule": {
+          "AccountNameRule": {
+            "Attributes": [
+              {
+                "cn":        "ACCOUNTID",
+                "baseDN":    "$${baseDN}",
+                "RuleCheck": "$${user.lastname},${user.firstname}"
+              }
+            ]
+          }
+        },
+        "checkforunique": {
+          "CheckForUnique": {
+            "Attributes": [
+              {
+                "samaccountname": "customproperty1",
+                "RuleCheck":      "$${user.lastname}"
+              },
+              {
+                "userprincipalname": "customproperty2",
+                "RuleCheck":         "$${user.lastname}@domain1.com"
+              }
+            ]
+          }
+        },
+        "group_search_base_dn":  "OU=Groups,DC=domain1,DC=Com",
+        "group_import_mapping": {
+          "importGroupHierarchy":         "true",
+          "entitlementTypeName":          "memberOf",
+          "performGroupAccountLinking":   "true",
+          "groupObjectClass":             "(objectclass=group)",
+          "entitlementOwnerAttribute":    "managedBy",
+          "tableFieldAttribute":          "accountID",
+          "mapping":                      "memberHash:memberof_char"
+        },
+        "import_nested_membership": false,
+        "page_size":                1000,
+        "createaccountjson": {
+          "objects": [
+            {
+              "objectClasses": ["user","top","Person","OrganizationalPerson"],
+              "baseDn":        "OU=Groups,DC=domain1,DC=Com",
+              "password":      "*******",
+              "attributes": {
+                "sn":              "$${user.lastname}",
+                "sAMAccountName":  "$${task.accountName}",
+                "cn":              "$${task.accountName}",
+                "userAccountControl": 512
+              }
+            }
+          ]
+        },
+        "updateaccountjson": {
+          "objects": [
+            {
+              "objectClasses":    ["user"],
+              "distinguishedName": "$${account.accountID}",
+              "attributes": {
+                "displayName": "test-updated",
+                "streetAddress":"123 Main St"
+              }
+            }
+          ]
+        },
+        "addaccessjson": {
+          "objects": [
+            {
+              "objectClasses": ["user"],
+              "distinguishedName":"$${accountID}",
+              "addGroup": "$${entitlement_values}"
+            }
+          ],
+          "requestConfiguration": {
+            "grpMemExistenceChk": { "enable": true }
+          }
+        },
+        "removeaccessjson": {
+          "objects": [
+            {
+              "objectClasses": ["group"],
+              "distinguishedName":"$${accountID}",
+              "removeGroup": "$${entitlement_values}"
+            }
+          ],
+          "requestConfiguration": {
+            "grpMemExistenceChk": { "enable": true }
+          }
+        },
+        "enableaccountjson": {
+          "objects": [
+            {
+              "objectClasses": ["user"],
+              "distinguishedName":"$${account.accountID}",
+              "deleteAllGroups": false,
+              "attributes": { "userAccountControl": 512 }
+            }
+          ]
+        },
+        "disableaccountjson": {
+          "objects": [
+            {
+              "objectClasses": ["user"],
+              "distinguishedName":"$${account.accountID}",
+              "deleteAllGroups": false,
+              "attributes": { "userAccountControl": 514 }
+            }
+          ]
+        },
+        "removeaccountjson": {
+          "objects": [
+            {
+              "distinguishedName":"$${account.accountID}",
+              "removeAction":"DELETE",
+              "deleteChildObjects": false
+            }
+          ]
+        },
+        "resetandchangepasswrdjson": {
+          "objects":[
+            {
+              "objectClasses":["user"],
+              "password":"$${password}",
+              "attributes":{ "pwdLastSet":"$${pwdLastSet}" }
+            }
+          ]
+        },
+        "creategroupjson": {
+          "objects":[
+            {
+              "objectClasses":["group"],
+              "baseDn":"$${role.customproperty24}",
+              "attributes":{
+                "cn":"$${role.displayname}",
+                "name":"$${role.displayname}",
+                "description":"$${role.description}"
+              }
+            }
+          ]
+        },
+        "updategroupjson": {
+          "objects":[
+            {
+              "objectClasses":["group"],
+              "distinguishedName":"$${role.role_name}",
+              "attributes":{
+                "description":"$${role.description}"
+              }
+            }
+          ]
+        },
+        "removegroupjson": {
+          "objects":[
+            {
+              "distinguishedName":"$${role.role_name}",
+              "removeAction":"DELETE",
+              "deleteChildObjects": false
+            }
+          ]
+        },
+        "addaccessentitlementjson": {
+          "objects":[
+            {
+              "objectClasses":["group"],
+              "distinguishedName":"$${ent1Value.entitlement_value}",
+              "addGroup":"$${ent2Value.entitlement_value}"
+            }
+          ],
+          "requestConfiguration":{
+            "grpMemExistenceChk":{ "enable": true }
+          }
+        },
+        "removeaccessentitlementjson": {
+          "objects":[
+            {
+              "objectClasses":["group"],
+              "distinguishedName":"$${ent1Value.entitlement_value}",
+              "removeGroup":"$${ent2Value.entitlement_value}"
+            }
+          ],
+          "requestConfiguration":{
+            "grpMemExistenceChk":{ "enable": true }
+          }
+        },
+        "createserviceaccountjson": {
+          "objects":[
+            {
+              "objectClasses":["user","top","Person","OrganizationalPerson"],
+              "baseDn":"$${baseDN}",
+              "password":"$${password}",
+              "attributes":{
+                "sAMAccountName":"$${task.accountName}",
+                "cn":"$${task.accountName}"
+              }
+            }
+          ]
+        },
+        "updateserviceaccountjson": {
+          "objects":[
+            {
+              "objectClasses":["user","top"],
+              "distinguishedName":"$${account.accountID}",
+              "attributes":{ "pwdLastSet":0 }
+            }
+          ]
+        },
+        "removeserviceaccountjson": {
+          "objects":[
+            {
+              "distinguishedName":"$${account.accountID}",
+              "removeAction":"DELETE"
+            }
+          ]
+        }
+    }
+  }
+  

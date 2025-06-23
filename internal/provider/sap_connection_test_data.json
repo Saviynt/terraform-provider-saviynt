@@ -1,0 +1,231 @@
+{
+    "create": {
+      "connection_type": "SAP",
+      "connection_name": "Terraform_SAP_Connector",
+      "message_server":"FALSE",
+      "system_name":"sys1",
+      "jco_snc_mode":"0",
+      "password_max_length":"16",
+      "user_import_json":{
+        "USERTABLEMAPPING": [
+          {
+            "SAPTABLE": "PA0105",
+            "SAVTABLE": "PA0105",
+            "SAPMAP": "PERNR,ENDDA,BEGDA,AEDTM,UNAME,USRTY,USRID,SUBTY,OBJPS,SEQNR"
+          },
+          {
+            "SAPTABLE": "PA0001",
+            "SAVTABLE": "PA0001",
+            "SAPMAP": "PERNR,ENDDA,BEGDA,AEDTM,UNAME,BUKRS,WERKS,PERSG,PERSK,VDSK1,BTRTL,KOSTL,ORGEH,PLANS,STELL,SUBTY"
+          },
+          {
+            "SAPTABLE": "PA0002",
+            "SAVTABLE": "PA0002",
+            "SAPMAP": "PERNR,ENDDA,BEGDA,AEDTM,UNAME,NACHN,VORNA,TITEL,CNAME"
+          },
+          {
+            "SAPTABLE": "PA0000",
+            "SAVTABLE": "PA0000",
+            "SAPMAP": "PERNR,ENDDA,BEGDA,AEDTM,UNAME,STAT2"
+          }
+        ],
+        "USERIMPORTQRY": "SELECT DISTINCT p0.PERNR username,p5.USRID employeeid,CASE WHEN (p0.STAT2 = 3) THEN 1 END statuskey,CASE WHEN (p0.STAT2 = 3) THEN 1 END enabled,p0.ENDDA end_date, p0.BEGDA start_date,p2.NACHN first_name,p2.VORNA last_name,p1.BUKRS company_code,p1.KOSTL cost_center,p1.PERSG EEGroup,p1.PERSK EESubgroup,p1.WERKS PersonnelArea,p1.BTRTL PersonnelSubArea,p1.STELL Job,p1.ORGEH Org_Unit,'SAPHR' as customproperty10 FROM PA0000 p0 left join PA0001 p1 on  p0.PERNR = p1.PERNR left join PA0002 p2 on p1.PERNR = p2.PERNR left join PA0105 p5 on p2.PERNR = p5.PERNR left join (SELECT p51.pernr FROM PA0105 p51 WHERE p51.USRTY = '0010' ) p51out on p51out.pernr = p5.pernr WHERE p0.STAT2 = 3 and p0.ENDDA > SYSDATE() and (p1.endda > SYSDATE() or p1.endda is null) and (p5.USRTY = '0001' or p5.usrty is null)",
+        "SAVCOLMAPPING": "username,employeeid, statuskey, enabled, enddate, startdate, firstname, lastname, companyname, costcenter,customproperty1, customproperty2,customproperty3, customproperty4, jobcode,orgunitid,customproperty10",
+        "userNotInFileAction": "NOACTION",
+        "zeroDayProvisioning": "FALSE",
+        "generateSystemUsername": "FALSE",
+        "checkRules": "FALSE",
+        "buildUserMap": "FALSE"
+      }
+      ,
+      "update_account_json":{
+        "ADDRESS": {
+          "LASTNAME": "$${user.lastname}",
+          "FIRSTNAME": "$${user.firstname}",
+          "E_MAIL": "$${user.email}"
+        },
+        "DEFAULTS": {
+          "DATFM": "2",
+          "DCPFM": "X",
+          "SPLD": "LOCL",
+          "SPDA": "D"
+        },
+        "SNC": {
+          "GUIFLAG": "U",
+          "PNAME": "p:$${accountName}@abcdefgh.com"
+        }
+      },
+      "set_cua_system":"SAP_CUA",
+      "saptable_filter_lang":"EN"
+    },
+    "update": {
+      "connection_type": "SAP",
+      "connection_name": "Terraform_SAP_Connector",
+      "message_server":"TRUE",
+      "system_name":"sys2",
+      "jco_snc_mode":"1",
+      "password_max_length":"14",
+      "user_import_json":{
+        "USERTABLEMAPPING": [
+          {
+            "SAPTABLE": "PA0001",
+            "SAVTABLE": "PA0001",
+            "SAPMAP": "PERNR,ENDDA,BEGDA,AEDTM,UNAME,BUKRS,WERKS,PERSG,PERSK,VDSK1,BTRTL,KOSTL,ORGEH,PLANS,STELL,SUBTY"
+          },
+          {
+            "SAPTABLE": "PA0002",
+            "SAVTABLE": "PA0002",
+            "SAPMAP": "PERNR,ENDDA,BEGDA,AEDTM,UNAME,NACHN,VORNA,TITEL,CNAME"
+          },
+          {
+            "SAPTABLE": "PA0000",
+            "SAVTABLE": "PA0000",
+            "SAPMAP": "PERNR,ENDDA,BEGDA,AEDTM,UNAME,STAT2"
+          }
+        ],
+        "USERIMPORTQRY": "SELECT DISTINCT p0.PERNR username,p5.USRID employeeid,CASE WHEN (p0.STAT2 = 3) THEN 1 END statuskey,CASE WHEN (p0.STAT2 = 3) THEN 1 END enabled,p0.ENDDA end_date, p0.BEGDA start_date,p2.NACHN first_name,p2.VORNA last_name,p1.BUKRS company_code,p1.KOSTL cost_center,p1.PERSG EEGroup,p1.PERSK EESubgroup,p1.WERKS PersonnelArea,p1.BTRTL PersonnelSubArea,p1.STELL Job,p1.ORGEH Org_Unit,'SAPHR' as customproperty10 FROM PA0000 p0 left join PA0001 p1 on  p0.PERNR = p1.PERNR left join PA0002 p2 on p1.PERNR = p2.PERNR left join PA0105 p5 on p2.PERNR = p5.PERNR left join (SELECT p51.pernr FROM PA0105 p51 WHERE p51.USRTY = '0010' ) p51out on p51out.pernr = p5.pernr WHERE p0.STAT2 = 3 and p0.ENDDA > SYSDATE() and (p1.endda > SYSDATE() or p1.endda is null) and (p5.USRTY = '0001' or p5.usrty is null)",
+        "SAVCOLMAPPING": "username,employeeid, statuskey, enabled, enddate, startdate, firstname, lastname, companyname, costcenter,customproperty1, customproperty2,customproperty3, customproperty4, jobcode,orgunitid,customproperty10",
+        "userNotInFileAction": "NOACTION",
+        "zeroDayProvisioning": "FALSE",
+        "generateSystemUsername": "FALSE"
+      }
+      ,
+      "update_account_json":{
+        "ADDRESS": {
+          "LASTNAME": "$${user.lastname}",
+          "FIRSTNAME": "$${user.firstname}",
+          "E_MAIL": "$${user.email}"
+        },
+        "DEFAULTS": {
+          "DATFM": "2",
+          "DCPFM": "X",
+          "SPLD": "LOCL",
+          "SPDA": "D"
+        },
+        "SNC": {
+          "GUIFLAG": "U",
+          "PNAME": "p:$${accountName}@abcdefgh.com"
+        }
+      },
+      "set_cua_system":"SAP_CUA",
+      "saptable_filter_lang":"FR"
+    },
+    "update_connection_name": {
+      "connection_type": "SAP",
+      "connection_name": "Terraform_SAP_Connector_change",
+      "message_server":"FALSE",
+      "system_name":"sys1",
+      "jco_snc_mode":"0",
+      "password_max_length":"16",
+      "user_import_json":{
+        "USERTABLEMAPPING": [
+          {
+            "SAPTABLE": "PA0105",
+            "SAVTABLE": "PA0105",
+            "SAPMAP": "PERNR,ENDDA,BEGDA,AEDTM,UNAME,USRTY,USRID,SUBTY,OBJPS,SEQNR"
+          },
+          {
+            "SAPTABLE": "PA0001",
+            "SAVTABLE": "PA0001",
+            "SAPMAP": "PERNR,ENDDA,BEGDA,AEDTM,UNAME,BUKRS,WERKS,PERSG,PERSK,VDSK1,BTRTL,KOSTL,ORGEH,PLANS,STELL,SUBTY"
+          },
+          {
+            "SAPTABLE": "PA0002",
+            "SAVTABLE": "PA0002",
+            "SAPMAP": "PERNR,ENDDA,BEGDA,AEDTM,UNAME,NACHN,VORNA,TITEL,CNAME"
+          },
+          {
+            "SAPTABLE": "PA0000",
+            "SAVTABLE": "PA0000",
+            "SAPMAP": "PERNR,ENDDA,BEGDA,AEDTM,UNAME,STAT2"
+          }
+        ],
+        "USERIMPORTQRY": "SELECT DISTINCT p0.PERNR username,p5.USRID employeeid,CASE WHEN (p0.STAT2 = 3) THEN 1 END statuskey,CASE WHEN (p0.STAT2 = 3) THEN 1 END enabled,p0.ENDDA end_date, p0.BEGDA start_date,p2.NACHN first_name,p2.VORNA last_name,p1.BUKRS company_code,p1.KOSTL cost_center,p1.PERSG EEGroup,p1.PERSK EESubgroup,p1.WERKS PersonnelArea,p1.BTRTL PersonnelSubArea,p1.STELL Job,p1.ORGEH Org_Unit,'SAPHR' as customproperty10 FROM PA0000 p0 left join PA0001 p1 on  p0.PERNR = p1.PERNR left join PA0002 p2 on p1.PERNR = p2.PERNR left join PA0105 p5 on p2.PERNR = p5.PERNR left join (SELECT p51.pernr FROM PA0105 p51 WHERE p51.USRTY = '0010' ) p51out on p51out.pernr = p5.pernr WHERE p0.STAT2 = 3 and p0.ENDDA > SYSDATE() and (p1.endda > SYSDATE() or p1.endda is null) and (p5.USRTY = '0001' or p5.usrty is null)",
+        "SAVCOLMAPPING": "username,employeeid, statuskey, enabled, enddate, startdate, firstname, lastname, companyname, costcenter,customproperty1, customproperty2,customproperty3, customproperty4, jobcode,orgunitid,customproperty10",
+        "userNotInFileAction": "NOACTION",
+        "zeroDayProvisioning": "FALSE",
+        "generateSystemUsername": "FALSE",
+        "checkRules": "FALSE",
+        "buildUserMap": "FALSE"
+      }
+      ,
+      "update_account_json":{
+        "ADDRESS": {
+          "LASTNAME": "$${user.lastname}",
+          "FIRSTNAME": "$${user.firstname}",
+          "E_MAIL": "$${user.email}"
+        },
+        "DEFAULTS": {
+          "DATFM": "2",
+          "DCPFM": "X",
+          "SPLD": "LOCL",
+          "SPDA": "D"
+        },
+        "SNC": {
+          "GUIFLAG": "U",
+          "PNAME": "p:$${accountName}@abcdefgh.com"
+        }
+      },
+      "set_cua_system":"SAP_CUA",
+      "saptable_filter_lang":"EN"
+    },
+    "update_connection_type": {
+      "connection_type": "SalesForce",
+      "connection_name": "Terraform_SAP_Connector",
+      "message_server":"FALSE",
+      "system_name":"sys1",
+      "jco_snc_mode":"0",
+      "password_max_length":"16",
+      "user_import_json":{
+        "USERTABLEMAPPING": [
+          {
+            "SAPTABLE": "PA0105",
+            "SAVTABLE": "PA0105",
+            "SAPMAP": "PERNR,ENDDA,BEGDA,AEDTM,UNAME,USRTY,USRID,SUBTY,OBJPS,SEQNR"
+          },
+          {
+            "SAPTABLE": "PA0001",
+            "SAVTABLE": "PA0001",
+            "SAPMAP": "PERNR,ENDDA,BEGDA,AEDTM,UNAME,BUKRS,WERKS,PERSG,PERSK,VDSK1,BTRTL,KOSTL,ORGEH,PLANS,STELL,SUBTY"
+          },
+          {
+            "SAPTABLE": "PA0002",
+            "SAVTABLE": "PA0002",
+            "SAPMAP": "PERNR,ENDDA,BEGDA,AEDTM,UNAME,NACHN,VORNA,TITEL,CNAME"
+          },
+          {
+            "SAPTABLE": "PA0000",
+            "SAVTABLE": "PA0000",
+            "SAPMAP": "PERNR,ENDDA,BEGDA,AEDTM,UNAME,STAT2"
+          }
+        ],
+        "USERIMPORTQRY": "SELECT DISTINCT p0.PERNR username,p5.USRID employeeid,CASE WHEN (p0.STAT2 = 3) THEN 1 END statuskey,CASE WHEN (p0.STAT2 = 3) THEN 1 END enabled,p0.ENDDA end_date, p0.BEGDA start_date,p2.NACHN first_name,p2.VORNA last_name,p1.BUKRS company_code,p1.KOSTL cost_center,p1.PERSG EEGroup,p1.PERSK EESubgroup,p1.WERKS PersonnelArea,p1.BTRTL PersonnelSubArea,p1.STELL Job,p1.ORGEH Org_Unit,'SAPHR' as customproperty10 FROM PA0000 p0 left join PA0001 p1 on  p0.PERNR = p1.PERNR left join PA0002 p2 on p1.PERNR = p2.PERNR left join PA0105 p5 on p2.PERNR = p5.PERNR left join (SELECT p51.pernr FROM PA0105 p51 WHERE p51.USRTY = '0010' ) p51out on p51out.pernr = p5.pernr WHERE p0.STAT2 = 3 and p0.ENDDA > SYSDATE() and (p1.endda > SYSDATE() or p1.endda is null) and (p5.USRTY = '0001' or p5.usrty is null)",
+        "SAVCOLMAPPING": "username,employeeid, statuskey, enabled, enddate, startdate, firstname, lastname, companyname, costcenter,customproperty1, customproperty2,customproperty3, customproperty4, jobcode,orgunitid,customproperty10",
+        "userNotInFileAction": "NOACTION",
+        "zeroDayProvisioning": "FALSE",
+        "generateSystemUsername": "FALSE",
+        "checkRules": "FALSE",
+        "buildUserMap": "FALSE"
+      }
+      ,
+      "update_account_json":{
+        "ADDRESS": {
+          "LASTNAME": "$${user.lastname}",
+          "FIRSTNAME": "$${user.firstname}",
+          "E_MAIL": "$${user.email}"
+        },
+        "DEFAULTS": {
+          "DATFM": "2",
+          "DCPFM": "X",
+          "SPLD": "LOCL",
+          "SPDA": "D"
+        },
+        "SNC": {
+          "GUIFLAG": "U",
+          "PNAME": "p:$${accountName}@abcdefgh.com"
+        }
+      },
+      "set_cua_system":"SAP_CUA",
+      "saptable_filter_lang":"EN"
+    }
+  }

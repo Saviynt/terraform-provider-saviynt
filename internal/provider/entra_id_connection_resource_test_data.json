@@ -1,0 +1,1023 @@
+{
+    "create": {
+      "connection_type":           "AzureAD",
+      "connection_name":           "Terraform_EntraId_Connector",
+      "client_id":                 "XXXXXX",
+      "client_secret":             "XXXXXX",
+      "aad_tenant_id":             "XXXXXX",
+      "authentication_endpoint":   "https://login.microsoft.com",
+      "microsoft_graph_endpoint":  "https://graph.microsoft.com",
+      "azure_management_endpoint": "https://management.azure.com",
+      "account_attributes": {
+        "acctLabels": {
+          "customproperty1": "FirstName",
+          "customproperty2": "LastName",
+          "customproperty3": "OfficePhone",
+          "customproperty10": "AccountStatus"
+        },
+        "colsToPropsMap": {
+          "accountID":      "id~#~char",
+          "name":           "userPrincipalName~#~char",
+          "customproperty1": "givenName~#~char",
+          "customproperty2": "surname~#~char",
+          "customproperty3": "businessPhones~#~char",
+          "customproperty10": "accountEnabled~#~char"
+        }
+      },
+      "account_import_fields": "accountEnabled,mail,businessPhone,surname,givenName,displayName,userPrincipalName,id",
+      "status_threshold_config": {
+        "statusAndThresholdConfig": {
+          "accountThresholdValue":       1000,
+          "statusColumn":                "customproperty10",
+          "activeStatus":                ["true"],
+          "deleteLinks":                 true,
+          "correlateInactiveAccounts":   true,
+          "inactivateAccountsNotInFile": false
+        }
+      },
+      "endpoints_filter": {
+        "APPLICATION_QA": [
+          { "AADGROUP": ["group%"] }
+        ]
+      },
+      "connection_json": {
+        "authentications": {
+          "userAuth": {
+            "authType":            "oauth2",
+            "url":                 "https://login.microsoftonline.com/<<tenantid>>/oauth2/token",
+            "httpMethod":          "POST",
+            "httpParams": {
+              "grant_type":    "client_credentials",
+              "client_secret": "<specify client secret>",
+              "client_id":     "<specify client id>",
+              "resource":      "https://management.azure.com/"
+            },
+            "httpHeaders": {
+              "contentType": "application/x-www-form-urlencoded"
+            },
+            "httpContentType":      "application/x-www-form-urlencoded",
+            "expiryError":          "ExpiredAuthenticationToken",
+            "authError":            ["InvalidAuthenticationToken"],
+            "timeOutError":         "Read timed out",
+            "errorPath":            "error.code",
+            "maxRefreshTryCount":   5,
+            "tokenResponsePath":    "access_token",
+            "tokenType":            "Bearer",
+            "accessToken":          "Bearer abcd"
+          },
+          "entAuth": {
+            "authType":            "oauth2",
+            "url":                 "https://login.microsoftonline.com/<<tenantid>>/oauth2/token",
+            "httpMethod":          "POST",
+            "httpParams": {
+              "grant_type":    "client_credentials",
+              "client_secret": "<specify client secret>",
+              "client_id":     "<specify client id>",
+              "resource":      "https://graph.windows.net/"
+            },
+            "httpHeaders": {
+              "contentType": "application/x-www-form-urlencoded"
+            },
+            "httpContentType":      "application/x-www-form-urlencoded",
+            "expiryError":          "ExpiredAuthenticationToken",
+            "authError":            ["InvalidAuthenticationToken","Authentication_MissingOrMalformed"],
+            "timeOutError":         "Read timed out",
+            "errorPath":            "odata~dot#error.code",
+            "maxRefreshTryCount":   3,
+            "tokenResponsePath":    "access_token",
+            "tokenType":            "Bearer",
+            "accessToken":          "Bearer abcde"
+          }
+        }
+      },
+      "import_user_json": {
+        "connection":         "userAuth",
+        "url":                "https://graph.microsoft.com/v1.0/users?$select=Id,userPrincipalName,accountEnabled,mail,userType,createdDateTime,country,preferredLanguage,displayName,surname,givenName,mobilePhone,businessPhones,mailNickname,mail",
+        "httpMethod":         "GET",
+        "httpHeaders": {
+          "Authorization":    "${access_token}",
+          "Accept":           "application/json"
+        },
+        "statusConfig": {
+          "active":           "true",
+          "inactive":         "false"
+        },
+        "colsToPropsMap": {
+          "username":        "userPrincipalName~#~char",
+          "displayname":     "displayName~#~char",
+          "firstname":       "givenName~#~char",
+          "lastname":        "surname~#~char",
+          "country":         "country~#~char",
+          "phonenumber":     "mobilePhone~#~char",
+          "statuskey":       "accountEnabled~#~char",
+          "email":           "mail~#~char",
+          "employeeType":    "userType~#~char",
+          "customproperty1": "preferredLanguage~#~char",
+          "customproperty2": "businessPhones~#~char",
+          "customproperty3": "mailNickname~#~char",
+          "customproperty4": "Id~#~char",
+          "customproperty5": "userPrincipalName~#~char",
+          "customproperty6": "createdDateTime~#~char"
+        },
+        "userResponsePath": "value",
+        "pagination": {
+          "nextUrl": {
+            "nextUrlPath": "${(response?.completeResponseMap?.get('@odata.nextLink')==null)? null : response?.completeResponseMap?.get('@odata.nextLink')}"
+          }
+        }
+      },
+      "create_account_json": {
+        "accountIdPath":           "call1.message.id",
+        "dateFormat":             "yyyy-MM-dd'T'HH:mm:ssXXX",
+        "responseColsToPropsMap": {
+          "comments":               "call1.message.displayName~#~char",
+          "displayName":            "call1.message.displayName~#~char",
+          "name":                   "call1.message.userPrincipalName~#~char"
+        },
+        "call": [
+          {
+            "name":           "call1",
+            "connection":     "userAuth",
+            "url":            "https://graph.windows.net/myorganization/users/${user.username}?api-version=1.6",
+            "httpMethod":     "POST",
+            "httpParams":     "{\"accountEnabled\":\"true\",\"displayName\":\"${user.displayname}\",\"passwordProfile\":{\"password\":\"Passw0rd\",\"forceChangePasswordNextSignIn\":\"true\"},\"UsageLocation\":\"US\",\"userPrincipalName\":\"${user.email}\",\"mailNickname\":\"${user.firstname}\",\"givenName\":\"${user.firstname}\",\"surname\":\"${user.lastname}\"}",
+            "httpHeaders": {
+              "Authorization": "${access_token}"
+            },
+            "httpContentType": "application/json",
+            "successResponses": {
+              "statusCode": [200,201,204,205]
+            }
+          }
+        ]
+      },
+      "update_account_json": {
+        "call": [
+          {
+            "name":           "call1",
+            "connection":     "userAuth",
+            "url":            "https://graph.microsoft.com/v1.0/users/${account.accountID}",
+            "httpMethod":     "PATCH",
+            "httpParams":     "{\"userPrincipalName\":\"${user.email}\"}",
+            "httpHeaders": {
+              "Authorization": "${access_token}"
+            },
+            "httpContentType": "application/json",
+            "successResponses": {
+              "statusCode": [200,201,204,205]
+            }
+          }
+        ]
+      },
+      "enable_account_json": {
+        "call": [
+          {
+            "name":           "call1",
+            "connection":     "userAuth",
+            "url":            "https://graph.microsoft.com/v1.0/users/${account.accountID}",
+            "httpMethod":     "PATCH",
+            "httpParams":     "{\"accountEnabled\":true}",
+            "httpHeaders": {
+              "Authorization": "${access_token}"
+            },
+            "httpContentType": "application/json",
+            "successResponses": {
+              "statusCode": [200,201,204,205]
+            }
+          }
+        ]
+      },
+      "disable_account_json": {
+        "call": [
+          {
+            "name":           "call1",
+            "connection":     "userAuth",
+            "url":            "https://graph.microsoft.com/v1.0/users/${account.accountID}",
+            "httpMethod":     "PATCH",
+            "httpParams":     "{\"accountEnabled\":false}",
+            "httpHeaders": {
+              "Authorization": "${access_token}"
+            },
+            "httpContentType": "application/json",
+            "successResponses": {
+              "statusCode": [200,201,204,205]
+            }
+          }
+        ]
+      },
+      "add_access_json": {
+        "call": [
+          {
+            "name":           "Subscription",
+            "connection":     "userAuth",
+            "privilegeEntitlement": { "privEntType":"RoleDefinition","privAttrName":"Roles" },
+            "url":            "https://management.azure.com${entitlementValue.customproperty4}/providers/Microsoft.Authorization/roleAssignments/${UUID.randomUUID()}?api-version=2015-07-01",
+            "httpMethod":     "PUT",
+            "httpParams":     "{\"properties\":{\"roleDefinitionId\":\"${privEntVal.customproperty4}\",\"principalId\":\"${account.accountID}\"}}",
+            "httpHeaders": {
+              "Authorization": "${access_token}"
+            },
+            "httpContentType": "application/json"
+          }
+        ]
+      },
+      "remove_access_json": {
+        "call": [
+          {
+            "name":           "Subscription",
+            "connection":     "userAuth",
+            "privilegeEntitlement": { "privEntType":"RoleDefinition","privAttrName":"Roles" },
+            "url":            "https://management.azure.com${entitlementValue.customproperty4}/providers/Microsoft.Authorization/roleAssignments/${uuid}?api-version=2015-07-01",
+            "httpMethod":     "DELETE",
+            "httpHeaders": {
+              "Authorization": "${access_token}"
+            },
+            "httpContentType": "application/json"
+          }
+        ]
+      },
+      "remove_account_json": {
+        "call": [
+          {
+            "name":           "call1",
+            "connection":     "userAuth",
+            "url":            "https://graph.microsoft.com/v1.0/users/${account.accountID}",
+            "httpMethod":     "DELETE",
+            "httpHeaders": {
+              "Authorization": "${access_token}"
+            },
+            "httpContentType": "application/json",
+            "successResponses": {
+              "statusCode": [200,201,204,205]
+            }
+          }
+        ]
+      }
+    },
+    "update": {
+        "connection_type":           "AzureAD",
+        "connection_name":           "Terraform_EntraId_Connector",
+        "client_id":                 "XXXXXX",
+        "client_secret":             "XXXXXX",
+        "aad_tenant_id":             "XXXXXX",
+        "authentication_endpoint":   "https://login.microsoft.com",
+        "microsoft_graph_endpoint":  "https://graph.microsoft.com",
+        "azure_management_endpoint": "https://management.azure.com",
+        "account_attributes": {
+          "acctLabels": {
+            "customproperty1": "LastName",
+            "customproperty2": "FirstName",
+            "customproperty3": "OfficePhone",
+            "customproperty10": "AccountStatus"
+          },
+          "colsToPropsMap": {
+            "accountID":      "id~#~char",
+            "name":           "userPrincipalName~#~char",
+            "customproperty1": "givenName~#~char",
+            "customproperty2": "surname~#~char",
+            "customproperty3": "businessPhones~#~char",
+            "customproperty10": "accountEnabled~#~char"
+          }
+        },
+        "account_import_fields": "accountEnabled,mail,businessPhone,surname,givenName,displayName,userPrincipalName,id",
+        "status_threshold_config": {
+          "statusAndThresholdConfig": {
+            "accountThresholdValue":       1000,
+            "statusColumn":                "customproperty10",
+            "activeStatus":                ["true"],
+            "deleteLinks":                 true,
+            "correlateInactiveAccounts":   true,
+            "inactivateAccountsNotInFile": false
+          }
+        },
+        "endpoints_filter": {
+          "APPLICATION_QA": [
+            { "AADGROUP": ["group%"] }
+          ]
+        },
+        "connection_json": {
+          "authentications": {
+            "userAuth": {
+              "authType":            "oauth2",
+              "url":                 "https://login.microsoftonline.com/<<tenantid>>/oauth2/token",
+              "httpMethod":          "POST",
+              "httpParams": {
+                "grant_type":    "client_credentials",
+                "client_secret": "<specify client secret>",
+                "client_id":     "<specify client id>",
+                "resource":      "https://management.azure.com/"
+              },
+              "httpHeaders": {
+                "contentType": "application/x-www-form-urlencoded"
+              },
+              "httpContentType":      "application/x-www-form-urlencoded",
+              "expiryError":          "ExpiredAuthenticationToken",
+              "authError":            ["InvalidAuthenticationToken"],
+              "timeOutError":         "Read timed out",
+              "errorPath":            "error.code",
+              "maxRefreshTryCount":   5,
+              "tokenResponsePath":    "access_token",
+              "tokenType":            "Bearer",
+              "accessToken":          "Bearer abcd"
+            },
+            "entAuth": {
+              "authType":            "oauth2",
+              "url":                 "https://login.microsoftonline.com/<<tenantid>>/oauth2/token",
+              "httpMethod":          "POST",
+              "httpParams": {
+                "grant_type":    "client_credentials",
+                "client_secret": "<specify client secret>",
+                "client_id":     "<specify client id>",
+                "resource":      "https://graph.windows.net/"
+              },
+              "httpHeaders": {
+                "contentType": "application/x-www-form-urlencoded"
+              },
+              "httpContentType":      "application/x-www-form-urlencoded",
+              "expiryError":          "ExpiredAuthenticationToken",
+              "authError":            ["InvalidAuthenticationToken","Authentication_MissingOrMalformed"],
+              "timeOutError":         "Read timed out",
+              "errorPath":            "odata~dot#error.code",
+              "maxRefreshTryCount":   3,
+              "tokenResponsePath":    "access_token",
+              "tokenType":            "Bearer",
+              "accessToken":          "Bearer abcde"
+            }
+          }
+        },
+        "import_user_json": {
+          "connection":         "userAuth",
+          "url":                "https://graph.microsoft.com/v1.0/users?$select=Id,userPrincipalName,accountEnabled,mail,userType,createdDateTime,country,preferredLanguage,displayName,surname,givenName,mobilePhone,businessPhones,mailNickname,mail",
+          "httpMethod":         "GET",
+          "httpHeaders": {
+            "Authorization":    "${access_token}",
+            "Accept":           "application/json"
+          },
+          "statusConfig": {
+            "active":           "true",
+            "inactive":         "false"
+          },
+          "colsToPropsMap": {
+            "username":        "userPrincipalName~#~char",
+            "displayname":     "displayName~#~char",
+            "firstname":       "givenName~#~char",
+            "lastname":        "surname~#~char",
+            "country":         "country~#~char",
+            "phonenumber":     "mobilePhone~#~char",
+            "statuskey":       "accountEnabled~#~char",
+            "email":           "mail~#~char",
+            "employeeType":    "userType~#~char",
+            "customproperty1": "preferredLanguage~#~char",
+            "customproperty2": "businessPhones~#~char",
+            "customproperty3": "mailNickname~#~char",
+            "customproperty4": "Id~#~char",
+            "customproperty5": "userPrincipalName~#~char",
+            "customproperty6": "createdDateTime~#~char"
+          },
+          "userResponsePath": "value",
+          "pagination": {
+            "nextUrl": {
+              "nextUrlPath": "${(response?.completeResponseMap?.get('@odata.nextLink')==null)? null : response?.completeResponseMap?.get('@odata.nextLink')}"
+            }
+          }
+        },
+        "create_account_json": {
+          "accountIdPath":           "call1.message.id",
+          "dateFormat":             "yyyy-MM-dd'T'HH:mm:ssXXX",
+          "responseColsToPropsMap": {
+            "comments":               "call1.message.displayName~#~char",
+            "displayName":            "call1.message.displayName~#~char",
+            "name":                   "call1.message.userPrincipalName~#~char"
+          },
+          "call": [
+            {
+              "name":           "call1",
+              "connection":     "userAuth",
+              "url":            "https://graph.windows.net/myorganization/users/${user.username}?api-version=1.6",
+              "httpMethod":     "POST",
+              "httpParams":     "{\"accountEnabled\":\"true\",\"displayName\":\"${user.displayname}\",\"passwordProfile\":{\"password\":\"Passw0rd\",\"forceChangePasswordNextSignIn\":\"true\"},\"UsageLocation\":\"US\",\"userPrincipalName\":\"${user.email}\",\"mailNickname\":\"${user.firstname}\",\"givenName\":\"${user.firstname}\",\"surname\":\"${user.lastname}\"}",
+              "httpHeaders": {
+                "Authorization": "${access_token}"
+              },
+              "httpContentType": "application/json",
+              "successResponses": {
+                "statusCode": [200,201,204,205]
+              }
+            }
+          ]
+        },
+        "update_account_json": {
+          "call": [
+            {
+              "name":           "call1",
+              "connection":     "userAuth",
+              "url":            "https://graph.microsoft.com/v1.0/users/${account.accountID}",
+              "httpMethod":     "PATCH",
+              "httpParams":     "{\"userPrincipalName\":\"${user.email}\"}",
+              "httpHeaders": {
+                "Authorization": "${access_token}"
+              },
+              "httpContentType": "application/json",
+              "successResponses": {
+                "statusCode": [200,201,204,205]
+              }
+            }
+          ]
+        },
+        "enable_account_json": {
+          "call": [
+            {
+              "name":           "call1",
+              "connection":     "userAuth",
+              "url":            "https://graph.microsoft.com/v1.0/users/${account.accountID}",
+              "httpMethod":     "PATCH",
+              "httpParams":     "{\"accountEnabled\":true}",
+              "httpHeaders": {
+                "Authorization": "${access_token}"
+              },
+              "httpContentType": "application/json",
+              "successResponses": {
+                "statusCode": [200,201,204,205]
+              }
+            }
+          ]
+        },
+        "disable_account_json": {
+          "call": [
+            {
+              "name":           "call1",
+              "connection":     "userAuth",
+              "url":            "https://graph.microsoft.com/v1.0/users/${account.accountID}",
+              "httpMethod":     "PATCH",
+              "httpParams":     "{\"accountEnabled\":false}",
+              "httpHeaders": {
+                "Authorization": "${access_token}"
+              },
+              "httpContentType": "application/json",
+              "successResponses": {
+                "statusCode": [200,201,204,205]
+              }
+            }
+          ]
+        },
+        "add_access_json": {
+          "call": [
+            {
+              "name":           "Subscription",
+              "connection":     "userAuth",
+              "privilegeEntitlement": { "privEntType":"RoleDefinition","privAttrName":"Roles" },
+              "url":            "https://management.azure.com${entitlementValue.customproperty4}/providers/Microsoft.Authorization/roleAssignments/${UUID.randomUUID()}?api-version=2015-07-01",
+              "httpMethod":     "PUT",
+              "httpParams":     "{\"properties\":{\"roleDefinitionId\":\"${privEntVal.customproperty4}\",\"principalId\":\"${account.accountID}\"}}",
+              "httpHeaders": {
+                "Authorization": "${access_token}"
+              },
+              "httpContentType": "application/json"
+            }
+          ]
+        },
+        "remove_access_json": {
+          "call": [
+            {
+              "name":           "Subscription",
+              "connection":     "userAuth",
+              "privilegeEntitlement": { "privEntType":"RoleDefinition","privAttrName":"Roles" },
+              "url":            "https://management.azure.com${entitlementValue.customproperty4}/providers/Microsoft.Authorization/roleAssignments/${uuid}?api-version=2015-07-01",
+              "httpMethod":     "DELETE",
+              "httpHeaders": {
+                "Authorization": "${access_token}"
+              },
+              "httpContentType": "application/json"
+            }
+          ]
+        },
+        "remove_account_json": {
+          "call": [
+            {
+              "name":           "call1",
+              "connection":     "userAuth",
+              "url":            "https://graph.microsoft.com/v1.0/users/${account.accountID}",
+              "httpMethod":     "DELETE",
+              "httpHeaders": {
+                "Authorization": "${access_token}"
+              },
+              "httpContentType": "application/json",
+              "successResponses": {
+                "statusCode": [200,201,204,205]
+              }
+            }
+          ]
+        }
+      },
+      "update_connection_name": {
+        "connection_type":           "AzureAD",
+        "connection_name":           "Terraform_EntraId_Connector_1",
+        "client_id":                 "XXXXXX",
+        "client_secret":             "XXXXXX",
+        "aad_tenant_id":             "XXXXXX",
+        "authentication_endpoint":   "https://login.microsoft.com",
+        "microsoft_graph_endpoint":  "https://graph.microsoft.com",
+        "azure_management_endpoint": "https://management.azure.com",
+        "account_attributes": {
+          "acctLabels": {
+            "customproperty1": "FirstName",
+            "customproperty2": "LastName",
+            "customproperty3": "OfficePhone",
+            "customproperty10": "AccountStatus"
+          },
+          "colsToPropsMap": {
+            "accountID":      "id~#~char",
+            "name":           "userPrincipalName~#~char",
+            "customproperty1": "givenName~#~char",
+            "customproperty2": "surname~#~char",
+            "customproperty3": "businessPhones~#~char",
+            "customproperty10": "accountEnabled~#~char"
+          }
+        },
+        "account_import_fields": "accountEnabled,mail,businessPhone,surname,givenName,displayName,userPrincipalName,id",
+        "status_threshold_config": {
+          "statusAndThresholdConfig": {
+            "accountThresholdValue":       1000,
+            "statusColumn":                "customproperty10",
+            "activeStatus":                ["true"],
+            "deleteLinks":                 true,
+            "correlateInactiveAccounts":   true,
+            "inactivateAccountsNotInFile": false
+          }
+        },
+        "endpoints_filter": {
+          "APPLICATION_QA": [
+            { "AADGROUP": ["group%"] }
+          ]
+        },
+        "connection_json": {
+          "authentications": {
+            "userAuth": {
+              "authType":            "oauth2",
+              "url":                 "https://login.microsoftonline.com/<<tenantid>>/oauth2/token",
+              "httpMethod":          "POST",
+              "httpParams": {
+                "grant_type":    "client_credentials",
+                "client_secret": "<specify client secret>",
+                "client_id":     "<specify client id>",
+                "resource":      "https://management.azure.com/"
+              },
+              "httpHeaders": {
+                "contentType": "application/x-www-form-urlencoded"
+              },
+              "httpContentType":      "application/x-www-form-urlencoded",
+              "expiryError":          "ExpiredAuthenticationToken",
+              "authError":            ["InvalidAuthenticationToken"],
+              "timeOutError":         "Read timed out",
+              "errorPath":            "error.code",
+              "maxRefreshTryCount":   5,
+              "tokenResponsePath":    "access_token",
+              "tokenType":            "Bearer",
+              "accessToken":          "Bearer abcd"
+            },
+            "entAuth": {
+              "authType":            "oauth2",
+              "url":                 "https://login.microsoftonline.com/<<tenantid>>/oauth2/token",
+              "httpMethod":          "POST",
+              "httpParams": {
+                "grant_type":    "client_credentials",
+                "client_secret": "<specify client secret>",
+                "client_id":     "<specify client id>",
+                "resource":      "https://graph.windows.net/"
+              },
+              "httpHeaders": {
+                "contentType": "application/x-www-form-urlencoded"
+              },
+              "httpContentType":      "application/x-www-form-urlencoded",
+              "expiryError":          "ExpiredAuthenticationToken",
+              "authError":            ["InvalidAuthenticationToken","Authentication_MissingOrMalformed"],
+              "timeOutError":         "Read timed out",
+              "errorPath":            "odata~dot#error.code",
+              "maxRefreshTryCount":   3,
+              "tokenResponsePath":    "access_token",
+              "tokenType":            "Bearer",
+              "accessToken":          "Bearer abcde"
+            }
+          }
+        },
+        "import_user_json": {
+          "connection":         "userAuth",
+          "url":                "https://graph.microsoft.com/v1.0/users?$select=Id,userPrincipalName,accountEnabled,mail,userType,createdDateTime,country,preferredLanguage,displayName,surname,givenName,mobilePhone,businessPhones,mailNickname,mail",
+          "httpMethod":         "GET",
+          "httpHeaders": {
+            "Authorization":    "${access_token}",
+            "Accept":           "application/json"
+          },
+          "statusConfig": {
+            "active":           "true",
+            "inactive":         "false"
+          },
+          "colsToPropsMap": {
+            "username":        "userPrincipalName~#~char",
+            "displayname":     "displayName~#~char",
+            "firstname":       "givenName~#~char",
+            "lastname":        "surname~#~char",
+            "country":         "country~#~char",
+            "phonenumber":     "mobilePhone~#~char",
+            "statuskey":       "accountEnabled~#~char",
+            "email":           "mail~#~char",
+            "employeeType":    "userType~#~char",
+            "customproperty1": "preferredLanguage~#~char",
+            "customproperty2": "businessPhones~#~char",
+            "customproperty3": "mailNickname~#~char",
+            "customproperty4": "Id~#~char",
+            "customproperty5": "userPrincipalName~#~char",
+            "customproperty6": "createdDateTime~#~char"
+          },
+          "userResponsePath": "value",
+          "pagination": {
+            "nextUrl": {
+              "nextUrlPath": "${(response?.completeResponseMap?.get('@odata.nextLink')==null)? null : response?.completeResponseMap?.get('@odata.nextLink')}"
+            }
+          }
+        },
+        "create_account_json": {
+          "accountIdPath":           "call1.message.id",
+          "dateFormat":             "yyyy-MM-dd'T'HH:mm:ssXXX",
+          "responseColsToPropsMap": {
+            "comments":               "call1.message.displayName~#~char",
+            "displayName":            "call1.message.displayName~#~char",
+            "name":                   "call1.message.userPrincipalName~#~char"
+          },
+          "call": [
+            {
+              "name":           "call1",
+              "connection":     "userAuth",
+              "url":            "https://graph.windows.net/myorganization/users/${user.username}?api-version=1.6",
+              "httpMethod":     "POST",
+              "httpParams":     "{\"accountEnabled\":\"true\",\"displayName\":\"${user.displayname}\",\"passwordProfile\":{\"password\":\"Passw0rd\",\"forceChangePasswordNextSignIn\":\"true\"},\"UsageLocation\":\"US\",\"userPrincipalName\":\"${user.email}\",\"mailNickname\":\"${user.firstname}\",\"givenName\":\"${user.firstname}\",\"surname\":\"${user.lastname}\"}",
+              "httpHeaders": {
+                "Authorization": "${access_token}"
+              },
+              "httpContentType": "application/json",
+              "successResponses": {
+                "statusCode": [200,201,204,205]
+              }
+            }
+          ]
+        },
+        "update_account_json": {
+          "call": [
+            {
+              "name":           "call1",
+              "connection":     "userAuth",
+              "url":            "https://graph.microsoft.com/v1.0/users/${account.accountID}",
+              "httpMethod":     "PATCH",
+              "httpParams":     "{\"userPrincipalName\":\"${user.email}\"}",
+              "httpHeaders": {
+                "Authorization": "${access_token}"
+              },
+              "httpContentType": "application/json",
+              "successResponses": {
+                "statusCode": [200,201,204,205]
+              }
+            }
+          ]
+        },
+        "enable_account_json": {
+          "call": [
+            {
+              "name":           "call1",
+              "connection":     "userAuth",
+              "url":            "https://graph.microsoft.com/v1.0/users/${account.accountID}",
+              "httpMethod":     "PATCH",
+              "httpParams":     "{\"accountEnabled\":true}",
+              "httpHeaders": {
+                "Authorization": "${access_token}"
+              },
+              "httpContentType": "application/json",
+              "successResponses": {
+                "statusCode": [200,201,204,205]
+              }
+            }
+          ]
+        },
+        "disable_account_json": {
+          "call": [
+            {
+              "name":           "call1",
+              "connection":     "userAuth",
+              "url":            "https://graph.microsoft.com/v1.0/users/${account.accountID}",
+              "httpMethod":     "PATCH",
+              "httpParams":     "{\"accountEnabled\":false}",
+              "httpHeaders": {
+                "Authorization": "${access_token}"
+              },
+              "httpContentType": "application/json",
+              "successResponses": {
+                "statusCode": [200,201,204,205]
+              }
+            }
+          ]
+        },
+        "add_access_json": {
+          "call": [
+            {
+              "name":           "Subscription",
+              "connection":     "userAuth",
+              "privilegeEntitlement": { "privEntType":"RoleDefinition","privAttrName":"Roles" },
+              "url":            "https://management.azure.com${entitlementValue.customproperty4}/providers/Microsoft.Authorization/roleAssignments/${UUID.randomUUID()}?api-version=2015-07-01",
+              "httpMethod":     "PUT",
+              "httpParams":     "{\"properties\":{\"roleDefinitionId\":\"${privEntVal.customproperty4}\",\"principalId\":\"${account.accountID}\"}}",
+              "httpHeaders": {
+                "Authorization": "${access_token}"
+              },
+              "httpContentType": "application/json"
+            }
+          ]
+        },
+        "remove_access_json": {
+          "call": [
+            {
+              "name":           "Subscription",
+              "connection":     "userAuth",
+              "privilegeEntitlement": { "privEntType":"RoleDefinition","privAttrName":"Roles" },
+              "url":            "https://management.azure.com${entitlementValue.customproperty4}/providers/Microsoft.Authorization/roleAssignments/${uuid}?api-version=2015-07-01",
+              "httpMethod":     "DELETE",
+              "httpHeaders": {
+                "Authorization": "${access_token}"
+              },
+              "httpContentType": "application/json"
+            }
+          ]
+        },
+        "remove_account_json": {
+          "call": [
+            {
+              "name":           "call1",
+              "connection":     "userAuth",
+              "url":            "https://graph.microsoft.com/v1.0/users/${account.accountID}",
+              "httpMethod":     "DELETE",
+              "httpHeaders": {
+                "Authorization": "${access_token}"
+              },
+              "httpContentType": "application/json",
+              "successResponses": {
+                "statusCode": [200,201,204,205]
+              }
+            }
+          ]
+        }
+      },
+      "update_connection_type": {
+        "connection_type":           "ADSI",
+        "connection_name":           "Terraform_EntraId_Connector",
+        "client_id":                 "XXXXXX",
+        "client_secret":             "XXXXXX",
+        "aad_tenant_id":             "XXXXXX",
+        "authentication_endpoint":   "https://login.microsoft.com",
+        "microsoft_graph_endpoint":  "https://graph.microsoft.com",
+        "azure_management_endpoint": "https://management.azure.com",
+        "account_attributes": {
+          "acctLabels": {
+            "customproperty1": "FirstName",
+            "customproperty2": "LastName",
+            "customproperty3": "OfficePhone",
+            "customproperty10": "AccountStatus"
+          },
+          "colsToPropsMap": {
+            "accountID":      "id~#~char",
+            "name":           "userPrincipalName~#~char",
+            "customproperty1": "givenName~#~char",
+            "customproperty2": "surname~#~char",
+            "customproperty3": "businessPhones~#~char",
+            "customproperty10": "accountEnabled~#~char"
+          }
+        },
+        "account_import_fields": "accountEnabled,mail,businessPhone,surname,givenName,displayName,userPrincipalName,id",
+        "status_threshold_config": {
+          "statusAndThresholdConfig": {
+            "accountThresholdValue":       1000,
+            "statusColumn":                "customproperty10",
+            "activeStatus":                ["true"],
+            "deleteLinks":                 true,
+            "correlateInactiveAccounts":   true,
+            "inactivateAccountsNotInFile": false
+          }
+        },
+        "endpoints_filter": {
+          "APPLICATION_QA": [
+            { "AADGROUP": ["group%"] }
+          ]
+        },
+        "connection_json": {
+          "authentications": {
+            "userAuth": {
+              "authType":            "oauth2",
+              "url":                 "https://login.microsoftonline.com/<<tenantid>>/oauth2/token",
+              "httpMethod":          "POST",
+              "httpParams": {
+                "grant_type":    "client_credentials",
+                "client_secret": "<specify client secret>",
+                "client_id":     "<specify client id>",
+                "resource":      "https://management.azure.com/"
+              },
+              "httpHeaders": {
+                "contentType": "application/x-www-form-urlencoded"
+              },
+              "httpContentType":      "application/x-www-form-urlencoded",
+              "expiryError":          "ExpiredAuthenticationToken",
+              "authError":            ["InvalidAuthenticationToken"],
+              "timeOutError":         "Read timed out",
+              "errorPath":            "error.code",
+              "maxRefreshTryCount":   5,
+              "tokenResponsePath":    "access_token",
+              "tokenType":            "Bearer",
+              "accessToken":          "Bearer abcd"
+            },
+            "entAuth": {
+              "authType":            "oauth2",
+              "url":                 "https://login.microsoftonline.com/<<tenantid>>/oauth2/token",
+              "httpMethod":          "POST",
+              "httpParams": {
+                "grant_type":    "client_credentials",
+                "client_secret": "<specify client secret>",
+                "client_id":     "<specify client id>",
+                "resource":      "https://graph.windows.net/"
+              },
+              "httpHeaders": {
+                "contentType": "application/x-www-form-urlencoded"
+              },
+              "httpContentType":      "application/x-www-form-urlencoded",
+              "expiryError":          "ExpiredAuthenticationToken",
+              "authError":            ["InvalidAuthenticationToken","Authentication_MissingOrMalformed"],
+              "timeOutError":         "Read timed out",
+              "errorPath":            "odata~dot#error.code",
+              "maxRefreshTryCount":   3,
+              "tokenResponsePath":    "access_token",
+              "tokenType":            "Bearer",
+              "accessToken":          "Bearer abcde"
+            }
+          }
+        },
+        "import_user_json": {
+          "connection":         "userAuth",
+          "url":                "https://graph.microsoft.com/v1.0/users?$select=Id,userPrincipalName,accountEnabled,mail,userType,createdDateTime,country,preferredLanguage,displayName,surname,givenName,mobilePhone,businessPhones,mailNickname,mail",
+          "httpMethod":         "GET",
+          "httpHeaders": {
+            "Authorization":    "${access_token}",
+            "Accept":           "application/json"
+          },
+          "statusConfig": {
+            "active":           "true",
+            "inactive":         "false"
+          },
+          "colsToPropsMap": {
+            "username":        "userPrincipalName~#~char",
+            "displayname":     "displayName~#~char",
+            "firstname":       "givenName~#~char",
+            "lastname":        "surname~#~char",
+            "country":         "country~#~char",
+            "phonenumber":     "mobilePhone~#~char",
+            "statuskey":       "accountEnabled~#~char",
+            "email":           "mail~#~char",
+            "employeeType":    "userType~#~char",
+            "customproperty1": "preferredLanguage~#~char",
+            "customproperty2": "businessPhones~#~char",
+            "customproperty3": "mailNickname~#~char",
+            "customproperty4": "Id~#~char",
+            "customproperty5": "userPrincipalName~#~char",
+            "customproperty6": "createdDateTime~#~char"
+          },
+          "userResponsePath": "value",
+          "pagination": {
+            "nextUrl": {
+              "nextUrlPath": "${(response?.completeResponseMap?.get('@odata.nextLink')==null)? null : response?.completeResponseMap?.get('@odata.nextLink')}"
+            }
+          }
+        },
+        "create_account_json": {
+          "accountIdPath":           "call1.message.id",
+          "dateFormat":             "yyyy-MM-dd'T'HH:mm:ssXXX",
+          "responseColsToPropsMap": {
+            "comments":               "call1.message.displayName~#~char",
+            "displayName":            "call1.message.displayName~#~char",
+            "name":                   "call1.message.userPrincipalName~#~char"
+          },
+          "call": [
+            {
+              "name":           "call1",
+              "connection":     "userAuth",
+              "url":            "https://graph.windows.net/myorganization/users/${user.username}?api-version=1.6",
+              "httpMethod":     "POST",
+              "httpParams":     "{\"accountEnabled\":\"true\",\"displayName\":\"${user.displayname}\",\"passwordProfile\":{\"password\":\"Passw0rd\",\"forceChangePasswordNextSignIn\":\"true\"},\"UsageLocation\":\"US\",\"userPrincipalName\":\"${user.email}\",\"mailNickname\":\"${user.firstname}\",\"givenName\":\"${user.firstname}\",\"surname\":\"${user.lastname}\"}",
+              "httpHeaders": {
+                "Authorization": "${access_token}"
+              },
+              "httpContentType": "application/json",
+              "successResponses": {
+                "statusCode": [200,201,204,205]
+              }
+            }
+          ]
+        },
+        "update_account_json": {
+          "call": [
+            {
+              "name":           "call1",
+              "connection":     "userAuth",
+              "url":            "https://graph.microsoft.com/v1.0/users/${account.accountID}",
+              "httpMethod":     "PATCH",
+              "httpParams":     "{\"userPrincipalName\":\"${user.email}\"}",
+              "httpHeaders": {
+                "Authorization": "${access_token}"
+              },
+              "httpContentType": "application/json",
+              "successResponses": {
+                "statusCode": [200,201,204,205]
+              }
+            }
+          ]
+        },
+        "enable_account_json": {
+          "call": [
+            {
+              "name":           "call1",
+              "connection":     "userAuth",
+              "url":            "https://graph.microsoft.com/v1.0/users/${account.accountID}",
+              "httpMethod":     "PATCH",
+              "httpParams":     "{\"accountEnabled\":true}",
+              "httpHeaders": {
+                "Authorization": "${access_token}"
+              },
+              "httpContentType": "application/json",
+              "successResponses": {
+                "statusCode": [200,201,204,205]
+              }
+            }
+          ]
+        },
+        "disable_account_json": {
+          "call": [
+            {
+              "name":           "call1",
+              "connection":     "userAuth",
+              "url":            "https://graph.microsoft.com/v1.0/users/${account.accountID}",
+              "httpMethod":     "PATCH",
+              "httpParams":     "{\"accountEnabled\":false}",
+              "httpHeaders": {
+                "Authorization": "${access_token}"
+              },
+              "httpContentType": "application/json",
+              "successResponses": {
+                "statusCode": [200,201,204,205]
+              }
+            }
+          ]
+        },
+        "add_access_json": {
+          "call": [
+            {
+              "name":           "Subscription",
+              "connection":     "userAuth",
+              "privilegeEntitlement": { "privEntType":"RoleDefinition","privAttrName":"Roles" },
+              "url":            "https://management.azure.com${entitlementValue.customproperty4}/providers/Microsoft.Authorization/roleAssignments/${UUID.randomUUID()}?api-version=2015-07-01",
+              "httpMethod":     "PUT",
+              "httpParams":     "{\"properties\":{\"roleDefinitionId\":\"${privEntVal.customproperty4}\",\"principalId\":\"${account.accountID}\"}}",
+              "httpHeaders": {
+                "Authorization": "${access_token}"
+              },
+              "httpContentType": "application/json"
+            }
+          ]
+        },
+        "remove_access_json": {
+          "call": [
+            {
+              "name":           "Subscription",
+              "connection":     "userAuth",
+              "privilegeEntitlement": { "privEntType":"RoleDefinition","privAttrName":"Roles" },
+              "url":            "https://management.azure.com${entitlementValue.customproperty4}/providers/Microsoft.Authorization/roleAssignments/${uuid}?api-version=2015-07-01",
+              "httpMethod":     "DELETE",
+              "httpHeaders": {
+                "Authorization": "${access_token}"
+              },
+              "httpContentType": "application/json"
+            }
+          ]
+        },
+        "remove_account_json": {
+          "call": [
+            {
+              "name":           "call1",
+              "connection":     "userAuth",
+              "url":            "https://graph.microsoft.com/v1.0/users/${account.accountID}",
+              "httpMethod":     "DELETE",
+              "httpHeaders": {
+                "Authorization": "${access_token}"
+              },
+              "httpContentType": "application/json",
+              "successResponses": {
+                "statusCode": [200,201,204,205]
+              }
+            }
+          ]
+        }
+      }
+  }
+  

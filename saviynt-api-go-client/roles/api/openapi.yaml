@@ -1,0 +1,1977 @@
+openapi: 3.1.0
+info:
+  description: API for managing roles in Saviynt.
+  title: Saviynt API
+  version: 1.0.0
+servers:
+- url: http://localhost:3000
+paths:
+  /ECM/api/v5/createEnterpriseRoleRequest:
+    post:
+      operationId: createEnterpriseRoleRequest
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateEnterpriseRoleRequest'
+        required: true
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CreateEnterpriseRoleResponse'
+          description: Role request created successfully
+      summary: This API call can be used for creating a new role and assigning an
+        owner to the role
+      tags:
+      - Roles
+  /ECM/api/v5/updateEnterpriseRoleRequest:
+    post:
+      operationId: updateEnterpriseRoleRequest
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateEnterpriseRoleRequest'
+        required: true
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UpdateEnterpriseRoleResponse'
+          description: Role request updated successfully
+      summary: This API call can be used for creating a new role and assigning an
+        owner to the role
+      tags:
+      - Roles
+  /ECM/api/v5/getRoles:
+    post:
+      operationId: getRoles
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/GetRolesRequest'
+        required: true
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GetRolesResponse'
+          description: Successful Response
+      summary: This API can be used to get the list of all the roles
+      tags:
+      - Roles
+  /ECM/api/v5/getFireFighterRoles:
+    post:
+      operationId: getFireFighterRoles
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                items:
+                  $ref: '#/components/schemas/GetFireFighterRole'
+                type: array
+          description: List of FireFighter roles
+      summary: Get FireFighter Roles
+      tags:
+      - Roles
+  /ECM/api/v5/addrole:
+    post:
+      operationId: addrole
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AddOrRemoveRoleRequest'
+        required: true
+      responses:
+        "200":
+          content:
+            application/json:
+              example:
+                message: "Tasks created. IDs:: 673975"
+              schema:
+                $ref: '#/components/schemas/AddOrRemoveRoleResponse'
+          description: Successfully added the role
+      summary: This API adds role to user.
+      tags:
+      - Roles
+  /ECM/api/v5/removerole:
+    post:
+      operationId: removerole
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AddOrRemoveRoleRequest'
+        required: true
+      responses:
+        "200":
+          content:
+            application/json:
+              example:
+                message: "Tasks created. IDs:: 673975"
+              schema:
+                $ref: '#/components/schemas/AddOrRemoveRoleResponse'
+          description: Successfully added the role
+      summary: This API removes role from user.
+      tags:
+      - Roles
+components:
+  schemas:
+    CreateRoleOwnerPayload:
+      example:
+        ownerName: ownerName
+        rank: rank
+      properties:
+        ownerName:
+          type: string
+        rank:
+          type: string
+    CreateEnterpriseRoleRequest:
+      example:
+        customproperty10: customproperty10
+        customproperty54: customproperty54
+        customproperty53: customproperty53
+        customproperty12: customproperty12
+        customproperty56: customproperty56
+        customproperty11: customproperty11
+        customproperty55: customproperty55
+        customproperty50: customproperty50
+        customproperty52: customproperty52
+        customproperty51: customproperty51
+        customproperty18: customproperty18
+        customproperty17: customproperty17
+        customproperty19: customproperty19
+        customproperty14: customproperty14
+        customproperty58: customproperty58
+        defaulttimeframe: defaulttimeframe
+        customproperty13: customproperty13
+        customproperty57: customproperty57
+        customproperty16: customproperty16
+        customproperty15: customproperty15
+        customproperty59: customproperty59
+        roletype: ENABLER
+        checksod: "true"
+        customproperty43: customproperty43
+        customproperty42: customproperty42
+        customproperty45: customproperty45
+        customproperty44: customproperty44
+        level: level
+        customproperty41: customproperty41
+        customproperty40: customproperty40
+        priviliged: priviliged
+        customproperty47: customproperty47
+        customproperty46: customproperty46
+        customproperty49: customproperty49
+        customproperty48: customproperty48
+        role_name: role_name
+        glossary: glossary
+        soxcritical: soxcritical
+        customproperty4: customproperty4
+        customproperty32: customproperty32
+        customproperty5: customproperty5
+        customproperty31: customproperty31
+        customproperty2: customproperty2
+        customproperty34: customproperty34
+        customproperty3: customproperty3
+        customproperty33: customproperty33
+        customproperty1: customproperty1
+        customproperty30: customproperty30
+        confidentiality: confidentiality
+        customproperty39: customproperty39
+        description: description
+        showDynamicAttrs: "true"
+        customproperty36: customproperty36
+        customproperty35: customproperty35
+        customproperty38: customproperty38
+        customproperty37: customproperty37
+        customproperty8: customproperty8
+        customproperty9: customproperty9
+        customproperty6: customproperty6
+        customproperty7: customproperty7
+        owner:
+        - ownerName: ownerName
+          rank: rank
+        - ownerName: ownerName
+          rank: rank
+        customproperty21: customproperty21
+        syscritical: syscritical
+        customproperty20: customproperty20
+        customproperty23: customproperty23
+        customproperty22: customproperty22
+        customproperty60: customproperty60
+        customproperty29: customproperty29
+        customproperty28: customproperty28
+        customproperty25: customproperty25
+        customproperty24: customproperty24
+        requestor: requestor
+        customproperty27: customproperty27
+        customproperty26: customproperty26
+        endpointname: endpointname
+        displayname: displayname
+        risk: risk
+        requestable: "true"
+      properties:
+        roletype:
+          description: Use the roletype as 'ENTERPRISE' to Create Enterprise Role
+            Request.
+          enum:
+          - ENABLER
+          - TRANSACTIONAL
+          - FIREFIGHTER
+          - ENTERPRISE
+          - APPLICATION
+          type: string
+        role_name:
+          type: string
+        requestor:
+          type: string
+        owner:
+          items:
+            $ref: '#/components/schemas/CreateRoleOwnerPayload'
+          type: array
+        customproperty1:
+          type: string
+        customproperty2:
+          type: string
+        customproperty3:
+          type: string
+        customproperty4:
+          type: string
+        customproperty5:
+          type: string
+        customproperty6:
+          type: string
+        customproperty7:
+          type: string
+        customproperty8:
+          type: string
+        customproperty9:
+          type: string
+        customproperty10:
+          type: string
+        customproperty11:
+          type: string
+        customproperty12:
+          type: string
+        customproperty13:
+          type: string
+        customproperty14:
+          type: string
+        customproperty15:
+          type: string
+        customproperty16:
+          type: string
+        customproperty17:
+          type: string
+        customproperty18:
+          type: string
+        customproperty19:
+          type: string
+        customproperty20:
+          type: string
+        customproperty21:
+          type: string
+        customproperty22:
+          type: string
+        customproperty23:
+          type: string
+        customproperty24:
+          type: string
+        customproperty25:
+          type: string
+        customproperty26:
+          type: string
+        customproperty27:
+          type: string
+        customproperty28:
+          type: string
+        customproperty29:
+          type: string
+        customproperty30:
+          type: string
+        customproperty31:
+          type: string
+        customproperty32:
+          type: string
+        customproperty33:
+          type: string
+        customproperty34:
+          type: string
+        customproperty35:
+          type: string
+        customproperty36:
+          type: string
+        customproperty37:
+          type: string
+        customproperty38:
+          type: string
+        customproperty39:
+          type: string
+        customproperty40:
+          type: string
+        customproperty41:
+          type: string
+        customproperty42:
+          type: string
+        customproperty43:
+          type: string
+        customproperty44:
+          type: string
+        customproperty45:
+          type: string
+        customproperty46:
+          type: string
+        customproperty47:
+          type: string
+        customproperty48:
+          type: string
+        customproperty49:
+          type: string
+        customproperty50:
+          type: string
+        customproperty51:
+          type: string
+        customproperty52:
+          type: string
+        customproperty53:
+          type: string
+        customproperty54:
+          type: string
+        customproperty55:
+          type: string
+        customproperty56:
+          type: string
+        customproperty57:
+          type: string
+        customproperty58:
+          type: string
+        customproperty59:
+          type: string
+        customproperty60:
+          type: string
+        endpointname:
+          type: string
+        defaulttimeframe:
+          type: string
+        description:
+          type: string
+        displayname:
+          type: string
+        glossary:
+          type: string
+        risk:
+          type: string
+        level:
+          type: string
+        soxcritical:
+          type: string
+        syscritical:
+          type: string
+        priviliged:
+          type: string
+        confidentiality:
+          type: string
+        requestable:
+          enum:
+          - "true"
+          - "false"
+          type: string
+        showDynamicAttrs:
+          enum:
+          - "true"
+          - "false"
+          type: string
+        checksod:
+          enum:
+          - "true"
+          - "false"
+          type: string
+      required:
+      - owner
+      - requestor
+      - role_name
+      - roletype
+    CreateEnterpriseRoleResponse:
+      example:
+        requestid: requestid
+        requestkey: requestkey
+        errorCode: errorCode
+        message: message
+      properties:
+        requestid:
+          type: string
+        requestkey:
+          type: string
+        errorCode:
+          type: string
+        message:
+          type: string
+    UpdateEnterpriseRoleResponse:
+      example:
+        requestid: requestid
+        requestkey: requestkey
+        errorCode: errorCode
+        message: message
+      properties:
+        requestid:
+          type: string
+        requestkey:
+          type: string
+        errorCode:
+          type: string
+        message:
+          type: string
+    UpdateRoleOwnerPayload:
+      example:
+        ownerName: ownerName
+        rank: rank
+        updateType: ADD
+      properties:
+        ownerName:
+          type: string
+        updateType:
+          enum:
+          - ADD
+          - REMOVE
+          type: string
+        rank:
+          type: string
+    UpdateEntitlementPayload:
+      example:
+        endpoint: endpoint
+        entitlement_value: entitlement_value
+        entitlementType: entitlementType
+        updateType: ADD
+      properties:
+        entitlement_value:
+          type: string
+        entitlementType:
+          type: string
+        endpoint:
+          type: string
+        updateType:
+          enum:
+          - ADD
+          - REMOVE
+          type: string
+    UpdateEnterpriseRoleRequest:
+      example:
+        entitlements:
+        - endpoint: endpoint
+          entitlement_value: entitlement_value
+          entitlementType: entitlementType
+          updateType: ADD
+        - endpoint: endpoint
+          entitlement_value: entitlement_value
+          entitlementType: entitlementType
+          updateType: ADD
+        customproperty10: customproperty10
+        customproperty54: customproperty54
+        customproperty53: customproperty53
+        customproperty12: customproperty12
+        customproperty56: customproperty56
+        customproperty11: customproperty11
+        customproperty55: customproperty55
+        customproperty50: customproperty50
+        customproperty52: customproperty52
+        customproperty51: customproperty51
+        customproperty18: customproperty18
+        customproperty17: customproperty17
+        customproperty19: customproperty19
+        defaulttimeframe: defaulttimeframe
+        customproperty14: customproperty14
+        customproperty58: customproperty58
+        customproperty13: customproperty13
+        customproperty57: customproperty57
+        customproperty16: customproperty16
+        customproperty15: customproperty15
+        customproperty59: customproperty59
+        roletype: roletype
+        checksod: true
+        customproperty43: customproperty43
+        customproperty42: customproperty42
+        customproperty45: customproperty45
+        customproperty44: customproperty44
+        level: level
+        customproperty41: customproperty41
+        customproperty40: customproperty40
+        priviliged: priviliged
+        customproperty47: customproperty47
+        customproperty46: customproperty46
+        customproperty49: customproperty49
+        customproperty48: customproperty48
+        role_name: role_name
+        glossary: glossary
+        soxcritical: soxcritical
+        customproperty4: customproperty4
+        customproperty32: customproperty32
+        customproperty5: customproperty5
+        customproperty31: customproperty31
+        customproperty2: customproperty2
+        customproperty34: customproperty34
+        customproperty3: customproperty3
+        customproperty33: customproperty33
+        customproperty1: customproperty1
+        customproperty30: customproperty30
+        confidentiality: confidentiality
+        description: description
+        showDynamicAttrs: showDynamicAttrs
+        customproperty39: customproperty39
+        customproperty36: customproperty36
+        customproperty35: customproperty35
+        customproperty38: customproperty38
+        customproperty37: customproperty37
+        customproperty8: customproperty8
+        customproperty9: customproperty9
+        customproperty6: customproperty6
+        customproperty7: customproperty7
+        owner:
+        - ownerName: ownerName
+          rank: rank
+          updateType: ADD
+        - ownerName: ownerName
+          rank: rank
+          updateType: ADD
+        syscritical: syscritical
+        customproperty21: customproperty21
+        customproperty20: customproperty20
+        customproperty23: customproperty23
+        customproperty22: customproperty22
+        customproperty60: customproperty60
+        customproperty29: customproperty29
+        customproperty28: customproperty28
+        customproperty25: customproperty25
+        customproperty24: customproperty24
+        requestor: requestor
+        customproperty27: customproperty27
+        customproperty26: customproperty26
+        endpointname: endpointname
+        displayname: displayname
+        risk: risk
+        requestable: requestable
+      properties:
+        roletype:
+          type: string
+        role_name:
+          type: string
+        requestor:
+          type: string
+        owner:
+          items:
+            $ref: '#/components/schemas/UpdateRoleOwnerPayload'
+          type: array
+        endpointname:
+          type: string
+        entitlements:
+          items:
+            $ref: '#/components/schemas/UpdateEntitlementPayload'
+          type: array
+        defaulttimeframe:
+          type: string
+        description:
+          type: string
+        displayname:
+          type: string
+        glossary:
+          type: string
+        risk:
+          type: string
+        level:
+          type: string
+        soxcritical:
+          type: string
+        syscritical:
+          type: string
+        priviliged:
+          type: string
+        confidentiality:
+          type: string
+        requestable:
+          type: string
+        showDynamicAttrs:
+          type: string
+        checksod:
+          description: Evaluate Segregation of Duties (SOD) violations. Defaults to
+            false.
+          type: boolean
+        customproperty1:
+          type: string
+        customproperty2:
+          type: string
+        customproperty3:
+          type: string
+        customproperty4:
+          type: string
+        customproperty5:
+          type: string
+        customproperty6:
+          type: string
+        customproperty7:
+          type: string
+        customproperty8:
+          type: string
+        customproperty9:
+          type: string
+        customproperty10:
+          type: string
+        customproperty11:
+          type: string
+        customproperty12:
+          type: string
+        customproperty13:
+          type: string
+        customproperty14:
+          type: string
+        customproperty15:
+          type: string
+        customproperty16:
+          type: string
+        customproperty17:
+          type: string
+        customproperty18:
+          type: string
+        customproperty19:
+          type: string
+        customproperty20:
+          type: string
+        customproperty21:
+          type: string
+        customproperty22:
+          type: string
+        customproperty23:
+          type: string
+        customproperty24:
+          type: string
+        customproperty25:
+          type: string
+        customproperty26:
+          type: string
+        customproperty27:
+          type: string
+        customproperty28:
+          type: string
+        customproperty29:
+          type: string
+        customproperty30:
+          type: string
+        customproperty31:
+          type: string
+        customproperty32:
+          type: string
+        customproperty33:
+          type: string
+        customproperty34:
+          type: string
+        customproperty35:
+          type: string
+        customproperty36:
+          type: string
+        customproperty37:
+          type: string
+        customproperty38:
+          type: string
+        customproperty39:
+          type: string
+        customproperty40:
+          type: string
+        customproperty41:
+          type: string
+        customproperty42:
+          type: string
+        customproperty43:
+          type: string
+        customproperty44:
+          type: string
+        customproperty45:
+          type: string
+        customproperty46:
+          type: string
+        customproperty47:
+          type: string
+        customproperty48:
+          type: string
+        customproperty49:
+          type: string
+        customproperty50:
+          type: string
+        customproperty51:
+          type: string
+        customproperty52:
+          type: string
+        customproperty53:
+          type: string
+        customproperty54:
+          type: string
+        customproperty55:
+          type: string
+        customproperty56:
+          type: string
+        customproperty57:
+          type: string
+        customproperty58:
+          type: string
+        customproperty59:
+          type: string
+        customproperty60:
+          type: string
+      required:
+      - role_name
+      - roletype
+    GetRolesRequest:
+      example:
+        customproperty10: customproperty10
+        customproperty54: customproperty54
+        customproperty53: customproperty53
+        customproperty12: customproperty12
+        customproperty56: customproperty56
+        customproperty11: customproperty11
+        customproperty55: customproperty55
+        customproperty50: customproperty50
+        customproperty52: customproperty52
+        customproperty51: customproperty51
+        customproperty18: customproperty18
+        customproperty17: customproperty17
+        customproperty19: customproperty19
+        customproperty14: customproperty14
+        customproperty58: customproperty58
+        customproperty13: customproperty13
+        customproperty57: customproperty57
+        customproperty16: customproperty16
+        customproperty15: customproperty15
+        customproperty59: customproperty59
+        mininginstance: mininginstance
+        roletype: roletype
+        customproperty43: customproperty43
+        customproperty42: customproperty42
+        customproperty45: customproperty45
+        customproperty44: customproperty44
+        offset: offset
+        level: level
+        customproperty41: customproperty41
+        customproperty40: customproperty40
+        priviliged: priviliged
+        customproperty47: customproperty47
+        customproperty46: customproperty46
+        customproperty49: customproperty49
+        customproperty48: customproperty48
+        role_name: role_name
+        glossary: glossary
+        roleQuery: roleQuery
+        soxcritical: soxcritical
+        status: status
+        customproperty4: customproperty4
+        customproperty32: customproperty32
+        customproperty5: customproperty5
+        customproperty31: customproperty31
+        systemid: systemid
+        customproperty2: customproperty2
+        customproperty34: customproperty34
+        hideblankvalues: hideblankvalues
+        customproperty3: customproperty3
+        customproperty33: customproperty33
+        customproperty1: customproperty1
+        customproperty30: customproperty30
+        confidentiality: confidentiality
+        description: description
+        customproperty39: customproperty39
+        customproperty36: customproperty36
+        customproperty35: customproperty35
+        customproperty38: customproperty38
+        customproperty37: customproperty37
+        customproperty8: customproperty8
+        customproperty9: customproperty9
+        customproperty6: customproperty6
+        customproperty7: customproperty7
+        syscritical: syscritical
+        customproperty21: customproperty21
+        customproperty20: customproperty20
+        customproperty23: customproperty23
+        customproperty22: customproperty22
+        max: max
+        customproperty60: customproperty60
+        customproperty29: customproperty29
+        customproperty28: customproperty28
+        customproperty25: customproperty25
+        customproperty24: customproperty24
+        customproperty27: customproperty27
+        requestedObject: requestedObject
+        customproperty26: customproperty26
+        displayname: displayname
+        risk: risk
+        requestable: requestable
+        username: username
+        updateuser: updateuser
+      properties:
+        requestedObject:
+          description: Comma-separated values like `entitlement`
+          type: string
+        username:
+          description: Username associated with the role
+          type: string
+        roletype:
+          description: "Role type code (e.g., 4 for enterprise roles)"
+          type: string
+        requestable:
+          description: "Requestable status (e.g., true or false)"
+          type: string
+        status:
+          description: "Role status (e.g., Active, Inactive)"
+          type: string
+        role_name:
+          description: Role name
+          type: string
+        description:
+          description: Role description
+          type: string
+        displayname:
+          description: Role display name
+          type: string
+        glossary:
+          description: Role glossary
+          type: string
+        mininginstance:
+          description: Mining instance name
+          type: string
+        risk:
+          description: Risk associated with the role
+          type: string
+        updateuser:
+          description: User who updated the role
+          type: string
+        systemid:
+          description: System ID associated with the role
+          type: string
+        soxcritical:
+          description: "SOX criticality status (e.g., true or false)"
+          type: string
+        syscritical:
+          description: "System criticality status (e.g., true or false)"
+          type: string
+        level:
+          description: Role level
+          type: string
+        priviliged:
+          description: "Privileged status (e.g., true or false)"
+          type: string
+        confidentiality:
+          description: "Confidentiality status (e.g., true or false)"
+          type: string
+        max:
+          description: Maximum number of records to return
+          type: string
+        offset:
+          description: Offset for pagination
+          type: string
+        roleQuery:
+          description: "SQL-like query to filter roles (e.g., `r.role_name = 'Admin'`)"
+          type: string
+        hideblankvalues:
+          description: "Hide blank values (e.g., true or false)"
+          type: string
+        customproperty1:
+          description: Custom property 1 for additional metadata
+          type: string
+        customproperty2:
+          description: Custom property 2 for additional metadata
+          type: string
+        customproperty3:
+          description: Custom property 3 for additional metadata
+          type: string
+        customproperty4:
+          description: Custom property 4 for additional metadata
+          type: string
+        customproperty5:
+          description: Custom property 5 for additional metadata
+          type: string
+        customproperty6:
+          description: Custom property 6 for additional metadata
+          type: string
+        customproperty7:
+          description: Custom property 7 for additional metadata
+          type: string
+        customproperty8:
+          description: Custom property 8 for additional metadata
+          type: string
+        customproperty9:
+          description: Custom property 9 for additional metadata
+          type: string
+        customproperty10:
+          description: Custom property 10 for additional metadata
+          type: string
+        customproperty11:
+          description: Custom property 11 for additional metadata
+          type: string
+        customproperty12:
+          description: Custom property 12 for additional metadata
+          type: string
+        customproperty13:
+          description: Custom property 13 for additional metadata
+          type: string
+        customproperty14:
+          description: Custom property 14 for additional metadata
+          type: string
+        customproperty15:
+          description: Custom property 15 for additional metadata
+          type: string
+        customproperty16:
+          description: Custom property 16 for additional metadata
+          type: string
+        customproperty17:
+          description: Custom property 17 for additional metadata
+          type: string
+        customproperty18:
+          description: Custom property 18 for additional metadata
+          type: string
+        customproperty19:
+          description: Custom property 19 for additional metadata
+          type: string
+        customproperty20:
+          description: Custom property 20 for additional metadata
+          type: string
+        customproperty21:
+          description: Custom property 21 for additional metadata
+          type: string
+        customproperty22:
+          description: Custom property 22 for additional metadata
+          type: string
+        customproperty23:
+          description: Custom property 23 for additional metadata
+          type: string
+        customproperty24:
+          description: Custom property 24 for additional metadata
+          type: string
+        customproperty25:
+          description: Custom property 25 for additional metadata
+          type: string
+        customproperty26:
+          description: Custom property 26 for additional metadata
+          type: string
+        customproperty27:
+          description: Custom property 27 for additional metadata
+          type: string
+        customproperty28:
+          description: Custom property 28 for additional metadata
+          type: string
+        customproperty29:
+          description: Custom property 29 for additional metadata
+          type: string
+        customproperty30:
+          description: Custom property 30 for additional metadata
+          type: string
+        customproperty31:
+          description: Custom property 31 for additional metadata
+          type: string
+        customproperty32:
+          description: Custom property 32 for additional metadata
+          type: string
+        customproperty33:
+          description: Custom property 33 for additional metadata
+          type: string
+        customproperty34:
+          description: Custom property 34 for additional metadata
+          type: string
+        customproperty35:
+          description: Custom property 35 for additional metadata
+          type: string
+        customproperty36:
+          description: Custom property 36 for additional metadata
+          type: string
+        customproperty37:
+          description: Custom property 37 for additional metadata
+          type: string
+        customproperty38:
+          description: Custom property 38 for additional metadata
+          type: string
+        customproperty39:
+          description: Custom property 39 for additional metadata
+          type: string
+        customproperty40:
+          description: Custom property 40 for additional metadata
+          type: string
+        customproperty41:
+          description: Custom property 41 for additional metadata
+          type: string
+        customproperty42:
+          description: Custom property 42 for additional metadata
+          type: string
+        customproperty43:
+          description: Custom property 43 for additional metadata
+          type: string
+        customproperty44:
+          description: Custom property 44 for additional metadata
+          type: string
+        customproperty45:
+          description: Custom property 45 for additional metadata
+          type: string
+        customproperty46:
+          description: Custom property 46 for additional metadata
+          type: string
+        customproperty47:
+          description: Custom property 47 for additional metadata
+          type: string
+        customproperty48:
+          description: Custom property 48 for additional metadata
+          type: string
+        customproperty49:
+          description: Custom property 49 for additional metadata
+          type: string
+        customproperty50:
+          description: Custom property 50 for additional metadata
+          type: string
+        customproperty51:
+          description: Custom property 51 for additional metadata
+          type: string
+        customproperty52:
+          description: Custom property 52 for additional metadata
+          type: string
+        customproperty53:
+          description: Custom property 53 for additional metadata
+          type: string
+        customproperty54:
+          description: Custom property 54 for additional metadata
+          type: string
+        customproperty55:
+          description: Custom property 55 for additional metadata
+          type: string
+        customproperty56:
+          description: Custom property 56 for additional metadata
+          type: string
+        customproperty57:
+          description: Custom property 57 for additional metadata
+          type: string
+        customproperty58:
+          description: Custom property 58 for additional metadata
+          type: string
+        customproperty59:
+          description: Custom property 59 for additional metadata
+          type: string
+        customproperty60:
+          description: Custom property 60 for additional metadata
+          type: string
+    GetRoleOwnersResponse:
+      properties:
+        ownername:
+          type: string
+          nullable: true
+        rank:
+          type: string
+          nullable: true
+    GetEntitlementDetailsResponse:
+      example:
+        endpoint: endpoint
+        entitlementTypeName: entitlementTypeName
+        entitlement_value: entitlement_value
+      properties:
+        entitlement_value:
+          type: string
+        entitlementTypeName:
+          type: string
+        endpoint:
+          type: string
+    GetUserDetailsResponse:
+      additionalProperties: true
+      properties:
+        username:
+          type: string
+    GetRoleDetailsResponse:
+      example:
+        Custom Property 26: Custom Property 26
+        Custom Property 27: Custom Property 27
+        Custom Property 28: Custom Property 28
+        Custom Property 29: Custom Property 29
+        lastReviewedCampaignName: lastReviewedCampaignName
+        UserDetails:
+        - GetRoleDetailsResponse_UserDetails_inner
+        - GetRoleDetailsResponse_UserDetails_inner
+        updatedate: updatedate
+        roleKey: 1
+        Custom Property 30: Custom Property 30
+        roletype: roletype
+        Custom Property 31: Custom Property 31
+        Custom Property 32: Custom Property 32
+        Custom Property 33: Custom Property 33
+        lastReviewedBy: lastReviewedBy
+        Custom Property 34: Custom Property 34
+        Custom Property 35: Custom Property 35
+        Custom Property 36: Custom Property 36
+        Custom Property 37: Custom Property 37
+        Custom Property 38: Custom Property 38
+        Custom Property 39: Custom Property 39
+        priviliged: priviliged
+        version: 5
+        role_name: role_name
+        glossary: glossary
+        soxcritical: soxcritical
+        Custom Property 40: Custom Property 40
+        Custom Property 41: Custom Property 41
+        Custom Property 42: Custom Property 42
+        defaultTimeFrameHrs: defaultTimeFrameHrs
+        Custom Property 43: Custom Property 43
+        Custom Property 44: Custom Property 44
+        Custom Property 45: Custom Property 45
+        Custom Property 46: Custom Property 46
+        status: status
+        Custom Property 47: Custom Property 47
+        Custom Property 48: Custom Property 48
+        Custom Property 49: Custom Property 49
+        entitlement_valueKey: entitlement_valueKey
+        confidentiality: confidentiality
+        description: description
+        showDynamicAttrs: showDynamicAttrs
+        Custom Property 50: Custom Property 50
+        Custom Property 51: Custom Property 51
+        Custom Property 52: Custom Property 52
+        Custom Property 53: Custom Property 53
+        Custom Property 10: Custom Property 10
+        Custom Property 54: Custom Property 54
+        Custom Property 11: Custom Property 11
+        Custom Property 55: Custom Property 55
+        Custom Property 12: Custom Property 12
+        Custom Property 56: Custom Property 56
+        Custom Property 13: Custom Property 13
+        Custom Property 57: Custom Property 57
+        Custom Property 14: Custom Property 14
+        Custom Property 58: Custom Property 58
+        syscritical: syscritical
+        owner: GetRoleDetailsResponse_owner
+        Custom Property 4: Custom Property 4
+        Custom Property 15: Custom Property 15
+        Custom Property 59: Custom Property 59
+        Custom Property 5: Custom Property 5
+        Custom Property 16: Custom Property 16
+        Custom Property 6: Custom Property 6
+        Custom Property 17: Custom Property 17
+        Custom Property 7: Custom Property 7
+        Custom Property 18: Custom Property 18
+        Custom Property 8: Custom Property 8
+        Custom Property 19: Custom Property 19
+        roleState: roleState
+        Custom Property 9: Custom Property 9
+        maxTimeFrameHrs: maxTimeFrameHrs
+        endpointkey: endpointkey
+        EntitlementDetails:
+        - endpoint: endpoint
+          entitlementTypeName: entitlementTypeName
+          entitlement_value: entitlement_value
+        - endpoint: endpoint
+          entitlementTypeName: entitlementTypeName
+          entitlement_value: entitlement_value
+        Custom Property 1: Custom Property 1
+        Custom Property 2: Custom Property 2
+        Custom Property 3: Custom Property 3
+        Custom Property 60: Custom Property 60
+        displayname: displayname
+        Custom Property 20: Custom Property 20
+        requestable: requestable
+        Custom Property 21: Custom Property 21
+        Custom Property 22: Custom Property 22
+        Custom Property 23: Custom Property 23
+        Custom Property 24: Custom Property 24
+        updateuser: updateuser
+        Custom Property 25: Custom Property 25
+      properties:
+        roleKey:
+          type: integer
+        updatedate:
+          type: string
+        roletype:
+          type: string
+        version:
+          type: integer
+        role_name:
+          type: string
+        description:
+          type: string
+        glossary:
+          type: string
+        priviliged:
+          type: string
+        status:
+          type: string
+        showDynamicAttrs:
+          type: string
+        defaultTimeFrameHrs:
+          type: string
+        maxTimeFrameHrs:
+          type: string
+        confidentiality:
+          type: string
+        soxcritical:
+          type: string
+        syscritical:
+          type: string
+        requestable:
+          type: string
+        displayname:
+          type: string
+        updateuser:
+          type: string
+        entitlement_valueKey:
+          type: string
+        roleState:
+          type: string
+        endpointkey:
+          type: string
+        lastReviewedCampaignName:
+          type: string
+        lastReviewedBy:
+          type: string
+        owner:
+          $ref: '#/components/schemas/GetRoleDetailsResponse_owner'
+        UserDetails:
+          items:
+            $ref: '#/components/schemas/GetRoleDetailsResponse_UserDetails_inner'
+          type: array
+          nullable: true
+        EntitlementDetails:
+          items:
+            $ref: '#/components/schemas/GetEntitlementDetailsResponse'
+          type: array
+          nullable: true
+        Custom Property 1:
+          type: string
+        Custom Property 2:
+          type: string
+        Custom Property 3:
+          type: string
+        Custom Property 4:
+          type: string
+        Custom Property 5:
+          type: string
+        Custom Property 6:
+          type: string
+        Custom Property 7:
+          type: string
+        Custom Property 8:
+          type: string
+        Custom Property 9:
+          type: string
+        Custom Property 10:
+          type: string
+        Custom Property 11:
+          type: string
+        Custom Property 12:
+          type: string
+        Custom Property 13:
+          type: string
+        Custom Property 14:
+          type: string
+        Custom Property 15:
+          type: string
+        Custom Property 16:
+          type: string
+        Custom Property 17:
+          type: string
+        Custom Property 18:
+          type: string
+        Custom Property 19:
+          type: string
+        Custom Property 20:
+          type: string
+        Custom Property 21:
+          type: string
+        Custom Property 22:
+          type: string
+        Custom Property 23:
+          type: string
+        Custom Property 24:
+          type: string
+        Custom Property 25:
+          type: string
+        Custom Property 26:
+          type: string
+        Custom Property 27:
+          type: string
+        Custom Property 28:
+          type: string
+        Custom Property 29:
+          type: string
+        Custom Property 30:
+          type: string
+        Custom Property 31:
+          type: string
+        Custom Property 32:
+          type: string
+        Custom Property 33:
+          type: string
+        Custom Property 34:
+          type: string
+        Custom Property 35:
+          type: string
+        Custom Property 36:
+          type: string
+        Custom Property 37:
+          type: string
+        Custom Property 38:
+          type: string
+        Custom Property 39:
+          type: string
+        Custom Property 40:
+          type: string
+        Custom Property 41:
+          type: string
+        Custom Property 42:
+          type: string
+        Custom Property 43:
+          type: string
+        Custom Property 44:
+          type: string
+        Custom Property 45:
+          type: string
+        Custom Property 46:
+          type: string
+        Custom Property 47:
+          type: string
+        Custom Property 48:
+          type: string
+        Custom Property 49:
+          type: string
+        Custom Property 50:
+          type: string
+        Custom Property 51:
+          type: string
+        Custom Property 52:
+          type: string
+        Custom Property 53:
+          type: string
+        Custom Property 54:
+          type: string
+        Custom Property 55:
+          type: string
+        Custom Property 56:
+          type: string
+        Custom Property 57:
+          type: string
+        Custom Property 58:
+          type: string
+        Custom Property 59:
+          type: string
+        Custom Property 60:
+          type: string
+    GetRolesResponse:
+      example:
+        msg: msg
+        displayCount: 0
+        errorCode: errorCode
+        Roledetails:
+        - Custom Property 26: Custom Property 26
+          Custom Property 27: Custom Property 27
+          Custom Property 28: Custom Property 28
+          Custom Property 29: Custom Property 29
+          lastReviewedCampaignName: lastReviewedCampaignName
+          UserDetails:
+          - GetRoleDetailsResponse_UserDetails_inner
+          - GetRoleDetailsResponse_UserDetails_inner
+          updatedate: updatedate
+          roleKey: 1
+          Custom Property 30: Custom Property 30
+          roletype: roletype
+          Custom Property 31: Custom Property 31
+          Custom Property 32: Custom Property 32
+          Custom Property 33: Custom Property 33
+          lastReviewedBy: lastReviewedBy
+          Custom Property 34: Custom Property 34
+          Custom Property 35: Custom Property 35
+          Custom Property 36: Custom Property 36
+          Custom Property 37: Custom Property 37
+          Custom Property 38: Custom Property 38
+          Custom Property 39: Custom Property 39
+          priviliged: priviliged
+          version: 5
+          role_name: role_name
+          glossary: glossary
+          soxcritical: soxcritical
+          Custom Property 40: Custom Property 40
+          Custom Property 41: Custom Property 41
+          Custom Property 42: Custom Property 42
+          defaultTimeFrameHrs: defaultTimeFrameHrs
+          Custom Property 43: Custom Property 43
+          Custom Property 44: Custom Property 44
+          Custom Property 45: Custom Property 45
+          Custom Property 46: Custom Property 46
+          status: status
+          Custom Property 47: Custom Property 47
+          Custom Property 48: Custom Property 48
+          Custom Property 49: Custom Property 49
+          entitlement_valueKey: entitlement_valueKey
+          confidentiality: confidentiality
+          description: description
+          showDynamicAttrs: showDynamicAttrs
+          Custom Property 50: Custom Property 50
+          Custom Property 51: Custom Property 51
+          Custom Property 52: Custom Property 52
+          Custom Property 53: Custom Property 53
+          Custom Property 10: Custom Property 10
+          Custom Property 54: Custom Property 54
+          Custom Property 11: Custom Property 11
+          Custom Property 55: Custom Property 55
+          Custom Property 12: Custom Property 12
+          Custom Property 56: Custom Property 56
+          Custom Property 13: Custom Property 13
+          Custom Property 57: Custom Property 57
+          Custom Property 14: Custom Property 14
+          Custom Property 58: Custom Property 58
+          syscritical: syscritical
+          owner: GetRoleDetailsResponse_owner
+          Custom Property 4: Custom Property 4
+          Custom Property 15: Custom Property 15
+          Custom Property 59: Custom Property 59
+          Custom Property 5: Custom Property 5
+          Custom Property 16: Custom Property 16
+          Custom Property 6: Custom Property 6
+          Custom Property 17: Custom Property 17
+          Custom Property 7: Custom Property 7
+          Custom Property 18: Custom Property 18
+          Custom Property 8: Custom Property 8
+          Custom Property 19: Custom Property 19
+          roleState: roleState
+          Custom Property 9: Custom Property 9
+          maxTimeFrameHrs: maxTimeFrameHrs
+          endpointkey: endpointkey
+          EntitlementDetails:
+          - endpoint: endpoint
+            entitlementTypeName: entitlementTypeName
+            entitlement_value: entitlement_value
+          - endpoint: endpoint
+            entitlementTypeName: entitlementTypeName
+            entitlement_value: entitlement_value
+          Custom Property 1: Custom Property 1
+          Custom Property 2: Custom Property 2
+          Custom Property 3: Custom Property 3
+          Custom Property 60: Custom Property 60
+          displayname: displayname
+          Custom Property 20: Custom Property 20
+          requestable: requestable
+          Custom Property 21: Custom Property 21
+          Custom Property 22: Custom Property 22
+          Custom Property 23: Custom Property 23
+          Custom Property 24: Custom Property 24
+          updateuser: updateuser
+          Custom Property 25: Custom Property 25
+        - Custom Property 26: Custom Property 26
+          Custom Property 27: Custom Property 27
+          Custom Property 28: Custom Property 28
+          Custom Property 29: Custom Property 29
+          lastReviewedCampaignName: lastReviewedCampaignName
+          UserDetails:
+          - GetRoleDetailsResponse_UserDetails_inner
+          - GetRoleDetailsResponse_UserDetails_inner
+          updatedate: updatedate
+          roleKey: 1
+          Custom Property 30: Custom Property 30
+          roletype: roletype
+          Custom Property 31: Custom Property 31
+          Custom Property 32: Custom Property 32
+          Custom Property 33: Custom Property 33
+          lastReviewedBy: lastReviewedBy
+          Custom Property 34: Custom Property 34
+          Custom Property 35: Custom Property 35
+          Custom Property 36: Custom Property 36
+          Custom Property 37: Custom Property 37
+          Custom Property 38: Custom Property 38
+          Custom Property 39: Custom Property 39
+          priviliged: priviliged
+          version: 5
+          role_name: role_name
+          glossary: glossary
+          soxcritical: soxcritical
+          Custom Property 40: Custom Property 40
+          Custom Property 41: Custom Property 41
+          Custom Property 42: Custom Property 42
+          defaultTimeFrameHrs: defaultTimeFrameHrs
+          Custom Property 43: Custom Property 43
+          Custom Property 44: Custom Property 44
+          Custom Property 45: Custom Property 45
+          Custom Property 46: Custom Property 46
+          status: status
+          Custom Property 47: Custom Property 47
+          Custom Property 48: Custom Property 48
+          Custom Property 49: Custom Property 49
+          entitlement_valueKey: entitlement_valueKey
+          confidentiality: confidentiality
+          description: description
+          showDynamicAttrs: showDynamicAttrs
+          Custom Property 50: Custom Property 50
+          Custom Property 51: Custom Property 51
+          Custom Property 52: Custom Property 52
+          Custom Property 53: Custom Property 53
+          Custom Property 10: Custom Property 10
+          Custom Property 54: Custom Property 54
+          Custom Property 11: Custom Property 11
+          Custom Property 55: Custom Property 55
+          Custom Property 12: Custom Property 12
+          Custom Property 56: Custom Property 56
+          Custom Property 13: Custom Property 13
+          Custom Property 57: Custom Property 57
+          Custom Property 14: Custom Property 14
+          Custom Property 58: Custom Property 58
+          syscritical: syscritical
+          owner: GetRoleDetailsResponse_owner
+          Custom Property 4: Custom Property 4
+          Custom Property 15: Custom Property 15
+          Custom Property 59: Custom Property 59
+          Custom Property 5: Custom Property 5
+          Custom Property 16: Custom Property 16
+          Custom Property 6: Custom Property 6
+          Custom Property 17: Custom Property 17
+          Custom Property 7: Custom Property 7
+          Custom Property 18: Custom Property 18
+          Custom Property 8: Custom Property 8
+          Custom Property 19: Custom Property 19
+          roleState: roleState
+          Custom Property 9: Custom Property 9
+          maxTimeFrameHrs: maxTimeFrameHrs
+          endpointkey: endpointkey
+          EntitlementDetails:
+          - endpoint: endpoint
+            entitlementTypeName: entitlementTypeName
+            entitlement_value: entitlement_value
+          - endpoint: endpoint
+            entitlementTypeName: entitlementTypeName
+            entitlement_value: entitlement_value
+          Custom Property 1: Custom Property 1
+          Custom Property 2: Custom Property 2
+          Custom Property 3: Custom Property 3
+          Custom Property 60: Custom Property 60
+          displayname: displayname
+          Custom Property 20: Custom Property 20
+          requestable: requestable
+          Custom Property 21: Custom Property 21
+          Custom Property 22: Custom Property 22
+          Custom Property 23: Custom Property 23
+          Custom Property 24: Custom Property 24
+          updateuser: updateuser
+          Custom Property 25: Custom Property 25
+        totalCount: 6
+      properties:
+        msg:
+          type: string
+        displayCount:
+          type: integer
+        errorCode:
+          type: string
+        totalCount:
+          type: integer
+        Roledetails:
+          items:
+            $ref: '#/components/schemas/GetRoleDetailsResponse'
+          type: array
+    RoleUserAccount:
+      example:
+        id: 1
+        class: class
+      properties:
+        id:
+          type: integer
+        class:
+          type: string
+    GetFireFighterRole:
+      example:
+        customproperty10: customproperty10
+        customproperty54: customproperty54
+        customproperty53: customproperty53
+        customproperty12: customproperty12
+        customproperty56: customproperty56
+        customproperty11: customproperty11
+        customproperty55: customproperty55
+        customproperty50: customproperty50
+        customproperty52: customproperty52
+        customproperty51: customproperty51
+        customproperty18: customproperty18
+        customproperty17: customproperty17
+        customproperty19: customproperty19
+        customproperty14: customproperty14
+        customproperty58: customproperty58
+        customproperty13: customproperty13
+        customproperty57: customproperty57
+        customproperty16: customproperty16
+        customproperty15: customproperty15
+        customproperty59: customproperty59
+        lastReviewedCampaignName: lastReviewedCampaignName
+        updatedate: 2000-01-23T04:56:07.000+00:00
+        mininginstance: mininginstance
+        roletype: 7
+        id: 0
+        lastReviewedBy: lastReviewedBy
+        customproperty43: customproperty43
+        customproperty42: customproperty42
+        customproperty45: customproperty45
+        customproperty44: customproperty44
+        level: level
+        customproperty41: customproperty41
+        customproperty40: customproperty40
+        priviliged: 2
+        customproperty47: customproperty47
+        customproperty46: customproperty46
+        customproperty49: customproperty49
+        customproperty48: customproperty48
+        role_name: role_name
+        glossary: glossary
+        soxcritical: 9
+        defaultTimeFrameHrs: 1
+        status: 3
+        customproperty4: customproperty4
+        customproperty32: customproperty32
+        customproperty5: customproperty5
+        customproperty31: customproperty31
+        systemid: 4
+        customproperty2: customproperty2
+        customproperty34: customproperty34
+        entitlement_valueKey: ""
+        customproperty3: customproperty3
+        customproperty33: customproperty33
+        customproperty1: customproperty1
+        customproperty30: customproperty30
+        confidentiality: 6
+        description: description
+        showDynamicAttrs: true
+        customproperty39: customproperty39
+        customproperty36: customproperty36
+        customproperty35: customproperty35
+        customproperty38: customproperty38
+        customproperty37: customproperty37
+        accessControlEntitlements: ""
+        customproperty8: customproperty8
+        class: class
+        customproperty9: customproperty9
+        customproperty6: customproperty6
+        parentroles: parentroles
+        customproperty7: customproperty7
+        syscritical: 2
+        customproperty21: customproperty21
+        customproperty20: customproperty20
+        customproperty23: customproperty23
+        customproperty22: customproperty22
+        roleState: roleState
+        customproperty60: customproperty60
+        endpointkey: 5
+        maxTimeFrameHrs: 5
+        customproperty29: customproperty29
+        customproperty28: customproperty28
+        lastReviewedDate: 2000-01-23T04:56:07.000+00:00
+        flagexportedtoOIA: true
+        customproperty25: customproperty25
+        customproperty24: customproperty24
+        customproperty27: customproperty27
+        customproperty26: customproperty26
+        sodflag: true
+        role_user_accounts:
+        - id: 1
+          class: class
+        - id: 1
+          class: class
+        displayname: displayname
+        risk: risk
+        requestable: true
+        updateuser: 7
+      properties:
+        id:
+          type: integer
+        class:
+          type: string
+        role_name:
+          type: string
+        description:
+          type: string
+          nullable: true
+        displayname:
+          type: string
+          nullable: true
+        confidentiality:
+          type: integer
+          nullable: true
+        accessControlEntitlements: {}
+        entitlement_valueKey: {}
+        lastReviewedBy:
+          type: string
+          nullable: true
+        lastReviewedCampaignName:
+          type: string
+          nullable: true
+        lastReviewedDate:
+          format: date-time
+          type: string
+          nullable: true
+        roleState:
+          type: string
+          nullable: true
+        defaultTimeFrameHrs:
+          type: integer
+          nullable: true
+        endpointkey:
+          type: integer
+          nullable: true
+        flagexportedtoOIA:
+          type: boolean
+          nullable: true
+        glossary:
+          type: string
+          nullable: true
+        level:
+          type: string
+          nullable: true
+        maxTimeFrameHrs:
+          type: integer
+          nullable: true
+        mininginstance:
+          type: string
+          nullable: true
+        parentroles:
+          type: string
+          nullable: true
+        priviliged:
+          type: integer
+          nullable: true
+        requestable:
+          type: boolean
+        risk:
+          type: string
+          nullable: true
+        roletype:
+          type: integer
+        showDynamicAttrs:
+          type: boolean
+          nullable: true
+        sodflag:
+          type: boolean
+          nullable: true
+        soxcritical:
+          type: integer
+          nullable: true
+        status:
+          type: integer
+        syscritical:
+          type: integer
+          nullable: true
+        systemid:
+          type: integer
+          nullable: true
+        updatedate:
+          format: date-time
+          type: string
+        updateuser:
+          type: integer
+          nullable: true
+        role_user_accounts:
+          items:
+            $ref: '#/components/schemas/RoleUserAccount'
+          type: array
+        customproperty1:
+          type: string
+          nullable: true
+        customproperty2:
+          type: string
+          nullable: true
+        customproperty3:
+          type: string
+          nullable: true
+        customproperty4:
+          type: string
+          nullable: true
+        customproperty5:
+          type: string
+          nullable: true
+        customproperty6:
+          type: string
+          nullable: true
+        customproperty7:
+          type: string
+          nullable: true
+        customproperty8:
+          type: string
+          nullable: true
+        customproperty9:
+          type: string
+          nullable: true
+        customproperty10:
+          type: string
+          nullable: true
+        customproperty11:
+          type: string
+          nullable: true
+        customproperty12:
+          type: string
+          nullable: true
+        customproperty13:
+          type: string
+          nullable: true
+        customproperty14:
+          type: string
+          nullable: true
+        customproperty15:
+          type: string
+          nullable: true
+        customproperty16:
+          type: string
+          nullable: true
+        customproperty17:
+          type: string
+          nullable: true
+        customproperty18:
+          type: string
+          nullable: true
+        customproperty19:
+          type: string
+          nullable: true
+        customproperty20:
+          type: string
+          nullable: true
+        customproperty21:
+          type: string
+          nullable: true
+        customproperty22:
+          type: string
+          nullable: true
+        customproperty23:
+          type: string
+          nullable: true
+        customproperty24:
+          type: string
+          nullable: true
+        customproperty25:
+          type: string
+          nullable: true
+        customproperty26:
+          type: string
+          nullable: true
+        customproperty27:
+          type: string
+          nullable: true
+        customproperty28:
+          type: string
+          nullable: true
+        customproperty29:
+          type: string
+          nullable: true
+        customproperty30:
+          type: string
+          nullable: true
+        customproperty31:
+          type: string
+          nullable: true
+        customproperty32:
+          type: string
+          nullable: true
+        customproperty33:
+          type: string
+          nullable: true
+        customproperty34:
+          type: string
+          nullable: true
+        customproperty35:
+          type: string
+          nullable: true
+        customproperty36:
+          type: string
+          nullable: true
+        customproperty37:
+          type: string
+          nullable: true
+        customproperty38:
+          type: string
+          nullable: true
+        customproperty39:
+          type: string
+          nullable: true
+        customproperty40:
+          type: string
+          nullable: true
+        customproperty41:
+          type: string
+          nullable: true
+        customproperty42:
+          type: string
+          nullable: true
+        customproperty43:
+          type: string
+          nullable: true
+        customproperty44:
+          type: string
+          nullable: true
+        customproperty45:
+          type: string
+          nullable: true
+        customproperty46:
+          type: string
+          nullable: true
+        customproperty47:
+          type: string
+          nullable: true
+        customproperty48:
+          type: string
+          nullable: true
+        customproperty49:
+          type: string
+          nullable: true
+        customproperty50:
+          type: string
+          nullable: true
+        customproperty51:
+          type: string
+          nullable: true
+        customproperty52:
+          type: string
+          nullable: true
+        customproperty53:
+          type: string
+          nullable: true
+        customproperty54:
+          type: string
+          nullable: true
+        customproperty55:
+          type: string
+          nullable: true
+        customproperty56:
+          type: string
+          nullable: true
+        customproperty57:
+          type: string
+          nullable: true
+        customproperty58:
+          type: string
+          nullable: true
+        customproperty59:
+          type: string
+          nullable: true
+        customproperty60:
+          type: string
+          nullable: true
+    AddOrRemoveRoleRequest:
+      example:
+        rolename: Fire Fighter
+        username: johndoe
+      properties:
+        username:
+          example: johndoe
+          type: string
+        rolename:
+          example: Fire Fighter
+          type: string
+      required:
+      - rolename
+      - username
+    AddOrRemoveRoleResponse:
+      example:
+        message: "Tasks created. IDs:: 673975"
+      properties:
+        message:
+          example: "Tasks created. IDs:: 673975"
+          type: string
+    GetRoleDetailsResponse_owner:
+      oneOf:
+      - type: string
+      - items:
+          $ref: '#/components/schemas/GetRoleOwnersResponse'
+        type: array
+      nullable: true
+    GetRoleDetailsResponse_UserDetails_inner:
+      oneOf:
+      - type: string
+      - $ref: '#/components/schemas/GetUserDetailsResponse'

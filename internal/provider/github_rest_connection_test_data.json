@@ -1,0 +1,270 @@
+{
+  "create": {
+    "connection_type": "GithubRest",
+    "connection_name": "Terraform_GithubRest_Connector",
+    "connection_json": {
+      "authentications": {
+        "acctAuth": {
+          "authType": "oauth2",
+          "url": "https://domain/access_token",
+          "httpMethod": "POST",
+          "httpParams": {
+            "code": "<<code>>",
+            "state": "<<state>>",
+            "client_id": "<<client_id>>",
+            "client_secret": "<<client_secret>>"
+          },
+          "httpHeaders": {
+            "contentType": "application/x-www-form-urlencoded"
+          },
+          "httpContentType": "application/x-www-form-urlencoded",
+          "expiryError": "ExpiredAuthenticationToken",
+          "authError": ["InvalidAuthenticationToken", "AuthenticationFailed"],
+          "timeOutError": "Read timed out",
+          "errorPath": "error.code",
+          "maxRefreshTryCount": 5,
+          "tokenResponsePath": "access_token",
+          "tokenType": "Bearer",
+          "accessToken": "Bearer token"
+        }
+      }
+    },
+    "import_account_ent_json": {
+      "globalSettingParams": {
+        "globalTriggerParams": {
+          "maxLoopCountForLastTrigger": 5,
+          "lastTriggerCompletionSleep": 2000,
+          "lastTriggerCompletionIntermediateSleep": 1000
+        },
+        "supportedEntitlementTypes": [
+          {
+            "Organization": {
+              "custompropertyLabels": {
+                "customproperty3": "Tags",
+                "customproperty4": "ID",
+                "customproperty6": "Provision VM Agent",
+                "customproperty7": "Enable Automatic Updates"
+              }
+            },
+            "Team": {
+              "custompropertyLabels": {
+                "customproperty3": "Tags",
+                "customproperty4": "ID",
+                "customproperty6": "Provision VM Agent",
+                "customproperty7": "Enable Automatic Updates"
+              }
+            },
+            "Repository": {
+              "custompropertyLabels": {
+                "customproperty3": "Tags",
+                "customproperty4": "ID",
+                "customproperty6": "Provision VM Agent",
+                "customproperty7": "Enable Automatic Updates"
+              }
+            }
+          }
+        ]
+      }
+    },
+    "organization_list": "latinorg1"
+  },
+  "update": {
+    "connection_type": "GithubRest",
+    "connection_name": "Terraform_GithubRest_Connector",
+    "connection_json": {
+      "authentications": {
+        "acctAuth": {
+          "authType": "oauth2",
+          "url": "https://domain/access_token",
+          "httpMethod": "POST",
+          "httpParams": {
+            "code": "<<code>>",
+            "state": "<<state>>",
+            "client_id": "<<client_id>>",
+            "client_secret": "<<client_secret>>"
+          },
+          "httpHeaders": {
+            "contentType": "application/x-www-form-urlencoded"
+          },
+          "httpContentType": "application/x-www-form-urlencoded",
+          "expiryError": "ExpiredAuthenticationToken",
+          "authError": ["InvalidAuthenticationToken", "AuthenticationFailed"],
+          "timeOutError": "Read timed out",
+          "errorPath": "error.code",
+          "maxRefreshTryCount": 5,
+          "tokenResponsePath": "access_token",
+          "tokenType": "Bearer",
+          "accessToken": "Bearer token"
+        }
+      }
+    },
+    "import_account_ent_json": {
+      "globalSettingParams": {
+        "globalTriggerParams": {
+          "maxLoopCountForLastTrigger": 5,
+          "lastTriggerCompletionSleep": 2000,
+          "lastTriggerCompletionIntermediateSleep": 1000
+        },
+        "supportedEntitlementTypes": [
+          {
+            "Organization": {
+              "custompropertyLabels": {
+                "customproperty3": "Tags",
+                "customproperty4": "ID",
+                "customproperty6": "Provision VM Agent",
+                "customproperty7": "Enable Automatic Updates"
+              }
+            },
+            "Team": {
+              "custompropertyLabels": {
+                "customproperty3": "Tags",
+                "customproperty4": "ID",
+                "customproperty6": "Provision VM Agent",
+                "customproperty7": "Enable Automatic Updates"
+              }
+            }
+          }
+        ]
+      }
+    },
+    "organization_list": "engorg1"
+  },
+  "update_connection_name": {
+    "connection_type": "GithubRest",
+    "connection_name": "Terraform_GithubRest_Connector_change",
+    "connection_json": {
+      "authentications": {
+        "acctAuth": {
+          "authType": "oauth2",
+          "url": "https://domain/access_token",
+          "httpMethod": "POST",
+          "httpParams": {
+            "code": "<<code>>",
+            "state": "<<state>>",
+            "client_id": "<<client_id>>",
+            "client_secret": "<<client_secret>>"
+          },
+          "httpHeaders": {
+            "contentType": "application/x-www-form-urlencoded"
+          },
+          "httpContentType": "application/x-www-form-urlencoded",
+          "expiryError": "ExpiredAuthenticationToken",
+          "authError": ["InvalidAuthenticationToken", "AuthenticationFailed"],
+          "timeOutError": "Read timed out",
+          "errorPath": "error.code",
+          "maxRefreshTryCount": 5,
+          "tokenResponsePath": "access_token",
+          "tokenType": "Bearer",
+          "accessToken": "Bearer token"
+        }
+      }
+    },
+    "import_account_ent_json": {
+      "globalSettingParams": {
+        "globalTriggerParams": {
+          "maxLoopCountForLastTrigger": 5,
+          "lastTriggerCompletionSleep": 2000,
+          "lastTriggerCompletionIntermediateSleep": 1000
+        },
+        "supportedEntitlementTypes": [
+          {
+            "Organization": {
+              "custompropertyLabels": {
+                "customproperty3": "Tags",
+                "customproperty4": "ID",
+                "customproperty6": "Provision VM Agent",
+                "customproperty7": "Enable Automatic Updates"
+              }
+            },
+            "Team": {
+              "custompropertyLabels": {
+                "customproperty3": "Tags",
+                "customproperty4": "ID",
+                "customproperty6": "Provision VM Agent",
+                "customproperty7": "Enable Automatic Updates"
+              }
+            },
+            "Repository": {
+              "custompropertyLabels": {
+                "customproperty3": "Tags",
+                "customproperty4": "ID",
+                "customproperty6": "Provision VM Agent",
+                "customproperty7": "Enable Automatic Updates"
+              }
+            }
+          }
+        ]
+      }
+    },
+    "organization_list": "latinorg1"
+  },
+  "update_connection_type": {
+    "connection_type": "SAP",
+    "connection_name": "Terraform_GithubRest_Connector",
+    "connection_json": {
+      "authentications": {
+        "acctAuth": {
+          "authType": "oauth2",
+          "url": "https://domain/access_token",
+          "httpMethod": "POST",
+          "httpParams": {
+            "code": "<<code>>",
+            "state": "<<state>>",
+            "client_id": "<<client_id>>",
+            "client_secret": "<<client_secret>>"
+          },
+          "httpHeaders": {
+            "contentType": "application/x-www-form-urlencoded"
+          },
+          "httpContentType": "application/x-www-form-urlencoded",
+          "expiryError": "ExpiredAuthenticationToken",
+          "authError": ["InvalidAuthenticationToken", "AuthenticationFailed"],
+          "timeOutError": "Read timed out",
+          "errorPath": "error.code",
+          "maxRefreshTryCount": 5,
+          "tokenResponsePath": "access_token",
+          "tokenType": "Bearer",
+          "accessToken": "Bearer token"
+        }
+      }
+    },
+    "import_account_ent_json": {
+      "globalSettingParams": {
+        "globalTriggerParams": {
+          "maxLoopCountForLastTrigger": 5,
+          "lastTriggerCompletionSleep": 2000,
+          "lastTriggerCompletionIntermediateSleep": 1000
+        },
+        "supportedEntitlementTypes": [
+          {
+            "Organization": {
+              "custompropertyLabels": {
+                "customproperty3": "Tags",
+                "customproperty4": "ID",
+                "customproperty6": "Provision VM Agent",
+                "customproperty7": "Enable Automatic Updates"
+              }
+            },
+            "Team": {
+              "custompropertyLabels": {
+                "customproperty3": "Tags",
+                "customproperty4": "ID",
+                "customproperty6": "Provision VM Agent",
+                "customproperty7": "Enable Automatic Updates"
+              }
+            },
+            "Repository": {
+              "custompropertyLabels": {
+                "customproperty3": "Tags",
+                "customproperty4": "ID",
+                "customproperty6": "Provision VM Agent",
+                "customproperty7": "Enable Automatic Updates"
+              }
+            }
+          }
+        ]
+      }
+    },
+    "organization_list": "latinorg1"
+  }
+}

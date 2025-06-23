@@ -1,0 +1,39 @@
+{
+    "create": {
+      "systemname":                   "testsecurity",
+      "display_name":                 "testsecurity",
+      "access_add_workflow":          "Autoapprovalwf",
+      "access_remove_workflow":       "Autoapprovalwf",
+      "add_service_account_workflow": "Autoapprovalwf",
+      "remove_service_account_workflow":"Autoapprovalwf",
+      "automated_provisioning":       true
+    },
+    "update": {
+      "systemname":                   "testsecurity",
+      "display_name":                 "testsecurity",
+      "access_add_workflow":          "Manager Approval",
+      "access_remove_workflow":       "Manager Approval",
+      "add_service_account_workflow": "Manager Approval",
+      "remove_service_account_workflow":"Manager Approval",
+      "automated_provisioning":       false
+    },
+    "update_security_system_name":{
+      "systemname":                   "testsecurity_1",
+      "display_name":                 "testsecurity_1",
+      "access_add_workflow":          "Manager Approval",
+      "access_remove_workflow":       "Manager Approval",
+      "add_service_account_workflow": "Manager Approval",
+      "remove_service_account_workflow":"Manager Approval",
+      "automated_provisioning":       false
+    },
+    "create_duplicate_security_system":{
+      "systemname":                   "testsecurity",
+      "display_name":                 "testsecurity",
+      "access_add_workflow":          "Autoapprovalwf",
+      "access_remove_workflow":       "Autoapprovalwf",
+      "add_service_account_workflow": "Autoapprovalwf",
+      "remove_service_account_workflow":"Autoapprovalwf",
+      "automated_provisioning":       true
+    }
+}
+  
