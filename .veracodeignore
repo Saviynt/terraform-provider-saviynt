@@ -1,7 +1,0 @@
-rules:
-  - id: "LIBRARY_UNRECOGNIZED_LICENSE"
-    reason: "Approved Internally"
-    expires: "2025-12-31"
-    locations:
-      - path: "**/google.golang.org/protobuf/**"
-      - path: "**/golang.org/x/text/**"
