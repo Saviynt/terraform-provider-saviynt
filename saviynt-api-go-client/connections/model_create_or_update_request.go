@@ -18,17 +18,18 @@ import (
 
 // CreateOrUpdateRequest - struct for CreateOrUpdateRequest
 type CreateOrUpdateRequest struct {
-	ADConnector         *ADConnector
-	ADSIConnector       *ADSIConnector
-	D365Connector       *D365Connector
-	DBConnector         *DBConnector
-	EntraIDConnector    *EntraIDConnector
+	ADConnector *ADConnector
+	ADSIConnector *ADSIConnector
+	D365Connector *D365Connector
+	DBConnector *DBConnector
+	EntraIDConnector *EntraIDConnector
 	GithubRESTConnector *GithubRESTConnector
-	RESTConnector       *RESTConnector
-	SAPConnector        *SAPConnector
+	OktaConnector *OktaConnector
+	RESTConnector *RESTConnector
+	SAPConnector *SAPConnector
 	SalesforceConnector *SalesforceConnector
-	UNIXConnector       *UNIXConnector
-	WorkdayConnector    *WorkdayConnector
+	UNIXConnector *UNIXConnector
+	WorkdayConnector *WorkdayConnector
 }
 
 // ADConnectorAsCreateOrUpdateRequest is a convenience function that returns ADConnector wrapped in CreateOrUpdateRequest
@@ -73,6 +74,13 @@ func GithubRESTConnectorAsCreateOrUpdateRequest(v *GithubRESTConnector) CreateOr
 	}
 }
 
+// OktaConnectorAsCreateOrUpdateRequest is a convenience function that returns OktaConnector wrapped in CreateOrUpdateRequest
+func OktaConnectorAsCreateOrUpdateRequest(v *OktaConnector) CreateOrUpdateRequest {
+	return CreateOrUpdateRequest{
+		OktaConnector: v,
+	}
+}
+
 // RESTConnectorAsCreateOrUpdateRequest is a convenience function that returns RESTConnector wrapped in CreateOrUpdateRequest
 func RESTConnectorAsCreateOrUpdateRequest(v *RESTConnector) CreateOrUpdateRequest {
 	return CreateOrUpdateRequest{
@@ -107,6 +115,7 @@ func WorkdayConnectorAsCreateOrUpdateRequest(v *WorkdayConnector) CreateOrUpdate
 		WorkdayConnector: v,
 	}
 }
+
 
 // Unmarshal JSON data into one of the pointers in the struct
 func (dst *CreateOrUpdateRequest) UnmarshalJSON(data []byte) error {
@@ -214,6 +223,23 @@ func (dst *CreateOrUpdateRequest) UnmarshalJSON(data []byte) error {
 		dst.GithubRESTConnector = nil
 	}
 
+	// try to unmarshal data into OktaConnector
+	err = newStrictDecoder(data).Decode(&dst.OktaConnector)
+	if err == nil {
+		jsonOktaConnector, _ := json.Marshal(dst.OktaConnector)
+		if string(jsonOktaConnector) == "{}" { // empty struct
+			dst.OktaConnector = nil
+		} else {
+			if err = validator.Validate(dst.OktaConnector); err != nil {
+				dst.OktaConnector = nil
+			} else {
+				match++
+			}
+		}
+	} else {
+		dst.OktaConnector = nil
+	}
+
 	// try to unmarshal data into RESTConnector
 	err = newStrictDecoder(data).Decode(&dst.RESTConnector)
 	if err == nil {
@@ -307,6 +333,7 @@ func (dst *CreateOrUpdateRequest) UnmarshalJSON(data []byte) error {
 		dst.DBConnector = nil
 		dst.EntraIDConnector = nil
 		dst.GithubRESTConnector = nil
+		dst.OktaConnector = nil
 		dst.RESTConnector = nil
 		dst.SAPConnector = nil
 		dst.SalesforceConnector = nil
@@ -347,6 +374,10 @@ func (src CreateOrUpdateRequest) MarshalJSON() ([]byte, error) {
 		return json.Marshal(&src.GithubRESTConnector)
 	}
 
+	if src.OktaConnector != nil {
+		return json.Marshal(&src.OktaConnector)
+	}
+
 	if src.RESTConnector != nil {
 		return json.Marshal(&src.RESTConnector)
 	}
@@ -371,7 +402,7 @@ func (src CreateOrUpdateRequest) MarshalJSON() ([]byte, error) {
 }
 
 // Get the actual instance
-func (obj *CreateOrUpdateRequest) GetActualInstance() interface{} {
+func (obj *CreateOrUpdateRequest) GetActualInstance() (interface{}) {
 	if obj == nil {
 		return nil
 	}
@@ -399,6 +430,10 @@ func (obj *CreateOrUpdateRequest) GetActualInstance() interface{} {
 		return obj.GithubRESTConnector
 	}
 
+	if obj.OktaConnector != nil {
+		return obj.OktaConnector
+	}
+
 	if obj.RESTConnector != nil {
 		return obj.RESTConnector
 	}
@@ -424,7 +459,7 @@ func (obj *CreateOrUpdateRequest) GetActualInstance() interface{} {
 }
 
 // Get the actual instance value
-func (obj CreateOrUpdateRequest) GetActualInstanceValue() interface{} {
+func (obj CreateOrUpdateRequest) GetActualInstanceValue() (interface{}) {
 	if obj.ADConnector != nil {
 		return *obj.ADConnector
 	}
@@ -447,6 +482,10 @@ func (obj CreateOrUpdateRequest) GetActualInstanceValue() interface{} {
 
 	if obj.GithubRESTConnector != nil {
 		return *obj.GithubRESTConnector
+	}
+
+	if obj.OktaConnector != nil {
+		return *obj.OktaConnector
 	}
 
 	if obj.RESTConnector != nil {
@@ -508,3 +547,5 @@ func (v *NullableCreateOrUpdateRequest) UnmarshalJSON(src []byte) error {
 	v.isSet = true
 	return json.Unmarshal(src, &v.value)
 }
+
+

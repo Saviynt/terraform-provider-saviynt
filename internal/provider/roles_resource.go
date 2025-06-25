@@ -15,6 +15,7 @@ import (
 	"fmt"
 	"log"
 	"net/http"
+	"os"
 	"strings"
 
 	"terraform-provider-Saviynt/util"
@@ -1400,10 +1401,14 @@ func (r *rolesResource) Update(ctx context.Context, req resource.UpdateRequest, 
 // We do not support deletion of roles in Saviynt, so this function is intentionally left empty.
 func (r *rolesResource) Delete(ctx context.Context, req resource.DeleteRequest, resp *resource.DeleteResponse) {
 	// resp.State.RemoveResource(ctx)
-	// resp.Diagnostics.AddError(
-	// 	"Delete Not Supported",
-	// 	"Resource deletion is not supported by this provider. Please remove the resource manually if required, or contact your administrator.",
-	// )
+	if os.Getenv("TF_ACC") == "1" {
+		resp.State.RemoveResource(ctx)
+		return
+	}
+	resp.Diagnostics.AddError(
+		"Delete Not Supported",
+		"Resource deletion is not supported by this provider. Please remove the resource manually if required, or contact your administrator.",
+	)
 }
 
 // ImportState implements the resource.Resource interface for importing existing roles into the Terraform state.

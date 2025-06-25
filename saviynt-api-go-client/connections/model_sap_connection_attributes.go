@@ -19,70 +19,70 @@ var _ MappedNullable = &SAPConnectionAttributes{}
 
 // SAPConnectionAttributes struct for SAPConnectionAttributes
 type SAPConnectionAttributes struct {
-	CREATEACCOUNTJSON                  *string                  `json:"CREATEACCOUNTJSON,omitempty"`
-	AUDIT_LOG_JSON                     *string                  `json:"AUDIT_LOG_JSON,omitempty"`
-	ConnectionType                     *string                  `json:"connectionType,omitempty"`
-	SAPTABLE_FILTER_LANG               *string                  `json:"SAPTABLE_FILTER_LANG,omitempty"`
-	PASSWORD_NOOFSPLCHARS              *string                  `json:"PASSWORD_NOOFSPLCHARS,omitempty"`
-	TERMINATEDUSERGROUP                *string                  `json:"TERMINATEDUSERGROUP,omitempty"`
-	LOGS_TABLE_FILTER                  *string                  `json:"LOGS_TABLE_FILTER,omitempty"`
-	ECCORS4HANA                        *string                  `json:"ECC_OR_S4HANA,omitempty"`
-	FIREFIGHTERID_REVOKE_ACCESS_JSON   *string                  `json:"FIREFIGHTERID_REVOKE_ACCESS_JSON,omitempty"`
-	ConfigJSON                         *string                  `json:"ConfigJSON,omitempty"`
-	FIREFIGHTERID_GRANT_ACCESS_JSON    *string                  `json:"FIREFIGHTERID_GRANT_ACCESS_JSON,omitempty"`
-	PROV_PASSWORD                      *string                  `json:"PROV_PASSWORD,omitempty"`
-	JCO_SNC_LIBRARY                    *string                  `json:"JCO_SNC_LIBRARY,omitempty"`
-	IsTimeoutSupported                 *bool                    `json:"isTimeoutSupported,omitempty"`
-	JCOR3NAME                          *string                  `json:"JCO_R3NAME,omitempty"`
-	EXTERNAL_SOD_EVAL_JSON             *string                  `json:"EXTERNAL_SOD_EVAL_JSON,omitempty"`
-	JCO_ASHOST                         *string                  `json:"JCO_ASHOST,omitempty"`
-	PASSWORD_NOOFDIGITS                *string                  `json:"PASSWORD_NOOFDIGITS,omitempty"`
-	PROV_JCO_MSHOST                    *string                  `json:"PROV_JCO_MSHOST,omitempty"`
-	PASSWORD                           *string                  `json:"PASSWORD,omitempty"`
-	PAM_CONFIG                         *string                  `json:"PAM_CONFIG,omitempty"`
-	JCO_SNC_MYNAME                     *string                  `json:"JCO_SNC_MYNAME,omitempty"`
-	ENFORCEPASSWORDCHANGE              *string                  `json:"ENFORCEPASSWORDCHANGE,omitempty"`
-	JCO_USER                           *string                  `json:"JCO_USER,omitempty"`
-	JCO_SNC_MODE                       *string                  `json:"JCO_SNC_MODE,omitempty"`
-	PROV_JCO_MSSERV                    *string                  `json:"PROV_JCO_MSSERV,omitempty"`
-	HANAREFTABLEJSON                   *string                  `json:"HANAREFTABLEJSON,omitempty"`
-	PASSWORD_MIN_LENGTH                *string                  `json:"PASSWORD_MIN_LENGTH,omitempty"`
-	JCO_CLIENT                         *string                  `json:"JCO_CLIENT,omitempty"`
-	TERMINATED_USER_ROLE_ACTION        *string                  `json:"TERMINATED_USER_ROLE_ACTION,omitempty"`
-	RESET_PWD_FOR_NEWACCOUNT           *string                  `json:"RESET_PWD_FOR_NEWACCOUNT,omitempty"`
-	PROV_JCO_CLIENT                    *string                  `json:"PROV_JCO_CLIENT,omitempty"`
-	SNC                                *string                  `json:"SNC,omitempty"`
-	JCO_MSSERV                         *string                  `json:"JCO_MSSERV,omitempty"`
-	PROV_CUA_SNC                       *string                  `json:"PROV_CUA_SNC,omitempty"`
-	ConnectionTimeoutConfig            *ConnectionTimeoutConfig `json:"connectionTimeoutConfig,omitempty"`
-	PROV_JCO_USER                      *string                  `json:"PROV_JCO_USER,omitempty"`
-	JCO_LANG                           *string                  `json:"JCO_LANG,omitempty"`
-	JCO_SNC_PARTNERNAME                *string                  `json:"JCO_SNC_PARTNERNAME,omitempty"`
-	STATUS_THRESHOLD_CONFIG            *string                  `json:"STATUS_THRESHOLD_CONFIG,omitempty"`
-	PROV_JCO_SYSNR                     *string                  `json:"PROV_JCO_SYSNR,omitempty"`
-	SETCUASYSTEM                       *string                  `json:"SETCUASYSTEM,omitempty"`
-	MESSAGESERVER                      *string                  `json:"MESSAGESERVER,omitempty"`
-	PROV_JCO_ASHOST                    *string                  `json:"PROV_JCO_ASHOST,omitempty"`
-	PROV_JCO_GROUP                     *string                  `json:"PROV_JCO_GROUP,omitempty"`
-	PROV_CUA_ENABLED                   *string                  `json:"PROV_CUA_ENABLED,omitempty"`
-	JCO_MSHOST                         *string                  `json:"JCO_MSHOST,omitempty"`
-	PROVJCOR3NAME                      *string                  `json:"PROV_JCO_R3NAME,omitempty"`
-	PASSWORD_NOOFCAPSALPHA             *string                  `json:"PASSWORD_NOOFCAPSALPHA,omitempty"`
-	MODIFYUSERDATAJSON                 *string                  `json:"MODIFYUSERDATAJSON,omitempty"`
-	IsTimeoutConfigValidated           *bool                    `json:"isTimeoutConfigValidated,omitempty"`
-	JCO_SNC_QOP                        *string                  `json:"JCO_SNC_QOP,omitempty"`
-	TABLES                             *string                  `json:"TABLES,omitempty"`
-	PROV_JCO_LANG                      *string                  `json:"PROV_JCO_LANG,omitempty"`
-	JCO_SYSNR                          *string                  `json:"JCO_SYSNR,omitempty"`
-	EXTERNAL_SOD_EVAL_JSON_DETAIL      *string                  `json:"EXTERNAL_SOD_EVAL_JSON_DETAIL,omitempty"`
-	DATA_IMPORT_FILTER                 *string                  `json:"DATA_IMPORT_FILTER,omitempty"`
-	ENABLEACCOUNTJSON                  *string                  `json:"ENABLEACCOUNTJSON,omitempty"`
-	ALTERNATE_OUTPUT_PARAMETER_ET_DATA *string                  `json:"ALTERNATE_OUTPUT_PARAMETER_ET_DATA,omitempty"`
-	JCO_GROUP                          *string                  `json:"JCO_GROUP,omitempty"`
-	PASSWORD_MAX_LENGTH                *string                  `json:"PASSWORD_MAX_LENGTH,omitempty"`
-	USERIMPORTJSON                     *string                  `json:"USERIMPORTJSON,omitempty"`
-	SYSTEMNAME                         *string                  `json:"SYSTEMNAME,omitempty"`
-	UPDATEACCOUNTJSON                  *string                  `json:"UPDATEACCOUNTJSON,omitempty"`
+	CREATEACCOUNTJSON *string `json:"CREATEACCOUNTJSON,omitempty"`
+	AUDIT_LOG_JSON *string `json:"AUDIT_LOG_JSON,omitempty"`
+	ConnectionType *string `json:"connectionType,omitempty"`
+	SAPTABLE_FILTER_LANG *string `json:"SAPTABLE_FILTER_LANG,omitempty"`
+	PASSWORD_NOOFSPLCHARS *string `json:"PASSWORD_NOOFSPLCHARS,omitempty"`
+	TERMINATEDUSERGROUP *string `json:"TERMINATEDUSERGROUP,omitempty"`
+	LOGS_TABLE_FILTER *string `json:"LOGS_TABLE_FILTER,omitempty"`
+	ECCORS4HANA *string `json:"ECC_OR_S4HANA,omitempty"`
+	FIREFIGHTERID_REVOKE_ACCESS_JSON *string `json:"FIREFIGHTERID_REVOKE_ACCESS_JSON,omitempty"`
+	ConfigJSON *string `json:"ConfigJSON,omitempty"`
+	FIREFIGHTERID_GRANT_ACCESS_JSON *string `json:"FIREFIGHTERID_GRANT_ACCESS_JSON,omitempty"`
+	PROV_PASSWORD *string `json:"PROV_PASSWORD,omitempty"`
+	JCO_SNC_LIBRARY *string `json:"JCO_SNC_LIBRARY,omitempty"`
+	IsTimeoutSupported *bool `json:"isTimeoutSupported,omitempty"`
+	JCOR3NAME *string `json:"JCO_R3NAME,omitempty"`
+	EXTERNAL_SOD_EVAL_JSON *string `json:"EXTERNAL_SOD_EVAL_JSON,omitempty"`
+	JCO_ASHOST *string `json:"JCO_ASHOST,omitempty"`
+	PASSWORD_NOOFDIGITS *string `json:"PASSWORD_NOOFDIGITS,omitempty"`
+	PROV_JCO_MSHOST *string `json:"PROV_JCO_MSHOST,omitempty"`
+	PASSWORD *string `json:"PASSWORD,omitempty"`
+	PAM_CONFIG *string `json:"PAM_CONFIG,omitempty"`
+	JCO_SNC_MYNAME *string `json:"JCO_SNC_MYNAME,omitempty"`
+	ENFORCEPASSWORDCHANGE *string `json:"ENFORCEPASSWORDCHANGE,omitempty"`
+	JCO_USER *string `json:"JCO_USER,omitempty"`
+	JCO_SNC_MODE *string `json:"JCO_SNC_MODE,omitempty"`
+	PROV_JCO_MSSERV *string `json:"PROV_JCO_MSSERV,omitempty"`
+	HANAREFTABLEJSON *string `json:"HANAREFTABLEJSON,omitempty"`
+	PASSWORD_MIN_LENGTH *string `json:"PASSWORD_MIN_LENGTH,omitempty"`
+	JCO_CLIENT *string `json:"JCO_CLIENT,omitempty"`
+	TERMINATED_USER_ROLE_ACTION *string `json:"TERMINATED_USER_ROLE_ACTION,omitempty"`
+	RESET_PWD_FOR_NEWACCOUNT *string `json:"RESET_PWD_FOR_NEWACCOUNT,omitempty"`
+	PROV_JCO_CLIENT *string `json:"PROV_JCO_CLIENT,omitempty"`
+	SNC *string `json:"SNC,omitempty"`
+	JCO_MSSERV *string `json:"JCO_MSSERV,omitempty"`
+	PROV_CUA_SNC *string `json:"PROV_CUA_SNC,omitempty"`
+	ConnectionTimeoutConfig *ConnectionTimeoutConfig `json:"connectionTimeoutConfig,omitempty"`
+	PROV_JCO_USER *string `json:"PROV_JCO_USER,omitempty"`
+	JCO_LANG *string `json:"JCO_LANG,omitempty"`
+	JCO_SNC_PARTNERNAME *string `json:"JCO_SNC_PARTNERNAME,omitempty"`
+	STATUS_THRESHOLD_CONFIG *string `json:"STATUS_THRESHOLD_CONFIG,omitempty"`
+	PROV_JCO_SYSNR *string `json:"PROV_JCO_SYSNR,omitempty"`
+	SETCUASYSTEM *string `json:"SETCUASYSTEM,omitempty"`
+	MESSAGESERVER *string `json:"MESSAGESERVER,omitempty"`
+	PROV_JCO_ASHOST *string `json:"PROV_JCO_ASHOST,omitempty"`
+	PROV_JCO_GROUP *string `json:"PROV_JCO_GROUP,omitempty"`
+	PROV_CUA_ENABLED *string `json:"PROV_CUA_ENABLED,omitempty"`
+	JCO_MSHOST *string `json:"JCO_MSHOST,omitempty"`
+	PROVJCOR3NAME *string `json:"PROV_JCO_R3NAME,omitempty"`
+	PASSWORD_NOOFCAPSALPHA *string `json:"PASSWORD_NOOFCAPSALPHA,omitempty"`
+	MODIFYUSERDATAJSON *string `json:"MODIFYUSERDATAJSON,omitempty"`
+	IsTimeoutConfigValidated *bool `json:"isTimeoutConfigValidated,omitempty"`
+	JCO_SNC_QOP *string `json:"JCO_SNC_QOP,omitempty"`
+	TABLES *string `json:"TABLES,omitempty"`
+	PROV_JCO_LANG *string `json:"PROV_JCO_LANG,omitempty"`
+	JCO_SYSNR *string `json:"JCO_SYSNR,omitempty"`
+	EXTERNAL_SOD_EVAL_JSON_DETAIL *string `json:"EXTERNAL_SOD_EVAL_JSON_DETAIL,omitempty"`
+	DATA_IMPORT_FILTER *string `json:"DATA_IMPORT_FILTER,omitempty"`
+	ENABLEACCOUNTJSON *string `json:"ENABLEACCOUNTJSON,omitempty"`
+	ALTERNATE_OUTPUT_PARAMETER_ET_DATA *string `json:"ALTERNATE_OUTPUT_PARAMETER_ET_DATA,omitempty"`
+	JCO_GROUP *string `json:"JCO_GROUP,omitempty"`
+	PASSWORD_MAX_LENGTH *string `json:"PASSWORD_MAX_LENGTH,omitempty"`
+	USERIMPORTJSON *string `json:"USERIMPORTJSON,omitempty"`
+	SYSTEMNAME *string `json:"SYSTEMNAME,omitempty"`
+	UPDATEACCOUNTJSON *string `json:"UPDATEACCOUNTJSON,omitempty"`
 }
 
 // NewSAPConnectionAttributes instantiates a new SAPConnectionAttributes object
@@ -2151,7 +2151,7 @@ func (o *SAPConnectionAttributes) SetUPDATEACCOUNTJSON(v string) {
 }
 
 func (o SAPConnectionAttributes) MarshalJSON() ([]byte, error) {
-	toSerialize, err := o.ToMap()
+	toSerialize,err := o.ToMap()
 	if err != nil {
 		return []byte{}, err
 	}
@@ -2390,3 +2390,5 @@ func (v *NullableSAPConnectionAttributes) UnmarshalJSON(src []byte) error {
 	v.isSet = true
 	return json.Unmarshal(src, &v.value)
 }
+
+

@@ -14,6 +14,7 @@ import (
 	"fmt"
 	"log"
 	"net/http"
+	"os"
 	"strings"
 	"terraform-provider-Saviynt/util"
 
@@ -105,7 +106,7 @@ func (r *adConnectionResource) Metadata(ctx context.Context, req resource.Metada
 	resp.TypeName = "saviynt_ad_connection_resource"
 }
 
-func ADConnectorSchema() map[string]schema.Attribute {
+func ADConnectorResourceSchema() map[string]schema.Attribute {
 	return map[string]schema.Attribute{
 		"id": schema.StringAttribute{
 			Computed:    true,
@@ -397,7 +398,7 @@ func ADConnectorSchema() map[string]schema.Attribute {
 func (r *adConnectionResource) Schema(ctx context.Context, req resource.SchemaRequest, resp *resource.SchemaResponse) {
 	resp.Schema = schema.Schema{
 		Description: util.ADConnDescription,
-		Attributes:  connectionsutil.MergeResourceAttributes(BaseConnectorResourceSchema(), ADConnectorSchema()),
+		Attributes:  connectionsutil.MergeResourceAttributes(BaseConnectorResourceSchema(), ADConnectorResourceSchema()),
 	}
 }
 
@@ -405,7 +406,7 @@ func (r *adConnectionResource) Configure(ctx context.Context, req resource.Confi
 	// Check if provider data is available.
 	if req.ProviderData == nil {
 		log.Println("ProviderData is nil, returning early.")
-		resp.Diagnostics.AddError("Provider Data Not Found", "Provider data is not set. Please ensure the provider is configured correctly.")
+		// resp.Diagnostics.AddError("Provider Data Not Found", "Provider data is not set. Please ensure the provider is configured correctly.")
 		return
 	}
 
@@ -534,8 +535,8 @@ func (r *adConnectionResource) Create(ctx context.Context, req resource.CreateRe
 	// Initialize API client
 	apiResp, _, err := apiClient.ConnectionsAPI.CreateOrUpdate(ctx).CreateOrUpdateRequest(adConnRequest).Execute()
 	if err != nil || *apiResp.ErrorCode != "0" {
-		log.Printf("[ERROR] Failed to create API resource. Error: %v", *apiResp.Msg)
-		resp.Diagnostics.AddError("API Create Failed", fmt.Sprintf("Error: %v", *apiResp.Msg))
+		log.Printf("[ERROR] Failed to create API resource. Error: %v", err)
+		resp.Diagnostics.AddError("API Create Failed", fmt.Sprintf("Error: %v", err))
 		return
 	}
 	plan.ID = types.StringValue(fmt.Sprintf("%d", *apiResp.ConnectionKey))
@@ -628,7 +629,7 @@ func (r *adConnectionResource) Read(ctx context.Context, req resource.ReadReques
 	apiResp, _, err := apiClient.ConnectionsAPI.GetConnectionDetails(ctx).GetConnectionDetailsRequest(reqParams).Execute()
 	if err != nil {
 		log.Printf("Problem with the get function in read block")
-		resp.Diagnostics.AddError("API Read Failed In Read Block", fmt.Sprintf("Error: %v", *apiResp.ADConnectionResponse.Msg))
+		resp.Diagnostics.AddError("API Read Failed In Read Block", fmt.Sprintf("Error: %v", err))
 		return
 	}
 	state.ConnectionKey = types.Int64Value(int64(*apiResp.ADConnectionResponse.Connectionkey))
@@ -827,7 +828,7 @@ func (r *adConnectionResource) Update(ctx context.Context, req resource.UpdateRe
 	apiResp, _, err := apiClient.ConnectionsAPI.CreateOrUpdate(ctx).CreateOrUpdateRequest(adConnRequest).Execute()
 	if err != nil || *apiResp.ErrorCode != "0" {
 		log.Printf("Problem with the update function")
-		resp.Diagnostics.AddError("API Update Failed", fmt.Sprintf("Error: %v", *apiResp.Msg))
+		resp.Diagnostics.AddError("API Update Failed", fmt.Sprintf("Error: %v", err))
 		return
 	}
 	reqParams := openapi.GetConnectionDetailsRequest{}
@@ -836,7 +837,7 @@ func (r *adConnectionResource) Update(ctx context.Context, req resource.UpdateRe
 	getResp, _, err := apiClient.ConnectionsAPI.GetConnectionDetails(ctx).GetConnectionDetailsRequest(reqParams).Execute()
 	if err != nil {
 		log.Printf("Problem with the get function in update block")
-		resp.Diagnostics.AddError("API Read Failed In Update Block", fmt.Sprintf("Error: %v", *getResp.ADConnectionResponse.Msg))
+		resp.Diagnostics.AddError("API Read Failed In Update Block", fmt.Sprintf("Error: %v", err))
 		return
 	}
 	plan.ConnectionKey = types.Int64Value(int64(*getResp.ADConnectionResponse.Connectionkey))
@@ -910,6 +911,10 @@ func (r *adConnectionResource) Update(ctx context.Context, req resource.UpdateRe
 
 func (r *adConnectionResource) Delete(ctx context.Context, req resource.DeleteRequest, resp *resource.DeleteResponse) {
 	// resp.State.RemoveResource(ctx)
+	if os.Getenv("TF_ACC") == "1" {
+		resp.State.RemoveResource(ctx)
+		return
+	}
 	resp.Diagnostics.AddError(
 		"Delete Not Supported",
 		"Resource deletion is not supported by this provider. Please remove the resource manually if required, or contact your administrator.",

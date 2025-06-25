@@ -25,7 +25,7 @@ Name | Type | Description | Notes
 **SEARCHFILTER** | Pointer to **string** | Account Search Filter to specify the starting point of the directory from where the accounts needs to be imported. You can have multiple BaseDNs here separated by ###. | [optional] 
 **OBJECTFILTER** | Pointer to **string** | Object Filter is used to filter the objects that will be returned.This filter will be same for all domains. | [optional] 
 **ACCOUNT_ATTRIBUTE** | Pointer to **string** | Map EIC and AD attributes for account import (AD attributes must be in lower case) | [optional] 
-**STATUS_THRESHOLD_CONFIG** | Pointer to **string** | Property for STATUS_THRESHOLD_CONFIG | [optional] 
+**STATUS_THRESHOLD_CONFIG** | Pointer to **string** |  | [optional] 
 **ENTITLEMENT_ATTRIBUTE** | Pointer to **string** | Property for ENTITLEMENT_ATTRIBUTE | [optional] 
 **USER_ATTRIBUTE** | Pointer to **string** | Map EIC and AD attributes for user import (AD attributes must be in lower case) | [optional] 
 **GroupSearchBaseDN** | Pointer to **string** | Group Search Filter to specify the starting point of the directory from where the groups needs to be imported. You can have multiple BaseDNs here separated by ###. | [optional] 
@@ -52,8 +52,8 @@ Name | Type | Description | Notes
 **CREATESERVICEACCOUNTJSON** | Pointer to **string** | Specify the Field Value which will be used to Create the New Service Account. | [optional] 
 **UPDATESERVICEACCOUNTJSON** | Pointer to **string** | Specify the Field Value which will be used to update the existing Service Account. | [optional] 
 **REMOVESERVICEACCOUNTJSON** | Pointer to **string** | Specify the actions to be performed while deleting a service account. | [optional] 
-**PAM_CONFIG** | Pointer to **string** | Property for PAM_CONFIG | [optional] 
-**MODIFYUSERDATAJSON** | Pointer to **string** | Property for MODIFYUSERDATAJSON | [optional] 
+**PAM_CONFIG** | Pointer to **string** |  | [optional] 
+**MODIFYUSERDATAJSON** | Pointer to **string** |  | [optional] 
 **MESSAGESERVER** | Pointer to **string** | set it to TRUE if the Message Server is going to be used for connecting to SAP | [optional] 
 **JCO_ASHOST** | Pointer to **string** | HostName for connection for Import | [optional] 
 **JCO_SYSNR** | Pointer to **string** | System Number for the SAP Instance for Import | [optional] 
@@ -106,7 +106,7 @@ Name | Type | Description | Notes
 **AUDIT_LOG_JSON** | Pointer to **string** | Property for AUDIT_LOG_JSON | [optional] 
 **ECCORS4HANA** | Pointer to **string** | Property for ECC_OR_S4HANA | [optional] 
 **DATA_IMPORT_FILTER** | Pointer to **string** | Property for DATA_IMPORT_FILTER | [optional] 
-**ConfigJSON** | Pointer to **string** | Property for ConfigJSON | [optional] 
+**ConfigJSON** | Pointer to **string** |  | [optional] 
 **CLIENT_ID** | **string** |  | 
 **CLIENT_SECRET** | **string** | Property for CLIENT_SECRET | 
 **REFRESH_TOKEN** | Pointer to **string** |  | [optional] 
@@ -249,12 +249,23 @@ Name | Type | Description | Notes
 **SSHPassThroughPassphrase** | Pointer to **string** | Property for SSHPassThroughPassphrase | [optional] 
 **ACCESS_TOKENS** | Pointer to **string** | Property for ACCESS_TOKENS | [optional] 
 **ORGANIZATION_LIST** | Pointer to **string** | Property for ORGANIZATION_LIST | [optional] 
+**IMPORTURL** | **string** |  | 
+**AUTHTOKEN** | **string** |  | 
+**ACCOUNTFIELDMAPPINGS** | Pointer to **string** |  | [optional] 
+**USERFIELDMAPPINGS** | Pointer to **string** |  | [optional] 
+**ENTITLEMENTTYPESMAPPINGS** | Pointer to **string** |  | [optional] 
+**IMPORT_INACTIVE_APPS** | Pointer to **string** |  | [optional] 
+**OKTA_APPLICATION_SECURITYSYSTEM** | **string** |  | 
+**OKTA_GROUPS_FILTER** | Pointer to **string** |  | [optional] 
+**APPACCOUNTFIELDMAPPINGS** | Pointer to **string** |  | [optional] 
+**AUDIT_FILTER** | Pointer to **string** |  | [optional] 
+**ACTIVATE_ENDPOINT** | Pointer to **string** |  | [optional] 
 
 ## Methods
 
 ### NewCreateOrUpdateRequest
 
-`func NewCreateOrUpdateRequest(connectionName string, connectiontype string, uRL string, uSERNAME string, pASSWORD string, cONNECTIONURL string, fORESTLIST string, cLIENTID string, cLIENTSECRET string, bASEURL string, tENANTID string, lOGINURL string, uSEOAUTH string, dRIVERNAME string, aADTENANTID string, hOSTNAME string, pORTNUMBER string, ) *CreateOrUpdateRequest`
+`func NewCreateOrUpdateRequest(connectionName string, connectiontype string, uRL string, uSERNAME string, pASSWORD string, cONNECTIONURL string, fORESTLIST string, cLIENTID string, cLIENTSECRET string, bASEURL string, tENANTID string, lOGINURL string, uSEOAUTH string, dRIVERNAME string, aADTENANTID string, hOSTNAME string, pORTNUMBER string, iMPORTURL string, aUTHTOKEN string, oKTAAPPLICATIONSECURITYSYSTEM string, ) *CreateOrUpdateRequest`
 
 NewCreateOrUpdateRequest instantiates a new CreateOrUpdateRequest object
 This constructor will assign default values to properties that have it defined,
@@ -6308,6 +6319,266 @@ SetORGANIZATION_LIST sets ORGANIZATION_LIST field to given value.
 `func (o *CreateOrUpdateRequest) HasORGANIZATION_LIST() bool`
 
 HasORGANIZATION_LIST returns a boolean if a field has been set.
+
+### GetIMPORTURL
+
+`func (o *CreateOrUpdateRequest) GetIMPORTURL() string`
+
+GetIMPORTURL returns the IMPORTURL field if non-nil, zero value otherwise.
+
+### GetIMPORTURLOk
+
+`func (o *CreateOrUpdateRequest) GetIMPORTURLOk() (*string, bool)`
+
+GetIMPORTURLOk returns a tuple with the IMPORTURL field if it's non-nil, zero value otherwise
+and a boolean to check if the value has been set.
+
+### SetIMPORTURL
+
+`func (o *CreateOrUpdateRequest) SetIMPORTURL(v string)`
+
+SetIMPORTURL sets IMPORTURL field to given value.
+
+
+### GetAUTHTOKEN
+
+`func (o *CreateOrUpdateRequest) GetAUTHTOKEN() string`
+
+GetAUTHTOKEN returns the AUTHTOKEN field if non-nil, zero value otherwise.
+
+### GetAUTHTOKENOk
+
+`func (o *CreateOrUpdateRequest) GetAUTHTOKENOk() (*string, bool)`
+
+GetAUTHTOKENOk returns a tuple with the AUTHTOKEN field if it's non-nil, zero value otherwise
+and a boolean to check if the value has been set.
+
+### SetAUTHTOKEN
+
+`func (o *CreateOrUpdateRequest) SetAUTHTOKEN(v string)`
+
+SetAUTHTOKEN sets AUTHTOKEN field to given value.
+
+
+### GetACCOUNTFIELDMAPPINGS
+
+`func (o *CreateOrUpdateRequest) GetACCOUNTFIELDMAPPINGS() string`
+
+GetACCOUNTFIELDMAPPINGS returns the ACCOUNTFIELDMAPPINGS field if non-nil, zero value otherwise.
+
+### GetACCOUNTFIELDMAPPINGSOk
+
+`func (o *CreateOrUpdateRequest) GetACCOUNTFIELDMAPPINGSOk() (*string, bool)`
+
+GetACCOUNTFIELDMAPPINGSOk returns a tuple with the ACCOUNTFIELDMAPPINGS field if it's non-nil, zero value otherwise
+and a boolean to check if the value has been set.
+
+### SetACCOUNTFIELDMAPPINGS
+
+`func (o *CreateOrUpdateRequest) SetACCOUNTFIELDMAPPINGS(v string)`
+
+SetACCOUNTFIELDMAPPINGS sets ACCOUNTFIELDMAPPINGS field to given value.
+
+### HasACCOUNTFIELDMAPPINGS
+
+`func (o *CreateOrUpdateRequest) HasACCOUNTFIELDMAPPINGS() bool`
+
+HasACCOUNTFIELDMAPPINGS returns a boolean if a field has been set.
+
+### GetUSERFIELDMAPPINGS
+
+`func (o *CreateOrUpdateRequest) GetUSERFIELDMAPPINGS() string`
+
+GetUSERFIELDMAPPINGS returns the USERFIELDMAPPINGS field if non-nil, zero value otherwise.
+
+### GetUSERFIELDMAPPINGSOk
+
+`func (o *CreateOrUpdateRequest) GetUSERFIELDMAPPINGSOk() (*string, bool)`
+
+GetUSERFIELDMAPPINGSOk returns a tuple with the USERFIELDMAPPINGS field if it's non-nil, zero value otherwise
+and a boolean to check if the value has been set.
+
+### SetUSERFIELDMAPPINGS
+
+`func (o *CreateOrUpdateRequest) SetUSERFIELDMAPPINGS(v string)`
+
+SetUSERFIELDMAPPINGS sets USERFIELDMAPPINGS field to given value.
+
+### HasUSERFIELDMAPPINGS
+
+`func (o *CreateOrUpdateRequest) HasUSERFIELDMAPPINGS() bool`
+
+HasUSERFIELDMAPPINGS returns a boolean if a field has been set.
+
+### GetENTITLEMENTTYPESMAPPINGS
+
+`func (o *CreateOrUpdateRequest) GetENTITLEMENTTYPESMAPPINGS() string`
+
+GetENTITLEMENTTYPESMAPPINGS returns the ENTITLEMENTTYPESMAPPINGS field if non-nil, zero value otherwise.
+
+### GetENTITLEMENTTYPESMAPPINGSOk
+
+`func (o *CreateOrUpdateRequest) GetENTITLEMENTTYPESMAPPINGSOk() (*string, bool)`
+
+GetENTITLEMENTTYPESMAPPINGSOk returns a tuple with the ENTITLEMENTTYPESMAPPINGS field if it's non-nil, zero value otherwise
+and a boolean to check if the value has been set.
+
+### SetENTITLEMENTTYPESMAPPINGS
+
+`func (o *CreateOrUpdateRequest) SetENTITLEMENTTYPESMAPPINGS(v string)`
+
+SetENTITLEMENTTYPESMAPPINGS sets ENTITLEMENTTYPESMAPPINGS field to given value.
+
+### HasENTITLEMENTTYPESMAPPINGS
+
+`func (o *CreateOrUpdateRequest) HasENTITLEMENTTYPESMAPPINGS() bool`
+
+HasENTITLEMENTTYPESMAPPINGS returns a boolean if a field has been set.
+
+### GetIMPORT_INACTIVE_APPS
+
+`func (o *CreateOrUpdateRequest) GetIMPORT_INACTIVE_APPS() string`
+
+GetIMPORT_INACTIVE_APPS returns the IMPORT_INACTIVE_APPS field if non-nil, zero value otherwise.
+
+### GetIMPORT_INACTIVE_APPSOk
+
+`func (o *CreateOrUpdateRequest) GetIMPORT_INACTIVE_APPSOk() (*string, bool)`
+
+GetIMPORT_INACTIVE_APPSOk returns a tuple with the IMPORT_INACTIVE_APPS field if it's non-nil, zero value otherwise
+and a boolean to check if the value has been set.
+
+### SetIMPORT_INACTIVE_APPS
+
+`func (o *CreateOrUpdateRequest) SetIMPORT_INACTIVE_APPS(v string)`
+
+SetIMPORT_INACTIVE_APPS sets IMPORT_INACTIVE_APPS field to given value.
+
+### HasIMPORT_INACTIVE_APPS
+
+`func (o *CreateOrUpdateRequest) HasIMPORT_INACTIVE_APPS() bool`
+
+HasIMPORT_INACTIVE_APPS returns a boolean if a field has been set.
+
+### GetOKTA_APPLICATION_SECURITYSYSTEM
+
+`func (o *CreateOrUpdateRequest) GetOKTA_APPLICATION_SECURITYSYSTEM() string`
+
+GetOKTA_APPLICATION_SECURITYSYSTEM returns the OKTA_APPLICATION_SECURITYSYSTEM field if non-nil, zero value otherwise.
+
+### GetOKTA_APPLICATION_SECURITYSYSTEMOk
+
+`func (o *CreateOrUpdateRequest) GetOKTA_APPLICATION_SECURITYSYSTEMOk() (*string, bool)`
+
+GetOKTA_APPLICATION_SECURITYSYSTEMOk returns a tuple with the OKTA_APPLICATION_SECURITYSYSTEM field if it's non-nil, zero value otherwise
+and a boolean to check if the value has been set.
+
+### SetOKTA_APPLICATION_SECURITYSYSTEM
+
+`func (o *CreateOrUpdateRequest) SetOKTA_APPLICATION_SECURITYSYSTEM(v string)`
+
+SetOKTA_APPLICATION_SECURITYSYSTEM sets OKTA_APPLICATION_SECURITYSYSTEM field to given value.
+
+
+### GetOKTA_GROUPS_FILTER
+
+`func (o *CreateOrUpdateRequest) GetOKTA_GROUPS_FILTER() string`
+
+GetOKTA_GROUPS_FILTER returns the OKTA_GROUPS_FILTER field if non-nil, zero value otherwise.
+
+### GetOKTA_GROUPS_FILTEROk
+
+`func (o *CreateOrUpdateRequest) GetOKTA_GROUPS_FILTEROk() (*string, bool)`
+
+GetOKTA_GROUPS_FILTEROk returns a tuple with the OKTA_GROUPS_FILTER field if it's non-nil, zero value otherwise
+and a boolean to check if the value has been set.
+
+### SetOKTA_GROUPS_FILTER
+
+`func (o *CreateOrUpdateRequest) SetOKTA_GROUPS_FILTER(v string)`
+
+SetOKTA_GROUPS_FILTER sets OKTA_GROUPS_FILTER field to given value.
+
+### HasOKTA_GROUPS_FILTER
+
+`func (o *CreateOrUpdateRequest) HasOKTA_GROUPS_FILTER() bool`
+
+HasOKTA_GROUPS_FILTER returns a boolean if a field has been set.
+
+### GetAPPACCOUNTFIELDMAPPINGS
+
+`func (o *CreateOrUpdateRequest) GetAPPACCOUNTFIELDMAPPINGS() string`
+
+GetAPPACCOUNTFIELDMAPPINGS returns the APPACCOUNTFIELDMAPPINGS field if non-nil, zero value otherwise.
+
+### GetAPPACCOUNTFIELDMAPPINGSOk
+
+`func (o *CreateOrUpdateRequest) GetAPPACCOUNTFIELDMAPPINGSOk() (*string, bool)`
+
+GetAPPACCOUNTFIELDMAPPINGSOk returns a tuple with the APPACCOUNTFIELDMAPPINGS field if it's non-nil, zero value otherwise
+and a boolean to check if the value has been set.
+
+### SetAPPACCOUNTFIELDMAPPINGS
+
+`func (o *CreateOrUpdateRequest) SetAPPACCOUNTFIELDMAPPINGS(v string)`
+
+SetAPPACCOUNTFIELDMAPPINGS sets APPACCOUNTFIELDMAPPINGS field to given value.
+
+### HasAPPACCOUNTFIELDMAPPINGS
+
+`func (o *CreateOrUpdateRequest) HasAPPACCOUNTFIELDMAPPINGS() bool`
+
+HasAPPACCOUNTFIELDMAPPINGS returns a boolean if a field has been set.
+
+### GetAUDIT_FILTER
+
+`func (o *CreateOrUpdateRequest) GetAUDIT_FILTER() string`
+
+GetAUDIT_FILTER returns the AUDIT_FILTER field if non-nil, zero value otherwise.
+
+### GetAUDIT_FILTEROk
+
+`func (o *CreateOrUpdateRequest) GetAUDIT_FILTEROk() (*string, bool)`
+
+GetAUDIT_FILTEROk returns a tuple with the AUDIT_FILTER field if it's non-nil, zero value otherwise
+and a boolean to check if the value has been set.
+
+### SetAUDIT_FILTER
+
+`func (o *CreateOrUpdateRequest) SetAUDIT_FILTER(v string)`
+
+SetAUDIT_FILTER sets AUDIT_FILTER field to given value.
+
+### HasAUDIT_FILTER
+
+`func (o *CreateOrUpdateRequest) HasAUDIT_FILTER() bool`
+
+HasAUDIT_FILTER returns a boolean if a field has been set.
+
+### GetACTIVATE_ENDPOINT
+
+`func (o *CreateOrUpdateRequest) GetACTIVATE_ENDPOINT() string`
+
+GetACTIVATE_ENDPOINT returns the ACTIVATE_ENDPOINT field if non-nil, zero value otherwise.
+
+### GetACTIVATE_ENDPOINTOk
+
+`func (o *CreateOrUpdateRequest) GetACTIVATE_ENDPOINTOk() (*string, bool)`
+
+GetACTIVATE_ENDPOINTOk returns a tuple with the ACTIVATE_ENDPOINT field if it's non-nil, zero value otherwise
+and a boolean to check if the value has been set.
+
+### SetACTIVATE_ENDPOINT
+
+`func (o *CreateOrUpdateRequest) SetACTIVATE_ENDPOINT(v string)`
+
+SetACTIVATE_ENDPOINT sets ACTIVATE_ENDPOINT field to given value.
+
+### HasACTIVATE_ENDPOINT
+
+`func (o *CreateOrUpdateRequest) HasACTIVATE_ENDPOINT() bool`
+
+HasACTIVATE_ENDPOINT returns a boolean if a field has been set.
 
 
 [[Back to Model list]](../README.md#documentation-for-models) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to README]](../README.md)

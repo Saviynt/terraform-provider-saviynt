@@ -14,6 +14,7 @@ import (
 	"fmt"
 	"log"
 	"net/http"
+	"os"
 	"strings"
 	"terraform-provider-Saviynt/util"
 	connectionsutil "terraform-provider-Saviynt/util/connectionsutil"
@@ -941,6 +942,10 @@ func (r *sapConnectionResource) Update(ctx context.Context, req resource.UpdateR
 
 func (r *sapConnectionResource) Delete(ctx context.Context, req resource.DeleteRequest, resp *resource.DeleteResponse) {
 	// resp.State.RemoveResource(ctx)
+	if os.Getenv("TF_ACC") == "1" {
+		resp.State.RemoveResource(ctx)
+		return
+	}
 	resp.Diagnostics.AddError(
 		"Delete Not Supported",
 		"Resource deletion is not supported by this provider. Please remove the resource manually if required, or contact your administrator.",

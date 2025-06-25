@@ -6,7 +6,7 @@
 // (no remote create/read/update/delete), loading credentials and connection data from a local file
 // into Terraform state at plan time.
 //
-// On `Open`, the file is parsed via `util.LoadConnectorDataForEphemeral`, and each recognized
+// On `Open`, the file is parsed via `testutil.LoadConnectorDataForEphemeral`, and each recognized
 // key/value is mapped to its corresponding attribute in the model. This ephemeral resource is
 // useful for decoupling secret management from provider API calls by sourcing runtime credentials
 // from a local file.

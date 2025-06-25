@@ -11,8 +11,8 @@ API version: 1.0.0
 package connections
 
 import (
-	"bytes"
 	"encoding/json"
+	"bytes"
 	"fmt"
 )
 
@@ -22,33 +22,33 @@ var _ MappedNullable = &RESTConnector{}
 // RESTConnector struct for RESTConnector
 type RESTConnector struct {
 	BaseConnector
-	ConnectionJSON map[string]interface{} `json:"ConnectionJSON,omitempty"`
+	ConnectionJSON *string `json:"ConnectionJSON,omitempty"`
 	// Property for ImportUserJSON
-	ImportUserJSON          *string `json:"ImportUserJSON,omitempty"`
-	ImportAccountEntJSON    *string `json:"ImportAccountEntJSON,omitempty"`
+	ImportUserJSON *string `json:"ImportUserJSON,omitempty"`
+	ImportAccountEntJSON *string `json:"ImportAccountEntJSON,omitempty"`
 	STATUS_THRESHOLD_CONFIG *string `json:"STATUS_THRESHOLD_CONFIG,omitempty"`
-	CreateAccountJSON       *string `json:"CreateAccountJSON,omitempty"`
-	UpdateAccountJSON       *string `json:"UpdateAccountJSON,omitempty"`
-	EnableAccountJSON       *string `json:"EnableAccountJSON,omitempty"`
-	DisableAccountJSON      *string `json:"DisableAccountJSON,omitempty"`
-	AddAccessJSON           *string `json:"AddAccessJSON,omitempty"`
-	RemoveAccessJSON        *string `json:"RemoveAccessJSON,omitempty"`
+	CreateAccountJSON *string `json:"CreateAccountJSON,omitempty"`
+	UpdateAccountJSON *string `json:"UpdateAccountJSON,omitempty"`
+	EnableAccountJSON *string `json:"EnableAccountJSON,omitempty"`
+	DisableAccountJSON *string `json:"DisableAccountJSON,omitempty"`
+	AddAccessJSON *string `json:"AddAccessJSON,omitempty"`
+	RemoveAccessJSON *string `json:"RemoveAccessJSON,omitempty"`
 	// Property for UpdateUserJSON
-	UpdateUserJSON    *string `json:"UpdateUserJSON,omitempty"`
-	ChangePassJSON    *string `json:"ChangePassJSON,omitempty"`
+	UpdateUserJSON *string `json:"UpdateUserJSON,omitempty"`
+	ChangePassJSON *string `json:"ChangePassJSON,omitempty"`
 	RemoveAccountJSON *string `json:"RemoveAccountJSON,omitempty"`
-	TicketStatusJSON  *string `json:"TicketStatusJSON,omitempty"`
-	CreateTicketJSON  *string `json:"CreateTicketJSON,omitempty"`
-	ENDPOINTS_FILTER  *string `json:"ENDPOINTS_FILTER,omitempty"`
-	PasswdPolicyJSON  *string `json:"PasswdPolicyJSON,omitempty"`
+	TicketStatusJSON *string `json:"TicketStatusJSON,omitempty"`
+	CreateTicketJSON *string `json:"CreateTicketJSON,omitempty"`
+	ENDPOINTS_FILTER *string `json:"ENDPOINTS_FILTER,omitempty"`
+	PasswdPolicyJSON *string `json:"PasswdPolicyJSON,omitempty"`
 	// We can use this attribute to define the provisioningLimit,showLogs and connectionTimeoutConfig.
-	ConfigJSON           *string `json:"ConfigJSON,omitempty"`
-	AddFFIDAccessJSON    *string `json:"AddFFIDAccessJSON,omitempty"`
+	ConfigJSON *string `json:"ConfigJSON,omitempty"`
+	AddFFIDAccessJSON *string `json:"AddFFIDAccessJSON,omitempty"`
 	RemoveFFIDAccessJSON *string `json:"RemoveFFIDAccessJSON,omitempty"`
-	MODIFYUSERDATAJSON   *string `json:"MODIFYUSERDATAJSON,omitempty"`
-	SendOtpJSON          *string `json:"SendOtpJSON,omitempty"`
-	ValidateOtpJSON      *string `json:"ValidateOtpJSON,omitempty"`
-	PAM_CONFIG           *string `json:"PAM_CONFIG,omitempty"`
+	MODIFYUSERDATAJSON *string `json:"MODIFYUSERDATAJSON,omitempty"`
+	SendOtpJSON *string `json:"SendOtpJSON,omitempty"`
+	ValidateOtpJSON *string `json:"ValidateOtpJSON,omitempty"`
+	PAM_CONFIG *string `json:"PAM_CONFIG,omitempty"`
 }
 
 type _RESTConnector RESTConnector
@@ -73,19 +73,19 @@ func NewRESTConnectorWithDefaults() *RESTConnector {
 }
 
 // GetConnectionJSON returns the ConnectionJSON field value if set, zero value otherwise.
-func (o *RESTConnector) GetConnectionJSON() map[string]interface{} {
+func (o *RESTConnector) GetConnectionJSON() string {
 	if o == nil || IsNil(o.ConnectionJSON) {
-		var ret map[string]interface{}
+		var ret string
 		return ret
 	}
-	return o.ConnectionJSON
+	return *o.ConnectionJSON
 }
 
 // GetConnectionJSONOk returns a tuple with the ConnectionJSON field value if set, nil otherwise
 // and a boolean to check if the value has been set.
-func (o *RESTConnector) GetConnectionJSONOk() (map[string]interface{}, bool) {
+func (o *RESTConnector) GetConnectionJSONOk() (*string, bool) {
 	if o == nil || IsNil(o.ConnectionJSON) {
-		return map[string]interface{}{}, false
+		return nil, false
 	}
 	return o.ConnectionJSON, true
 }
@@ -99,9 +99,9 @@ func (o *RESTConnector) HasConnectionJSON() bool {
 	return false
 }
 
-// SetConnectionJSON gets a reference to the given map[string]interface{} and assigns it to the ConnectionJSON field.
-func (o *RESTConnector) SetConnectionJSON(v map[string]interface{}) {
-	o.ConnectionJSON = v
+// SetConnectionJSON gets a reference to the given string and assigns it to the ConnectionJSON field.
+func (o *RESTConnector) SetConnectionJSON(v string) {
+	o.ConnectionJSON = &v
 }
 
 // GetImportUserJSON returns the ImportUserJSON field value if set, zero value otherwise.
@@ -841,7 +841,7 @@ func (o *RESTConnector) SetPAM_CONFIG(v string) {
 }
 
 func (o RESTConnector) MarshalJSON() ([]byte, error) {
-	toSerialize, err := o.ToMap()
+	toSerialize,err := o.ToMap()
 	if err != nil {
 		return []byte{}, err
 	}
@@ -947,10 +947,10 @@ func (o *RESTConnector) UnmarshalJSON(data []byte) (err error) {
 	err = json.Unmarshal(data, &allProperties)
 
 	if err != nil {
-		return err
+		return err;
 	}
 
-	for _, requiredProperty := range requiredProperties {
+	for _, requiredProperty := range(requiredProperties) {
 		if _, exists := allProperties[requiredProperty]; !exists {
 			return fmt.Errorf("no value given for required property %v", requiredProperty)
 		}
@@ -1006,3 +1006,5 @@ func (v *NullableRESTConnector) UnmarshalJSON(src []byte) error {
 	v.isSet = true
 	return json.Unmarshal(src, &v.value)
 }
+
+

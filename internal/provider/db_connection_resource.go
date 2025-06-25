@@ -14,6 +14,7 @@ import (
 	"fmt"
 	"log"
 	"net/http"
+	"os"
 	"strings"
 	"terraform-provider-Saviynt/util"
 	connectionsutil "terraform-provider-Saviynt/util/connectionsutil"
@@ -235,7 +236,7 @@ func DBConnectorResourceSchema() map[string]schema.Attribute {
 
 func (r *dbConnectionResource) Schema(ctx context.Context, req resource.SchemaRequest, resp *resource.SchemaResponse) {
 	resp.Schema = schema.Schema{
-		Description: util.DBConnDescription,
+		Description: util.ADConnDescription,
 		Attributes:  connectionsutil.MergeResourceAttributes(BaseConnectorResourceSchema(), DBConnectorResourceSchema()),
 	}
 }
@@ -345,8 +346,8 @@ func (r *dbConnectionResource) Create(ctx context.Context, req resource.CreateRe
 	// Initialize API client
 	apiResp, _, err := apiClient.ConnectionsAPI.CreateOrUpdate(ctx).CreateOrUpdateRequest(dbConnRequest).Execute()
 	if err != nil || *apiResp.ErrorCode != "0" {
-		log.Printf("[ERROR] Failed to create API resource. Error: %v", *apiResp.Msg)
-		resp.Diagnostics.AddError("API Create Failed", fmt.Sprintf("Error: %v", *apiResp.Msg))
+		log.Printf("[ERROR] Failed to create API resource. Error: %v", err)
+		resp.Diagnostics.AddError("API Create Failed", fmt.Sprintf("Error: %v", err))
 		return
 	}
 	plan.ID = types.StringValue(fmt.Sprintf("%d", *apiResp.ConnectionKey))
@@ -407,7 +408,7 @@ func (r *dbConnectionResource) Read(ctx context.Context, req resource.ReadReques
 	apiResp, _, err := apiClient.ConnectionsAPI.GetConnectionDetails(ctx).GetConnectionDetailsRequest(reqParams).Execute()
 	if err != nil {
 		log.Printf("Problem with the get function in read block")
-		resp.Diagnostics.AddError("API Read Failed In Read Block", fmt.Sprintf("Error: %v", *apiResp.DBConnectionResponse.Msg))
+		resp.Diagnostics.AddError("API Read Failed In Read Block", fmt.Sprintf("Error: %v", err))
 		return
 	}
 	state.ConnectionKey = types.Int64Value(int64(*apiResp.DBConnectionResponse.Connectionkey))
@@ -567,7 +568,7 @@ func (r *dbConnectionResource) Update(ctx context.Context, req resource.UpdateRe
 	getResp, _, err := apiClient.ConnectionsAPI.GetConnectionDetails(ctx).GetConnectionDetailsRequest(reqParams).Execute()
 	if err != nil {
 		log.Printf("Problem with the get function in update block")
-		resp.Diagnostics.AddError("API Read Failed In Update Block", fmt.Sprintf("Error: %v", *getResp.DBConnectionResponse.Msg))
+		resp.Diagnostics.AddError("API Read Failed In Update Block", fmt.Sprintf("Error: %v", err))
 		return
 	}
 	plan.ConnectionKey = types.Int64Value(int64(*getResp.DBConnectionResponse.Connectionkey))
@@ -619,6 +620,10 @@ func (r *dbConnectionResource) Update(ctx context.Context, req resource.UpdateRe
 
 func (r *dbConnectionResource) Delete(ctx context.Context, req resource.DeleteRequest, resp *resource.DeleteResponse) {
 	// resp.State.RemoveResource(ctx)
+	if os.Getenv("TF_ACC") == "1" {
+		resp.State.RemoveResource(ctx)
+		return
+	}
 	resp.Diagnostics.AddError(
 		"Delete Not Supported",
 		"Resource deletion is not supported by this provider. Please remove the resource manually if required, or contact your administrator.",

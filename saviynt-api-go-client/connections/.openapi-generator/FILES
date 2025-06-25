@@ -33,6 +33,9 @@ docs/GetConnectionsResponseConnectionListInner.md
 docs/GithubRESTConnectionAttributes.md
 docs/GithubRESTConnectionResponse.md
 docs/GithubRESTConnector.md
+docs/OktaConnectionAttributes.md
+docs/OktaConnectionResponse.md
+docs/OktaConnector.md
 docs/RESTConnectionAttributes.md
 docs/RESTConnectionResponse.md
 docs/RESTConnector.md
@@ -77,6 +80,9 @@ model_get_connections_response_connection_list_inner.go
 model_github_rest_connection_attributes.go
 model_github_rest_connection_response.go
 model_github_rest_connector.go
+model_okta_connection_attributes.go
+model_okta_connection_response.go
+model_okta_connector.go
 model_rest_connection_attributes.go
 model_rest_connection_response.go
 model_rest_connector.go

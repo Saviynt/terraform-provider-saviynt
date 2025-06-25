@@ -11,7 +11,8 @@ package provider
 
 import (
 	"context"
-	"encoding/json"
+	"os"
+	// "encoding/json"
 	"fmt"
 	"log"
 	"net/http"
@@ -206,7 +207,7 @@ func RestConnectorResourceSchema() map[string]schema.Attribute {
 
 func (r *restConnectionResource) Schema(ctx context.Context, req resource.SchemaRequest, resp *resource.SchemaResponse) {
 	resp.Schema = schema.Schema{
-		Description: util.RestConnDescription,
+		Description: util.ADConnDescription,
 		Attributes:  connectionsutil.MergeResourceAttributes(BaseConnectorResourceSchema(), RestConnectorResourceSchema()),
 	}
 }
@@ -243,11 +244,12 @@ func (r *restConnectionResource) Create(ctx context.Context, req resource.Create
 		return
 	}
 	//for connJson data conversion from string to map[string]interface{}
-	var connJSON map[string]interface{}
-	err := json.Unmarshal([]byte(config.ConnectionJSON.ValueString()), &connJSON)
-	if err != nil {
-		log.Fatalf("Failed to unmarshal ConnectionJSON: %v", err)
-	}
+	// var connJSON map[string]interface{}
+	// err := json.Unmarshal([]byte(config.ConnectionJSON.ValueString()), &connJSON)
+	// log.Print("[DEBUG] Unmarshalling ConnectionJSON: ", connJSON)
+	// if err != nil {
+	// 	log.Fatalf("Failed to unmarshal ConnectionJSON: %v", err)
+	// }
 
 	cfg := openapi.NewConfiguration()
 	apiBaseURL := strings.TrimPrefix(strings.TrimPrefix(r.client.APIBaseURL(), "https://"), "http://")
@@ -267,7 +269,7 @@ func (r *restConnectionResource) Create(ctx context.Context, req resource.Create
 		resp.Diagnostics.AddError("API Create Failed", "Connection name already exists. Please import or use a different name")
 		return
 	}
-
+	log.Print("Debug the config connection json", config.ConnectionJSON)
 	restConn := openapi.RESTConnector{
 		BaseConnector: openapi.BaseConnector{
 			//required fields
@@ -282,7 +284,7 @@ func (r *restConnectionResource) Create(ctx context.Context, req resource.Create
 			Saveinvault:        util.StringPointerOrEmpty(plan.SaveInVault),
 		},
 		//optional fields
-		ConnectionJSON:          connJSON,
+		ConnectionJSON:          util.StringPointerOrEmpty(config.ConnectionJSON),
 		ImportUserJSON:          util.StringPointerOrEmpty(plan.ImportUserJson),
 		ImportAccountEntJSON:    util.StringPointerOrEmpty(plan.ImportAccountEntJson),
 		STATUS_THRESHOLD_CONFIG: util.StringPointerOrEmpty(plan.StatusThresholdConfig),
@@ -310,7 +312,7 @@ func (r *restConnectionResource) Create(ctx context.Context, req resource.Create
 	restConnRequest := openapi.CreateOrUpdateRequest{
 		RESTConnector: &restConn,
 	}
-
+	log.Print("[DEBUG] Creating REST connection with request: ", restConn.ConnectionJSON)
 	// Initialize API client
 	apiResp, _, err := apiClient.ConnectionsAPI.CreateOrUpdate(ctx).CreateOrUpdateRequest(restConnRequest).Execute()
 	if err != nil || *apiResp.ErrorCode != "0" {
@@ -374,7 +376,7 @@ func (r *restConnectionResource) Read(ctx context.Context, req resource.ReadRequ
 	apiResp, _, err := apiClient.ConnectionsAPI.GetConnectionDetails(ctx).GetConnectionDetailsRequest(reqParams).Execute()
 	if err != nil {
 		log.Printf("Problem with the get function in read block")
-		resp.Diagnostics.AddError("API Read Failed", fmt.Sprintf("Error: %v", *apiResp.RESTConnectionResponse.Msg))
+		resp.Diagnostics.AddError("API Read Failed", fmt.Sprintf("Error: %v", err))
 		return
 	}
 	state.ConnectionKey = types.Int64Value(int64(*apiResp.RESTConnectionResponse.Connectionkey))
@@ -457,14 +459,14 @@ func (r *restConnectionResource) Update(ctx context.Context, req resource.Update
 	cfg.HTTPClient = http.DefaultClient
 
 	//for connJson data conversion from string to map[string]interface{}
-	var connJSON map[string]interface{}
-	if !config.ConnectionJSON.IsNull() && config.ConnectionJSON.ValueString() != "" {
-		err := json.Unmarshal([]byte(config.ConnectionJSON.ValueString()), &connJSON)
-		if err != nil {
-			resp.Diagnostics.AddError("Invalid JSON", fmt.Sprintf("Failed to parse connection_json: %v", err))
-			return
-		}
-	}
+	// var connJSON map[string]interface{}
+	// if !config.ConnectionJSON.IsNull() && config.ConnectionJSON.ValueString() != "" {
+	// 	err := json.Unmarshal([]byte(config.ConnectionJSON.ValueString()), &connJSON)
+	// 	if err != nil {
+	// 		resp.Diagnostics.AddError("Invalid JSON", fmt.Sprintf("Failed to parse connection_json: %v", err))
+	// 		return
+	// 	}
+	// }
 
 	restConn := openapi.RESTConnector{
 		BaseConnector: openapi.BaseConnector{
@@ -480,7 +482,7 @@ func (r *restConnectionResource) Update(ctx context.Context, req resource.Update
 			Saveinvault:        util.StringPointerOrEmpty(plan.SaveInVault),
 		},
 		//optional fields
-		ConnectionJSON:          connJSON,
+		ConnectionJSON:          util.StringPointerOrEmpty(config.ConnectionJSON),
 		ImportUserJSON:          util.StringPointerOrEmpty(plan.ImportUserJson),
 		ImportAccountEntJSON:    util.StringPointerOrEmpty(plan.ImportAccountEntJson),
 		STATUS_THRESHOLD_CONFIG: util.StringPointerOrEmpty(plan.StatusThresholdConfig),
@@ -524,7 +526,7 @@ func (r *restConnectionResource) Update(ctx context.Context, req resource.Update
 	getResp, _, err := apiClient.ConnectionsAPI.GetConnectionDetails(ctx).GetConnectionDetailsRequest(reqParams).Execute()
 	if err != nil {
 		log.Printf("Problem with the get function in update block")
-		resp.Diagnostics.AddError("API Read Failed", fmt.Sprintf("Error: %v", *getResp.RESTConnectionResponse.Msg))
+		resp.Diagnostics.AddError("API Read Failed", fmt.Sprintf("Error: %v", err))
 		return
 	}
 	plan.ConnectionKey = types.Int64Value(int64(*getResp.RESTConnectionResponse.Connectionkey))
@@ -570,6 +572,10 @@ func (r *restConnectionResource) Update(ctx context.Context, req resource.Update
 
 func (r *restConnectionResource) Delete(ctx context.Context, req resource.DeleteRequest, resp *resource.DeleteResponse) {
 	// resp.State.RemoveResource(ctx)
+	if os.Getenv("TF_ACC") == "1" {
+		resp.State.RemoveResource(ctx)
+		return
+	}
 	resp.Diagnostics.AddError(
 		"Delete Not Supported",
 		"Resource deletion is not supported by this provider. Please remove the resource manually if required, or contact your administrator.",

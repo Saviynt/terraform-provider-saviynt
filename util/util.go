@@ -9,7 +9,6 @@ import (
 	"os"
 	"sort"
 	"strconv"
-	"testing"
 
 	"github.com/hashicorp/terraform-plugin-framework/attr"
 	"github.com/hashicorp/terraform-plugin-framework/diag"
@@ -218,52 +217,6 @@ func Int32PtrToTFString(val *int32) types.String {
 		return types.StringValue(str)
 	}
 	return types.StringNull()
-}
-
-func LoadConnectorData(t *testing.T, filePath, scenario string) map[string]string {
-	// Load base JSON file
-	data, err := os.ReadFile(filePath)
-	if err != nil {
-		t.Fatalf("failed to read test config file: %v", err)
-	}
-
-	var allData map[string]map[string]interface{}
-	if err := json.Unmarshal(data, &allData); err != nil {
-		t.Fatalf("failed to unmarshal test config: %v", err)
-	}
-
-	// Select create or update based on the scenario
-	secrets, exists := allData[scenario]
-	if !exists {
-		t.Fatalf("scenario '%s' not found in config", scenario)
-	}
-
-	result := make(map[string]string)
-	for key, value := range secrets {
-		switch v := value.(type) {
-		case string:
-			// Keep plain strings as-is
-			result[key] = v
-
-		case map[string]interface{}:
-			// Handle nested maps (e.g., status_key_json)
-			jsonValue, err := json.Marshal(v)
-			if err != nil {
-				t.Fatalf("failed to marshal map for key %s: %v", key, err)
-			}
-			result[key] = string(jsonValue)
-
-		default:
-			// Fallback for other types, including arrays or deeply nested data
-			jsonValue, err := json.Marshal(value)
-			if err != nil {
-				t.Fatalf("failed to marshal value for key %s: %v", key, err)
-			}
-			result[key] = string(jsonValue)
-		}
-	}
-
-	return result
 }
 
 func LoadConnectorDataForEphemeral(filePath string) map[string]string {

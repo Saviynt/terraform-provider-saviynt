@@ -19,16 +19,16 @@ var _ MappedNullable = &GithubRESTConnectionAttributes{}
 
 // GithubRESTConnectionAttributes struct for GithubRESTConnectionAttributes
 type GithubRESTConnectionAttributes struct {
-	IsTimeoutSupported       *bool                    `json:"isTimeoutSupported,omitempty"`
-	ConnectionJSON           *string                  `json:"ConnectionJSON,omitempty"`
-	PAM_CONFIG               *string                  `json:"PAM_CONFIG,omitempty"`
-	ORGANIZATION_LIST        *string                  `json:"ORGANIZATION_LIST,omitempty"`
-	ImportAccountEntJSON     *string                  `json:"ImportAccountEntJSON,omitempty"`
-	STATUS_THRESHOLD_CONFIG  *string                  `json:"STATUS_THRESHOLD_CONFIG,omitempty"`
-	ACCESS_TOKENS            *string                  `json:"ACCESS_TOKENS,omitempty"`
-	ConnectionTimeoutConfig  *ConnectionTimeoutConfig `json:"connectionTimeoutConfig,omitempty"`
-	ConnectionType           *string                  `json:"connectionType,omitempty"`
-	IsTimeoutConfigValidated *bool                    `json:"isTimeoutConfigValidated,omitempty"`
+	IsTimeoutSupported *bool `json:"isTimeoutSupported,omitempty"`
+	ConnectionJSON *string `json:"ConnectionJSON,omitempty"`
+	PAM_CONFIG *string `json:"PAM_CONFIG,omitempty"`
+	ORGANIZATION_LIST *string `json:"ORGANIZATION_LIST,omitempty"`
+	ImportAccountEntJSON *string `json:"ImportAccountEntJSON,omitempty"`
+	STATUS_THRESHOLD_CONFIG *string `json:"STATUS_THRESHOLD_CONFIG,omitempty"`
+	ACCESS_TOKENS *string `json:"ACCESS_TOKENS,omitempty"`
+	ConnectionTimeoutConfig *ConnectionTimeoutConfig `json:"connectionTimeoutConfig,omitempty"`
+	ConnectionType *string `json:"connectionType,omitempty"`
+	IsTimeoutConfigValidated *bool `json:"isTimeoutConfigValidated,omitempty"`
 }
 
 // NewGithubRESTConnectionAttributes instantiates a new GithubRESTConnectionAttributes object
@@ -369,7 +369,7 @@ func (o *GithubRESTConnectionAttributes) SetIsTimeoutConfigValidated(v bool) {
 }
 
 func (o GithubRESTConnectionAttributes) MarshalJSON() ([]byte, error) {
-	toSerialize, err := o.ToMap()
+	toSerialize,err := o.ToMap()
 	if err != nil {
 		return []byte{}, err
 	}
@@ -446,3 +446,5 @@ func (v *NullableGithubRESTConnectionAttributes) UnmarshalJSON(src []byte) error
 	v.isSet = true
 	return json.Unmarshal(src, &v.value)
 }
+
+

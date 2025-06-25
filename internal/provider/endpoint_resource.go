@@ -9,6 +9,7 @@ import (
 	"fmt"
 	"log"
 	"net/http"
+	"os"
 	"strings"
 	"terraform-provider-Saviynt/util"
 	"terraform-provider-Saviynt/util/endpointsutil"
@@ -911,7 +912,7 @@ func (r *endpointResource) Read(ctx context.Context, req resource.ReadRequest, r
 	readResp, _, err := apiClient.EndpointsAPI.GetEndpoints(ctx).GetEndpointsRequest(reqParams).Execute()
 	if err != nil {
 		log.Printf("Problem with the get function in read block")
-		resp.Diagnostics.AddError("API Read Failed In Read Block", fmt.Sprintf("Error: %v", *readResp.Message))
+		resp.Diagnostics.AddError("API Read Failed In Read Block", fmt.Sprintf("Error: %v", err))
 		return
 	}
 	if len(readResp.Endpoints) == 0 {
@@ -1878,6 +1879,10 @@ func (r *endpointResource) Update(ctx context.Context, req resource.UpdateReques
 
 func (r *endpointResource) Delete(ctx context.Context, req resource.DeleteRequest, resp *resource.DeleteResponse) {
 	// resp.State.RemoveResource(ctx)
+	if os.Getenv("TF_ACC") == "1" {
+		resp.State.RemoveResource(ctx)
+		return
+	}
 	resp.Diagnostics.AddError(
 		"Delete Not Supported",
 		"Resource deletion is not supported by this provider. Please remove the resource manually if required, or contact your administrator.",

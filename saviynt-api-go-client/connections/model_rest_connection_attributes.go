@@ -20,37 +20,41 @@ var _ MappedNullable = &RESTConnectionAttributes{}
 // RESTConnectionAttributes struct for RESTConnectionAttributes
 type RESTConnectionAttributes struct {
 	// Property for UpdateUserJSON
-	UpdateUserJSON    *string `json:"UpdateUserJSON,omitempty"`
-	ChangePassJSON    *string `json:"ChangePassJSON,omitempty"`
+	UpdateUserJSON *string `json:"UpdateUserJSON,omitempty"`
+	ChangePassJSON *string `json:"ChangePassJSON,omitempty"`
+	CreateEntitlementJSON *string `json:"CreateEntitlementJSON,omitempty"`
+	UpdateEntitlementJSON *string `json:"UpdateEntitlementJSON,omitempty"`
+	DeleteEntitlementJSON *string `json:"DeleteEntitlementJSON,omitempty"`
+	ApplicationDiscoveryJSON *string `json:"ApplicationDiscoveryJSON,omitempty"`
 	RemoveAccountJSON *string `json:"RemoveAccountJSON,omitempty"`
-	TicketStatusJSON  *string `json:"TicketStatusJSON,omitempty"`
-	CreateTicketJSON  *string `json:"CreateTicketJSON,omitempty"`
+	TicketStatusJSON *string `json:"TicketStatusJSON,omitempty"`
+	CreateTicketJSON *string `json:"CreateTicketJSON,omitempty"`
 	// Type of connection, e.g., MS_BASED_CONNECTOR.
-	ConnectionType   *string `json:"connectionType,omitempty"`
+	ConnectionType *string `json:"connectionType,omitempty"`
 	ENDPOINTS_FILTER *string `json:"ENDPOINTS_FILTER,omitempty"`
 	PasswdPolicyJSON *string `json:"PasswdPolicyJSON,omitempty"`
 	// We can use this attribute to define the provisioningLimit,showLogs and connectionTimeoutConfig.
-	ConfigJSON           *string `json:"ConfigJSON,omitempty"`
-	AddFFIDAccessJSON    *string `json:"AddFFIDAccessJSON,omitempty"`
+	ConfigJSON *string `json:"ConfigJSON,omitempty"`
+	AddFFIDAccessJSON *string `json:"AddFFIDAccessJSON,omitempty"`
 	RemoveFFIDAccessJSON *string `json:"RemoveFFIDAccessJSON,omitempty"`
 	// JSON configuration for account status thresholds.
-	STATUS_THRESHOLD_CONFIG  *string                  `json:"STATUS_THRESHOLD_CONFIG,omitempty"`
-	MODIFYUSERDATAJSON       *string                  `json:"MODIFYUSERDATAJSON,omitempty"`
-	SendOtpJSON              *string                  `json:"SendOtpJSON,omitempty"`
-	ValidateOtpJSON          *string                  `json:"ValidateOtpJSON,omitempty"`
-	PAM_CONFIG               *string                  `json:"PAM_CONFIG,omitempty"`
-	ConnectionTimeoutConfig  *ConnectionTimeoutConfig `json:"connectionTimeoutConfig,omitempty"`
-	CreateAccountJSON        *string                  `json:"CreateAccountJSON,omitempty"`
-	UpdateAccountJSON        *string                  `json:"UpdateAccountJSON,omitempty"`
-	EnableAccountJSON        *string                  `json:"EnableAccountJSON,omitempty"`
-	DisableAccountJSON       *string                  `json:"DisableAccountJSON,omitempty"`
-	AddAccessJSON            *string                  `json:"AddAccessJSON,omitempty"`
-	RemoveAccessJSON         *string                  `json:"RemoveAccessJSON,omitempty"`
-	ImportUserJSON           *string                  `json:"ImportUserJSON,omitempty"`
-	IsTimeoutSupported       *bool                    `json:"isTimeoutSupported,omitempty"`
-	ImportAccountEntJSON     *string                  `json:"ImportAccountEntJSON,omitempty"`
-	IsTimeoutConfigValidated *bool                    `json:"isTimeoutConfigValidated,omitempty"`
-	ConnectionJSON           *string                  `json:"ConnectionJSON,omitempty"`
+	STATUS_THRESHOLD_CONFIG *string `json:"STATUS_THRESHOLD_CONFIG,omitempty"`
+	MODIFYUSERDATAJSON *string `json:"MODIFYUSERDATAJSON,omitempty"`
+	SendOtpJSON *string `json:"SendOtpJSON,omitempty"`
+	ValidateOtpJSON *string `json:"ValidateOtpJSON,omitempty"`
+	PAM_CONFIG *string `json:"PAM_CONFIG,omitempty"`
+	ConnectionTimeoutConfig *ConnectionTimeoutConfig `json:"connectionTimeoutConfig,omitempty"`
+	CreateAccountJSON *string `json:"CreateAccountJSON,omitempty"`
+	UpdateAccountJSON *string `json:"UpdateAccountJSON,omitempty"`
+	EnableAccountJSON *string `json:"EnableAccountJSON,omitempty"`
+	DisableAccountJSON *string `json:"DisableAccountJSON,omitempty"`
+	AddAccessJSON *string `json:"AddAccessJSON,omitempty"`
+	RemoveAccessJSON *string `json:"RemoveAccessJSON,omitempty"`
+	ImportUserJSON *string `json:"ImportUserJSON,omitempty"`
+	IsTimeoutSupported *bool `json:"isTimeoutSupported,omitempty"`
+	ImportAccountEntJSON *string `json:"ImportAccountEntJSON,omitempty"`
+	IsTimeoutConfigValidated *bool `json:"isTimeoutConfigValidated,omitempty"`
+	ConnectionJSON *string `json:"ConnectionJSON,omitempty"`
 }
 
 // NewRESTConnectionAttributes instantiates a new RESTConnectionAttributes object
@@ -132,6 +136,134 @@ func (o *RESTConnectionAttributes) HasChangePassJSON() bool {
 // SetChangePassJSON gets a reference to the given string and assigns it to the ChangePassJSON field.
 func (o *RESTConnectionAttributes) SetChangePassJSON(v string) {
 	o.ChangePassJSON = &v
+}
+
+// GetCreateEntitlementJSON returns the CreateEntitlementJSON field value if set, zero value otherwise.
+func (o *RESTConnectionAttributes) GetCreateEntitlementJSON() string {
+	if o == nil || IsNil(o.CreateEntitlementJSON) {
+		var ret string
+		return ret
+	}
+	return *o.CreateEntitlementJSON
+}
+
+// GetCreateEntitlementJSONOk returns a tuple with the CreateEntitlementJSON field value if set, nil otherwise
+// and a boolean to check if the value has been set.
+func (o *RESTConnectionAttributes) GetCreateEntitlementJSONOk() (*string, bool) {
+	if o == nil || IsNil(o.CreateEntitlementJSON) {
+		return nil, false
+	}
+	return o.CreateEntitlementJSON, true
+}
+
+// HasCreateEntitlementJSON returns a boolean if a field has been set.
+func (o *RESTConnectionAttributes) HasCreateEntitlementJSON() bool {
+	if o != nil && !IsNil(o.CreateEntitlementJSON) {
+		return true
+	}
+
+	return false
+}
+
+// SetCreateEntitlementJSON gets a reference to the given string and assigns it to the CreateEntitlementJSON field.
+func (o *RESTConnectionAttributes) SetCreateEntitlementJSON(v string) {
+	o.CreateEntitlementJSON = &v
+}
+
+// GetUpdateEntitlementJSON returns the UpdateEntitlementJSON field value if set, zero value otherwise.
+func (o *RESTConnectionAttributes) GetUpdateEntitlementJSON() string {
+	if o == nil || IsNil(o.UpdateEntitlementJSON) {
+		var ret string
+		return ret
+	}
+	return *o.UpdateEntitlementJSON
+}
+
+// GetUpdateEntitlementJSONOk returns a tuple with the UpdateEntitlementJSON field value if set, nil otherwise
+// and a boolean to check if the value has been set.
+func (o *RESTConnectionAttributes) GetUpdateEntitlementJSONOk() (*string, bool) {
+	if o == nil || IsNil(o.UpdateEntitlementJSON) {
+		return nil, false
+	}
+	return o.UpdateEntitlementJSON, true
+}
+
+// HasUpdateEntitlementJSON returns a boolean if a field has been set.
+func (o *RESTConnectionAttributes) HasUpdateEntitlementJSON() bool {
+	if o != nil && !IsNil(o.UpdateEntitlementJSON) {
+		return true
+	}
+
+	return false
+}
+
+// SetUpdateEntitlementJSON gets a reference to the given string and assigns it to the UpdateEntitlementJSON field.
+func (o *RESTConnectionAttributes) SetUpdateEntitlementJSON(v string) {
+	o.UpdateEntitlementJSON = &v
+}
+
+// GetDeleteEntitlementJSON returns the DeleteEntitlementJSON field value if set, zero value otherwise.
+func (o *RESTConnectionAttributes) GetDeleteEntitlementJSON() string {
+	if o == nil || IsNil(o.DeleteEntitlementJSON) {
+		var ret string
+		return ret
+	}
+	return *o.DeleteEntitlementJSON
+}
+
+// GetDeleteEntitlementJSONOk returns a tuple with the DeleteEntitlementJSON field value if set, nil otherwise
+// and a boolean to check if the value has been set.
+func (o *RESTConnectionAttributes) GetDeleteEntitlementJSONOk() (*string, bool) {
+	if o == nil || IsNil(o.DeleteEntitlementJSON) {
+		return nil, false
+	}
+	return o.DeleteEntitlementJSON, true
+}
+
+// HasDeleteEntitlementJSON returns a boolean if a field has been set.
+func (o *RESTConnectionAttributes) HasDeleteEntitlementJSON() bool {
+	if o != nil && !IsNil(o.DeleteEntitlementJSON) {
+		return true
+	}
+
+	return false
+}
+
+// SetDeleteEntitlementJSON gets a reference to the given string and assigns it to the DeleteEntitlementJSON field.
+func (o *RESTConnectionAttributes) SetDeleteEntitlementJSON(v string) {
+	o.DeleteEntitlementJSON = &v
+}
+
+// GetApplicationDiscoveryJSON returns the ApplicationDiscoveryJSON field value if set, zero value otherwise.
+func (o *RESTConnectionAttributes) GetApplicationDiscoveryJSON() string {
+	if o == nil || IsNil(o.ApplicationDiscoveryJSON) {
+		var ret string
+		return ret
+	}
+	return *o.ApplicationDiscoveryJSON
+}
+
+// GetApplicationDiscoveryJSONOk returns a tuple with the ApplicationDiscoveryJSON field value if set, nil otherwise
+// and a boolean to check if the value has been set.
+func (o *RESTConnectionAttributes) GetApplicationDiscoveryJSONOk() (*string, bool) {
+	if o == nil || IsNil(o.ApplicationDiscoveryJSON) {
+		return nil, false
+	}
+	return o.ApplicationDiscoveryJSON, true
+}
+
+// HasApplicationDiscoveryJSON returns a boolean if a field has been set.
+func (o *RESTConnectionAttributes) HasApplicationDiscoveryJSON() bool {
+	if o != nil && !IsNil(o.ApplicationDiscoveryJSON) {
+		return true
+	}
+
+	return false
+}
+
+// SetApplicationDiscoveryJSON gets a reference to the given string and assigns it to the ApplicationDiscoveryJSON field.
+func (o *RESTConnectionAttributes) SetApplicationDiscoveryJSON(v string) {
+	o.ApplicationDiscoveryJSON = &v
 }
 
 // GetRemoveAccountJSON returns the RemoveAccountJSON field value if set, zero value otherwise.
@@ -967,7 +1099,7 @@ func (o *RESTConnectionAttributes) SetConnectionJSON(v string) {
 }
 
 func (o RESTConnectionAttributes) MarshalJSON() ([]byte, error) {
-	toSerialize, err := o.ToMap()
+	toSerialize,err := o.ToMap()
 	if err != nil {
 		return []byte{}, err
 	}
@@ -981,6 +1113,18 @@ func (o RESTConnectionAttributes) ToMap() (map[string]interface{}, error) {
 	}
 	if !IsNil(o.ChangePassJSON) {
 		toSerialize["ChangePassJSON"] = o.ChangePassJSON
+	}
+	if !IsNil(o.CreateEntitlementJSON) {
+		toSerialize["CreateEntitlementJSON"] = o.CreateEntitlementJSON
+	}
+	if !IsNil(o.UpdateEntitlementJSON) {
+		toSerialize["UpdateEntitlementJSON"] = o.UpdateEntitlementJSON
+	}
+	if !IsNil(o.DeleteEntitlementJSON) {
+		toSerialize["DeleteEntitlementJSON"] = o.DeleteEntitlementJSON
+	}
+	if !IsNil(o.ApplicationDiscoveryJSON) {
+		toSerialize["ApplicationDiscoveryJSON"] = o.ApplicationDiscoveryJSON
 	}
 	if !IsNil(o.RemoveAccountJSON) {
 		toSerialize["RemoveAccountJSON"] = o.RemoveAccountJSON
@@ -1098,3 +1242,5 @@ func (v *NullableRESTConnectionAttributes) UnmarshalJSON(src []byte) error {
 	v.isSet = true
 	return json.Unmarshal(src, &v.value)
 }
+
+

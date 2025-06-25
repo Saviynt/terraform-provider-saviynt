@@ -19,9 +19,9 @@ var _ MappedNullable = &CreateOrUpdateResponse{}
 
 // CreateOrUpdateResponse struct for CreateOrUpdateResponse
 type CreateOrUpdateResponse struct {
-	ConnectionKey *int32  `json:"connectionKey,omitempty"`
-	Msg           *string `json:"msg,omitempty"`
-	ErrorCode     *string `json:"errorCode,omitempty"`
+	ConnectionKey *int32 `json:"connectionKey,omitempty"`
+	Msg *string `json:"msg,omitempty"`
+	ErrorCode *string `json:"errorCode,omitempty"`
 }
 
 // NewCreateOrUpdateResponse instantiates a new CreateOrUpdateResponse object
@@ -138,7 +138,7 @@ func (o *CreateOrUpdateResponse) SetErrorCode(v string) {
 }
 
 func (o CreateOrUpdateResponse) MarshalJSON() ([]byte, error) {
-	toSerialize, err := o.ToMap()
+	toSerialize,err := o.ToMap()
 	if err != nil {
 		return []byte{}, err
 	}
@@ -194,3 +194,5 @@ func (v *NullableCreateOrUpdateResponse) UnmarshalJSON(src []byte) error {
 	v.isSet = true
 	return json.Unmarshal(src, &v.value)
 }
+
+

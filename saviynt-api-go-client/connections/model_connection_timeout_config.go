@@ -23,7 +23,7 @@ type ConnectionTimeoutConfig struct {
 	RetryWait *int32 `json:"retryWait,omitempty"`
 	// Maximum number of retries for token refresh.
 	TokenRefreshMaxTryCount *int32 `json:"tokenRefreshMaxTryCount,omitempty"`
-	RetryFailureStatusCode  *int32 `json:"retryFailureStatusCode,omitempty"`
+	RetryFailureStatusCode *int32 `json:"retryFailureStatusCode,omitempty"`
 	// Maximum wait time for retries.
 	RetryWaitMaxValue *int32 `json:"retryWaitMaxValue,omitempty"`
 	// Number of retry attempts allowed.
@@ -276,7 +276,7 @@ func (o *ConnectionTimeoutConfig) SetConnectionTimeout(v int32) {
 }
 
 func (o ConnectionTimeoutConfig) MarshalJSON() ([]byte, error) {
-	toSerialize, err := o.ToMap()
+	toSerialize,err := o.ToMap()
 	if err != nil {
 		return []byte{}, err
 	}
@@ -344,3 +344,5 @@ func (v *NullableConnectionTimeoutConfig) UnmarshalJSON(src []byte) error {
 	v.isSet = true
 	return json.Unmarshal(src, &v.value)
 }
+
+

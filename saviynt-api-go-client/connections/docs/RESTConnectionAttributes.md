@@ -6,6 +6,10 @@ Name | Type | Description | Notes
 ------------ | ------------- | ------------- | -------------
 **UpdateUserJSON** | Pointer to **string** | Property for UpdateUserJSON | [optional] 
 **ChangePassJSON** | Pointer to **string** |  | [optional] 
+**CreateEntitlementJSON** | Pointer to **string** |  | [optional] 
+**UpdateEntitlementJSON** | Pointer to **string** |  | [optional] 
+**DeleteEntitlementJSON** | Pointer to **string** |  | [optional] 
+**ApplicationDiscoveryJSON** | Pointer to **string** |  | [optional] 
 **RemoveAccountJSON** | Pointer to **string** |  | [optional] 
 **TicketStatusJSON** | Pointer to **string** |  | [optional] 
 **CreateTicketJSON** | Pointer to **string** |  | [optional] 
@@ -101,6 +105,106 @@ SetChangePassJSON sets ChangePassJSON field to given value.
 `func (o *RESTConnectionAttributes) HasChangePassJSON() bool`
 
 HasChangePassJSON returns a boolean if a field has been set.
+
+### GetCreateEntitlementJSON
+
+`func (o *RESTConnectionAttributes) GetCreateEntitlementJSON() string`
+
+GetCreateEntitlementJSON returns the CreateEntitlementJSON field if non-nil, zero value otherwise.
+
+### GetCreateEntitlementJSONOk
+
+`func (o *RESTConnectionAttributes) GetCreateEntitlementJSONOk() (*string, bool)`
+
+GetCreateEntitlementJSONOk returns a tuple with the CreateEntitlementJSON field if it's non-nil, zero value otherwise
+and a boolean to check if the value has been set.
+
+### SetCreateEntitlementJSON
+
+`func (o *RESTConnectionAttributes) SetCreateEntitlementJSON(v string)`
+
+SetCreateEntitlementJSON sets CreateEntitlementJSON field to given value.
+
+### HasCreateEntitlementJSON
+
+`func (o *RESTConnectionAttributes) HasCreateEntitlementJSON() bool`
+
+HasCreateEntitlementJSON returns a boolean if a field has been set.
+
+### GetUpdateEntitlementJSON
+
+`func (o *RESTConnectionAttributes) GetUpdateEntitlementJSON() string`
+
+GetUpdateEntitlementJSON returns the UpdateEntitlementJSON field if non-nil, zero value otherwise.
+
+### GetUpdateEntitlementJSONOk
+
+`func (o *RESTConnectionAttributes) GetUpdateEntitlementJSONOk() (*string, bool)`
+
+GetUpdateEntitlementJSONOk returns a tuple with the UpdateEntitlementJSON field if it's non-nil, zero value otherwise
+and a boolean to check if the value has been set.
+
+### SetUpdateEntitlementJSON
+
+`func (o *RESTConnectionAttributes) SetUpdateEntitlementJSON(v string)`
+
+SetUpdateEntitlementJSON sets UpdateEntitlementJSON field to given value.
+
+### HasUpdateEntitlementJSON
+
+`func (o *RESTConnectionAttributes) HasUpdateEntitlementJSON() bool`
+
+HasUpdateEntitlementJSON returns a boolean if a field has been set.
+
+### GetDeleteEntitlementJSON
+
+`func (o *RESTConnectionAttributes) GetDeleteEntitlementJSON() string`
+
+GetDeleteEntitlementJSON returns the DeleteEntitlementJSON field if non-nil, zero value otherwise.
+
+### GetDeleteEntitlementJSONOk
+
+`func (o *RESTConnectionAttributes) GetDeleteEntitlementJSONOk() (*string, bool)`
+
+GetDeleteEntitlementJSONOk returns a tuple with the DeleteEntitlementJSON field if it's non-nil, zero value otherwise
+and a boolean to check if the value has been set.
+
+### SetDeleteEntitlementJSON
+
+`func (o *RESTConnectionAttributes) SetDeleteEntitlementJSON(v string)`
+
+SetDeleteEntitlementJSON sets DeleteEntitlementJSON field to given value.
+
+### HasDeleteEntitlementJSON
+
+`func (o *RESTConnectionAttributes) HasDeleteEntitlementJSON() bool`
+
+HasDeleteEntitlementJSON returns a boolean if a field has been set.
+
+### GetApplicationDiscoveryJSON
+
+`func (o *RESTConnectionAttributes) GetApplicationDiscoveryJSON() string`
+
+GetApplicationDiscoveryJSON returns the ApplicationDiscoveryJSON field if non-nil, zero value otherwise.
+
+### GetApplicationDiscoveryJSONOk
+
+`func (o *RESTConnectionAttributes) GetApplicationDiscoveryJSONOk() (*string, bool)`
+
+GetApplicationDiscoveryJSONOk returns a tuple with the ApplicationDiscoveryJSON field if it's non-nil, zero value otherwise
+and a boolean to check if the value has been set.
+
+### SetApplicationDiscoveryJSON
+
+`func (o *RESTConnectionAttributes) SetApplicationDiscoveryJSON(v string)`
+
+SetApplicationDiscoveryJSON sets ApplicationDiscoveryJSON field to given value.
+
+### HasApplicationDiscoveryJSON
+
+`func (o *RESTConnectionAttributes) HasApplicationDiscoveryJSON() bool`
+
+HasApplicationDiscoveryJSON returns a boolean if a field has been set.
 
 ### GetRemoveAccountJSON
 

@@ -1,7 +1,3 @@
-# Copyright (c) Saviynt Inc.
-# SPDX-License-Identifier: MPL-2.0
-
-
 openapi: 3.1.0
 info:
   description: |-
@@ -1273,10 +1269,7 @@ components:
       - $ref: '#/components/schemas/BaseConnector'
       - properties:
           ConnectionJSON:
-            additionalProperties: true
-            example: |
-              {'authentications': {'Slack': {'authType': 'oauth2', 'url': 'https://api.slack.com', 'httpMethod': 'POST', 'httpParams': {}, 'httpHeaders': {'contentType': 'application/x-www-form-urlencoded'}, 'httpContentType': 'application/x-www-form-urlencoded', 'expiryError': 'ExpiredAuthenticationToken', 'authError': ['InvalidAuthenticationToken', 'AuthenticationFailed'], 'timeOutError': 'Read timed out', 'errorPath': 'error.code', 'maxRefreshTryCount': 5, 'tokenResponsePath': 'access_token', 'tokenType': 'Bearer', 'accessToken': 'Bearer @ACCESS_TOKEN@', 'testConnectionParams': {'http': {'url': 'https://api.slack.com/scim/v1/Users?startIndex=1&count=1', 'httpHeaders': {'Authorization': '${access_token}'}, 'httpContentType': 'application/x-www-form-urlencoded', 'httpMethod': 'GET'}, 'successResponses': {'statusCode': [200]}, 'errors': ['invalid_authentication'], 'errorPath': 'Errors.description'}}}}
-            type: object
+            type: string
           ImportUserJSON:
             description: Property for ImportUserJSON
             type: string
@@ -1863,6 +1856,74 @@ components:
           PAM_CONFIG:
             description: Property for PAM_CONFIG
             type: string
+    OktaConnector:
+      allOf:
+      - $ref: '#/components/schemas/BaseConnector'
+      - properties:
+          IMPORTURL:
+            description: ""
+            example: ""
+            type: string
+          AUTHTOKEN:
+            description: ""
+            example: ""
+            type: string
+          ACCOUNTFIELDMAPPINGS:
+            description: ""
+            example: ""
+            type: string
+          USERFIELDMAPPINGS:
+            description: ""
+            example: ""
+            type: string
+          ENTITLEMENTTYPESMAPPINGS:
+            description: ""
+            example: ""
+            type: string
+          IMPORT_INACTIVE_APPS:
+            description: ""
+            example: ""
+            type: string
+          OKTA_APPLICATION_SECURITYSYSTEM:
+            description: ""
+            example: ""
+            type: string
+          OKTA_GROUPS_FILTER:
+            description: ""
+            example: ""
+            type: string
+          APPACCOUNTFIELDMAPPINGS:
+            description: ""
+            example: ""
+            type: string
+          STATUS_THRESHOLD_CONFIG:
+            description: ""
+            example: ""
+            type: string
+          AUDIT_FILTER:
+            description: ""
+            example: ""
+            type: string
+          MODIFYUSERDATAJSON:
+            description: ""
+            example: ""
+            type: string
+          ACTIVATE_ENDPOINT:
+            description: ""
+            example: ""
+            type: string
+          ConfigJSON:
+            description: ""
+            example: ""
+            type: string
+          PAM_CONFIG:
+            description: ""
+            example: ""
+            type: string
+        required:
+        - AUTHTOKEN
+        - IMPORTURL
+        - OKTA_APPLICATION_SECURITYSYSTEM
     CreateOrUpdateResponse:
       example:
         msg: Connection Successful
@@ -1932,6 +1993,7 @@ components:
           Salesforce: '#/components/schemas/SalesforceConnectionResponse'
           UNIX: '#/components/schemas/UNIXConnectionResponse'
           GithubREST: '#/components/schemas/GithubRESTResponse'
+          Okta: '#/components/schemas/OktaConnectionResponse'
         propertyName: connectiontype
       oneOf:
       - $ref: '#/components/schemas/ADConnectionResponse'
@@ -1944,6 +2006,7 @@ components:
       - $ref: '#/components/schemas/SalesforceConnectionResponse'
       - $ref: '#/components/schemas/UNIXConnectionResponse'
       - $ref: '#/components/schemas/GithubRESTConnectionResponse'
+      - $ref: '#/components/schemas/OktaConnectionResponse'
     getConnectionDetails:
       properties:
         msg:
@@ -2188,6 +2251,12 @@ components:
       - properties:
           connectionattributes:
             $ref: '#/components/schemas/GithubRESTConnectionAttributes'
+    OktaConnectionResponse:
+      allOf:
+      - $ref: '#/components/schemas/getConnectionDetails'
+      - properties:
+          connectionattributes:
+            $ref: '#/components/schemas/OktaConnectionAttributes'
     ConnectionTimeoutConfig:
       example:
         retryWait: 0
@@ -2637,6 +2706,14 @@ components:
           type: string
         ChangePassJSON:
           type: string
+        CreateEntitlementJSON:
+          type: string
+        UpdateEntitlementJSON:
+          type: string
+        DeleteEntitlementJSON:
+          type: string
+        ApplicationDiscoveryJSON:
+          type: string
         RemoveAccountJSON:
           example: |
             {'call': [{'name': 'call1', 'connection': 'Slack', 'url': 'https://api.slack.com/scim/v1/Users/${account.accountID}', 'httpMethod': 'DELETE', 'httpHeaders': {'Authorization': '${access_token}'}, 'httpContentType': 'application/json', 'successResponses': {'statusCode': [200, 204, 201]}}]}
@@ -2741,6 +2818,8 @@ components:
             \ Status, UPDATEDATE) VALUES (\"${user.username}\", DEFAULT, BASE_ACCESS,\
             \ 1, CURRENT_TIMESTAMP)\"]}"
           type: string
+        ENTITLEMENTEXISTJSON:
+          type: string
         USERIMPORT:
           example: |-
             <dataMapping>
@@ -2821,6 +2900,8 @@ components:
         URL:
           example: jdbc:mysql://34.139.69.20:3306
           type: string
+        UPDATEENTITLEMENTJSON:
+          type: string
         SYSTEMIMPORT:
           type: string
         DRIVERNAME:
@@ -2831,6 +2912,8 @@ components:
             \ = ${user.username}\",\"DELETE FROM mysqllocal.accounts WHERE AccountName\
             \ = ${user.username}\"]}"
           type: string
+        CREATEENTITLEMENTJSON:
+          type: string
         STATUS_THRESHOLD_CONFIG:
           type: string
         USERNAME:
@@ -2839,6 +2922,8 @@ components:
         isTimeoutSupported:
           example: true
           type: boolean
+        DELETEENTITLEMENTJSON:
+          type: string
         PASSWORD_NOOFCAPSALPHA:
           type: string
         PASSWORD_NOOFDIGITS:
@@ -3830,6 +3915,64 @@ components:
         isTimeoutConfigValidated:
           example: false
           type: boolean
+    OktaConnectionAttributes:
+      properties:
+        IMPORTURL:
+          example: ""
+          type: string
+        AUTHTOKEN:
+          example: ""
+          type: string
+        isTimeoutSupported:
+          example: true
+          type: boolean
+        OKTA_GROUPS_FILTER:
+          example: ""
+          type: string
+        ACCOUNTFIELDMAPPINGS:
+          example: ""
+          type: string
+        IMPORT_INACTIVE_APPS:
+          example: "FALSE"
+          type: string
+        AUDIT_FILTER:
+          example: ""
+          type: string
+        USERFIELDMAPPINGS:
+          example: ""
+          type: string
+        APPACCOUNTFIELDMAPPINGS:
+          example: ""
+          type: string
+        MODIFYUSERDATAJSON:
+          example: ""
+          type: string
+        connectionTimeoutConfig:
+          $ref: '#/components/schemas/ConnectionTimeoutConfig'
+        connectionType:
+          example: MS_BASED_CONNECTOR
+          type: string
+        isTimeoutConfigValidated:
+          example: false
+          type: boolean
+        ACTIVATE_ENDPOINT:
+          example: ""
+          type: string
+        ENTITLEMENTTYPESMAPPINGS:
+          example: ""
+          type: string
+        OKTA_APPLICATION_SECURITYSYSTEM:
+          example: ""
+          type: string
+        PAM_CONFIG:
+          example: ""
+          type: string
+        ConfigJSON:
+          example: ""
+          type: string
+        STATUS_THRESHOLD_CONFIG:
+          example: ""
+          type: string
     createOrUpdate_request:
       discriminator:
         mapping:
@@ -3844,6 +3987,7 @@ components:
           EntraID: '#/components/schemas/EntraIDConnector'
           UNIX: '#/components/schemas/UNIXConnector'
           GithubREST: '#/components/schemas/GithubRESTConnector'
+          Okta: '#/components/schemas/OktaConnector'
         propertyName: connectiontype
       oneOf:
       - $ref: '#/components/schemas/ADConnector'
@@ -3857,6 +4001,7 @@ components:
       - $ref: '#/components/schemas/EntraIDConnector'
       - $ref: '#/components/schemas/UNIXConnector'
       - $ref: '#/components/schemas/GithubRESTConnector'
+      - $ref: '#/components/schemas/OktaConnector'
     getConnections_request:
       properties:
         connectionname:

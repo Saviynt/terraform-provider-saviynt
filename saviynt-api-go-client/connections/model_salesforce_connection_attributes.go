@@ -19,26 +19,26 @@ var _ MappedNullable = &SalesforceConnectionAttributes{}
 
 // SalesforceConnectionAttributes struct for SalesforceConnectionAttributes
 type SalesforceConnectionAttributes struct {
-	IsTimeoutSupported       *bool                    `json:"isTimeoutSupported,omitempty"`
-	CLIENT_SECRET            *string                  `json:"CLIENT_SECRET,omitempty"`
-	OBJECT_TO_BE_IMPORTED    *string                  `json:"OBJECT_TO_BE_IMPORTED,omitempty"`
-	FEATURE_LICENSE_JSON     *string                  `json:"FEATURE_LICENSE_JSON,omitempty"`
-	CREATEACCOUNTJSON        *string                  `json:"CREATEACCOUNTJSON,omitempty"`
-	REDIRECT_URI             *string                  `json:"REDIRECT_URI,omitempty"`
-	REFRESH_TOKEN            *string                  `json:"REFRESH_TOKEN,omitempty"`
-	ConnectionTimeoutConfig  *ConnectionTimeoutConfig `json:"connectionTimeoutConfig,omitempty"`
-	MODIFYACCOUNTJSON        *string                  `json:"MODIFYACCOUNTJSON,omitempty"`
-	ConnectionType           *string                  `json:"connectionType,omitempty"`
-	IsTimeoutConfigValidated *bool                    `json:"isTimeoutConfigValidated,omitempty"`
-	CLIENT_ID                *string                  `json:"CLIENT_ID,omitempty"`
-	PAM_CONFIG               *string                  `json:"PAM_CONFIG,omitempty"`
-	CUSTOMCONFIGJSON         *string                  `json:"CUSTOMCONFIGJSON,omitempty"`
-	FIELD_MAPPING_JSON       *string                  `json:"FIELD_MAPPING_JSON,omitempty"`
-	STATUS_THRESHOLD_CONFIG  *string                  `json:"STATUS_THRESHOLD_CONFIG,omitempty"`
-	ACCOUNT_FIELD_QUERY      *string                  `json:"ACCOUNT_FIELD_QUERY,omitempty"`
-	CUSTOM_CREATEACCOUNT_URL *string                  `json:"CUSTOM_CREATEACCOUNT_URL,omitempty"`
-	ACCOUNT_FILTER_QUERY     *string                  `json:"ACCOUNT_FILTER_QUERY,omitempty"`
-	INSTANCE_URL             *string                  `json:"INSTANCE_URL,omitempty"`
+	IsTimeoutSupported *bool `json:"isTimeoutSupported,omitempty"`
+	CLIENT_SECRET *string `json:"CLIENT_SECRET,omitempty"`
+	OBJECT_TO_BE_IMPORTED *string `json:"OBJECT_TO_BE_IMPORTED,omitempty"`
+	FEATURE_LICENSE_JSON *string `json:"FEATURE_LICENSE_JSON,omitempty"`
+	CREATEACCOUNTJSON *string `json:"CREATEACCOUNTJSON,omitempty"`
+	REDIRECT_URI *string `json:"REDIRECT_URI,omitempty"`
+	REFRESH_TOKEN *string `json:"REFRESH_TOKEN,omitempty"`
+	ConnectionTimeoutConfig *ConnectionTimeoutConfig `json:"connectionTimeoutConfig,omitempty"`
+	MODIFYACCOUNTJSON *string `json:"MODIFYACCOUNTJSON,omitempty"`
+	ConnectionType *string `json:"connectionType,omitempty"`
+	IsTimeoutConfigValidated *bool `json:"isTimeoutConfigValidated,omitempty"`
+	CLIENT_ID *string `json:"CLIENT_ID,omitempty"`
+	PAM_CONFIG *string `json:"PAM_CONFIG,omitempty"`
+	CUSTOMCONFIGJSON *string `json:"CUSTOMCONFIGJSON,omitempty"`
+	FIELD_MAPPING_JSON *string `json:"FIELD_MAPPING_JSON,omitempty"`
+	STATUS_THRESHOLD_CONFIG *string `json:"STATUS_THRESHOLD_CONFIG,omitempty"`
+	ACCOUNT_FIELD_QUERY *string `json:"ACCOUNT_FIELD_QUERY,omitempty"`
+	CUSTOM_CREATEACCOUNT_URL *string `json:"CUSTOM_CREATEACCOUNT_URL,omitempty"`
+	ACCOUNT_FILTER_QUERY *string `json:"ACCOUNT_FILTER_QUERY,omitempty"`
+	INSTANCE_URL *string `json:"INSTANCE_URL,omitempty"`
 }
 
 // NewSalesforceConnectionAttributes instantiates a new SalesforceConnectionAttributes object
@@ -699,7 +699,7 @@ func (o *SalesforceConnectionAttributes) SetINSTANCE_URL(v string) {
 }
 
 func (o SalesforceConnectionAttributes) MarshalJSON() ([]byte, error) {
-	toSerialize, err := o.ToMap()
+	toSerialize,err := o.ToMap()
 	if err != nil {
 		return []byte{}, err
 	}
@@ -806,3 +806,5 @@ func (v *NullableSalesforceConnectionAttributes) UnmarshalJSON(src []byte) error
 	v.isSet = true
 	return json.Unmarshal(src, &v.value)
 }
+
+

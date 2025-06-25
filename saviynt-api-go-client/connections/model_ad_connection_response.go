@@ -38,9 +38,9 @@ type ADConnectionResponse struct {
 	// Creator account for the connection
 	Createdby *string `json:"createdby,omitempty"`
 	// Error code
-	Errorcode            *int32                  `json:"errorcode,omitempty"`
-	Status               *int32                  `json:"status,omitempty"`
-	Defaultsavroles      *string                 `json:"defaultsavroles,omitempty"`
+	Errorcode *int32 `json:"errorcode,omitempty"`
+	Status *int32 `json:"status,omitempty"`
+	Defaultsavroles *string `json:"defaultsavroles,omitempty"`
 	Connectionattributes *ADConnectionAttributes `json:"connectionattributes,omitempty"`
 }
 
@@ -478,7 +478,7 @@ func (o *ADConnectionResponse) SetConnectionattributes(v ADConnectionAttributes)
 }
 
 func (o ADConnectionResponse) MarshalJSON() ([]byte, error) {
-	toSerialize, err := o.ToMap()
+	toSerialize,err := o.ToMap()
 	if err != nil {
 		return []byte{}, err
 	}
@@ -564,3 +564,5 @@ func (v *NullableADConnectionResponse) UnmarshalJSON(src []byte) error {
 	v.isSet = true
 	return json.Unmarshal(src, &v.value)
 }
+
+

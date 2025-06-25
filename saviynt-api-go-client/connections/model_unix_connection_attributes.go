@@ -19,44 +19,44 @@ var _ MappedNullable = &UNIXConnectionAttributes{}
 
 // UNIXConnectionAttributes struct for UNIXConnectionAttributes
 type UNIXConnectionAttributes struct {
-	GROUPS_FILE                         *string                  `json:"GROUPS_FILE,omitempty"`
-	SSH_KEY                             *string                  `json:"SSH_KEY,omitempty"`
-	ACCOUNT_ENTITLEMENT_MAPPING_COMMAND *string                  `json:"ACCOUNT_ENTITLEMENT_MAPPING_COMMAND,omitempty"`
-	REMOVE_ACCESS_COMMAND               *string                  `json:"REMOVE_ACCESS_COMMAND,omitempty"`
-	PEM_KEY_FILE                        *string                  `json:"PEM_KEY_FILE,omitempty"`
-	PassThroughConnectionDetails        *string                  `json:"PassThroughConnectionDetails,omitempty"`
-	DISABLE_ACCOUNT_COMMAND             *string                  `json:"DISABLE_ACCOUNT_COMMAND,omitempty"`
-	ConnectionTimeoutConfig             *ConnectionTimeoutConfig `json:"connectionTimeoutConfig,omitempty"`
-	PORT_NUMBER                         *string                  `json:"PORT_NUMBER,omitempty"`
-	ConnectionType                      *string                  `json:"connectionType,omitempty"`
-	CREATE_GROUP_COMMAND                *string                  `json:"CREATE_GROUP_COMMAND,omitempty"`
-	ACCOUNTS_FILE                       *string                  `json:"ACCOUNTS_FILE,omitempty"`
-	PASSPHRASE                          *string                  `json:"PASSPHRASE,omitempty"`
-	DELETE_GROUP_COMMAND                *string                  `json:"DELETE_GROUP_COMMAND,omitempty"`
-	HOST_NAME                           *string                  `json:"HOST_NAME,omitempty"`
-	ADD_GROUP_OWNER_COMMAND             *string                  `json:"ADD_GROUP_OWNER_COMMAND,omitempty"`
-	STATUS_THRESHOLD_CONFIG             *string                  `json:"STATUS_THRESHOLD_CONFIG,omitempty"`
-	USERNAME                            *string                  `json:"USERNAME,omitempty"`
-	INACTIVE_LOCK_ACCOUNT               *string                  `json:"INACTIVE_LOCK_ACCOUNT,omitempty"`
-	ADD_ACCESS_COMMAND                  *string                  `json:"ADD_ACCESS_COMMAND,omitempty"`
-	UPDATE_ACCOUNT_COMMAND              *string                  `json:"UPDATE_ACCOUNT_COMMAND,omitempty"`
-	SSHPassThroughPassphrase            *string                  `json:"SSHPassThroughPassphrase,omitempty"`
-	SHADOW_FILE                         *string                  `json:"SHADOW_FILE,omitempty"`
-	IsTimeoutSupported                  *bool                    `json:"isTimeoutSupported,omitempty"`
-	SSHPassThroughSSHKEY                *string                  `json:"SSHPassThroughSSHKEY,omitempty"`
-	PROVISION_ACCOUNT_COMMAND           *string                  `json:"PROVISION_ACCOUNT_COMMAND,omitempty"`
-	FIREFIGHTERID_GRANT_ACCESS_COMMAND  *string                  `json:"FIREFIGHTERID_GRANT_ACCESS_COMMAND,omitempty"`
-	UNLOCK_ACCOUNT_COMMAND              *string                  `json:"UNLOCK_ACCOUNT_COMMAND,omitempty"`
-	DEPROVISION_ACCOUNT_COMMAND         *string                  `json:"DEPROVISION_ACCOUNT_COMMAND,omitempty"`
-	CHANGE_PASSWRD_JSON                 *string                  `json:"CHANGE_PASSWRD_JSON,omitempty"`
-	SSHPassThroughPassword              *string                  `json:"SSHPassThroughPassword,omitempty"`
-	FIREFIGHTERID_REVOKE_ACCESS_COMMAND *string                  `json:"FIREFIGHTERID_REVOKE_ACCESS_COMMAND,omitempty"`
-	ADD_PRIMARY_GROUP_COMMAND           *string                  `json:"ADD_PRIMARY_GROUP_COMMAND,omitempty"`
-	IsTimeoutConfigValidated            *bool                    `json:"isTimeoutConfigValidated,omitempty"`
-	LOCK_ACCOUNT_COMMAND                *string                  `json:"LOCK_ACCOUNT_COMMAND,omitempty"`
-	PASSWORD                            *string                  `json:"PASSWORD,omitempty"`
-	CUSTOM_CONFIG_JSON                  *string                  `json:"CUSTOM_CONFIG_JSON,omitempty"`
-	ENABLE_ACCOUNT_COMMAND              *string                  `json:"ENABLE_ACCOUNT_COMMAND,omitempty"`
+	GROUPS_FILE *string `json:"GROUPS_FILE,omitempty"`
+	SSH_KEY *string `json:"SSH_KEY,omitempty"`
+	ACCOUNT_ENTITLEMENT_MAPPING_COMMAND *string `json:"ACCOUNT_ENTITLEMENT_MAPPING_COMMAND,omitempty"`
+	REMOVE_ACCESS_COMMAND *string `json:"REMOVE_ACCESS_COMMAND,omitempty"`
+	PEM_KEY_FILE *string `json:"PEM_KEY_FILE,omitempty"`
+	PassThroughConnectionDetails *string `json:"PassThroughConnectionDetails,omitempty"`
+	DISABLE_ACCOUNT_COMMAND *string `json:"DISABLE_ACCOUNT_COMMAND,omitempty"`
+	ConnectionTimeoutConfig *ConnectionTimeoutConfig `json:"connectionTimeoutConfig,omitempty"`
+	PORT_NUMBER *string `json:"PORT_NUMBER,omitempty"`
+	ConnectionType *string `json:"connectionType,omitempty"`
+	CREATE_GROUP_COMMAND *string `json:"CREATE_GROUP_COMMAND,omitempty"`
+	ACCOUNTS_FILE *string `json:"ACCOUNTS_FILE,omitempty"`
+	PASSPHRASE *string `json:"PASSPHRASE,omitempty"`
+	DELETE_GROUP_COMMAND *string `json:"DELETE_GROUP_COMMAND,omitempty"`
+	HOST_NAME *string `json:"HOST_NAME,omitempty"`
+	ADD_GROUP_OWNER_COMMAND *string `json:"ADD_GROUP_OWNER_COMMAND,omitempty"`
+	STATUS_THRESHOLD_CONFIG *string `json:"STATUS_THRESHOLD_CONFIG,omitempty"`
+	USERNAME *string `json:"USERNAME,omitempty"`
+	INACTIVE_LOCK_ACCOUNT *string `json:"INACTIVE_LOCK_ACCOUNT,omitempty"`
+	ADD_ACCESS_COMMAND *string `json:"ADD_ACCESS_COMMAND,omitempty"`
+	UPDATE_ACCOUNT_COMMAND *string `json:"UPDATE_ACCOUNT_COMMAND,omitempty"`
+	SSHPassThroughPassphrase *string `json:"SSHPassThroughPassphrase,omitempty"`
+	SHADOW_FILE *string `json:"SHADOW_FILE,omitempty"`
+	IsTimeoutSupported *bool `json:"isTimeoutSupported,omitempty"`
+	SSHPassThroughSSHKEY *string `json:"SSHPassThroughSSHKEY,omitempty"`
+	PROVISION_ACCOUNT_COMMAND *string `json:"PROVISION_ACCOUNT_COMMAND,omitempty"`
+	FIREFIGHTERID_GRANT_ACCESS_COMMAND *string `json:"FIREFIGHTERID_GRANT_ACCESS_COMMAND,omitempty"`
+	UNLOCK_ACCOUNT_COMMAND *string `json:"UNLOCK_ACCOUNT_COMMAND,omitempty"`
+	DEPROVISION_ACCOUNT_COMMAND *string `json:"DEPROVISION_ACCOUNT_COMMAND,omitempty"`
+	CHANGE_PASSWRD_JSON *string `json:"CHANGE_PASSWRD_JSON,omitempty"`
+	SSHPassThroughPassword *string `json:"SSHPassThroughPassword,omitempty"`
+	FIREFIGHTERID_REVOKE_ACCESS_COMMAND *string `json:"FIREFIGHTERID_REVOKE_ACCESS_COMMAND,omitempty"`
+	ADD_PRIMARY_GROUP_COMMAND *string `json:"ADD_PRIMARY_GROUP_COMMAND,omitempty"`
+	IsTimeoutConfigValidated *bool `json:"isTimeoutConfigValidated,omitempty"`
+	LOCK_ACCOUNT_COMMAND *string `json:"LOCK_ACCOUNT_COMMAND,omitempty"`
+	PASSWORD *string `json:"PASSWORD,omitempty"`
+	CUSTOM_CONFIG_JSON *string `json:"CUSTOM_CONFIG_JSON,omitempty"`
+	ENABLE_ACCOUNT_COMMAND *string `json:"ENABLE_ACCOUNT_COMMAND,omitempty"`
 }
 
 // NewUNIXConnectionAttributes instantiates a new UNIXConnectionAttributes object
@@ -1293,7 +1293,7 @@ func (o *UNIXConnectionAttributes) SetENABLE_ACCOUNT_COMMAND(v string) {
 }
 
 func (o UNIXConnectionAttributes) MarshalJSON() ([]byte, error) {
-	toSerialize, err := o.ToMap()
+	toSerialize,err := o.ToMap()
 	if err != nil {
 		return []byte{}, err
 	}
@@ -1454,3 +1454,5 @@ func (v *NullableUNIXConnectionAttributes) UnmarshalJSON(src []byte) error {
 	v.isSet = true
 	return json.Unmarshal(src, &v.value)
 }
+
+

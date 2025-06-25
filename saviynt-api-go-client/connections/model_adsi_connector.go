@@ -11,8 +11,8 @@ API version: 1.0.0
 package connections
 
 import (
-	"bytes"
 	"encoding/json"
+	"bytes"
 	"fmt"
 )
 
@@ -90,7 +90,7 @@ type ADSIConnector struct {
 	REMOVEGROUPJSON *string `json:"REMOVEGROUPJSON,omitempty"`
 	// Configuration to Add nested group hierarchy
 	ADDACCESSENTITLEMENTJSON *string `json:"ADDACCESSENTITLEMENTJSON,omitempty"`
-	CUSTOMCONFIGJSON         *string `json:"CUSTOMCONFIGJSON,omitempty"`
+	CUSTOMCONFIGJSON *string `json:"CUSTOMCONFIGJSON,omitempty"`
 	// Configuration to Remove nested group hierarchy
 	REMOVEACCESSENTITLEMENTJSON *string `json:"REMOVEACCESSENTITLEMENTJSON,omitempty"`
 	// Specify the Field Value which will be used to Create the New Service Account.
@@ -1404,7 +1404,7 @@ func (o *ADSIConnector) SetMODIFYUSERDATAJSON(v string) {
 }
 
 func (o ADSIConnector) MarshalJSON() ([]byte, error) {
-	toSerialize, err := o.ToMap()
+	toSerialize,err := o.ToMap()
 	if err != nil {
 		return []byte{}, err
 	}
@@ -1556,10 +1556,10 @@ func (o *ADSIConnector) UnmarshalJSON(data []byte) (err error) {
 	err = json.Unmarshal(data, &allProperties)
 
 	if err != nil {
-		return err
+		return err;
 	}
 
-	for _, requiredProperty := range requiredProperties {
+	for _, requiredProperty := range(requiredProperties) {
 		if _, exists := allProperties[requiredProperty]; !exists {
 			return fmt.Errorf("no value given for required property %v", requiredProperty)
 		}
@@ -1615,3 +1615,5 @@ func (v *NullableADSIConnector) UnmarshalJSON(src []byte) error {
 	v.isSet = true
 	return json.Unmarshal(src, &v.value)
 }
+
+

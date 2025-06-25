@@ -10,6 +10,7 @@ Name | Type | Description | Notes
 **ROLESIMPORT** | Pointer to **string** |  | [optional] 
 **ROLEOWNERIMPORT** | Pointer to **string** |  | [optional] 
 **CREATEACCOUNTJSON** | Pointer to **string** |  | [optional] 
+**ENTITLEMENTEXISTJSON** | Pointer to **string** |  | [optional] 
 **USERIMPORT** | Pointer to **string** |  | [optional] 
 **DISABLEACCOUNTJSON** | Pointer to **string** |  | [optional] 
 **ENTITLEMENTVALUEIMPORT** | Pointer to **string** |  | [optional] 
@@ -19,12 +20,15 @@ Name | Type | Description | Notes
 **REVOKEACCESSJSON** | Pointer to **string** |  | [optional] 
 **ConnectionType** | Pointer to **string** |  | [optional] 
 **URL** | Pointer to **string** |  | [optional] 
+**UPDATEENTITLEMENTJSON** | Pointer to **string** |  | [optional] 
 **SYSTEMIMPORT** | Pointer to **string** |  | [optional] 
 **DRIVERNAME** | Pointer to **string** |  | [optional] 
 **DELETEACCOUNTJSON** | Pointer to **string** |  | [optional] 
+**CREATEENTITLEMENTJSON** | Pointer to **string** |  | [optional] 
 **STATUS_THRESHOLD_CONFIG** | Pointer to **string** |  | [optional] 
 **USERNAME** | Pointer to **string** |  | [optional] 
 **IsTimeoutSupported** | Pointer to **bool** |  | [optional] 
+**DELETEENTITLEMENTJSON** | Pointer to **string** |  | [optional] 
 **PASSWORD_NOOFCAPSALPHA** | Pointer to **string** |  | [optional] 
 **PASSWORD_NOOFDIGITS** | Pointer to **string** |  | [optional] 
 **CONNECTIONPROPERTIES** | Pointer to **string** |  | [optional] 
@@ -207,6 +211,31 @@ SetCREATEACCOUNTJSON sets CREATEACCOUNTJSON field to given value.
 `func (o *DBConnectionAttributes) HasCREATEACCOUNTJSON() bool`
 
 HasCREATEACCOUNTJSON returns a boolean if a field has been set.
+
+### GetENTITLEMENTEXISTJSON
+
+`func (o *DBConnectionAttributes) GetENTITLEMENTEXISTJSON() string`
+
+GetENTITLEMENTEXISTJSON returns the ENTITLEMENTEXISTJSON field if non-nil, zero value otherwise.
+
+### GetENTITLEMENTEXISTJSONOk
+
+`func (o *DBConnectionAttributes) GetENTITLEMENTEXISTJSONOk() (*string, bool)`
+
+GetENTITLEMENTEXISTJSONOk returns a tuple with the ENTITLEMENTEXISTJSON field if it's non-nil, zero value otherwise
+and a boolean to check if the value has been set.
+
+### SetENTITLEMENTEXISTJSON
+
+`func (o *DBConnectionAttributes) SetENTITLEMENTEXISTJSON(v string)`
+
+SetENTITLEMENTEXISTJSON sets ENTITLEMENTEXISTJSON field to given value.
+
+### HasENTITLEMENTEXISTJSON
+
+`func (o *DBConnectionAttributes) HasENTITLEMENTEXISTJSON() bool`
+
+HasENTITLEMENTEXISTJSON returns a boolean if a field has been set.
 
 ### GetUSERIMPORT
 
@@ -433,6 +462,31 @@ SetURL sets URL field to given value.
 
 HasURL returns a boolean if a field has been set.
 
+### GetUPDATEENTITLEMENTJSON
+
+`func (o *DBConnectionAttributes) GetUPDATEENTITLEMENTJSON() string`
+
+GetUPDATEENTITLEMENTJSON returns the UPDATEENTITLEMENTJSON field if non-nil, zero value otherwise.
+
+### GetUPDATEENTITLEMENTJSONOk
+
+`func (o *DBConnectionAttributes) GetUPDATEENTITLEMENTJSONOk() (*string, bool)`
+
+GetUPDATEENTITLEMENTJSONOk returns a tuple with the UPDATEENTITLEMENTJSON field if it's non-nil, zero value otherwise
+and a boolean to check if the value has been set.
+
+### SetUPDATEENTITLEMENTJSON
+
+`func (o *DBConnectionAttributes) SetUPDATEENTITLEMENTJSON(v string)`
+
+SetUPDATEENTITLEMENTJSON sets UPDATEENTITLEMENTJSON field to given value.
+
+### HasUPDATEENTITLEMENTJSON
+
+`func (o *DBConnectionAttributes) HasUPDATEENTITLEMENTJSON() bool`
+
+HasUPDATEENTITLEMENTJSON returns a boolean if a field has been set.
+
 ### GetSYSTEMIMPORT
 
 `func (o *DBConnectionAttributes) GetSYSTEMIMPORT() string`
@@ -508,6 +562,31 @@ SetDELETEACCOUNTJSON sets DELETEACCOUNTJSON field to given value.
 
 HasDELETEACCOUNTJSON returns a boolean if a field has been set.
 
+### GetCREATEENTITLEMENTJSON
+
+`func (o *DBConnectionAttributes) GetCREATEENTITLEMENTJSON() string`
+
+GetCREATEENTITLEMENTJSON returns the CREATEENTITLEMENTJSON field if non-nil, zero value otherwise.
+
+### GetCREATEENTITLEMENTJSONOk
+
+`func (o *DBConnectionAttributes) GetCREATEENTITLEMENTJSONOk() (*string, bool)`
+
+GetCREATEENTITLEMENTJSONOk returns a tuple with the CREATEENTITLEMENTJSON field if it's non-nil, zero value otherwise
+and a boolean to check if the value has been set.
+
+### SetCREATEENTITLEMENTJSON
+
+`func (o *DBConnectionAttributes) SetCREATEENTITLEMENTJSON(v string)`
+
+SetCREATEENTITLEMENTJSON sets CREATEENTITLEMENTJSON field to given value.
+
+### HasCREATEENTITLEMENTJSON
+
+`func (o *DBConnectionAttributes) HasCREATEENTITLEMENTJSON() bool`
+
+HasCREATEENTITLEMENTJSON returns a boolean if a field has been set.
+
 ### GetSTATUS_THRESHOLD_CONFIG
 
 `func (o *DBConnectionAttributes) GetSTATUS_THRESHOLD_CONFIG() string`
@@ -582,6 +661,31 @@ SetIsTimeoutSupported sets IsTimeoutSupported field to given value.
 `func (o *DBConnectionAttributes) HasIsTimeoutSupported() bool`
 
 HasIsTimeoutSupported returns a boolean if a field has been set.
+
+### GetDELETEENTITLEMENTJSON
+
+`func (o *DBConnectionAttributes) GetDELETEENTITLEMENTJSON() string`
+
+GetDELETEENTITLEMENTJSON returns the DELETEENTITLEMENTJSON field if non-nil, zero value otherwise.
+
+### GetDELETEENTITLEMENTJSONOk
+
+`func (o *DBConnectionAttributes) GetDELETEENTITLEMENTJSONOk() (*string, bool)`
+
+GetDELETEENTITLEMENTJSONOk returns a tuple with the DELETEENTITLEMENTJSON field if it's non-nil, zero value otherwise
+and a boolean to check if the value has been set.
+
+### SetDELETEENTITLEMENTJSON
+
+`func (o *DBConnectionAttributes) SetDELETEENTITLEMENTJSON(v string)`
+
+SetDELETEENTITLEMENTJSON sets DELETEENTITLEMENTJSON field to given value.
+
+### HasDELETEENTITLEMENTJSON
+
+`func (o *DBConnectionAttributes) HasDELETEENTITLEMENTJSON() bool`
+
+HasDELETEENTITLEMENTJSON returns a boolean if a field has been set.
 
 ### GetPASSWORD_NOOFCAPSALPHA
 

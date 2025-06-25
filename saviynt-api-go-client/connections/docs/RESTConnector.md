@@ -4,7 +4,7 @@
 
 Name | Type | Description | Notes
 ------------ | ------------- | ------------- | -------------
-**ConnectionJSON** | Pointer to **map[string]interface{}** |  | [optional] 
+**ConnectionJSON** | Pointer to **string** |  | [optional] 
 **ImportUserJSON** | Pointer to **string** | Property for ImportUserJSON | [optional] 
 **ImportAccountEntJSON** | Pointer to **string** |  | [optional] 
 **STATUS_THRESHOLD_CONFIG** | Pointer to **string** |  | [optional] 
@@ -50,20 +50,20 @@ but it doesn't guarantee that properties required by API are set
 
 ### GetConnectionJSON
 
-`func (o *RESTConnector) GetConnectionJSON() map[string]interface{}`
+`func (o *RESTConnector) GetConnectionJSON() string`
 
 GetConnectionJSON returns the ConnectionJSON field if non-nil, zero value otherwise.
 
 ### GetConnectionJSONOk
 
-`func (o *RESTConnector) GetConnectionJSONOk() (*map[string]interface{}, bool)`
+`func (o *RESTConnector) GetConnectionJSONOk() (*string, bool)`
 
 GetConnectionJSONOk returns a tuple with the ConnectionJSON field if it's non-nil, zero value otherwise
 and a boolean to check if the value has been set.
 
 ### SetConnectionJSON
 
-`func (o *RESTConnector) SetConnectionJSON(v map[string]interface{})`
+`func (o *RESTConnector) SetConnectionJSON(v string)`
 
 SetConnectionJSON sets ConnectionJSON field to given value.
 
