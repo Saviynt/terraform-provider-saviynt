@@ -41,6 +41,11 @@ provider "saviynt" {
 - `server_url` (String) URL of Saviynt server.
 - `username` (String) Username for authentication.
 
+### Supported Operating Systems
+- MacOS 
+
+### Compatible Saviynt EIC Versions
+- 24.4
 ---
 ## Credential Management Best Practices
 To ensure secure handling of sensitive credentials, follow these best practices:
