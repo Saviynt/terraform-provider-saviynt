@@ -50,7 +50,7 @@ func BaseConnectorDataSourceSchema() map[string]schema.Attribute {
 			Description: "The key of the connection.",
 		},
 		"authenticate": schema.BoolAttribute{
-			Optional:    true,
+			Required:    true,
 			Description: "If false, do not store connection_attributes in state",
 		},
 		"description": schema.StringAttribute{

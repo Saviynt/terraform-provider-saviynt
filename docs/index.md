@@ -62,7 +62,7 @@ This feature is designed to help prevent potential sensitive data from appearing
 
 ### 🔹 Behavior
 
-- When `authenticate = false`*(default)*:
+- When `authenticate = false`:
   - The provider will **omit** the entire `connection_attributes` block from state file.
 - When `authenticate = true`:
   - All attributes will be returned as usual with sensitive still not visible.
