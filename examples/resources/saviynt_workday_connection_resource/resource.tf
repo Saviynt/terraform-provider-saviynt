@@ -1,0 +1,385 @@
+/*
+ * Copyright (c) 2025 Saviynt Inc.
+ * All Rights Reserved.
+ *
+ * This software is the confidential and proprietary information of
+ * Saviynt Inc. ("Confidential Information"). You shall not disclose,
+ * use, or distribute such Confidential Information except in accordance
+ * with the terms of the license agreement you entered into with Saviynt.
+ *
+ * SAVIYNT MAKES NO REPRESENTATIONS OR WARRANTIES ABOUT THE SUITABILITY OF
+ * THE SOFTWARE, EITHER EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO
+ * THE IMPLIED WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR
+ * PURPOSE, OR NON-INFRINGEMENT.
+ */
+
+variable "BASE_URL" {
+  type        = string
+  description = "The base URL for the Workday connection"
+}
+variable "API_VERSION" {
+  type        = string
+  description = "The API version for the Workday connection"
+}
+variable "TENANT_NAME" {
+  type        = string
+  description = "The tenant name for the Workday connection"
+}
+variable "REPORT_OWNER" {
+  type        = string
+  description = "The report owner for the Workday connection"
+}
+variable "USE_OAUTH" {
+  type        = string
+  description = "Whether to use OAuth for the Workday connection"
+}
+variable "USERNAME" {
+  type        = string
+  description = "The username for the Workday connection"
+}
+variable "PASSWORD" {
+  type        = string
+  description = "The password for the Workday connection"
+  sensitive   = true
+}
+variable "CLIENT_ID" {
+  type        = string
+  description = "The client ID for the Workday connection"
+}
+variable "CLIENT_SECRET" {
+  type        = string
+  description = "The client secret for the Workday connection"
+}
+variable "REFRESH_TOKEN" {
+  type        = string
+  description = "The refresh token for the Workday connection"
+}
+
+# Workday SOAP using basic auth
+resource "saviynt_workday_connection_resource" "soap" {
+  connection_type = "Workday"
+  connection_name = "Terraform_Workday_Connector"
+  base_url        = var.BASE_URL
+  api_version     = var.API_VERSION
+  tenant_name     = var.TENANT_NAME
+  report_owner    = var.REPORT_OWNER
+  use_oauth       = var.USE_OAUTH #Set to "FALSE" for basic auth
+  username        = var.USERNAME
+  password        = var.PASSWORD
+
+  ## For Oauth
+  # client_id          = var.CLIENT_ID    
+  # client_secret      = var.CLIENT_SECRET
+  # refresh_token      = var.REFRESH_TOKEN
+  ##
+  access_import_list = "Security Group,Domain Security Policy,Business Process Security Policy,Business Process Definitions,Organizational Role,Organization,Tasks And Reports"
+  status_key_json = jsonencode({
+    STATUS_ACTIVE   = ["1", "Active"]
+    STATUS_INACTIVE = ["0", "Retired", "Terminated"]
+  })
+
+  page_size = "100"
+
+  user_import_payload = trimspace(
+    <<EOF
+    <bsvc:Get_Workers_Request bsvc:version="$${API_VERSION}">
+      <bsvc:Request_Criteria>
+          <bsvc:Exclude_Inactive_Workers>false</bsvc:Exclude_Inactive_Workers>
+          <bsvc:Exclude_Employees>false</bsvc:Exclude_Employees>
+          <bsvc:Exclude_Contingent_Workers>false</bsvc:Exclude_Contingent_Workers>
+          $${INCREMENTAL_IMPORT_CRITERIA}
+      </bsvc:Request_Criteria>
+      <bsvc:Response_Filter><bsvc:Page>$${PAGE_NUMBER}</bsvc:Page><bsvc:Count>$${PAGE_SIZE}</bsvc:Count></bsvc:Response_Filter>
+      <bsvc:Response_Group>
+          <bsvc:Include_Reference>true</bsvc:Include_Reference>
+          <bsvc:Include_Personal_Information>true</bsvc:Include_Personal_Information>
+          <bsvc:Include_Additional_Jobs>false</bsvc:Include_Additional_Jobs>
+          <bsvc:Include_Employment_Information>true</bsvc:Include_Employment_Information>
+          <bsvc:Include_Compensation>false</bsvc:Include_Compensation>
+          <bsvc:Include_Organizations>true</bsvc:Include_Organizations>
+          <bsvc:Exclude_Organization_Support_Role_Data>true</bsvc:Exclude_Organization_Support_Role_Data>
+          <bsvc:Exclude_Location_Hierarchies>true</bsvc:Exclude_Location_Hierarchies>
+          <bsvc:Exclude_Cost_Centers>true</bsvc:Exclude_Cost_Centers>
+          <bsvc:Exclude_Cost_Center_Hierarchies>true</bsvc:Exclude_Cost_Center_Hierarchies>
+          <bsvc:Exclude_Companies>false</bsvc:Exclude_Companies>
+          <bsvc:Exclude_Company_Hierarchies>true</bsvc:Exclude_Company_Hierarchies>
+          <bsvc:Exclude_Matrix_Organizations>true</bsvc:Exclude_Matrix_Organizations>
+          <bsvc:Exclude_Pay_Groups>true</bsvc:Exclude_Pay_Groups>
+          <bsvc:Exclude_Regions>true</bsvc:Exclude_Regions>
+          <bsvc:Exclude_Region_Hierarchies>true</bsvc:Exclude_Region_Hierarchies>
+          <bsvc:Exclude_Supervisory_Organizations>true</bsvc:Exclude_Supervisory_Organizations>
+          <bsvc:Exclude_Teams>true</bsvc:Exclude_Teams>
+          <bsvc:Exclude_Custom_Organizations>true</bsvc:Exclude_Custom_Organizations>
+          <bsvc:Include_Roles>false</bsvc:Include_Roles>
+          <bsvc:Include_Management_Chain_Data>false</bsvc:Include_Management_Chain_Data>
+          <bsvc:Include_Multiple_Managers_in_Management_Chain_Data>false</bsvc:Include_Multiple_Managers_in_Management_Chain_Data>
+          <bsvc:Include_Benefit_Enrollments>false</bsvc:Include_Benefit_Enrollments>
+          <bsvc:Include_Benefit_Eligibility>false</bsvc:Include_Benefit_Eligibility>
+          <bsvc:Include_Related_Persons>false</bsvc:Include_Related_Persons>
+          <bsvc:Include_Qualifications>false</bsvc:Include_Qualifications>
+          <bsvc:Include_Employee_Review>false</bsvc:Include_Employee_Review>
+          <bsvc:Include_Goals>false</bsvc:Include_Goals>
+          <bsvc:Include_Development_Items>false</bsvc:Include_Development_Items>
+          <bsvc:Include_Skills>false</bsvc:Include_Skills>
+          <bsvc:Include_Photo>false</bsvc:Include_Photo>
+          <bsvc:Include_Worker_Documents>false</bsvc:Include_Worker_Documents>
+          <bsvc:Include_Transaction_Log_Data>false</bsvc:Include_Transaction_Log_Data>
+          <bsvc:Include_Subevents_for_Corrected_Transaction>false</bsvc:Include_Subevents_for_Corrected_Transaction>
+          <bsvc:Include_Subevents_for_Rescinded_Transaction>false</bsvc:Include_Subevents_for_Rescinded_Transaction>
+          <bsvc:Include_Succession_Profile>false</bsvc:Include_Succession_Profile>
+          <bsvc:Include_Talent_Assessment>false</bsvc:Include_Talent_Assessment>
+          <bsvc:Include_Employee_Contract_Data>false</bsvc:Include_Employee_Contract_Data>
+          <bsvc:Include_Collective_Agreement_Data>false</bsvc:Include_Collective_Agreement_Data>
+          <bsvc:Include_Probation_Period_Data>false</bsvc:Include_Probation_Period_Data>
+          <bsvc:Include_Feedback_Received>false</bsvc:Include_Feedback_Received>
+          <bsvc:Include_User_Account>false</bsvc:Include_User_Account>
+          <bsvc:Include_Career>false</bsvc:Include_Career>
+          <bsvc:Include_Account_Provisioning>false</bsvc:Include_Account_Provisioning>
+          <bsvc:Include_Background_Check_Data>false</bsvc:Include_Background_Check_Data>
+          <bsvc:Include_Contingent_Worker_Tax_Authority_Form_Information>false</bsvc:Include_Contingent_Worker_Tax_Authority_Form_Information>
+          <bsvc:Exclude_Funds>true</bsvc:Exclude_Funds>
+          <bsvc:Exclude_Fund_Hierarchies>true</bsvc:Exclude_Fund_Hierarchies>
+          <bsvc:Exclude_Grants>true</bsvc:Exclude_Grants>
+          <bsvc:Exclude_Grant_Hierarchies>true</bsvc:Exclude_Grant_Hierarchies>
+          <bsvc:Exclude_Business_Units>true</bsvc:Exclude_Business_Units>
+          <bsvc:Exclude_Business_Unit_Hierarchies>true</bsvc:Exclude_Business_Unit_Hierarchies>
+          <bsvc:Exclude_Programs>true</bsvc:Exclude_Programs>
+          <bsvc:Exclude_Program_Hierarchies>true</bsvc:Exclude_Program_Hierarchies>
+          <bsvc:Exclude_Gifts>true</bsvc:Exclude_Gifts>
+          <bsvc:Exclude_Gift_Hierarchies>true</bsvc:Exclude_Gift_Hierarchies>
+      </bsvc:Response_Group>
+  </bsvc:Get_Workers_Request>
+  EOF
+  )
+
+  account_import_payload = trimspace(
+    <<EOF
+    <bsvc:Get_Workers_Request bsvc:version="$${API_VERSION}">
+      <bsvc:Request_Criteria>
+          <bsvc:Exclude_Inactive_Workers>false</bsvc:Exclude_Inactive_Workers>
+          <bsvc:Exclude_Employees>false</bsvc:Exclude_Employees>
+          <bsvc:Exclude_Contingent_Workers>false</bsvc:Exclude_Contingent_Workers>
+          $${INCREMENTAL_IMPORT_CRITERIA}
+      </bsvc:Request_Criteria>
+      <bsvc:Response_Filter><bsvc:Page>$${PAGE_NUMBER}</bsvc:Page><bsvc:Count>$${PAGE_SIZE}</bsvc:Count></bsvc:Response_Filter>
+      <bsvc:Response_Group>
+          <bsvc:Include_Reference>true</bsvc:Include_Reference>
+          <bsvc:Include_Personal_Information>true</bsvc:Include_Personal_Information>
+          <bsvc:Include_Additional_Jobs>false</bsvc:Include_Additional_Jobs>
+          <bsvc:Include_Employment_Information>true</bsvc:Include_Employment_Information>
+          <bsvc:Include_Compensation>false</bsvc:Include_Compensation>
+          <bsvc:Include_Organizations>false</bsvc:Include_Organizations>
+          <bsvc:Exclude_Organization_Support_Role_Data>true</bsvc:Exclude_Organization_Support_Role_Data>
+          <bsvc:Exclude_Location_Hierarchies>true</bsvc:Exclude_Location_Hierarchies>
+          <bsvc:Exclude_Cost_Centers>true</bsvc:Exclude_Cost_Centers>
+          <bsvc:Exclude_Cost_Center_Hierarchies>true</bsvc:Exclude_Cost_Center_Hierarchies>
+          <bsvc:Exclude_Companies>true</bsvc:Exclude_Companies>
+          <bsvc:Exclude_Company_Hierarchies>true</bsvc:Exclude_Company_Hierarchies>
+          <bsvc:Exclude_Matrix_Organizations>true</bsvc:Exclude_Matrix_Organizations>
+          <bsvc:Exclude_Pay_Groups>true</bsvc:Exclude_Pay_Groups>
+          <bsvc:Exclude_Regions>true</bsvc:Exclude_Regions>
+          <bsvc:Exclude_Region_Hierarchies>true</bsvc:Exclude_Region_Hierarchies>
+          <bsvc:Exclude_Supervisory_Organizations>true</bsvc:Exclude_Supervisory_Organizations>
+          <bsvc:Exclude_Teams>true</bsvc:Exclude_Teams>
+          <bsvc:Exclude_Custom_Organizations>true</bsvc:Exclude_Custom_Organizations>
+          <bsvc:Include_Roles>false</bsvc:Include_Roles>
+          <bsvc:Include_Management_Chain_Data>false</bsvc:Include_Management_Chain_Data>
+          <bsvc:Include_Multiple_Managers_in_Management_Chain_Data>false</bsvc:Include_Multiple_Managers_in_Management_Chain_Data>
+          <bsvc:Include_Benefit_Enrollments>false</bsvc:Include_Benefit_Enrollments>
+          <bsvc:Include_Benefit_Eligibility>false</bsvc:Include_Benefit_Eligibility>
+          <bsvc:Include_Related_Persons>false</bsvc:Include_Related_Persons>
+          <bsvc:Include_Qualifications>false</bsvc:Include_Qualifications>
+          <bsvc:Include_Employee_Review>false</bsvc:Include_Employee_Review>
+          <bsvc:Include_Goals>false</bsvc:Include_Goals>
+          <bsvc:Include_Development_Items>false</bsvc:Include_Development_Items>
+          <bsvc:Include_Skills>false</bsvc:Include_Skills>
+          <bsvc:Include_Photo>false</bsvc:Include_Photo>
+          <bsvc:Include_Worker_Documents>false</bsvc:Include_Worker_Documents>
+          <bsvc:Include_Transaction_Log_Data>false</bsvc:Include_Transaction_Log_Data>
+          <bsvc:Include_Subevents_for_Corrected_Transaction>false</bsvc:Include_Subevents_for_Corrected_Transaction>
+          <bsvc:Include_Subevents_for_Rescinded_Transaction>false</bsvc:Include_Subevents_for_Rescinded_Transaction>
+          <bsvc:Include_Succession_Profile>false</bsvc:Include_Succession_Profile>
+          <bsvc:Include_Talent_Assessment>false</bsvc:Include_Talent_Assessment>
+          <bsvc:Include_Employee_Contract_Data>false</bsvc:Include_Employee_Contract_Data>
+          <bsvc:Include_Collective_Agreement_Data>false</bsvc:Include_Collective_Agreement_Data>
+          <bsvc:Include_Probation_Period_Data>false</bsvc:Include_Probation_Period_Data>
+          <bsvc:Include_Feedback_Received>false</bsvc:Include_Feedback_Received>
+          <bsvc:Include_User_Account>false</bsvc:Include_User_Account>
+          <bsvc:Include_Career>false</bsvc:Include_Career>
+          <bsvc:Include_Account_Provisioning>false</bsvc:Include_Account_Provisioning>
+          <bsvc:Include_Background_Check_Data>false</bsvc:Include_Background_Check_Data>
+          <bsvc:Include_Contingent_Worker_Tax_Authority_Form_Information>false</bsvc:Include_Contingent_Worker_Tax_Authority_Form_Information>
+          <bsvc:Exclude_Funds>true</bsvc:Exclude_Funds>
+          <bsvc:Exclude_Fund_Hierarchies>true</bsvc:Exclude_Fund_Hierarchies>
+          <bsvc:Exclude_Grants>true</bsvc:Exclude_Grants>
+          <bsvc:Exclude_Grant_Hierarchies>true</bsvc:Exclude_Grant_Hierarchies>
+          <bsvc:Exclude_Business_Units>true</bsvc:Exclude_Business_Units>
+          <bsvc:Exclude_Business_Unit_Hierarchies>true</bsvc:Exclude_Business_Unit_Hierarchies>
+          <bsvc:Exclude_Programs>true</bsvc:Exclude_Programs>
+          <bsvc:Exclude_Program_Hierarchies>true</bsvc:Exclude_Program_Hierarchies>
+          <bsvc:Exclude_Gifts>true</bsvc:Exclude_Gifts>
+          <bsvc:Exclude_Gift_Hierarchies>true</bsvc:Exclude_Gift_Hierarchies>
+      </bsvc:Response_Group>
+  </bsvc:Get_Workers_Request>
+  EOF
+  )
+
+  account_import_mapping = jsonencode({
+    ImportType   = "SOAP"
+    ResponsePath = "Body.Get_Workers_Response.Response_Data.Worker"
+    ImportMapping = {
+      NAME             = "Worker_Data.User_ID"
+      ACCOUNTID        = "Worker_Reference.ID(@wd:type=='WID')"
+      CUSTOMPROPERTY30 = "Worker_Data.Employment_Data.Worker_Status_Data.Active"
+      CUSTOMPROPERTY1  = "Worker_Data.Personal_Data.Identification_Data.Custom_ID.Custom_ID_Data(ID_Type_Reference->ID=='CustomID_NTID').ID"
+      CUSTOMPROPERTY2  = "Worker_Data.Personal_Data.Identification_Data.Custom_ID.Custom_ID_Data(ID_Type_Reference -> ID == 'CustomID_GPID').ID"
+      CUSTOMPROPERTY3  = "Worker_Data.Personal_Data.Identification_Data.Custom_ID.Custom_ID_Data(ID_Type_Reference -> ID == 'CustomID_UPN').ID"
+      CUSTOMPROPERTY4  = "Worker_Data.Personal_Data.Contact_Data.Email_Address_Data(Usage_Data -> Type_Data -> Type_Reference -> ID == 'WORK').Email_Address"
+      CUSTOMPROPERTY5  = "Worker_Data.Personal_Data.Name_Data.Legal_Name_Data.Name_Detail_Data.First_Name"
+      CUSTOMPROPERTY6  = "Worker_Data.Personal_Data.Name_Data.Legal_Name_Data.Name_Detail_Data.Last_Name"
+      CUSTOMPROPERTY7  = "Worker_Data.Personal_Data.Name_Data.Legal_Name_Data.Name_Detail_Data.Country_Reference.ID(@type == 'ISO_3166-1_Alpha-3_Code')"
+      CUSTOMPROPERTY9  = "Worker_Data.Role_Data.Organization_Role_Data.Organization_Role.Organization_Role_Reference.ID(@type == 'Organization_Role_ID')"
+      CUSTOMPROPERTY11 = "Worker_Data.Worker_ID"
+      CUSTOMPROPERTY12 = "Worker_Data.Personal_Data.Identification_Data.Custom_ID(Custom_ID_Data -> ID_Type_Reference -> ID == 'CustomID_GPID').Custom_ID_Shared_Reference.ID(@type == 'Custom_Identifier_Reference_ID')"
+      CUSTOMPROPERTY13 = "Worker_Data.Personal_Data.Identification_Data.Custom_ID(Custom_ID_Data -> ID_Type_Reference -> ID == 'CustomID_UPN').Custom_ID_Shared_Reference.ID(@type == 'Custom_Identifier_Reference_ID')"
+    }
+  })
+
+  access_import_mapping = jsonencode({
+    "Security Group" = {
+      ImportMapping = {
+        displayname = "wd:Security_Group.wd:Descriptor~#~char"
+        description = "wd:Comment~#~char"
+      }
+    }
+    "Domain Security Policy" = {
+      ImportMapping = {}
+    }
+    "Business Process Security Policy" = {
+      ImportMapping = {}
+    }
+    "Business Process Definitions" = {
+      ImportMapping = {}
+    }
+    "Organizational Role" = {
+      ImportMapping = {}
+    }
+    "Organization" = {
+      ImportMapping = {}
+    }
+    "Tasks And Reports" = {
+      ImportMapping = {}
+    }
+  })
+
+  assign_orgrole_payload = trimspace(
+    <<EOF
+    <bsvc:Assign_Roles_Request bsvc:version="$${API_VERSION}"><bsvc:Business_Process_Parameters><bsvc:Auto_Complete>1</bsvc:Auto_Complete></bsvc:Business_Process_Parameters><bsvc:Assign_Roles_Event_Data><bsvc:Event_Target_Assignee_Reference bsvc:Descriptor="?"><bsvc:ID bsvc:type="WID">$${user.customproperty1}</bsvc:ID></bsvc:Event_Target_Assignee_Reference><bsvc:Remove_All_Role_Assignments_for_Event_Target_Assignee>0</bsvc:Remove_All_Role_Assignments_for_Event_Target_Assignee><bsvc:Assign_Roles_Role_Assignment_Data><bsvc:Role_Assigner_Reference><bsvc:ID bsvc:type="Organization_Reference_ID">$${Organization_Reference_ID}</bsvc:ID></bsvc:Role_Assigner_Reference><bsvc:Assignable_Role_Reference><bsvc:ID bsvc:type="WID">$${entitlementID}</bsvc:ID></bsvc:Assignable_Role_Reference><bsvc:Remove_Existing_Assignees_for_Assignable_Role_on_Role_Assigner>0</bsvc:Remove_Existing_Assignees_for_Assignable_Role_on_Role_Assigner><bsvc:Update_Later_Dated_Assignments>1</bsvc:Update_Later_Dated_Assignments><bsvc:Assignees_to_Add_Reference><bsvc:ID bsvc:type="WID">$${user.customproperty1}</bsvc:ID></bsvc:Assignees_to_Add_Reference><bsvc:Remove_Supervisory_Organization_Single_Assignment_Manager>0</bsvc:Remove_Supervisory_Organization_Single_Assignment_Manager></bsvc:Assign_Roles_Role_Assignment_Data></bsvc:Assign_Roles_Event_Data></bsvc:Assign_Roles_Request>
+    EOF
+  )
+
+  remove_orgrole_payload = trimspace(
+    <<EOF
+    <bsvc:Assign_Roles_Request bsvc:version="$${API_VERSION}"><bsvc:Business_Process_Parameters><bsvc:Auto_Complete>1</bsvc:Auto_Complete></bsvc:Business_Process_Parameters><bsvc:Assign_Roles_Event_Data><bsvc:Event_Target_Assignee_Reference bsvc:Descriptor="?"><bsvc:ID bsvc:type="WID">$${user.customproperty1}</bsvc:ID></bsvc:Event_Target_Assignee_Reference><bsvc:Remove_All_Role_Assignments_for_Event_Target_Assignee>0</bsvc:Remove_All_Role_Assignments_for_Event_Target_Assignee><bsvc:Assign_Roles_Role_Assignment_Data><bsvc:Role_Assigner_Reference><bsvc:ID bsvc:type="Organization_Reference_ID">$${Organization_Reference_ID}</bsvc:ID></bsvc:Role_Assigner_Reference><bsvc:Assignable_Role_Reference><bsvc:ID bsvc:type="WID">$${entitlementID}</bsvc:ID></bsvc:Assignable_Role_Reference><bsvc:Remove_Existing_Assignees_for_Assignable_Role_on_Role_Assigner>0</bsvc:Remove_Existing_Assignees_for_Assignable_Role_on_Role_Assigner><bsvc:Update_Later_Dated_Assignments>1</bsvc:Update_Later_Dated_Assignments><bsvc:Assignees_to_Remove_Reference><bsvc:ID bsvc:type="WID">$${user.customproperty1}</bsvc:ID></bsvc:Assignees_to_Remove_Reference><bsvc:Remove_Supervisory_Organization_Single_Assignment_Manager>0</bsvc:Remove_Supervisory_Organization_Single_Assignment_Manager></bsvc:Assign_Roles_Role_Assignment_Data></bsvc:Assign_Roles_Event_Data></bsvc:Assign_Roles_Request>
+    EOF
+  )
+
+  create_account_payload = trimspace(
+    <<EOF
+  <bsvc:Workday_Account_for_Worker_Add bsvc:version="$${var.api_version}">
+      <bsvc:Workday_Account_for_Worker_Data>
+          <bsvc:User_Name>$${var.account_name}</bsvc:User_Name>
+          <bsvc:Password>$${var.password}</bsvc:Password>
+      </bsvc:Workday_Account_for_Worker_Data>
+  </bsvc:Workday_Account_for_Worker_Add>
+  EOF
+  )
+
+  update_account_payload = trimspace(
+    <<EOF
+      <bsvc:Maintain_Contact_Information_for_Person_Event_Request bsvc:Add_Only="false" bsvc:version="$${API_VERSION}"> 
+      <bsvc:Business_Process_Parameters> 
+        <bsvc:Auto_Complete>true</bsvc:Auto_Complete> 
+        <bsvc:Run_Now>true</bsvc:Run_Now> 
+      </bsvc:Business_Process_Parameters> 
+      <bsvc:Maintain_Contact_Information_Data> 
+        <bsvc:Worker_Reference bsvc:Descriptor=""> 
+        <bsvc:ID bsvc:type="WID">$${user.customproperty1}</bsvc:ID> 
+      </bsvc:Worker_Reference> 
+      <bsvc:Effective_Date>$${CURRENT_PROV_TIMESTAMP}</bsvc:Effective_Date> 
+      <bsvc:Worker_Contact_Information_Data> 
+      <bsvc:Email_Address_Data> 
+      <bsvc:Email_Address>$${user.email}</bsvc:Email_Address> 
+      <bsvc:Usage_Data bsvc:Public="true"> 
+      <bsvc:Type_Data bsvc:Primary="true"> 
+      <bsvc:Type_Reference bsvc:Descriptor="work">
+        <bsvc:ID bsvc:type="Communication_Usage_Type_ID">WORK</bsvc:ID> 
+      </bsvc:Type_Reference>
+      </bsvc:Type_Data> 
+      </bsvc:Usage_Data> 
+      </bsvc:Email_Address_Data> 
+      </bsvc:Worker_Contact_Information_Data> 
+      </bsvc:Maintain_Contact_Information_Data>
+      </bsvc:Maintain_Contact_Information_for_Person_Event_Request>
+    EOF
+  )
+
+  update_user_payload = trimspace(
+    <<EOF
+    <bsvc:Maintain_Contact_Information_for_Person_Event_Request bsvc:Add_Only="true" bsvc:version="$${API_VERSION}">
+        <bsvc:Business_Process_Parameters>
+            <bsvc:Auto_Complete>true</bsvc:Auto_Complete>
+            <bsvc:Run_Now>true</bsvc:Run_Now>
+            <bsvc:Comment_Data>
+                <bsvc:Comment>Updated By Saviynt</bsvc:Comment>
+            </bsvc:Comment_Data>
+        </bsvc:Business_Process_Parameters>
+        <bsvc:Maintain_Contact_Information_Data>
+            <bsvc:Worker_Reference>
+                <bsvc:ID bsvc:type="WID">$${user.customproperty1}</bsvc:ID>
+            </bsvc:Worker_Reference>
+            <bsvc:Effective_Date>$${CURRENT_PROV_TIMESTAMP}</bsvc:Effective_Date>
+            <bsvc:Worker_Contact_Information_Data>
+                <bsvc:Email_Address_Data>
+                    <bsvc:Email_Address>$${user.email}</bsvc:Email_Address>
+                    <bsvc:Usage_Data bsvc:Public="true">
+                        <bsvc:Type_Data bsvc:Primary="true">
+                            <bsvc:Type_Reference>
+                                <bsvc:ID bsvc:type="Communication_Usage_Type_ID">WORK</bsvc:ID>
+                            </bsvc:Type_Reference>
+                        </bsvc:Type_Data>
+                    </bsvc:Usage_Data>
+                </bsvc:Email_Address_Data>
+            </bsvc:Worker_Contact_Information_Data>
+        </bsvc:Maintain_Contact_Information_Data>
+    </bsvc:Maintain_Contact_Information_for_Person_Event_Request>
+  EOF
+  )
+
+  user_import_mapping = jsonencode({
+    ImportType   = "SOAP"
+    ResponsePath = "Body.Get_Workers_Response.Response_Data.Worker"
+    ImportMapping = {
+      USERNAME          = "Worker_Data.User_ID"
+      SYSTEMUSERNAME    = "Worker_Data.User_ID"
+      FIRSTNAME         = "Worker_Data.Personal_Data.Name_Data.Preferred_Name_Data.Name_Detail_Data.First_Name"
+      MIDDLENAME        = "Worker_Data.Personal_Data.Name_Data.Preferred_Name_Data.Name_Detail_Data.Middle_Name"
+      LASTNAME          = "Worker_Data.Personal_Data.Name_Data.Legal_Name_Data.Name_Detail_Data.Last_Name"
+      DISPLAYNAME       = "Worker_Data.Personal_Data.Name_Data.Legal_Name_Data.Name_Detail_Data.@Formatted_Name"
+      LOCATION          = "Worker_Data.Personal_Data.Contact_Data.Address_Data(Usage_Data->Type_Data->Type_Reference->ID=='WORK').Municipality"
+      TITLE             = "Worker_Data.Employment_Data.Worker_Job_Data.Position_Data.Business_Title"
+      EMPLOYEEID        = "Worker_Data.Worker_ID"
+      PREFEREDFIRSTNAME = "Worker_Data.Personal_Data.Name_Data.Preferred_Name_Data.Name_Detail_Data.First_Name"
+      PHONENUMBER       = "Worker_Data.Personal_Data.Contact_Data.Phone_Data(Usage_Data->Type_Data->Type_Reference->ID=='WORK').Phone_Number"
+      CITY              = "Worker_Data.Personal_Data.Contact_Data.Address_Data(Usage_Data->Type_Data->Type_Reference->ID=='WORK').Municipality"
+      EMAIL             = "Worker_Data.Personal_Data.Contact_Data.Email_Address_Data(Usage_Data->Type_Data->Type_Reference->ID=='WORK').Email_Address"
+      STATUSKEY         = "Worker_Data.Employment_Data.Worker_Status_Data.Active"
+      CUSTOMPROPERTY1   = "Worker_Reference.ID(@type=='WID')"
+      COUNTRY           = "Worker_Data.Personal_Data.Name_Data.Legal_Name_Data.Name_Detail_Data.Country_Reference.ID(@type=='ISO_3166-1_Alpha-3_Code')"
+      EMPLOYEETYPE      = "Worker_Data.Employment_Data.Worker_Job_Data.Position_Data.Worker_Type_Reference.ID(@type=='Employee_Type_ID')"
+      COMPANYNAME       = "Worker_Data.Organization_Data.Worker_Organization_Data.Organization_Data.Organization_Name"
+      COSTCENTER        = "Worker_Data.Employment_Data.Worker_Job_Data.Position_Organizations_Data.Position_Organization_Data.Organization_Data.Organization_Code"
+    }
+  })
+
+}
