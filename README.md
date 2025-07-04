@@ -10,7 +10,7 @@
 </a>
 
 <a href="https://saviynt.com/">
-    <img src="assets/s-platform-icon-01.svg" alt="Saviynt logo" title="Saviynt" height="75" />
+    <img src="assets/s-platform-icon-01.svg" alt="Saviynt logo" title="Saviynt" height="80"  width="80" />
 </a>
 
 # Terraform Provider for Saviynt
