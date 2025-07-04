@@ -1,0 +1,21 @@
+# Copyright (c) HashiCorp, Inc.
+# SPDX-License-Identifier: MPL-2.0
+
+#https://saviyntars.atlassian.net/wiki/spaces/PD/pages/5741805592/DevSecOps?force_transition=a5e4ac89-1249-4e4b-8c9c-14e98b30b8d5#Install-and-configure-pre-commit,-Gitleaks,-Trufflehog
+repos:
+  - repo: local
+    hooks:
+      - id: gitleaks
+        name: Gitleaks
+        description: Detect hardcoded secrets using Gitleaks
+        entry: bash -c 'gitleaks git --pre-commit --staged -v'
+        language: system
+        stages: [ "pre-commit", "pre-push" ]
+        fail_fast: false
+      - id: trufflehog
+        name: TruffleHog
+        description: Detect hardcoded secrets using trufflehog
+        entry: bash -c 'trufflehog git file://. --since-commit HEAD --only-verified --no-update --fail'
+        language: system
+        fail_fast: false
+        stages: ["pre-commit", "pre-push"]
