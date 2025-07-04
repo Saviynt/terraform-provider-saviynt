@@ -13,20 +13,8 @@ Create and manage Github Rest connector in Saviynt
 ## Example Usage
 
 ```terraform
-/*
- * Copyright (c) 2025 Saviynt Inc.
- * All Rights Reserved.
- *
- * This software is the confidential and proprietary information of
- * Saviynt Inc. ("Confidential Information"). You shall not disclose,
- * use, or distribute such Confidential Information except in accordance
- * with the terms of the license agreement you entered into with Saviynt.
- *
- * SAVIYNT MAKES NO REPRESENTATIONS OR WARRANTIES ABOUT THE SUITABILITY OF
- * THE SOFTWARE, EITHER EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO
- * THE IMPLIED WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR
- * PURPOSE, OR NON-INFRINGEMENT.
- */
+// Copyright (c) Saviynt Inc.
+// SPDX-License-Identifier: MPL-2.0
 
 variable "ORG_LIST" {
   type = string
@@ -473,6 +461,28 @@ resource "saviynt_github_rest_connection_resource" "example" {
     }
   })
   organization_list = var.ORG_LIST
+  status_threshold_config = jsonencode({
+    statusAndThresholdConfig = {
+      accountThresholdValue       = 100,
+      inactivateAccountsNotInFile = true,
+      statusColumn                = "customproperty10",
+      activeStatus = [
+        null
+      ],
+      inactivateOrganizationNotInFeed = false,
+      inactivateEntsNotInFeed         = true,
+      entThresholdValue = {
+        entType = {
+          Team = {
+            ent = 100
+          },
+          Repository = {
+            ent = 100
+          }
+        }
+      }
+    }
+  })
 }
 ```
 
@@ -489,12 +499,15 @@ resource "saviynt_github_rest_connection_resource" "example" {
 - `connection_json` (String) Property for ConnectionJSON
 - `connection_type` (String) Connection type (e.g., 'AD' for Active Directory). Example: "AD"
 - `defaultsavroles` (String) Default SAV roles for managing the connection. Example: "ROLE_ORG"
+- `description` (String) Description for the connection. Example: "ORG_AD"
 - `email_template` (String) Email template for notifications. Example: "New Account Task Creation"
 - `error_code` (String) An error code where '0' signifies success and '1' signifies an unsuccessful operation.
 - `import_account_ent_json` (String) Property for ImportAccountEntJSON
 - `msg` (String) A message indicating the outcome of the operation.
 - `organization_list` (String) Property for ORGANIZATION_LIST
+- `pam_config` (String) Property for PAM_CONFIG
 - `save_in_vault` (String) Flag indicating whether the encrypted attribute should be saved in the configured vault. Example: "false"
+- `status_threshold_config` (String) Property for STATUS_THRESHOLD_CONFIG
 - `vault_configuration` (String) JSON string specifying vault configuration. Example: '{"path":"/secrets/data/kv-dev-intgn1/-AD_Credential","keyMapping":{"PASSWORD":"AD_PASSWORD~#~None"}}'
 - `vault_connection` (String) Specifies the type of vault connection being used (e.g., 'Hashicorp'). Example: "Hashicorp"
 

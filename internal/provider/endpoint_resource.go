@@ -1,24 +1,6 @@
-/*
- * Copyright (c) 2025 Saviynt Inc.
- * All Rights Reserved.
- *
- * This software is the confidential and proprietary information of
- * Saviynt Inc. ("Confidential Information"). You shall not disclose,
- * use, or distribute such Confidential Information except in accordance
- * with the terms of the license agreement you entered into with Saviynt.
- *
- * SAVIYNT MAKES NO REPRESENTATIONS OR WARRANTIES ABOUT THE SUITABILITY OF
- * THE SOFTWARE, EITHER EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO
- * THE IMPLIED WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR
- * PURPOSE, OR NON-INFRINGEMENT.
- */
+// Copyright (c) HashiCorp, Inc.
+// SPDX-License-Identifier: MPL-2.0
 
-// saviynt_endpoint_resource manages endpoints in the Saviynt Security Manager.
-// The resource implements the full Terraform lifecycle:
-//   - Create: provisions a new endpoint using the supplied configuration.
-//   - Read: fetches the current endpoint state from Saviynt to keep Terraform’s state in sync.
-//   - Update: applies any configuration changes to an existing endpoint.
-//   - Import: brings an existing endpoint under Terraform management by its name.
 package provider
 
 import (
@@ -63,7 +45,7 @@ type EndpointResourceModel struct {
 	OutOfBandAction                         types.String `tfsdk:"out_of_band_action"`
 	UserAccountCorrelationRule              types.String `tfsdk:"user_account_correlation_rule"`
 	ConnectionConfig                        types.String `tfsdk:"connection_config"`
-	Requestable                             types.Bool   `tfsdk:"requestable"`
+	Requestable                             types.String `tfsdk:"requestable"`
 	ParentAccountPattern                    types.String `tfsdk:"parent_account_pattern"`
 	ServiceAccountNameRule                  types.String `tfsdk:"service_account_name_rule"`
 	ServiceAccountAccessQuery               types.String `tfsdk:"service_account_access_query"`
@@ -77,7 +59,7 @@ type EndpointResourceModel struct {
 	PrimaryAccountType                      types.String `tfsdk:"primary_account_type"`
 	AccountTypeNoPasswordChange             types.String `tfsdk:"account_type_no_password_change"`
 	EndpointConfig                          types.String `tfsdk:"endpoint_config"`
-	AllowRemoveAllRoleOnRequest             types.Bool   `tfsdk:"allow_remove_all_role_on_request"`
+	AllowRemoveAllRoleOnRequest             types.String `tfsdk:"allow_remove_all_role_on_request"`
 
 	CustomProperty1              types.String `tfsdk:"custom_property1"`
 	CustomProperty2              types.String `tfsdk:"custom_property2"`
@@ -184,11 +166,11 @@ type EndpointResourceModel struct {
 	CustomProperty58Label        types.String `tfsdk:"custom_property58_label"`
 	CustomProperty59Label        types.String `tfsdk:"custom_property59_label"`
 	CustomProperty60Label        types.String `tfsdk:"custom_property60_label"`
-	// MappedEndpoints              types.List   `tfsdk:"mapped_endpoints"`
-	EmailTemplates       types.List   `tfsdk:"email_templates"`
-	RequestableRoleTypes types.List   `tfsdk:"requestable_role_types"`
-	Msg                  types.String `tfsdk:"msg"`
-	ErrorCode            types.String `tfsdk:"error_code"`
+	MappedEndpoints              types.List   `tfsdk:"mapped_endpoints"`
+	EmailTemplates               types.List   `tfsdk:"email_templates"`
+	RequestableRoleTypes         types.List   `tfsdk:"requestable_role_types"`
+	Msg                          types.String `tfsdk:"msg"`
+	ErrorCode                    types.String `tfsdk:"error_code"`
 }
 
 type endpointResource struct {
@@ -202,7 +184,7 @@ type RequestableRoleType struct {
 	Required       types.Bool   `tfsdk:"required"`
 	RequestedQuery types.String `tfsdk:"requested_query"`
 	SelectedQuery  types.String `tfsdk:"selected_query"`
-	// ShowOn         types.String `tfsdk:"show_on"`
+	ShowOn         types.String `tfsdk:"show_on"`
 }
 
 type EmailTemplate struct {
@@ -211,12 +193,12 @@ type EmailTemplate struct {
 	EmailTemplate     types.String `tfsdk:"email_template"`
 }
 
-// type MappedEndpoint struct {
-// 	SecuritySystem types.String `tfsdk:"security_system"`
-// 	Endpoint       types.String `tfsdk:"endpoint"`
-// 	Requestable    types.String `tfsdk:"requestable"`
-// 	Operation      types.String `tfsdk:"operation"`
-// }
+type MappedEndpoint struct {
+	SecuritySystem types.String `tfsdk:"security_system"`
+	Endpoint       types.String `tfsdk:"endpoint"`
+	Requestable    types.String `tfsdk:"requestable"`
+	Operation      types.String `tfsdk:"operation"`
+}
 
 func NewEndpointResource() resource.Resource {
 	return &endpointResource{}
@@ -313,9 +295,8 @@ func (r *endpointResource) Schema(ctx context.Context, req resource.SchemaReques
 				Computed:    true,
 				Description: "Use this configuration for processing the add access tasks and remove access tasks for AD and LDAP Connectors.",
 			},
-			"requestable": schema.BoolAttribute{
+			"requestable": schema.StringAttribute{
 				Optional:    true,
-				Computed:    true,
 				Description: "Is this endpoint requestable.",
 			},
 			"parent_account_pattern": schema.StringAttribute{
@@ -378,17 +359,17 @@ func (r *endpointResource) Schema(ctx context.Context, req resource.SchemaReques
 				Computed:    true,
 				Description: "Account type no password change",
 			},
-			// "mapped_endpoints": schema.ListAttribute{
-			// 	ElementType: types.ObjectType{
-			// 		AttrTypes: map[string]attr.Type{
-			// 			"security_system": types.StringType,
-			// 			"endpoint":        types.StringType,
-			// 			"requestable":     types.StringType,
-			// 			"operation":       types.StringType,
-			// 		},
-			// 	},
-			// 	Optional: true,
-			// },
+			"mapped_endpoints": schema.ListAttribute{
+				ElementType: types.ObjectType{
+					AttrTypes: map[string]attr.Type{
+						"security_system": types.StringType,
+						"endpoint":        types.StringType,
+						"requestable":     types.StringType,
+						"operation":       types.StringType,
+					},
+				},
+				Optional: true,
+			},
 			"email_templates": schema.ListAttribute{
 				ElementType: types.ObjectType{
 					AttrTypes: map[string]attr.Type{
@@ -409,7 +390,7 @@ func (r *endpointResource) Schema(ctx context.Context, req resource.SchemaReques
 						"required":        types.BoolType,
 						"requested_query": types.StringType,
 						"selected_query":  types.StringType,
-						// "show_on":         types.StringType,
+						"show_on":         types.StringType,
 					},
 				},
 				Optional: true,
@@ -455,7 +436,7 @@ func (r *endpointResource) Schema(ctx context.Context, req resource.SchemaReques
 		}
 	}
 
-	resp.Schema.Attributes["allow_remove_all_role_on_request"] = schema.BoolAttribute{
+	resp.Schema.Attributes["allow_remove_all_role_on_request"] = schema.StringAttribute{
 		Optional:    true,
 		Computed:    true,
 		Description: "Specify true to displays the Remove All Roles option in the Request page that can be used to remove all the roles.",
@@ -510,7 +491,7 @@ func (r *endpointResource) Create(ctx context.Context, req resource.CreateReques
 	existingResource, _, err := apiClient.EndpointsAPI.GetEndpoints(ctx).GetEndpointsRequest(reqParams).Execute()
 	if err != nil {
 		log.Printf("Problem with the get function in Create block")
-		resp.Diagnostics.AddError("API Read Failed In Create Block", fmt.Sprintf("Error: %v", err))
+		resp.Diagnostics.AddError("API Read Failed In Create Block", fmt.Sprintf("Error: %v", *existingResource.Message))
 		return
 	}
 
@@ -543,7 +524,7 @@ func (r *endpointResource) Create(ctx context.Context, req resource.CreateReques
 		CreateEntTaskforRemoveAcc:               util.StringPointerOrEmpty(plan.CreateEntTaskforRemoveAcc),
 		Outofbandaction:                         util.StringPointerOrEmpty(plan.OutOfBandAction),
 		Connectionconfig:                        util.StringPointerOrEmpty(plan.ConnectionConfig),
-		Requestable:                             util.BoolPointerOrEmtpy(plan.Requestable),
+		Requestable:                             util.StringPointerOrEmpty(plan.Requestable),
 		ParentAccountPattern:                    util.StringPointerOrEmpty(plan.ParentAccountPattern),
 		ServiceAccountNameRule:                  util.StringPointerOrEmpty(plan.ServiceAccountNameRule),
 		ServiceAccountAccessQuery:               util.StringPointerOrEmpty(plan.ServiceAccountAccessQuery),
@@ -557,7 +538,7 @@ func (r *endpointResource) Create(ctx context.Context, req resource.CreateReques
 		StatusConfig:                            util.StringPointerOrEmpty(plan.StatusConfig),
 		PluginConfigs:                           util.StringPointerOrEmpty(plan.PluginConfigs),
 		EndpointConfig:                          util.StringPointerOrEmpty(plan.EndpointConfig),
-		AllowRemoveAllRoleOnRequest:             util.BoolPointerOrEmtpy(plan.AllowRemoveAllRoleOnRequest),
+		AllowRemoveAllRoleOnRequest:             util.StringPointerOrEmpty(plan.AllowRemoveAllRoleOnRequest),
 		Customproperty1:                         util.StringPointerOrEmpty(plan.CustomProperty1),
 		Customproperty2:                         util.StringPointerOrEmpty(plan.CustomProperty2),
 		Customproperty3:                         util.StringPointerOrEmpty(plan.CustomProperty3),
@@ -711,14 +692,14 @@ func (r *endpointResource) Create(ctx context.Context, req resource.CreateReques
 		log.Printf("Error Creating Endpoint: %v, HTTP Response: %v", err, httpResp)
 		resp.Diagnostics.AddError(
 			"Error Creating Endpoint",
-			fmt.Sprintf("Error creating endpoint: %s", err),
+			"Check logs for details.",
 		)
 		return
 	}
-	if apiResp != nil && *apiResp.ErrorCode != "0" {
-		log.Printf("Error Creating Endpoint: %v, Error code: %v", *apiResp.Msg, *apiResp.ErrorCode)
+	if *apiResp.ErrorCode != "0" {
+		log.Printf("Error Updating Endpoint: %v, Error code: %v", *apiResp.Msg, *apiResp.ErrorCode)
 		resp.Diagnostics.AddError(
-			"Error Creating Endpoint",
+			"Error Updating Endpoint",
 			fmt.Sprintf("Error: %v, Error code: %v", *apiResp.Msg, *apiResp.ErrorCode),
 		)
 		return
@@ -728,16 +709,10 @@ func (r *endpointResource) Create(ctx context.Context, req resource.CreateReques
 	if plan.EnableCopyAccess.IsNull() || plan.EnableCopyAccess.IsUnknown() || plan.EnableCopyAccess.ValueString() == "" {
 		plan.EnableCopyAccess = types.StringValue("false")
 	}
-	if plan.AllowRemoveAllRoleOnRequest.IsNull() || plan.AllowRemoveAllRoleOnRequest.IsUnknown() {
-		plan.AllowRemoveAllRoleOnRequest = types.BoolValue(false)
-	} else {
-		plan.AllowRemoveAllRoleOnRequest = types.BoolValue(plan.AllowRemoveAllRoleOnRequest.ValueBool())
+	if plan.AllowRemoveAllRoleOnRequest.IsNull() || plan.AllowRemoveAllRoleOnRequest.IsUnknown() || plan.AllowRemoveAllRoleOnRequest.ValueString() == "" {
+		plan.AllowRemoveAllRoleOnRequest = types.StringValue("false")
 	}
-	if plan.Requestable.IsNull() || plan.Requestable.IsUnknown() {
-		plan.Requestable = types.BoolValue(true)
-	} else {
-		plan.Requestable = types.BoolValue(plan.Requestable.ValueBool())
-	}
+
 	if plan.DisableRemoveAccount.IsNull() || plan.DisableRemoveAccount.IsUnknown() || plan.DisableRemoveAccount.ValueString() == "" {
 		plan.DisableRemoveAccount = types.StringValue("false")
 	}
@@ -770,7 +745,7 @@ func (r *endpointResource) Create(ctx context.Context, req resource.CreateReques
 				"required":        types.BoolType,
 				"requested_query": types.StringType,
 				"selected_query":  types.StringType,
-				// "show_on":         types.StringType,
+				"show_on":         types.StringType,
 			},
 		},
 			[]attr.Value{},
@@ -937,15 +912,7 @@ func (r *endpointResource) Read(ctx context.Context, req resource.ReadRequest, r
 	readResp, _, err := apiClient.EndpointsAPI.GetEndpoints(ctx).GetEndpointsRequest(reqParams).Execute()
 	if err != nil {
 		log.Printf("Problem with the get function in read block")
-		resp.Diagnostics.AddError("API Read Failed In Read Block", fmt.Sprintf("Error: %s", err))
-		return
-	}
-	if readResp != nil && *readResp.ErrorCode != "0" {
-		log.Printf("Error Reading Endpoint: %v, Error code: %v", *readResp.Message, *readResp.ErrorCode)
-		resp.Diagnostics.AddError(
-			"Error Reading Endpoint",
-			fmt.Sprintf("Error: %v, Error code: %v", *readResp.Message, *readResp.ErrorCode),
-		)
+		resp.Diagnostics.AddError("API Read Failed In Read Block", fmt.Sprintf("Error: %v", err))
 		return
 	}
 	if len(readResp.Endpoints) == 0 {
@@ -972,39 +939,14 @@ func (r *endpointResource) Read(ctx context.Context, req resource.ReadRequest, r
 	state.EndpointName = util.SafeString(readResp.Endpoints[0].Endpointname)
 	state.AccessQuery = util.SafeString(readResp.Endpoints[0].Accessquery)
 	state.DisplayName = util.SafeString(readResp.Endpoints[0].DisplayName)
-	if readResp.Endpoints[0].Requestable != nil {
-		if *readResp.Endpoints[0].Requestable == "true" {
-			state.Requestable = types.BoolValue(true)
-		} else {
-			state.Requestable = types.BoolValue(false)
-		}
-	} else {
-		state.Requestable = types.BoolNull()
-	}
-	if readResp.Endpoints[0].AllowRemoveAllRoleOnRequest != nil {
-		if *readResp.Endpoints[0].AllowRemoveAllRoleOnRequest == "true" {
-			state.AllowRemoveAllRoleOnRequest = types.BoolValue(true)
-		} else {
-			state.AllowRemoveAllRoleOnRequest = types.BoolValue(false)
-		}
-	} else {
-		state.AllowRemoveAllRoleOnRequest = types.BoolNull()
-	}
-	if readResp.Endpoints[0].ConnectionconfigAsJson != nil {
-		normalized, err := endpointsutil.NormalizeJSON(*readResp.Endpoints[0].ConnectionconfigAsJson)
-		if err != nil {
-			state.ConnectionConfig = types.StringNull()
-		} else {
-			state.ConnectionConfig = util.SafeString(&normalized)
-		}
-	} else {
-		state.ConnectionConfig = types.StringNull()
-	}
+	state.AllowRemoveAllRoleOnRequest = util.SafeString(readResp.Endpoints[0].AllowRemoveAllRoleOnRequest)
+	state.ConnectionConfig = util.SafeString(readResp.Endpoints[0].Connectionconfig)
 	state.AccountNameRule = util.SafeString(readResp.Endpoints[0].AccountNameRule)
 	state.ChangePasswordAccessQuery = util.SafeString(readResp.Endpoints[0].ChangePasswordAccessQuery)
 	state.PluginConfigs = util.SafeString(readResp.Endpoints[0].PluginConfigs)
 	state.CreateEntTaskforRemoveAcc = util.SafeString(readResp.Endpoints[0].CreateEntTaskforRemoveAcc)
 	state.EnableCopyAccess = util.SafeString(readResp.Endpoints[0].EnableCopyAccess)
+	state.AccountTypeNoPasswordChange = util.SafeString(readResp.Endpoints[0].AccountTypeNoDeprovision)
 	state.EndpointConfig = util.SafeString(readResp.Endpoints[0].EndpointConfig)
 	state.ServiceAccountAccessQuery = util.SafeString(readResp.Endpoints[0].ServiceAccountAccessQuery)
 	state.UserAccountCorrelationRule = util.SafeString(readResp.Endpoints[0].UserAccountCorrelationRule)
@@ -1039,21 +981,21 @@ func (r *endpointResource) Read(ctx context.Context, req resource.ReadRequest, r
 	state.CustomProperty28 = util.SafeString(readResp.Endpoints[0].CustomProperty28)
 	state.CustomProperty29 = util.SafeString(readResp.Endpoints[0].CustomProperty29)
 	state.CustomProperty30 = util.SafeString(readResp.Endpoints[0].CustomProperty30)
-	state.CustomProperty31 = util.SafeString(readResp.Endpoints[0].Customproperty31)
-	state.CustomProperty32 = util.SafeString(readResp.Endpoints[0].Customproperty32)
-	state.CustomProperty33 = util.SafeString(readResp.Endpoints[0].Customproperty33)
-	state.CustomProperty34 = util.SafeString(readResp.Endpoints[0].Customproperty34)
-	state.CustomProperty35 = util.SafeString(readResp.Endpoints[0].Customproperty35)
-	state.CustomProperty36 = util.SafeString(readResp.Endpoints[0].Customproperty36)
-	state.CustomProperty37 = util.SafeString(readResp.Endpoints[0].Customproperty37)
-	state.CustomProperty38 = util.SafeString(readResp.Endpoints[0].Customproperty38)
-	state.CustomProperty39 = util.SafeString(readResp.Endpoints[0].Customproperty39)
-	state.CustomProperty40 = util.SafeString(readResp.Endpoints[0].Customproperty40)
-	state.CustomProperty41 = util.SafeString(readResp.Endpoints[0].Customproperty41)
-	state.CustomProperty42 = util.SafeString(readResp.Endpoints[0].Customproperty42)
-	state.CustomProperty43 = util.SafeString(readResp.Endpoints[0].Customproperty43)
-	state.CustomProperty44 = util.SafeString(readResp.Endpoints[0].Customproperty44)
-	state.CustomProperty45 = util.SafeString(readResp.Endpoints[0].Customproperty45)
+	state.CustomProperty31 = util.SafeString(readResp.Endpoints[0].CustomProperty31)
+	state.CustomProperty32 = util.SafeString(readResp.Endpoints[0].CustomProperty32)
+	state.CustomProperty33 = util.SafeString(readResp.Endpoints[0].CustomProperty33)
+	state.CustomProperty34 = util.SafeString(readResp.Endpoints[0].CustomProperty34)
+	state.CustomProperty35 = util.SafeString(readResp.Endpoints[0].CustomProperty35)
+	state.CustomProperty36 = util.SafeString(readResp.Endpoints[0].CustomProperty36)
+	state.CustomProperty37 = util.SafeString(readResp.Endpoints[0].CustomProperty37)
+	state.CustomProperty38 = util.SafeString(readResp.Endpoints[0].CustomProperty38)
+	state.CustomProperty39 = util.SafeString(readResp.Endpoints[0].CustomProperty39)
+	state.CustomProperty40 = util.SafeString(readResp.Endpoints[0].CustomProperty40)
+	state.CustomProperty41 = util.SafeString(readResp.Endpoints[0].CustomProperty41)
+	state.CustomProperty42 = util.SafeString(readResp.Endpoints[0].CustomProperty42)
+	state.CustomProperty43 = util.SafeString(readResp.Endpoints[0].CustomProperty43)
+	state.CustomProperty44 = util.SafeString(readResp.Endpoints[0].CustomProperty44)
+	state.CustomProperty45 = util.SafeString(readResp.Endpoints[0].CustomProperty45)
 	state.AccountCustomProperty1Label = util.SafeString(readResp.Endpoints[0].AccountCustomProperty1Label)
 	state.AccountCustomProperty2Label = util.SafeString(readResp.Endpoints[0].AccountCustomProperty2Label)
 	state.AccountCustomProperty3Label = util.SafeString(readResp.Endpoints[0].AccountCustomProperty3Label)
@@ -1192,7 +1134,7 @@ func (r *endpointResource) Read(ctx context.Context, req resource.ReadRequest, r
 				"required":        types.BoolType,
 				"requested_query": types.StringType,
 				"selected_query":  types.StringType,
-				// "show_on":         types.StringType,
+				"show_on":         types.StringType,
 			},
 		})
 	} else {
@@ -1226,7 +1168,7 @@ func (r *endpointResource) Read(ctx context.Context, req resource.ReadRequest, r
 					"required":        types.BoolType,
 					"requested_query": types.StringType,
 					"selected_query":  types.StringType,
-					// "show_on":         types.StringType,
+					"show_on":         types.StringType,
 				},
 				map[string]attr.Value{
 					"role_type":       types.StringValue(endpointsutil.TranslateValue(roleType, endpointsutil.RoleTypeMap)),
@@ -1234,7 +1176,7 @@ func (r *endpointResource) Read(ctx context.Context, req resource.ReadRequest, r
 					"required":        types.BoolValue(get(1) == "1"),
 					"requested_query": types.StringValue(get(2)),
 					"selected_query":  types.StringValue(get(3)),
-					// "show_on":         types.StringValue(endpointsutil.TranslateValue(get(4), endpointsutil.ShowOnMap)),
+					"show_on":         types.StringValue(endpointsutil.TranslateValue(get(4), endpointsutil.ShowOnMap)),
 				},
 			)
 			if diags.HasError() {
@@ -1252,7 +1194,7 @@ func (r *endpointResource) Read(ctx context.Context, req resource.ReadRequest, r
 					"required":        types.BoolType,
 					"requested_query": types.StringType,
 					"selected_query":  types.StringType,
-					// "show_on":         types.StringType,
+					"show_on":         types.StringType,
 				},
 			},
 			roleTypeObjects,
@@ -1346,7 +1288,7 @@ func (r *endpointResource) Update(ctx context.Context, req resource.UpdateReques
 		Outofbandaction:                         plan.OutOfBandAction.ValueStringPointer(),
 		AccountNameRule:                         plan.AccountNameRule.ValueStringPointer(),
 		AllowChangePasswordSqlquery:             plan.AllowChangePasswordSQLQuery.ValueStringPointer(),
-		Requestable:                             plan.Requestable.ValueBoolPointer(),
+		Requestable:                             plan.Requestable.ValueStringPointer(),
 		ParentAccountPattern:                    plan.ParentAccountPattern.ValueStringPointer(),
 		ServiceAccountNameRule:                  plan.ServiceAccountNameRule.ValueStringPointer(),
 		ServiceAccountAccessQuery:               plan.ServiceAccountAccessQuery.ValueStringPointer(),
@@ -1355,7 +1297,7 @@ func (r *endpointResource) Update(ctx context.Context, req resource.UpdateReques
 		StatusConfig:                            plan.StatusConfig.ValueStringPointer(),
 		PluginConfigs:                           plan.PluginConfigs.ValueStringPointer(),
 		EndpointConfig:                          plan.EndpointConfig.ValueStringPointer(),
-		AllowRemoveAllRoleOnRequest:             plan.AllowRemoveAllRoleOnRequest.ValueBoolPointer(),
+		AllowRemoveAllRoleOnRequest:             plan.AllowRemoveAllRoleOnRequest.ValueStringPointer(),
 		Customproperty1:                         util.StringPointerOrEmpty(plan.CustomProperty1),
 		Customproperty2:                         util.StringPointerOrEmpty(plan.CustomProperty2),
 		Customproperty3:                         util.StringPointerOrEmpty(plan.CustomProperty3),
@@ -1463,45 +1405,45 @@ func (r *endpointResource) Update(ctx context.Context, req resource.UpdateReques
 		Customproperty60Label:                   util.StringPointerOrEmpty(plan.CustomProperty60Label),
 	}
 
-	// var mappedEndpoints []openapi.UpdateEndpointRequestMappedEndpointsInner
+	var mappedEndpoints []openapi.UpdateEndpointRequestMappedEndpointsInner
 	var diags diag.Diagnostics
-	// var tfMappedEndpoints []MappedEndpoint
+	var tfMappedEndpoints []MappedEndpoint
 
-	// diags = plan.MappedEndpoints.ElementsAs(ctx, &tfMappedEndpoints, true)
-	// resp.Diagnostics.Append(diags...)
-	// if resp.Diagnostics.HasError() {
-	// 	return
-	// }
+	diags = plan.MappedEndpoints.ElementsAs(ctx, &tfMappedEndpoints, true)
+	resp.Diagnostics.Append(diags...)
+	if resp.Diagnostics.HasError() {
+		return
+	}
 
-	// for _, tfTemplate := range tfMappedEndpoints {
-	// 	if tfTemplate.SecuritySystem.IsUnknown() &&
-	// 		tfTemplate.Endpoint.IsUnknown() &&
-	// 		tfTemplate.Requestable.IsUnknown() &&
-	// 		tfTemplate.Operation.IsUnknown() {
-	// 		continue
-	// 	}
+	for _, tfTemplate := range tfMappedEndpoints {
+		if tfTemplate.SecuritySystem.IsUnknown() &&
+			tfTemplate.Endpoint.IsUnknown() &&
+			tfTemplate.Requestable.IsUnknown() &&
+			tfTemplate.Operation.IsUnknown() {
+			continue
+		}
 
-	// 	mappedEndpoint := openapi.UpdateEndpointRequestMappedEndpointsInner{}
+		mappedEndpoint := openapi.UpdateEndpointRequestMappedEndpointsInner{}
 
-	// 	if !tfTemplate.SecuritySystem.IsNull() {
-	// 		mappedEndpoint.Securitysystem = tfTemplate.SecuritySystem.ValueStringPointer()
-	// 	}
-	// 	if !tfTemplate.Endpoint.IsNull() {
-	// 		mappedEndpoint.Endpoint = tfTemplate.Endpoint.ValueStringPointer()
-	// 	}
-	// 	if !tfTemplate.Requestable.IsNull() {
-	// 		mappedEndpoint.Requestable = tfTemplate.Requestable.ValueStringPointer()
-	// 	}
-	// 	if !tfTemplate.Operation.IsNull() {
-	// 		mappedEndpoint.Operation = tfTemplate.Operation.ValueStringPointer()
-	// 	}
+		if !tfTemplate.SecuritySystem.IsNull() {
+			mappedEndpoint.Securitysystem = tfTemplate.SecuritySystem.ValueStringPointer()
+		}
+		if !tfTemplate.Endpoint.IsNull() {
+			mappedEndpoint.Endpoint = tfTemplate.Endpoint.ValueStringPointer()
+		}
+		if !tfTemplate.Requestable.IsNull() {
+			mappedEndpoint.Requestable = tfTemplate.Requestable.ValueStringPointer()
+		}
+		if !tfTemplate.Operation.IsNull() {
+			mappedEndpoint.Operation = tfTemplate.Operation.ValueStringPointer()
+		}
 
-	// 	mappedEndpoints = append(mappedEndpoints, mappedEndpoint)
-	// }
+		mappedEndpoints = append(mappedEndpoints, mappedEndpoint)
+	}
 
-	// if len(mappedEndpoints) > 0 {
-	// 	updateReq.MappedEndpoints = mappedEndpoints
-	// }
+	if len(mappedEndpoints) > 0 {
+		updateReq.MappedEndpoints = mappedEndpoints
+	}
 
 	var emailTemplates []openapi.CreateEndpointRequestEmailTemplateInner
 	var tfEmailTemplates []EmailTemplate
@@ -1552,7 +1494,8 @@ func (r *endpointResource) Update(ctx context.Context, req resource.UpdateReques
 			tfTemplate.RequestOption.IsUnknown() &&
 			tfTemplate.RequestedQuery.IsUnknown() &&
 			tfTemplate.Required.IsUnknown() &&
-			tfTemplate.SelectedQuery.IsUnknown() {
+			tfTemplate.SelectedQuery.IsUnknown() &&
+			tfTemplate.ShowOn.IsUnknown() {
 			continue
 		}
 
@@ -1573,9 +1516,9 @@ func (r *endpointResource) Update(ctx context.Context, req resource.UpdateReques
 		if !tfTemplate.SelectedQuery.IsNull() {
 			requestableRoleType.SelectedQuery = tfTemplate.SelectedQuery.ValueStringPointer()
 		}
-		// if !tfTemplate.ShowOn.IsNull() {
-		// 	requestableRoleType.ShowOn = tfTemplate.ShowOn.ValueStringPointer()
-		// }
+		if !tfTemplate.ShowOn.IsNull() {
+			requestableRoleType.ShowOn = tfTemplate.ShowOn.ValueStringPointer()
+		}
 
 		requestableRoleTypes = append(requestableRoleTypes, requestableRoleType)
 	}
@@ -1593,11 +1536,11 @@ func (r *endpointResource) Update(ctx context.Context, req resource.UpdateReques
 		log.Printf("Error Updating Endpoint: %v, HTTP Response: %v", err, httpResp)
 		resp.Diagnostics.AddError(
 			"Error Updating Endpoint",
-			fmt.Sprintf("Error updating endpoints: %v", err),
+			"Check logs for details.",
 		)
 		return
 	}
-	if apiResp != nil && *apiResp.ErrorCode != "0" {
+	if *apiResp.ErrorCode != "0" {
 		log.Printf("Error Updating Endpoint: %v, Error code: %v", *apiResp.Msg, *apiResp.ErrorCode)
 		resp.Diagnostics.AddError(
 			"Error Updating Endpoint",
@@ -1610,16 +1553,8 @@ func (r *endpointResource) Update(ctx context.Context, req resource.UpdateReques
 	reqParams.SetEndpointname(state.EndpointName.ValueString())
 	readResp, _, err := apiClient.EndpointsAPI.GetEndpoints(ctx).GetEndpointsRequest(reqParams).Execute()
 	if err != nil {
-		log.Printf("Problem with the get function in update block")
-		resp.Diagnostics.AddError("API Read Failed after updation of endpoint", fmt.Sprintf("Error: %v", err))
-		return
-	}
-	if readResp != nil && *readResp.ErrorCode != "0" {
-		log.Printf("Error Reading Endpoint after updation: %v, Error code: %v", *readResp.Message, *readResp.ErrorCode)
-		resp.Diagnostics.AddError(
-			"Error Reading endpoint after updation",
-			fmt.Sprintf("Error: %v, Error code: %v", *readResp.Message, *readResp.ErrorCode),
-		)
+		log.Printf("Problem with the get function in read block")
+		resp.Diagnostics.AddError("API Read Failed", fmt.Sprintf("Error: %v", err))
 		return
 	}
 
@@ -1641,34 +1576,8 @@ func (r *endpointResource) Update(ctx context.Context, req resource.UpdateReques
 	plan.EndpointName = util.SafeString(readResp.Endpoints[0].Endpointname)
 	plan.AccessQuery = util.SafeString(readResp.Endpoints[0].Accessquery)
 	plan.DisplayName = util.SafeString(readResp.Endpoints[0].DisplayName)
-	if readResp.Endpoints[0].Requestable != nil {
-		if *readResp.Endpoints[0].Requestable == "true" {
-			plan.Requestable = types.BoolValue(true)
-		} else {
-			plan.Requestable = types.BoolValue(false)
-		}
-	} else {
-		plan.Requestable = types.BoolNull()
-	}
-	if readResp.Endpoints[0].AllowRemoveAllRoleOnRequest != nil {
-		if *readResp.Endpoints[0].AllowRemoveAllRoleOnRequest == "true" {
-			plan.AllowRemoveAllRoleOnRequest = types.BoolValue(true)
-		} else {
-			plan.AllowRemoveAllRoleOnRequest = types.BoolValue(false)
-		}
-	} else {
-		plan.AllowRemoveAllRoleOnRequest = types.BoolNull()
-	}
-	if readResp.Endpoints[0].ConnectionconfigAsJson != nil {
-		normalized, err := endpointsutil.NormalizeJSON(*readResp.Endpoints[0].ConnectionconfigAsJson)
-		if err != nil {
-			plan.ConnectionConfig = types.StringNull()
-		} else {
-			plan.ConnectionConfig = util.SafeString(&normalized)
-		}
-	} else {
-		plan.ConnectionConfig = types.StringNull()
-	}
+	plan.AllowRemoveAllRoleOnRequest = util.SafeString(readResp.Endpoints[0].AllowRemoveAllRoleOnRequest)
+	plan.ConnectionConfig = util.SafeString(readResp.Endpoints[0].Connectionconfig)
 	plan.AccountNameRule = util.SafeString(readResp.Endpoints[0].AccountNameRule)
 	plan.ChangePasswordAccessQuery = util.SafeString(readResp.Endpoints[0].ChangePasswordAccessQuery)
 
@@ -1676,6 +1585,7 @@ func (r *endpointResource) Update(ctx context.Context, req resource.UpdateReques
 
 	plan.CreateEntTaskforRemoveAcc = util.SafeString(readResp.Endpoints[0].CreateEntTaskforRemoveAcc)
 	plan.EnableCopyAccess = util.SafeString(readResp.Endpoints[0].EnableCopyAccess)
+	plan.AccountTypeNoPasswordChange = util.SafeString(readResp.Endpoints[0].AccountTypeNoDeprovision)
 	plan.EndpointConfig = util.SafeString(readResp.Endpoints[0].EndpointConfig)
 	plan.ServiceAccountAccessQuery = util.SafeString(readResp.Endpoints[0].ServiceAccountAccessQuery)
 	plan.UserAccountCorrelationRule = util.SafeString(readResp.Endpoints[0].UserAccountCorrelationRule)
@@ -1711,21 +1621,21 @@ func (r *endpointResource) Update(ctx context.Context, req resource.UpdateReques
 	plan.CustomProperty28 = util.SafeString(readResp.Endpoints[0].CustomProperty28)
 	plan.CustomProperty29 = util.SafeString(readResp.Endpoints[0].CustomProperty29)
 	plan.CustomProperty30 = util.SafeString(readResp.Endpoints[0].CustomProperty30)
-	plan.CustomProperty31 = util.SafeString(readResp.Endpoints[0].Customproperty31)
-	plan.CustomProperty32 = util.SafeString(readResp.Endpoints[0].Customproperty32)
-	plan.CustomProperty33 = util.SafeString(readResp.Endpoints[0].Customproperty33)
-	plan.CustomProperty34 = util.SafeString(readResp.Endpoints[0].Customproperty34)
-	plan.CustomProperty35 = util.SafeString(readResp.Endpoints[0].Customproperty35)
-	plan.CustomProperty36 = util.SafeString(readResp.Endpoints[0].Customproperty36)
-	plan.CustomProperty37 = util.SafeString(readResp.Endpoints[0].Customproperty37)
-	plan.CustomProperty38 = util.SafeString(readResp.Endpoints[0].Customproperty38)
-	plan.CustomProperty39 = util.SafeString(readResp.Endpoints[0].Customproperty39)
-	plan.CustomProperty40 = util.SafeString(readResp.Endpoints[0].Customproperty40)
-	plan.CustomProperty41 = util.SafeString(readResp.Endpoints[0].Customproperty41)
-	plan.CustomProperty42 = util.SafeString(readResp.Endpoints[0].Customproperty42)
-	plan.CustomProperty43 = util.SafeString(readResp.Endpoints[0].Customproperty43)
-	plan.CustomProperty44 = util.SafeString(readResp.Endpoints[0].Customproperty44)
-	plan.CustomProperty45 = util.SafeString(readResp.Endpoints[0].Customproperty45)
+	plan.CustomProperty31 = util.SafeString(readResp.Endpoints[0].CustomProperty31)
+	plan.CustomProperty32 = util.SafeString(readResp.Endpoints[0].CustomProperty32)
+	plan.CustomProperty33 = util.SafeString(readResp.Endpoints[0].CustomProperty33)
+	plan.CustomProperty34 = util.SafeString(readResp.Endpoints[0].CustomProperty34)
+	plan.CustomProperty35 = util.SafeString(readResp.Endpoints[0].CustomProperty35)
+	plan.CustomProperty36 = util.SafeString(readResp.Endpoints[0].CustomProperty36)
+	plan.CustomProperty37 = util.SafeString(readResp.Endpoints[0].CustomProperty37)
+	plan.CustomProperty38 = util.SafeString(readResp.Endpoints[0].CustomProperty38)
+	plan.CustomProperty39 = util.SafeString(readResp.Endpoints[0].CustomProperty39)
+	plan.CustomProperty40 = util.SafeString(readResp.Endpoints[0].CustomProperty40)
+	plan.CustomProperty41 = util.SafeString(readResp.Endpoints[0].CustomProperty41)
+	plan.CustomProperty42 = util.SafeString(readResp.Endpoints[0].CustomProperty42)
+	plan.CustomProperty43 = util.SafeString(readResp.Endpoints[0].CustomProperty43)
+	plan.CustomProperty44 = util.SafeString(readResp.Endpoints[0].CustomProperty44)
+	plan.CustomProperty45 = util.SafeString(readResp.Endpoints[0].CustomProperty45)
 
 	plan.AccountCustomProperty1Label = util.SafeString(readResp.Endpoints[0].AccountCustomProperty1Label)
 	plan.AccountCustomProperty2Label = util.SafeString(readResp.Endpoints[0].AccountCustomProperty2Label)
@@ -1867,7 +1777,7 @@ func (r *endpointResource) Update(ctx context.Context, req resource.UpdateReques
 				"required":        types.BoolType,
 				"requested_query": types.StringType,
 				"selected_query":  types.StringType,
-				// "show_on":         types.StringType,
+				"show_on":         types.StringType,
 			},
 		})
 	} else {
@@ -1900,7 +1810,7 @@ func (r *endpointResource) Update(ctx context.Context, req resource.UpdateReques
 					"required":        types.BoolType,
 					"requested_query": types.StringType,
 					"selected_query":  types.StringType,
-					// "show_on":         types.StringType,
+					"show_on":         types.StringType,
 				},
 				map[string]attr.Value{
 					"role_type":       types.StringValue(endpointsutil.TranslateValue(roleType, endpointsutil.RoleTypeMap)),
@@ -1908,7 +1818,7 @@ func (r *endpointResource) Update(ctx context.Context, req resource.UpdateReques
 					"required":        types.BoolValue(get(1) == "1"),
 					"requested_query": types.StringValue(get(2)),
 					"selected_query":  types.StringValue(get(3)),
-					// "show_on":         types.StringValue(endpointsutil.TranslateValue(get(4), endpointsutil.ShowOnMap)),
+					"show_on":         types.StringValue(endpointsutil.TranslateValue(get(4), endpointsutil.ShowOnMap)),
 				},
 			)
 			if diags.HasError() {
@@ -1926,7 +1836,7 @@ func (r *endpointResource) Update(ctx context.Context, req resource.UpdateReques
 					"required":        types.BoolType,
 					"requested_query": types.StringType,
 					"selected_query":  types.StringType,
-					// "show_on":         types.StringType,
+					"show_on":         types.StringType,
 				},
 			},
 			roleTypeObjects,

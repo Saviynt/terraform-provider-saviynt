@@ -55,6 +55,7 @@ Read-Only:
 - `change_pass_json` (String)
 - `config_json` (String)
 - `connection_json` (String)
+- `connection_timeout_config` (Attributes) (see [below for nested schema](#nestedatt--connection_attributes--connection_timeout_config))
 - `connection_type` (String)
 - `create_account_json` (String)
 - `create_ticket_json` (String)
@@ -77,3 +78,16 @@ Read-Only:
 - `update_account_json` (String)
 - `update_user_json` (String)
 - `validate_otp_json` (String)
+
+<a id="nestedatt--connection_attributes--connection_timeout_config"></a>
+### Nested Schema for `connection_attributes.connection_timeout_config`
+
+Read-Only:
+
+- `connection_timeout` (Number)
+- `read_timeout` (Number)
+- `retry_count` (Number)
+- `retry_failure_status_code` (Number)
+- `retry_wait` (Number)
+- `retry_wait_max_value` (Number)
+- `token_refresh_max_try_count` (Number)

@@ -1,7 +1,7 @@
 /*
 Account Management API
 
-API for managing security systems in EIC. 
+API for managing security systems in EIC.
 
 API version: 1.0.0
 */
@@ -11,8 +11,8 @@ API version: 1.0.0
 package securitysystems
 
 import (
-	"encoding/json"
 	"bytes"
+	"encoding/json"
 	"fmt"
 )
 
@@ -42,7 +42,7 @@ type CreateSecuritySystemRequest struct {
 	// Specify true to enable automated provisioning.
 	AutomatedProvisioning *string `json:"automatedProvisioning,omitempty"`
 	// Specify true to enable the connectivity with any system over the open-source connectors such as REST.
-	Useopenconnector *bool `json:"useopenconnector,omitempty"`
+	Useopenconnector *string `json:"useopenconnector,omitempty"`
 	// Specify true to importing data from respective endpoint associated to security system.
 	ReconApplication *string `json:"reconApplication,omitempty"`
 	// Number of provisioning tries.
@@ -379,9 +379,9 @@ func (o *CreateSecuritySystemRequest) SetAutomatedProvisioning(v string) {
 }
 
 // GetUseopenconnector returns the Useopenconnector field value if set, zero value otherwise.
-func (o *CreateSecuritySystemRequest) GetUseopenconnector() bool {
+func (o *CreateSecuritySystemRequest) GetUseopenconnector() string {
 	if o == nil || IsNil(o.Useopenconnector) {
-		var ret bool
+		var ret string
 		return ret
 	}
 	return *o.Useopenconnector
@@ -389,7 +389,7 @@ func (o *CreateSecuritySystemRequest) GetUseopenconnector() bool {
 
 // GetUseopenconnectorOk returns a tuple with the Useopenconnector field value if set, nil otherwise
 // and a boolean to check if the value has been set.
-func (o *CreateSecuritySystemRequest) GetUseopenconnectorOk() (*bool, bool) {
+func (o *CreateSecuritySystemRequest) GetUseopenconnectorOk() (*string, bool) {
 	if o == nil || IsNil(o.Useopenconnector) {
 		return nil, false
 	}
@@ -405,8 +405,8 @@ func (o *CreateSecuritySystemRequest) HasUseopenconnector() bool {
 	return false
 }
 
-// SetUseopenconnector gets a reference to the given bool and assigns it to the Useopenconnector field.
-func (o *CreateSecuritySystemRequest) SetUseopenconnector(v bool) {
+// SetUseopenconnector gets a reference to the given string and assigns it to the Useopenconnector field.
+func (o *CreateSecuritySystemRequest) SetUseopenconnector(v string) {
 	o.Useopenconnector = &v
 }
 
@@ -539,7 +539,7 @@ func (o *CreateSecuritySystemRequest) SetProvisioningcomments(v string) {
 }
 
 func (o CreateSecuritySystemRequest) MarshalJSON() ([]byte, error) {
-	toSerialize,err := o.ToMap()
+	toSerialize, err := o.ToMap()
 	if err != nil {
 		return []byte{}, err
 	}
@@ -606,10 +606,10 @@ func (o *CreateSecuritySystemRequest) UnmarshalJSON(data []byte) (err error) {
 	err = json.Unmarshal(data, &allProperties)
 
 	if err != nil {
-		return err;
+		return err
 	}
 
-	for _, requiredProperty := range(requiredProperties) {
+	for _, requiredProperty := range requiredProperties {
 		if _, exists := allProperties[requiredProperty]; !exists {
 			return fmt.Errorf("no value given for required property %v", requiredProperty)
 		}
@@ -665,5 +665,3 @@ func (v *NullableCreateSecuritySystemRequest) UnmarshalJSON(src []byte) error {
 	v.isSet = true
 	return json.Unmarshal(src, &v.value)
 }
-
-

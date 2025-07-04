@@ -1,17 +1,5 @@
-/*
- * Copyright (c) 2025 Saviynt Inc.
- * All Rights Reserved.
- *
- * This software is the confidential and proprietary information of
- * Saviynt Inc. ("Confidential Information"). You shall not disclose,
- * use, or distribute such Confidential Information except in accordance
- * with the terms of the license agreement you entered into with Saviynt.
- *
- * SAVIYNT MAKES NO REPRESENTATIONS OR WARRANTIES ABOUT THE SUITABILITY OF
- * THE SOFTWARE, EITHER EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO
- * THE IMPLIED WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR
- * PURPOSE, OR NON-INFRINGEMENT.
- */
+// Copyright (c) Saviynt Inc.
+// SPDX-License-Identifier: MPL-2.0
 
 // saviynt_unix_connection_resource manages Unix connectors in the Saviynt Security Manager.
 // The resource implements the full Terraform lifecycle:
@@ -335,7 +323,7 @@ func (r *unixConnectionResource) Create(ctx context.Context, req resource.Create
 			Connectiontype: "Unix",
 			ConnectionName: plan.ConnectionName.ValueString(),
 			//optional values
-			// Description:     util.StringPointerOrEmpty(plan.Description),
+			Description:     util.StringPointerOrEmpty(plan.Description),
 			Defaultsavroles: util.StringPointerOrEmpty(plan.DefaultSavRoles),
 			EmailTemplate:   util.StringPointerOrEmpty(plan.EmailTemplate),
 		},
@@ -386,21 +374,15 @@ func (r *unixConnectionResource) Create(ctx context.Context, req resource.Create
 	}
 
 	apiResp, _, err := apiClient.ConnectionsAPI.CreateOrUpdate(ctx).CreateOrUpdateRequest(unixRequest).Execute()
-	if err != nil {
+	if err != nil || *apiResp.ErrorCode != "0" {
 		log.Printf("[ERROR] Failed to create API resource. Error: %v", err)
 		resp.Diagnostics.AddError("API Create Failed", fmt.Sprintf("Error: %v", err))
 		return
 	}
-	if apiResp!=nil && *apiResp.ErrorCode !="0"{
-		log.Printf("[ERROR]: Error in creating Unix connection resource. Errorcode: %v, Message: %v", *apiResp.ErrorCode, *apiResp.Msg)
-		resp.Diagnostics.AddError("Creation of Unix connection failed", *apiResp.Msg)
-		return
-	}
-
 	plan.ID = types.StringValue(fmt.Sprintf("%d", *apiResp.ConnectionKey))
 	plan.ConnectionType = types.StringValue("Unix")
 	plan.ConnectionKey = types.Int64Value(int64(*apiResp.ConnectionKey))
-	// plan.Description = util.SafeStringDatasource(plan.Description.ValueStringPointer())
+	plan.Description = util.SafeStringDatasource(plan.Description.ValueStringPointer())
 	plan.DefaultSavRoles = util.SafeStringDatasource(plan.DefaultSavRoles.ValueStringPointer())
 	plan.EmailTemplate = util.SafeStringDatasource(plan.EmailTemplate.ValueStringPointer())
 	plan.HostName = util.SafeStringDatasource(plan.HostName.ValueStringPointer())
@@ -462,16 +444,10 @@ func (r *unixConnectionResource) Read(ctx context.Context, req resource.ReadRequ
 		resp.Diagnostics.AddError("API Read Failed", fmt.Sprintf("Error: %v", err))
 		return
 	}
-	if apiResp!=nil && *apiResp.UNIXConnectionResponse.Errorcode !=0{
-		log.Printf("[ERROR]: Error in reading Unix connection resource. Errorcode: %v, Message: %v", *apiResp.UNIXConnectionResponse.Errorcode, *apiResp.UNIXConnectionResponse.Msg)
-		resp.Diagnostics.AddError("Reading Unix connection resource failed", *apiResp.UNIXConnectionResponse.Msg)
-		return
-	}
-
 	state.ConnectionKey = types.Int64Value(int64(*apiResp.UNIXConnectionResponse.Connectionkey))
 	state.ID = types.StringValue(fmt.Sprintf("%d", *apiResp.UNIXConnectionResponse.Connectionkey))
 	state.ConnectionName = util.SafeStringDatasource(apiResp.UNIXConnectionResponse.Connectionname)
-	// state.Description = util.SafeStringDatasource(apiResp.UNIXConnectionResponse.Description)
+	state.Description = util.SafeStringDatasource(apiResp.UNIXConnectionResponse.Description)
 	state.DefaultSavRoles = util.SafeStringDatasource(apiResp.UNIXConnectionResponse.Defaultsavroles)
 	state.ConnectionType = util.SafeStringDatasource(apiResp.UNIXConnectionResponse.Connectiontype)
 	state.EmailTemplate = util.SafeStringDatasource(apiResp.UNIXConnectionResponse.Emailtemplate)
@@ -559,7 +535,7 @@ func (r *unixConnectionResource) Update(ctx context.Context, req resource.Update
 			Connectiontype: "Unix",
 			ConnectionName: plan.ConnectionName.ValueString(),
 			//optional values
-			// Description:     util.StringPointerOrEmpty(plan.Description),
+			Description:     util.StringPointerOrEmpty(plan.Description),
 			Defaultsavroles: util.StringPointerOrEmpty(plan.DefaultSavRoles),
 			EmailTemplate:   util.StringPointerOrEmpty(plan.EmailTemplate),
 		},
@@ -617,17 +593,11 @@ func (r *unixConnectionResource) Update(ctx context.Context, req resource.Update
 	// Initialize API client
 	apiClient := openapi.NewAPIClient(cfg)
 	apiResp, _, err := apiClient.ConnectionsAPI.CreateOrUpdate(ctx).CreateOrUpdateRequest(unixConnRequest).Execute()
-	if err != nil {
+	if err != nil || *apiResp.ErrorCode != "0" {
 		log.Printf("Problem with the update function")
 		resp.Diagnostics.AddError("API Update Failed", fmt.Sprintf("Error: %v", err))
 		return
 	}
-	if apiResp!=nil && *apiResp.ErrorCode !="0"{
-		log.Printf("[ERROR]: Error in updating Unix connection resource. Errorcode: %v, Message: %v", *apiResp.ErrorCode, *apiResp.Msg)
-		resp.Diagnostics.AddError("Updation of Unix connection failed", *apiResp.Msg)
-		return
-	}
-
 	reqParams := openapi.GetConnectionDetailsRequest{}
 
 	reqParams.SetConnectionname(plan.ConnectionName.ValueString())
@@ -637,16 +607,10 @@ func (r *unixConnectionResource) Update(ctx context.Context, req resource.Update
 		resp.Diagnostics.AddError("API Read Failed", fmt.Sprintf("Error: %v", err))
 		return
 	}
-	if apiResp!=nil && *getResp.UNIXConnectionResponse.Errorcode !=0{
-		log.Printf("[ERROR]: Error in reading Unix connection resource after updation. Errorcode: %v, Message: %v", *getResp.UNIXConnectionResponse.Errorcode, *getResp.UNIXConnectionResponse.Msg)
-		resp.Diagnostics.AddError("Reading Unix connection after updation failed", *getResp.UNIXConnectionResponse.Msg)
-		return
-	}
-
 	plan.ConnectionKey = types.Int64Value(int64(*getResp.UNIXConnectionResponse.Connectionkey))
 	plan.ID = types.StringValue(fmt.Sprintf("%d", *getResp.UNIXConnectionResponse.Connectionkey))
 	plan.ConnectionName = util.SafeStringDatasource(getResp.UNIXConnectionResponse.Connectionname)
-	// plan.Description = util.SafeStringDatasource(getResp.UNIXConnectionResponse.Description)
+	plan.Description = util.SafeStringDatasource(getResp.UNIXConnectionResponse.Description)
 	plan.DefaultSavRoles = util.SafeStringDatasource(getResp.UNIXConnectionResponse.Defaultsavroles)
 	plan.ConnectionType = util.SafeStringDatasource(getResp.UNIXConnectionResponse.Connectiontype)
 	plan.EmailTemplate = util.SafeStringDatasource(getResp.UNIXConnectionResponse.Emailtemplate)

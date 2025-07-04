@@ -1,17 +1,5 @@
-/*
- * Copyright (c) 2025 Saviynt Inc.
- * All Rights Reserved.
- *
- * This software is the confidential and proprietary information of
- * Saviynt Inc. ("Confidential Information"). You shall not disclose,
- * use, or distribute such Confidential Information except in accordance
- * with the terms of the license agreement you entered into with Saviynt.
- *
- * SAVIYNT MAKES NO REPRESENTATIONS OR WARRANTIES ABOUT THE SUITABILITY OF
- * THE SOFTWARE, EITHER EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO
- * THE IMPLIED WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR
- * PURPOSE, OR NON-INFRINGEMENT.
- */
+// Copyright (c) Saviynt Inc.
+// SPDX-License-Identifier: MPL-2.0
 
 // saviynt_endpoints_datasource retrieves endpoint details from the Saviynt Security Manager.
 // The data source supports a single Read operation to look up an existing endpoint by name.
@@ -53,7 +41,7 @@ type EndpointsDataSourceModel struct {
 	TotalCount     types.Int64  `tfsdk:"total_count"`
 	Message        types.String `tfsdk:"message"`
 	EndpointName   types.String `tfsdk:"endpointname"`
-	EndpointKey    types.List   `tfsdk:"endpointkey"`
+	EndpointKey   types.List `tfsdk:"endpointkey"`
 	ConnectionType types.String `tfsdk:"connection_type"`
 	Displayname    types.String `tfsdk:"displayname"`
 	Owner          types.String `tfsdk:"owner"`
@@ -337,7 +325,7 @@ func (d *endpointsDataSource) Schema(ctx context.Context, req datasource.SchemaR
 				Description: "Filter by endpoint name",
 			},
 			"endpointkey": schema.ListAttribute{
-				Optional:    true,
+				Optional: true,
 				ElementType: types.StringType,
 				Description: "List of endpoint keys to filter",
 			},
@@ -428,13 +416,14 @@ func (d *endpointsDataSource) Read(ctx context.Context, req datasource.ReadReque
 
 	areq := openapi.GetEndpointsRequest{}
 
+
 	if !state.EndpointName.IsNull() && state.EndpointName.ValueString() != "" {
 		endpointName := state.EndpointName.ValueString()
 		areq.SetEndpointname(endpointName)
 	}
 
-	if !state.EndpointKey.IsNull() && len(state.EndpointKey.Elements()) > 0 {
-		endpointkeys := util.StringsFromList(state.EndpointKey)
+	if !state.EndpointKey.IsNull() && len(state.EndpointKey.Elements())>0 {
+		endpointkeys:=util.ConvertTFStringsToGoStrings(state.EndpointKey)
 		areq.SetEndpointkey(endpointkeys)
 	}
 
@@ -483,11 +472,6 @@ func (d *endpointsDataSource) Read(ctx context.Context, req datasource.ReadReque
 		resp.Diagnostics.AddError("API Call Failed", fmt.Sprintf("Error: %v", err))
 		return
 	}
-	if endpointsResponse!=nil && *endpointsResponse.ErrorCode !="0"{
-		log.Printf("[ERROR]: Error in reading endpoint. Errorcode: %v, Message: %v", *endpointsResponse.ErrorCode, *endpointsResponse.Message)
-		resp.Diagnostics.AddError("Read endpoint failed", *endpointsResponse.Message)
-	}
-
 	log.Printf("[DEBUG] HTTP Status Code: %d", httpResp.StatusCode)
 
 	state.Message = types.StringValue(*endpointsResponse.Message)
@@ -574,21 +558,21 @@ func (d *endpointsDataSource) Read(ctx context.Context, req datasource.ReadReque
 					CustomProperty28: util.SafeString(item.CustomProperty28),
 					CustomProperty29: util.SafeString(item.CustomProperty29),
 					CustomProperty30: util.SafeString(item.CustomProperty30),
-					CustomProperty31: util.SafeString(item.Customproperty31),
-					CustomProperty32: util.SafeString(item.Customproperty32),
-					CustomProperty33: util.SafeString(item.Customproperty33),
-					CustomProperty34: util.SafeString(item.Customproperty34),
-					CustomProperty35: util.SafeString(item.Customproperty35),
-					CustomProperty36: util.SafeString(item.Customproperty36),
-					CustomProperty37: util.SafeString(item.Customproperty37),
-					CustomProperty38: util.SafeString(item.Customproperty38),
-					CustomProperty39: util.SafeString(item.Customproperty39),
-					CustomProperty40: util.SafeString(item.Customproperty40),
-					CustomProperty41: util.SafeString(item.Customproperty41),
-					CustomProperty42: util.SafeString(item.Customproperty42),
-					CustomProperty43: util.SafeString(item.Customproperty43),
-					CustomProperty44: util.SafeString(item.Customproperty44),
-					CustomProperty45: util.SafeString(item.Customproperty45),
+					CustomProperty31: util.SafeString(item.CustomProperty31),
+					CustomProperty32: util.SafeString(item.CustomProperty32),
+					CustomProperty33: util.SafeString(item.CustomProperty33),
+					CustomProperty34: util.SafeString(item.CustomProperty34),
+					CustomProperty35: util.SafeString(item.CustomProperty35),
+					CustomProperty36: util.SafeString(item.CustomProperty36),
+					CustomProperty37: util.SafeString(item.CustomProperty37),
+					CustomProperty38: util.SafeString(item.CustomProperty38),
+					CustomProperty39: util.SafeString(item.CustomProperty39),
+					CustomProperty40: util.SafeString(item.CustomProperty40),
+					CustomProperty41: util.SafeString(item.CustomProperty41),
+					CustomProperty42: util.SafeString(item.CustomProperty42),
+					CustomProperty43: util.SafeString(item.CustomProperty43),
+					CustomProperty44: util.SafeString(item.CustomProperty44),
+					CustomProperty45: util.SafeString(item.CustomProperty45),
 				},
 				AccountCustomPropertyLabelModel: AccountCustomPropertyLabelModel{
 					AccountCustomProperty1Label:  util.SafeString(item.AccountCustomProperty1Label),

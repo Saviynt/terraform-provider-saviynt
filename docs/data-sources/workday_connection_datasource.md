@@ -61,6 +61,7 @@ Read-Only:
 - `base_url` (String)
 - `client_id` (String)
 - `client_secret` (String)
+- `connection_timeout_config` (Attributes) (see [below for nested schema](#nestedatt--connection_attributes--connection_timeout_config))
 - `connection_type` (String)
 - `create_account_payload` (String)
 - `custom_config` (String)
@@ -91,3 +92,16 @@ Read-Only:
 - `users_last_import_time` (String)
 - `x509_cert` (String)
 - `x509_key` (String)
+
+<a id="nestedatt--connection_attributes--connection_timeout_config"></a>
+### Nested Schema for `connection_attributes.connection_timeout_config`
+
+Read-Only:
+
+- `connection_timeout` (Number)
+- `read_timeout` (Number)
+- `retry_count` (Number)
+- `retry_failure_status_code` (Number)
+- `retry_wait` (Number)
+- `retry_wait_max_value` (Number)
+- `token_refresh_max_try_count` (Number)

@@ -162,35 +162,35 @@ type GetEndpoints200ResponseEndpointsInner struct {
 	// Custom Property 30
 	CustomProperty30 *string `json:"Custom Property 30,omitempty"`
 	// Custom Property 31
-	Customproperty31 *string `json:"customproperty31,omitempty"`
+	CustomProperty31 *string `json:"Custom Property 31,omitempty"`
 	// Custom Property 32
-	Customproperty32 *string `json:"customproperty32,omitempty"`
+	CustomProperty32 *string `json:"Custom Property 32,omitempty"`
 	// Custom Property 33
-	Customproperty33 *string `json:"customproperty33,omitempty"`
+	CustomProperty33 *string `json:"Custom Property 33,omitempty"`
 	// Custom Property 34
-	Customproperty34 *string `json:"customproperty34,omitempty"`
+	CustomProperty34 *string `json:"Custom Property 34,omitempty"`
 	// Custom Property 35
-	Customproperty35 *string `json:"customproperty35,omitempty"`
+	CustomProperty35 *string `json:"Custom Property 35,omitempty"`
 	// Custom Property 36
-	Customproperty36 *string `json:"customproperty36,omitempty"`
+	CustomProperty36 *string `json:"Custom Property 36,omitempty"`
 	// Custom Property 37
-	Customproperty37 *string `json:"customproperty37,omitempty"`
+	CustomProperty37 *string `json:"Custom Property 37,omitempty"`
 	// Custom Property 38
-	Customproperty38 *string `json:"customproperty38,omitempty"`
+	CustomProperty38 *string `json:"Custom Property 38,omitempty"`
 	// Custom Property 39
-	Customproperty39 *string `json:"customproperty39,omitempty"`
+	CustomProperty39 *string `json:"Custom Property 39,omitempty"`
 	// Custom Property 40
-	Customproperty40 *string `json:"customproperty40,omitempty"`
+	CustomProperty40 *string `json:"Custom Property 40,omitempty"`
 	// Custom Property 41
-	Customproperty41 *string `json:"customproperty41,omitempty"`
+	CustomProperty41 *string `json:"Custom Property 41,omitempty"`
 	// Custom Property 42
-	Customproperty42 *string `json:"customproperty42,omitempty"`
+	CustomProperty42 *string `json:"Custom Property 42,omitempty"`
 	// Custom Property 43
-	Customproperty43 *string `json:"customproperty43,omitempty"`
+	CustomProperty43 *string `json:"Custom Property 43,omitempty"`
 	// Custom Property 44
-	Customproperty44 *string `json:"customproperty44,omitempty"`
+	CustomProperty44 *string `json:"Custom Property 44,omitempty"`
 	// Custom Property 45
-	Customproperty45 *string `json:"customproperty45,omitempty"`
+	CustomProperty45 *string `json:"Custom Property 45,omitempty"`
 	// Custom Property 1 Label
 	AccountCustomProperty1Label *string `json:"Account Custom Property 1 Label,omitempty"`
 	// Custom Property 2 Label
@@ -2730,484 +2730,484 @@ func (o *GetEndpoints200ResponseEndpointsInner) SetCustomProperty30(v string) {
 	o.CustomProperty30 = &v
 }
 
-// GetCustomproperty31 returns the Customproperty31 field value if set, zero value otherwise.
-func (o *GetEndpoints200ResponseEndpointsInner) GetCustomproperty31() string {
-	if o == nil || IsNil(o.Customproperty31) {
+// GetCustomProperty31 returns the CustomProperty31 field value if set, zero value otherwise.
+func (o *GetEndpoints200ResponseEndpointsInner) GetCustomProperty31() string {
+	if o == nil || IsNil(o.CustomProperty31) {
 		var ret string
 		return ret
 	}
-	return *o.Customproperty31
+	return *o.CustomProperty31
 }
 
-// GetCustomproperty31Ok returns a tuple with the Customproperty31 field value if set, nil otherwise
+// GetCustomProperty31Ok returns a tuple with the CustomProperty31 field value if set, nil otherwise
 // and a boolean to check if the value has been set.
-func (o *GetEndpoints200ResponseEndpointsInner) GetCustomproperty31Ok() (*string, bool) {
-	if o == nil || IsNil(o.Customproperty31) {
+func (o *GetEndpoints200ResponseEndpointsInner) GetCustomProperty31Ok() (*string, bool) {
+	if o == nil || IsNil(o.CustomProperty31) {
 		return nil, false
 	}
-	return o.Customproperty31, true
+	return o.CustomProperty31, true
 }
 
-// HasCustomproperty31 returns a boolean if a field has been set.
-func (o *GetEndpoints200ResponseEndpointsInner) HasCustomproperty31() bool {
-	if o != nil && !IsNil(o.Customproperty31) {
+// HasCustomProperty31 returns a boolean if a field has been set.
+func (o *GetEndpoints200ResponseEndpointsInner) HasCustomProperty31() bool {
+	if o != nil && !IsNil(o.CustomProperty31) {
 		return true
 	}
 
 	return false
 }
 
-// SetCustomproperty31 gets a reference to the given string and assigns it to the Customproperty31 field.
-func (o *GetEndpoints200ResponseEndpointsInner) SetCustomproperty31(v string) {
-	o.Customproperty31 = &v
+// SetCustomProperty31 gets a reference to the given string and assigns it to the CustomProperty31 field.
+func (o *GetEndpoints200ResponseEndpointsInner) SetCustomProperty31(v string) {
+	o.CustomProperty31 = &v
 }
 
-// GetCustomproperty32 returns the Customproperty32 field value if set, zero value otherwise.
-func (o *GetEndpoints200ResponseEndpointsInner) GetCustomproperty32() string {
-	if o == nil || IsNil(o.Customproperty32) {
+// GetCustomProperty32 returns the CustomProperty32 field value if set, zero value otherwise.
+func (o *GetEndpoints200ResponseEndpointsInner) GetCustomProperty32() string {
+	if o == nil || IsNil(o.CustomProperty32) {
 		var ret string
 		return ret
 	}
-	return *o.Customproperty32
+	return *o.CustomProperty32
 }
 
-// GetCustomproperty32Ok returns a tuple with the Customproperty32 field value if set, nil otherwise
+// GetCustomProperty32Ok returns a tuple with the CustomProperty32 field value if set, nil otherwise
 // and a boolean to check if the value has been set.
-func (o *GetEndpoints200ResponseEndpointsInner) GetCustomproperty32Ok() (*string, bool) {
-	if o == nil || IsNil(o.Customproperty32) {
+func (o *GetEndpoints200ResponseEndpointsInner) GetCustomProperty32Ok() (*string, bool) {
+	if o == nil || IsNil(o.CustomProperty32) {
 		return nil, false
 	}
-	return o.Customproperty32, true
+	return o.CustomProperty32, true
 }
 
-// HasCustomproperty32 returns a boolean if a field has been set.
-func (o *GetEndpoints200ResponseEndpointsInner) HasCustomproperty32() bool {
-	if o != nil && !IsNil(o.Customproperty32) {
+// HasCustomProperty32 returns a boolean if a field has been set.
+func (o *GetEndpoints200ResponseEndpointsInner) HasCustomProperty32() bool {
+	if o != nil && !IsNil(o.CustomProperty32) {
 		return true
 	}
 
 	return false
 }
 
-// SetCustomproperty32 gets a reference to the given string and assigns it to the Customproperty32 field.
-func (o *GetEndpoints200ResponseEndpointsInner) SetCustomproperty32(v string) {
-	o.Customproperty32 = &v
+// SetCustomProperty32 gets a reference to the given string and assigns it to the CustomProperty32 field.
+func (o *GetEndpoints200ResponseEndpointsInner) SetCustomProperty32(v string) {
+	o.CustomProperty32 = &v
 }
 
-// GetCustomproperty33 returns the Customproperty33 field value if set, zero value otherwise.
-func (o *GetEndpoints200ResponseEndpointsInner) GetCustomproperty33() string {
-	if o == nil || IsNil(o.Customproperty33) {
+// GetCustomProperty33 returns the CustomProperty33 field value if set, zero value otherwise.
+func (o *GetEndpoints200ResponseEndpointsInner) GetCustomProperty33() string {
+	if o == nil || IsNil(o.CustomProperty33) {
 		var ret string
 		return ret
 	}
-	return *o.Customproperty33
+	return *o.CustomProperty33
 }
 
-// GetCustomproperty33Ok returns a tuple with the Customproperty33 field value if set, nil otherwise
+// GetCustomProperty33Ok returns a tuple with the CustomProperty33 field value if set, nil otherwise
 // and a boolean to check if the value has been set.
-func (o *GetEndpoints200ResponseEndpointsInner) GetCustomproperty33Ok() (*string, bool) {
-	if o == nil || IsNil(o.Customproperty33) {
+func (o *GetEndpoints200ResponseEndpointsInner) GetCustomProperty33Ok() (*string, bool) {
+	if o == nil || IsNil(o.CustomProperty33) {
 		return nil, false
 	}
-	return o.Customproperty33, true
+	return o.CustomProperty33, true
 }
 
-// HasCustomproperty33 returns a boolean if a field has been set.
-func (o *GetEndpoints200ResponseEndpointsInner) HasCustomproperty33() bool {
-	if o != nil && !IsNil(o.Customproperty33) {
+// HasCustomProperty33 returns a boolean if a field has been set.
+func (o *GetEndpoints200ResponseEndpointsInner) HasCustomProperty33() bool {
+	if o != nil && !IsNil(o.CustomProperty33) {
 		return true
 	}
 
 	return false
 }
 
-// SetCustomproperty33 gets a reference to the given string and assigns it to the Customproperty33 field.
-func (o *GetEndpoints200ResponseEndpointsInner) SetCustomproperty33(v string) {
-	o.Customproperty33 = &v
+// SetCustomProperty33 gets a reference to the given string and assigns it to the CustomProperty33 field.
+func (o *GetEndpoints200ResponseEndpointsInner) SetCustomProperty33(v string) {
+	o.CustomProperty33 = &v
 }
 
-// GetCustomproperty34 returns the Customproperty34 field value if set, zero value otherwise.
-func (o *GetEndpoints200ResponseEndpointsInner) GetCustomproperty34() string {
-	if o == nil || IsNil(o.Customproperty34) {
+// GetCustomProperty34 returns the CustomProperty34 field value if set, zero value otherwise.
+func (o *GetEndpoints200ResponseEndpointsInner) GetCustomProperty34() string {
+	if o == nil || IsNil(o.CustomProperty34) {
 		var ret string
 		return ret
 	}
-	return *o.Customproperty34
+	return *o.CustomProperty34
 }
 
-// GetCustomproperty34Ok returns a tuple with the Customproperty34 field value if set, nil otherwise
+// GetCustomProperty34Ok returns a tuple with the CustomProperty34 field value if set, nil otherwise
 // and a boolean to check if the value has been set.
-func (o *GetEndpoints200ResponseEndpointsInner) GetCustomproperty34Ok() (*string, bool) {
-	if o == nil || IsNil(o.Customproperty34) {
+func (o *GetEndpoints200ResponseEndpointsInner) GetCustomProperty34Ok() (*string, bool) {
+	if o == nil || IsNil(o.CustomProperty34) {
 		return nil, false
 	}
-	return o.Customproperty34, true
+	return o.CustomProperty34, true
 }
 
-// HasCustomproperty34 returns a boolean if a field has been set.
-func (o *GetEndpoints200ResponseEndpointsInner) HasCustomproperty34() bool {
-	if o != nil && !IsNil(o.Customproperty34) {
+// HasCustomProperty34 returns a boolean if a field has been set.
+func (o *GetEndpoints200ResponseEndpointsInner) HasCustomProperty34() bool {
+	if o != nil && !IsNil(o.CustomProperty34) {
 		return true
 	}
 
 	return false
 }
 
-// SetCustomproperty34 gets a reference to the given string and assigns it to the Customproperty34 field.
-func (o *GetEndpoints200ResponseEndpointsInner) SetCustomproperty34(v string) {
-	o.Customproperty34 = &v
+// SetCustomProperty34 gets a reference to the given string and assigns it to the CustomProperty34 field.
+func (o *GetEndpoints200ResponseEndpointsInner) SetCustomProperty34(v string) {
+	o.CustomProperty34 = &v
 }
 
-// GetCustomproperty35 returns the Customproperty35 field value if set, zero value otherwise.
-func (o *GetEndpoints200ResponseEndpointsInner) GetCustomproperty35() string {
-	if o == nil || IsNil(o.Customproperty35) {
+// GetCustomProperty35 returns the CustomProperty35 field value if set, zero value otherwise.
+func (o *GetEndpoints200ResponseEndpointsInner) GetCustomProperty35() string {
+	if o == nil || IsNil(o.CustomProperty35) {
 		var ret string
 		return ret
 	}
-	return *o.Customproperty35
+	return *o.CustomProperty35
 }
 
-// GetCustomproperty35Ok returns a tuple with the Customproperty35 field value if set, nil otherwise
+// GetCustomProperty35Ok returns a tuple with the CustomProperty35 field value if set, nil otherwise
 // and a boolean to check if the value has been set.
-func (o *GetEndpoints200ResponseEndpointsInner) GetCustomproperty35Ok() (*string, bool) {
-	if o == nil || IsNil(o.Customproperty35) {
+func (o *GetEndpoints200ResponseEndpointsInner) GetCustomProperty35Ok() (*string, bool) {
+	if o == nil || IsNil(o.CustomProperty35) {
 		return nil, false
 	}
-	return o.Customproperty35, true
+	return o.CustomProperty35, true
 }
 
-// HasCustomproperty35 returns a boolean if a field has been set.
-func (o *GetEndpoints200ResponseEndpointsInner) HasCustomproperty35() bool {
-	if o != nil && !IsNil(o.Customproperty35) {
+// HasCustomProperty35 returns a boolean if a field has been set.
+func (o *GetEndpoints200ResponseEndpointsInner) HasCustomProperty35() bool {
+	if o != nil && !IsNil(o.CustomProperty35) {
 		return true
 	}
 
 	return false
 }
 
-// SetCustomproperty35 gets a reference to the given string and assigns it to the Customproperty35 field.
-func (o *GetEndpoints200ResponseEndpointsInner) SetCustomproperty35(v string) {
-	o.Customproperty35 = &v
+// SetCustomProperty35 gets a reference to the given string and assigns it to the CustomProperty35 field.
+func (o *GetEndpoints200ResponseEndpointsInner) SetCustomProperty35(v string) {
+	o.CustomProperty35 = &v
 }
 
-// GetCustomproperty36 returns the Customproperty36 field value if set, zero value otherwise.
-func (o *GetEndpoints200ResponseEndpointsInner) GetCustomproperty36() string {
-	if o == nil || IsNil(o.Customproperty36) {
+// GetCustomProperty36 returns the CustomProperty36 field value if set, zero value otherwise.
+func (o *GetEndpoints200ResponseEndpointsInner) GetCustomProperty36() string {
+	if o == nil || IsNil(o.CustomProperty36) {
 		var ret string
 		return ret
 	}
-	return *o.Customproperty36
+	return *o.CustomProperty36
 }
 
-// GetCustomproperty36Ok returns a tuple with the Customproperty36 field value if set, nil otherwise
+// GetCustomProperty36Ok returns a tuple with the CustomProperty36 field value if set, nil otherwise
 // and a boolean to check if the value has been set.
-func (o *GetEndpoints200ResponseEndpointsInner) GetCustomproperty36Ok() (*string, bool) {
-	if o == nil || IsNil(o.Customproperty36) {
+func (o *GetEndpoints200ResponseEndpointsInner) GetCustomProperty36Ok() (*string, bool) {
+	if o == nil || IsNil(o.CustomProperty36) {
 		return nil, false
 	}
-	return o.Customproperty36, true
+	return o.CustomProperty36, true
 }
 
-// HasCustomproperty36 returns a boolean if a field has been set.
-func (o *GetEndpoints200ResponseEndpointsInner) HasCustomproperty36() bool {
-	if o != nil && !IsNil(o.Customproperty36) {
+// HasCustomProperty36 returns a boolean if a field has been set.
+func (o *GetEndpoints200ResponseEndpointsInner) HasCustomProperty36() bool {
+	if o != nil && !IsNil(o.CustomProperty36) {
 		return true
 	}
 
 	return false
 }
 
-// SetCustomproperty36 gets a reference to the given string and assigns it to the Customproperty36 field.
-func (o *GetEndpoints200ResponseEndpointsInner) SetCustomproperty36(v string) {
-	o.Customproperty36 = &v
+// SetCustomProperty36 gets a reference to the given string and assigns it to the CustomProperty36 field.
+func (o *GetEndpoints200ResponseEndpointsInner) SetCustomProperty36(v string) {
+	o.CustomProperty36 = &v
 }
 
-// GetCustomproperty37 returns the Customproperty37 field value if set, zero value otherwise.
-func (o *GetEndpoints200ResponseEndpointsInner) GetCustomproperty37() string {
-	if o == nil || IsNil(o.Customproperty37) {
+// GetCustomProperty37 returns the CustomProperty37 field value if set, zero value otherwise.
+func (o *GetEndpoints200ResponseEndpointsInner) GetCustomProperty37() string {
+	if o == nil || IsNil(o.CustomProperty37) {
 		var ret string
 		return ret
 	}
-	return *o.Customproperty37
+	return *o.CustomProperty37
 }
 
-// GetCustomproperty37Ok returns a tuple with the Customproperty37 field value if set, nil otherwise
+// GetCustomProperty37Ok returns a tuple with the CustomProperty37 field value if set, nil otherwise
 // and a boolean to check if the value has been set.
-func (o *GetEndpoints200ResponseEndpointsInner) GetCustomproperty37Ok() (*string, bool) {
-	if o == nil || IsNil(o.Customproperty37) {
+func (o *GetEndpoints200ResponseEndpointsInner) GetCustomProperty37Ok() (*string, bool) {
+	if o == nil || IsNil(o.CustomProperty37) {
 		return nil, false
 	}
-	return o.Customproperty37, true
+	return o.CustomProperty37, true
 }
 
-// HasCustomproperty37 returns a boolean if a field has been set.
-func (o *GetEndpoints200ResponseEndpointsInner) HasCustomproperty37() bool {
-	if o != nil && !IsNil(o.Customproperty37) {
+// HasCustomProperty37 returns a boolean if a field has been set.
+func (o *GetEndpoints200ResponseEndpointsInner) HasCustomProperty37() bool {
+	if o != nil && !IsNil(o.CustomProperty37) {
 		return true
 	}
 
 	return false
 }
 
-// SetCustomproperty37 gets a reference to the given string and assigns it to the Customproperty37 field.
-func (o *GetEndpoints200ResponseEndpointsInner) SetCustomproperty37(v string) {
-	o.Customproperty37 = &v
+// SetCustomProperty37 gets a reference to the given string and assigns it to the CustomProperty37 field.
+func (o *GetEndpoints200ResponseEndpointsInner) SetCustomProperty37(v string) {
+	o.CustomProperty37 = &v
 }
 
-// GetCustomproperty38 returns the Customproperty38 field value if set, zero value otherwise.
-func (o *GetEndpoints200ResponseEndpointsInner) GetCustomproperty38() string {
-	if o == nil || IsNil(o.Customproperty38) {
+// GetCustomProperty38 returns the CustomProperty38 field value if set, zero value otherwise.
+func (o *GetEndpoints200ResponseEndpointsInner) GetCustomProperty38() string {
+	if o == nil || IsNil(o.CustomProperty38) {
 		var ret string
 		return ret
 	}
-	return *o.Customproperty38
+	return *o.CustomProperty38
 }
 
-// GetCustomproperty38Ok returns a tuple with the Customproperty38 field value if set, nil otherwise
+// GetCustomProperty38Ok returns a tuple with the CustomProperty38 field value if set, nil otherwise
 // and a boolean to check if the value has been set.
-func (o *GetEndpoints200ResponseEndpointsInner) GetCustomproperty38Ok() (*string, bool) {
-	if o == nil || IsNil(o.Customproperty38) {
+func (o *GetEndpoints200ResponseEndpointsInner) GetCustomProperty38Ok() (*string, bool) {
+	if o == nil || IsNil(o.CustomProperty38) {
 		return nil, false
 	}
-	return o.Customproperty38, true
+	return o.CustomProperty38, true
 }
 
-// HasCustomproperty38 returns a boolean if a field has been set.
-func (o *GetEndpoints200ResponseEndpointsInner) HasCustomproperty38() bool {
-	if o != nil && !IsNil(o.Customproperty38) {
+// HasCustomProperty38 returns a boolean if a field has been set.
+func (o *GetEndpoints200ResponseEndpointsInner) HasCustomProperty38() bool {
+	if o != nil && !IsNil(o.CustomProperty38) {
 		return true
 	}
 
 	return false
 }
 
-// SetCustomproperty38 gets a reference to the given string and assigns it to the Customproperty38 field.
-func (o *GetEndpoints200ResponseEndpointsInner) SetCustomproperty38(v string) {
-	o.Customproperty38 = &v
+// SetCustomProperty38 gets a reference to the given string and assigns it to the CustomProperty38 field.
+func (o *GetEndpoints200ResponseEndpointsInner) SetCustomProperty38(v string) {
+	o.CustomProperty38 = &v
 }
 
-// GetCustomproperty39 returns the Customproperty39 field value if set, zero value otherwise.
-func (o *GetEndpoints200ResponseEndpointsInner) GetCustomproperty39() string {
-	if o == nil || IsNil(o.Customproperty39) {
+// GetCustomProperty39 returns the CustomProperty39 field value if set, zero value otherwise.
+func (o *GetEndpoints200ResponseEndpointsInner) GetCustomProperty39() string {
+	if o == nil || IsNil(o.CustomProperty39) {
 		var ret string
 		return ret
 	}
-	return *o.Customproperty39
+	return *o.CustomProperty39
 }
 
-// GetCustomproperty39Ok returns a tuple with the Customproperty39 field value if set, nil otherwise
+// GetCustomProperty39Ok returns a tuple with the CustomProperty39 field value if set, nil otherwise
 // and a boolean to check if the value has been set.
-func (o *GetEndpoints200ResponseEndpointsInner) GetCustomproperty39Ok() (*string, bool) {
-	if o == nil || IsNil(o.Customproperty39) {
+func (o *GetEndpoints200ResponseEndpointsInner) GetCustomProperty39Ok() (*string, bool) {
+	if o == nil || IsNil(o.CustomProperty39) {
 		return nil, false
 	}
-	return o.Customproperty39, true
+	return o.CustomProperty39, true
 }
 
-// HasCustomproperty39 returns a boolean if a field has been set.
-func (o *GetEndpoints200ResponseEndpointsInner) HasCustomproperty39() bool {
-	if o != nil && !IsNil(o.Customproperty39) {
+// HasCustomProperty39 returns a boolean if a field has been set.
+func (o *GetEndpoints200ResponseEndpointsInner) HasCustomProperty39() bool {
+	if o != nil && !IsNil(o.CustomProperty39) {
 		return true
 	}
 
 	return false
 }
 
-// SetCustomproperty39 gets a reference to the given string and assigns it to the Customproperty39 field.
-func (o *GetEndpoints200ResponseEndpointsInner) SetCustomproperty39(v string) {
-	o.Customproperty39 = &v
+// SetCustomProperty39 gets a reference to the given string and assigns it to the CustomProperty39 field.
+func (o *GetEndpoints200ResponseEndpointsInner) SetCustomProperty39(v string) {
+	o.CustomProperty39 = &v
 }
 
-// GetCustomproperty40 returns the Customproperty40 field value if set, zero value otherwise.
-func (o *GetEndpoints200ResponseEndpointsInner) GetCustomproperty40() string {
-	if o == nil || IsNil(o.Customproperty40) {
+// GetCustomProperty40 returns the CustomProperty40 field value if set, zero value otherwise.
+func (o *GetEndpoints200ResponseEndpointsInner) GetCustomProperty40() string {
+	if o == nil || IsNil(o.CustomProperty40) {
 		var ret string
 		return ret
 	}
-	return *o.Customproperty40
+	return *o.CustomProperty40
 }
 
-// GetCustomproperty40Ok returns a tuple with the Customproperty40 field value if set, nil otherwise
+// GetCustomProperty40Ok returns a tuple with the CustomProperty40 field value if set, nil otherwise
 // and a boolean to check if the value has been set.
-func (o *GetEndpoints200ResponseEndpointsInner) GetCustomproperty40Ok() (*string, bool) {
-	if o == nil || IsNil(o.Customproperty40) {
+func (o *GetEndpoints200ResponseEndpointsInner) GetCustomProperty40Ok() (*string, bool) {
+	if o == nil || IsNil(o.CustomProperty40) {
 		return nil, false
 	}
-	return o.Customproperty40, true
+	return o.CustomProperty40, true
 }
 
-// HasCustomproperty40 returns a boolean if a field has been set.
-func (o *GetEndpoints200ResponseEndpointsInner) HasCustomproperty40() bool {
-	if o != nil && !IsNil(o.Customproperty40) {
+// HasCustomProperty40 returns a boolean if a field has been set.
+func (o *GetEndpoints200ResponseEndpointsInner) HasCustomProperty40() bool {
+	if o != nil && !IsNil(o.CustomProperty40) {
 		return true
 	}
 
 	return false
 }
 
-// SetCustomproperty40 gets a reference to the given string and assigns it to the Customproperty40 field.
-func (o *GetEndpoints200ResponseEndpointsInner) SetCustomproperty40(v string) {
-	o.Customproperty40 = &v
+// SetCustomProperty40 gets a reference to the given string and assigns it to the CustomProperty40 field.
+func (o *GetEndpoints200ResponseEndpointsInner) SetCustomProperty40(v string) {
+	o.CustomProperty40 = &v
 }
 
-// GetCustomproperty41 returns the Customproperty41 field value if set, zero value otherwise.
-func (o *GetEndpoints200ResponseEndpointsInner) GetCustomproperty41() string {
-	if o == nil || IsNil(o.Customproperty41) {
+// GetCustomProperty41 returns the CustomProperty41 field value if set, zero value otherwise.
+func (o *GetEndpoints200ResponseEndpointsInner) GetCustomProperty41() string {
+	if o == nil || IsNil(o.CustomProperty41) {
 		var ret string
 		return ret
 	}
-	return *o.Customproperty41
+	return *o.CustomProperty41
 }
 
-// GetCustomproperty41Ok returns a tuple with the Customproperty41 field value if set, nil otherwise
+// GetCustomProperty41Ok returns a tuple with the CustomProperty41 field value if set, nil otherwise
 // and a boolean to check if the value has been set.
-func (o *GetEndpoints200ResponseEndpointsInner) GetCustomproperty41Ok() (*string, bool) {
-	if o == nil || IsNil(o.Customproperty41) {
+func (o *GetEndpoints200ResponseEndpointsInner) GetCustomProperty41Ok() (*string, bool) {
+	if o == nil || IsNil(o.CustomProperty41) {
 		return nil, false
 	}
-	return o.Customproperty41, true
+	return o.CustomProperty41, true
 }
 
-// HasCustomproperty41 returns a boolean if a field has been set.
-func (o *GetEndpoints200ResponseEndpointsInner) HasCustomproperty41() bool {
-	if o != nil && !IsNil(o.Customproperty41) {
+// HasCustomProperty41 returns a boolean if a field has been set.
+func (o *GetEndpoints200ResponseEndpointsInner) HasCustomProperty41() bool {
+	if o != nil && !IsNil(o.CustomProperty41) {
 		return true
 	}
 
 	return false
 }
 
-// SetCustomproperty41 gets a reference to the given string and assigns it to the Customproperty41 field.
-func (o *GetEndpoints200ResponseEndpointsInner) SetCustomproperty41(v string) {
-	o.Customproperty41 = &v
+// SetCustomProperty41 gets a reference to the given string and assigns it to the CustomProperty41 field.
+func (o *GetEndpoints200ResponseEndpointsInner) SetCustomProperty41(v string) {
+	o.CustomProperty41 = &v
 }
 
-// GetCustomproperty42 returns the Customproperty42 field value if set, zero value otherwise.
-func (o *GetEndpoints200ResponseEndpointsInner) GetCustomproperty42() string {
-	if o == nil || IsNil(o.Customproperty42) {
+// GetCustomProperty42 returns the CustomProperty42 field value if set, zero value otherwise.
+func (o *GetEndpoints200ResponseEndpointsInner) GetCustomProperty42() string {
+	if o == nil || IsNil(o.CustomProperty42) {
 		var ret string
 		return ret
 	}
-	return *o.Customproperty42
+	return *o.CustomProperty42
 }
 
-// GetCustomproperty42Ok returns a tuple with the Customproperty42 field value if set, nil otherwise
+// GetCustomProperty42Ok returns a tuple with the CustomProperty42 field value if set, nil otherwise
 // and a boolean to check if the value has been set.
-func (o *GetEndpoints200ResponseEndpointsInner) GetCustomproperty42Ok() (*string, bool) {
-	if o == nil || IsNil(o.Customproperty42) {
+func (o *GetEndpoints200ResponseEndpointsInner) GetCustomProperty42Ok() (*string, bool) {
+	if o == nil || IsNil(o.CustomProperty42) {
 		return nil, false
 	}
-	return o.Customproperty42, true
+	return o.CustomProperty42, true
 }
 
-// HasCustomproperty42 returns a boolean if a field has been set.
-func (o *GetEndpoints200ResponseEndpointsInner) HasCustomproperty42() bool {
-	if o != nil && !IsNil(o.Customproperty42) {
+// HasCustomProperty42 returns a boolean if a field has been set.
+func (o *GetEndpoints200ResponseEndpointsInner) HasCustomProperty42() bool {
+	if o != nil && !IsNil(o.CustomProperty42) {
 		return true
 	}
 
 	return false
 }
 
-// SetCustomproperty42 gets a reference to the given string and assigns it to the Customproperty42 field.
-func (o *GetEndpoints200ResponseEndpointsInner) SetCustomproperty42(v string) {
-	o.Customproperty42 = &v
+// SetCustomProperty42 gets a reference to the given string and assigns it to the CustomProperty42 field.
+func (o *GetEndpoints200ResponseEndpointsInner) SetCustomProperty42(v string) {
+	o.CustomProperty42 = &v
 }
 
-// GetCustomproperty43 returns the Customproperty43 field value if set, zero value otherwise.
-func (o *GetEndpoints200ResponseEndpointsInner) GetCustomproperty43() string {
-	if o == nil || IsNil(o.Customproperty43) {
+// GetCustomProperty43 returns the CustomProperty43 field value if set, zero value otherwise.
+func (o *GetEndpoints200ResponseEndpointsInner) GetCustomProperty43() string {
+	if o == nil || IsNil(o.CustomProperty43) {
 		var ret string
 		return ret
 	}
-	return *o.Customproperty43
+	return *o.CustomProperty43
 }
 
-// GetCustomproperty43Ok returns a tuple with the Customproperty43 field value if set, nil otherwise
+// GetCustomProperty43Ok returns a tuple with the CustomProperty43 field value if set, nil otherwise
 // and a boolean to check if the value has been set.
-func (o *GetEndpoints200ResponseEndpointsInner) GetCustomproperty43Ok() (*string, bool) {
-	if o == nil || IsNil(o.Customproperty43) {
+func (o *GetEndpoints200ResponseEndpointsInner) GetCustomProperty43Ok() (*string, bool) {
+	if o == nil || IsNil(o.CustomProperty43) {
 		return nil, false
 	}
-	return o.Customproperty43, true
+	return o.CustomProperty43, true
 }
 
-// HasCustomproperty43 returns a boolean if a field has been set.
-func (o *GetEndpoints200ResponseEndpointsInner) HasCustomproperty43() bool {
-	if o != nil && !IsNil(o.Customproperty43) {
+// HasCustomProperty43 returns a boolean if a field has been set.
+func (o *GetEndpoints200ResponseEndpointsInner) HasCustomProperty43() bool {
+	if o != nil && !IsNil(o.CustomProperty43) {
 		return true
 	}
 
 	return false
 }
 
-// SetCustomproperty43 gets a reference to the given string and assigns it to the Customproperty43 field.
-func (o *GetEndpoints200ResponseEndpointsInner) SetCustomproperty43(v string) {
-	o.Customproperty43 = &v
+// SetCustomProperty43 gets a reference to the given string and assigns it to the CustomProperty43 field.
+func (o *GetEndpoints200ResponseEndpointsInner) SetCustomProperty43(v string) {
+	o.CustomProperty43 = &v
 }
 
-// GetCustomproperty44 returns the Customproperty44 field value if set, zero value otherwise.
-func (o *GetEndpoints200ResponseEndpointsInner) GetCustomproperty44() string {
-	if o == nil || IsNil(o.Customproperty44) {
+// GetCustomProperty44 returns the CustomProperty44 field value if set, zero value otherwise.
+func (o *GetEndpoints200ResponseEndpointsInner) GetCustomProperty44() string {
+	if o == nil || IsNil(o.CustomProperty44) {
 		var ret string
 		return ret
 	}
-	return *o.Customproperty44
+	return *o.CustomProperty44
 }
 
-// GetCustomproperty44Ok returns a tuple with the Customproperty44 field value if set, nil otherwise
+// GetCustomProperty44Ok returns a tuple with the CustomProperty44 field value if set, nil otherwise
 // and a boolean to check if the value has been set.
-func (o *GetEndpoints200ResponseEndpointsInner) GetCustomproperty44Ok() (*string, bool) {
-	if o == nil || IsNil(o.Customproperty44) {
+func (o *GetEndpoints200ResponseEndpointsInner) GetCustomProperty44Ok() (*string, bool) {
+	if o == nil || IsNil(o.CustomProperty44) {
 		return nil, false
 	}
-	return o.Customproperty44, true
+	return o.CustomProperty44, true
 }
 
-// HasCustomproperty44 returns a boolean if a field has been set.
-func (o *GetEndpoints200ResponseEndpointsInner) HasCustomproperty44() bool {
-	if o != nil && !IsNil(o.Customproperty44) {
+// HasCustomProperty44 returns a boolean if a field has been set.
+func (o *GetEndpoints200ResponseEndpointsInner) HasCustomProperty44() bool {
+	if o != nil && !IsNil(o.CustomProperty44) {
 		return true
 	}
 
 	return false
 }
 
-// SetCustomproperty44 gets a reference to the given string and assigns it to the Customproperty44 field.
-func (o *GetEndpoints200ResponseEndpointsInner) SetCustomproperty44(v string) {
-	o.Customproperty44 = &v
+// SetCustomProperty44 gets a reference to the given string and assigns it to the CustomProperty44 field.
+func (o *GetEndpoints200ResponseEndpointsInner) SetCustomProperty44(v string) {
+	o.CustomProperty44 = &v
 }
 
-// GetCustomproperty45 returns the Customproperty45 field value if set, zero value otherwise.
-func (o *GetEndpoints200ResponseEndpointsInner) GetCustomproperty45() string {
-	if o == nil || IsNil(o.Customproperty45) {
+// GetCustomProperty45 returns the CustomProperty45 field value if set, zero value otherwise.
+func (o *GetEndpoints200ResponseEndpointsInner) GetCustomProperty45() string {
+	if o == nil || IsNil(o.CustomProperty45) {
 		var ret string
 		return ret
 	}
-	return *o.Customproperty45
+	return *o.CustomProperty45
 }
 
-// GetCustomproperty45Ok returns a tuple with the Customproperty45 field value if set, nil otherwise
+// GetCustomProperty45Ok returns a tuple with the CustomProperty45 field value if set, nil otherwise
 // and a boolean to check if the value has been set.
-func (o *GetEndpoints200ResponseEndpointsInner) GetCustomproperty45Ok() (*string, bool) {
-	if o == nil || IsNil(o.Customproperty45) {
+func (o *GetEndpoints200ResponseEndpointsInner) GetCustomProperty45Ok() (*string, bool) {
+	if o == nil || IsNil(o.CustomProperty45) {
 		return nil, false
 	}
-	return o.Customproperty45, true
+	return o.CustomProperty45, true
 }
 
-// HasCustomproperty45 returns a boolean if a field has been set.
-func (o *GetEndpoints200ResponseEndpointsInner) HasCustomproperty45() bool {
-	if o != nil && !IsNil(o.Customproperty45) {
+// HasCustomProperty45 returns a boolean if a field has been set.
+func (o *GetEndpoints200ResponseEndpointsInner) HasCustomProperty45() bool {
+	if o != nil && !IsNil(o.CustomProperty45) {
 		return true
 	}
 
 	return false
 }
 
-// SetCustomproperty45 gets a reference to the given string and assigns it to the Customproperty45 field.
-func (o *GetEndpoints200ResponseEndpointsInner) SetCustomproperty45(v string) {
-	o.Customproperty45 = &v
+// SetCustomProperty45 gets a reference to the given string and assigns it to the CustomProperty45 field.
+func (o *GetEndpoints200ResponseEndpointsInner) SetCustomProperty45(v string) {
+	o.CustomProperty45 = &v
 }
 
 // GetAccountCustomProperty1Label returns the AccountCustomProperty1Label field value if set, zero value otherwise.
@@ -5365,50 +5365,50 @@ func (o GetEndpoints200ResponseEndpointsInner) ToMap() (map[string]interface{}, 
 	if !IsNil(o.CustomProperty30) {
 		toSerialize["Custom Property 30"] = o.CustomProperty30
 	}
-	if !IsNil(o.Customproperty31) {
-		toSerialize["customproperty31"] = o.Customproperty31
+	if !IsNil(o.CustomProperty31) {
+		toSerialize["Custom Property 31"] = o.CustomProperty31
 	}
-	if !IsNil(o.Customproperty32) {
-		toSerialize["customproperty32"] = o.Customproperty32
+	if !IsNil(o.CustomProperty32) {
+		toSerialize["Custom Property 32"] = o.CustomProperty32
 	}
-	if !IsNil(o.Customproperty33) {
-		toSerialize["customproperty33"] = o.Customproperty33
+	if !IsNil(o.CustomProperty33) {
+		toSerialize["Custom Property 33"] = o.CustomProperty33
 	}
-	if !IsNil(o.Customproperty34) {
-		toSerialize["customproperty34"] = o.Customproperty34
+	if !IsNil(o.CustomProperty34) {
+		toSerialize["Custom Property 34"] = o.CustomProperty34
 	}
-	if !IsNil(o.Customproperty35) {
-		toSerialize["customproperty35"] = o.Customproperty35
+	if !IsNil(o.CustomProperty35) {
+		toSerialize["Custom Property 35"] = o.CustomProperty35
 	}
-	if !IsNil(o.Customproperty36) {
-		toSerialize["customproperty36"] = o.Customproperty36
+	if !IsNil(o.CustomProperty36) {
+		toSerialize["Custom Property 36"] = o.CustomProperty36
 	}
-	if !IsNil(o.Customproperty37) {
-		toSerialize["customproperty37"] = o.Customproperty37
+	if !IsNil(o.CustomProperty37) {
+		toSerialize["Custom Property 37"] = o.CustomProperty37
 	}
-	if !IsNil(o.Customproperty38) {
-		toSerialize["customproperty38"] = o.Customproperty38
+	if !IsNil(o.CustomProperty38) {
+		toSerialize["Custom Property 38"] = o.CustomProperty38
 	}
-	if !IsNil(o.Customproperty39) {
-		toSerialize["customproperty39"] = o.Customproperty39
+	if !IsNil(o.CustomProperty39) {
+		toSerialize["Custom Property 39"] = o.CustomProperty39
 	}
-	if !IsNil(o.Customproperty40) {
-		toSerialize["customproperty40"] = o.Customproperty40
+	if !IsNil(o.CustomProperty40) {
+		toSerialize["Custom Property 40"] = o.CustomProperty40
 	}
-	if !IsNil(o.Customproperty41) {
-		toSerialize["customproperty41"] = o.Customproperty41
+	if !IsNil(o.CustomProperty41) {
+		toSerialize["Custom Property 41"] = o.CustomProperty41
 	}
-	if !IsNil(o.Customproperty42) {
-		toSerialize["customproperty42"] = o.Customproperty42
+	if !IsNil(o.CustomProperty42) {
+		toSerialize["Custom Property 42"] = o.CustomProperty42
 	}
-	if !IsNil(o.Customproperty43) {
-		toSerialize["customproperty43"] = o.Customproperty43
+	if !IsNil(o.CustomProperty43) {
+		toSerialize["Custom Property 43"] = o.CustomProperty43
 	}
-	if !IsNil(o.Customproperty44) {
-		toSerialize["customproperty44"] = o.Customproperty44
+	if !IsNil(o.CustomProperty44) {
+		toSerialize["Custom Property 44"] = o.CustomProperty44
 	}
-	if !IsNil(o.Customproperty45) {
-		toSerialize["customproperty45"] = o.Customproperty45
+	if !IsNil(o.CustomProperty45) {
+		toSerialize["Custom Property 45"] = o.CustomProperty45
 	}
 	if !IsNil(o.AccountCustomProperty1Label) {
 		toSerialize["Account Custom Property 1 Label"] = o.AccountCustomProperty1Label
