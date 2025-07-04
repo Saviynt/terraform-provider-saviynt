@@ -423,7 +423,7 @@ func (r *workdayConnectionResource) Create(ctx context.Context, req resource.Cre
 		resp.Diagnostics.AddError("API Create Failed", fmt.Sprintf("Error: %v", err))
 		return
 	}
-	if apiResp!=nil && *apiResp.ErrorCode !="0"{
+	if apiResp != nil && *apiResp.ErrorCode != "0" {
 		log.Printf("[ERROR]: Error in creating Workday connection resource. Errorcode: %v, Message: %v", *apiResp.ErrorCode, *apiResp.Msg)
 		resp.Diagnostics.AddError("Creation of Workday connection failed", *apiResp.Msg)
 		return
@@ -501,7 +501,7 @@ func (r *workdayConnectionResource) Read(ctx context.Context, req resource.ReadR
 		resp.Diagnostics.AddError("API Read Failed", fmt.Sprintf("Error: %v", err))
 		return
 	}
-	if apiResp!=nil && *apiResp.WorkdayConnectionResponse.Errorcode !=0{
+	if apiResp != nil && *apiResp.WorkdayConnectionResponse.Errorcode != 0 {
 		log.Printf("[ERROR]: Error in reading Workday connection resource. Errorcode: %v, Message: %v", *apiResp.WorkdayConnectionResponse.Errorcode, *apiResp.WorkdayConnectionResponse.Msg)
 		resp.Diagnostics.AddError("Reading Workday connection resource failed", *apiResp.WorkdayConnectionResponse.Msg)
 		return
@@ -663,7 +663,7 @@ func (r *workdayConnectionResource) Update(ctx context.Context, req resource.Upd
 		resp.Diagnostics.AddError("API Create Failed", fmt.Sprintf("Error: %v", err))
 		return
 	}
-	if apiResp!=nil && *apiResp.ErrorCode !="0"{
+	if apiResp != nil && *apiResp.ErrorCode != "0" {
 		log.Printf("[ERROR]: Error in updating Workday connection resource. Errorcode: %v, Message: %v", *apiResp.ErrorCode, *apiResp.Msg)
 		resp.Diagnostics.AddError("Updation of Workday connection failed", *apiResp.Msg)
 		return
@@ -677,8 +677,8 @@ func (r *workdayConnectionResource) Update(ctx context.Context, req resource.Upd
 		log.Printf("Problem with the get function in update block")
 		resp.Diagnostics.AddError("API Read Failed", fmt.Sprintf("Error: %v", err))
 		return
-	}	
-	if getResp!=nil && *getResp.WorkdayConnectionResponse.Errorcode !=0{
+	}
+	if getResp != nil && *getResp.WorkdayConnectionResponse.Errorcode != 0 {
 		log.Printf("[ERROR]: Error in reading Workday connection resource after updation. Errorcode: %v, Message: %v", *getResp.WorkdayConnectionResponse.Errorcode, *getResp.WorkdayConnectionResponse.Msg)
 		resp.Diagnostics.AddError("Reading Workday connection after updation failed", *getResp.WorkdayConnectionResponse.Msg)
 		return

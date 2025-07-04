@@ -67,7 +67,7 @@ type WorkdayConnectionAttributes struct {
 	IsTimeoutSupported   types.Bool   `tfsdk:"is_timeout_supported"`
 	AccountImportMapping types.String `tfsdk:"account_import_mapping"`
 	// ClientSecret                types.String `tfsdk:"client_secret"`
-	OrgroleImportPayload        types.String `tfsdk:"orgrole_import_payload"`
+	// OrgroleImportPayload        types.String `tfsdk:"orgrole_import_payload"`
 	AssignOrgrolePayload        types.String `tfsdk:"assign_orgrole_payload"`
 	AccessImportMapping         types.String `tfsdk:"access_import_mapping"`
 	ApiVersion                  types.String `tfsdk:"api_version"`
@@ -127,7 +127,7 @@ func WorkdayConnectorsDataSourceSchema() map[string]schema.Attribute {
 				"is_timeout_supported":   schema.BoolAttribute{Computed: true},
 				"account_import_mapping": schema.StringAttribute{Computed: true},
 				// "client_secret":                 schema.StringAttribute{Computed: true},
-				"orgrole_import_payload":        schema.StringAttribute{Computed: true},
+				// "orgrole_import_payload":        schema.StringAttribute{Computed: true},
 				"assign_orgrole_payload":        schema.StringAttribute{Computed: true},
 				"access_import_mapping":         schema.StringAttribute{Computed: true},
 				"api_version":                   schema.StringAttribute{Computed: true},
@@ -284,7 +284,7 @@ func (d *workdayConnectionDataSource) Read(ctx context.Context, req datasource.R
 			IsTimeoutSupported:   util.SafeBoolDatasource(apiResp.WorkdayConnectionResponse.Connectionattributes.IsTimeoutSupported),
 			AccountImportMapping: util.SafeStringDatasource(apiResp.WorkdayConnectionResponse.Connectionattributes.ACCOUNT_IMPORT_MAPPING),
 			// ClientSecret:                util.SafeStringDatasource(apiResp.WorkdayConnectionResponse.Connectionattributes.CLIENT_SECRET),
-			OrgroleImportPayload:        util.SafeStringDatasource(apiResp.WorkdayConnectionResponse.Connectionattributes.ORGROLE_IMPORT_PAYLOAD),
+			// OrgroleImportPayload:        util.SafeStringDatasource(apiResp.WorkdayConnectionResponse.Connectionattributes.ORGROLE_IMPORT_PAYLOAD),
 			AssignOrgrolePayload:        util.SafeStringDatasource(apiResp.WorkdayConnectionResponse.Connectionattributes.ASSIGN_ORGROLE_PAYLOAD),
 			AccessImportMapping:         util.SafeStringDatasource(apiResp.WorkdayConnectionResponse.Connectionattributes.ACCESS_IMPORT_MAPPING),
 			ApiVersion:                  util.SafeStringDatasource(apiResp.WorkdayConnectionResponse.Connectionattributes.API_VERSION),

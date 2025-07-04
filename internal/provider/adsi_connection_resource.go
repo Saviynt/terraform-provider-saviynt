@@ -445,7 +445,7 @@ func (r *adsiConnectionResource) Create(ctx context.Context, req resource.Create
 		resp.Diagnostics.AddError("API Create Failed", fmt.Sprintf("Error: %v", err))
 		return
 	}
-	if apiResp!=nil && *apiResp.ErrorCode !="0"{
+	if apiResp != nil && *apiResp.ErrorCode != "0" {
 		log.Printf("[ERROR]: Error in creating ADSI connection resource. Errorcode: %v, Message: %v", *apiResp.ErrorCode, *apiResp.Msg)
 		resp.Diagnostics.AddError("Creation of ADSI connection failed", *apiResp.Msg)
 		return
@@ -523,7 +523,7 @@ func (r *adsiConnectionResource) Read(ctx context.Context, req resource.ReadRequ
 		resp.Diagnostics.AddError("API Read Failed In Read Block", fmt.Sprintf("Error: %v", err))
 		return
 	}
-	if apiResp!=nil && *apiResp.ADSIConnectionResponse.Errorcode !=0{
+	if apiResp != nil && *apiResp.ADSIConnectionResponse.Errorcode != 0 {
 		log.Printf("[ERROR]: Error in reading ADSI connection resource. Errorcode: %v, Message: %v", *apiResp.ADSIConnectionResponse.Errorcode, *apiResp.ADSIConnectionResponse.Msg)
 		resp.Diagnostics.AddError("Reading of ADSI connection resource failed", *apiResp.ADSIConnectionResponse.Msg)
 		return
@@ -703,7 +703,7 @@ func (r *adsiConnectionResource) Update(ctx context.Context, req resource.Update
 		resp.Diagnostics.AddError("API Update Failed", fmt.Sprintf("Error: %v", err))
 		return
 	}
-	if apiResp!=nil && *apiResp.ErrorCode !="0"{
+	if apiResp != nil && *apiResp.ErrorCode != "0" {
 		log.Printf("[ERROR]: Error in updating ADSI connection. Errorcode: %v, Message: %v", *apiResp.ErrorCode, *apiResp.Msg)
 		resp.Diagnostics.AddError("Updating of ADSI connection failed", *apiResp.Msg)
 		return
@@ -718,7 +718,7 @@ func (r *adsiConnectionResource) Update(ctx context.Context, req resource.Update
 		resp.Diagnostics.AddError("API Read Failed In Update Block", fmt.Sprintf("Error: %v", err))
 		return
 	}
-	if getResp!=nil && *getResp.ADSIConnectionResponse.Errorcode !=0{
+	if getResp != nil && *getResp.ADSIConnectionResponse.Errorcode != 0 {
 		log.Printf("[ERROR]: Error in reading ADSI connection after updation. Errorcode: %v, Message: %v", *getResp.ADSIConnectionResponse.Errorcode, *getResp.ADSIConnectionResponse.Msg)
 		resp.Diagnostics.AddError("Reading after updation of ADSI connection failed", *getResp.ADSIConnectionResponse.Msg)
 		return

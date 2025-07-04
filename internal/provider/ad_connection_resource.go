@@ -551,7 +551,7 @@ func (r *adConnectionResource) Create(ctx context.Context, req resource.CreateRe
 		resp.Diagnostics.AddError("API Create Failed", fmt.Sprintf("Error: %v", err))
 		return
 	}
-	if apiResp!=nil && *apiResp.ErrorCode !="0"{
+	if apiResp != nil && *apiResp.ErrorCode != "0" {
 		log.Printf("[ERROR]: Error in creating AD connection resource. Errorcode: %v, Message: %v", *apiResp.ErrorCode, *apiResp.Msg)
 		resp.Diagnostics.AddError("Creation of AD connection failed", *apiResp.Msg)
 		return
@@ -650,7 +650,7 @@ func (r *adConnectionResource) Read(ctx context.Context, req resource.ReadReques
 		resp.Diagnostics.AddError("API Read Failed In Read Block", fmt.Sprintf("Error: %v", err))
 		return
 	}
-	if apiResp!=nil &&*apiResp.ADConnectionResponse.Errorcode !=0{
+	if apiResp != nil && *apiResp.ADConnectionResponse.Errorcode != 0 {
 		log.Printf("[ERROR]: Error in reading AD connection resource. Errorcode: %v, Message: %v", *apiResp.ADConnectionResponse.Errorcode, *apiResp.ADConnectionResponse.Msg)
 		resp.Diagnostics.AddError("Reading of AD connection resource failed", *apiResp.ADConnectionResponse.Msg)
 		return
@@ -862,7 +862,7 @@ func (r *adConnectionResource) Update(ctx context.Context, req resource.UpdateRe
 		resp.Diagnostics.AddError("API Update Failed", fmt.Sprintf("Error: %v", err))
 		return
 	}
-	if apiResp!=nil && *apiResp.ErrorCode !="0"{
+	if apiResp != nil && *apiResp.ErrorCode != "0" {
 		log.Printf("[ERROR]: Error in updating AD connection resource. Errorcode: %v, Message: %v", *apiResp.ErrorCode, *apiResp.Msg)
 		resp.Diagnostics.AddError("Updation of AD connection failed", *apiResp.Msg)
 		return
@@ -877,7 +877,7 @@ func (r *adConnectionResource) Update(ctx context.Context, req resource.UpdateRe
 		resp.Diagnostics.AddError("API Read Failed In Update Block", fmt.Sprintf("Error: %v", err))
 		return
 	}
-	if getResp!=nil && *getResp.ADConnectionResponse.Errorcode !=0{
+	if getResp != nil && *getResp.ADConnectionResponse.Errorcode != 0 {
 		log.Printf("[ERROR]: Error in reading AD connection resource after updation. Errorcode: %v, Message: %v", *getResp.ADConnectionResponse.Errorcode, *getResp.ADConnectionResponse.Msg)
 		resp.Diagnostics.AddError("Reading of AD connection after updation failed", *getResp.ADConnectionResponse.Msg)
 		return

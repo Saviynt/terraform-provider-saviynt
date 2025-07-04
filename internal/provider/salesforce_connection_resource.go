@@ -264,7 +264,7 @@ func (r *salesforceConnectionResource) Create(ctx context.Context, req resource.
 		resp.Diagnostics.AddError("API Create Failed", fmt.Sprintf("Error: %v", err))
 		return
 	}
-	if apiResp!=nil && *apiResp.ErrorCode !="0"{
+	if apiResp != nil && *apiResp.ErrorCode != "0" {
 		log.Printf("[ERROR]: Error in creating Salesforce connection resource. Errorcode: %v, Message: %v", *apiResp.ErrorCode, *apiResp.Msg)
 		resp.Diagnostics.AddError("Creation of Salesforce connection failed", *apiResp.Msg)
 		return
@@ -321,7 +321,7 @@ func (r *salesforceConnectionResource) Read(ctx context.Context, req resource.Re
 		resp.Diagnostics.AddError("API Read Failed", fmt.Sprintf("Error: %v", err))
 		return
 	}
-	if apiResp!=nil && *apiResp.SalesforceConnectionResponse.Errorcode !=0{
+	if apiResp != nil && *apiResp.SalesforceConnectionResponse.Errorcode != 0 {
 		log.Printf("[ERROR]: Error in reading Salesforce connection resource. Errorcode: %v, Message: %v", *apiResp.SalesforceConnectionResponse.Errorcode, *apiResp.SalesforceConnectionResponse.Msg)
 		resp.Diagnostics.AddError("Reading Salesforce connection failed", *apiResp.SalesforceConnectionResponse.Msg)
 		return
@@ -440,7 +440,7 @@ func (r *salesforceConnectionResource) Update(ctx context.Context, req resource.
 		resp.Diagnostics.AddError("API Create Failed", fmt.Sprintf("Error: %v", err))
 		return
 	}
-	if apiResp!=nil && *apiResp.ErrorCode !="0"{
+	if apiResp != nil && *apiResp.ErrorCode != "0" {
 		log.Printf("[ERROR]: Error in updating Salesforce connection after updation. Errorcode: %v, Message: %v", *apiResp.ErrorCode, *apiResp.Msg)
 		resp.Diagnostics.AddError("Updation of Salesforce connection", *apiResp.Msg)
 		return
@@ -455,12 +455,11 @@ func (r *salesforceConnectionResource) Update(ctx context.Context, req resource.
 		resp.Diagnostics.AddError("API Read Failed", fmt.Sprintf("Error: %v", err))
 		return
 	}
-	if getResp!=nil && *getResp.SalesforceConnectionResponse.Errorcode !=0{
+	if getResp != nil && *getResp.SalesforceConnectionResponse.Errorcode != 0 {
 		log.Printf("[ERROR]: Error in reading Salesforce connection after updation. Errorcode: %v, Message: %v", *getResp.SalesforceConnectionResponse.Errorcode, *getResp.SalesforceConnectionResponse.Msg)
 		resp.Diagnostics.AddError("Reading Salesforce connection after updation failed", *getResp.SalesforceConnectionResponse.Msg)
 		return
 	}
-
 
 	plan.ConnectionKey = types.Int64Value(int64(*getResp.SalesforceConnectionResponse.Connectionkey))
 	plan.ID = types.StringValue(fmt.Sprintf("%d", *getResp.SalesforceConnectionResponse.Connectionkey))

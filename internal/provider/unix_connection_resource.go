@@ -391,7 +391,7 @@ func (r *unixConnectionResource) Create(ctx context.Context, req resource.Create
 		resp.Diagnostics.AddError("API Create Failed", fmt.Sprintf("Error: %v", err))
 		return
 	}
-	if apiResp!=nil && *apiResp.ErrorCode !="0"{
+	if apiResp != nil && *apiResp.ErrorCode != "0" {
 		log.Printf("[ERROR]: Error in creating Unix connection resource. Errorcode: %v, Message: %v", *apiResp.ErrorCode, *apiResp.Msg)
 		resp.Diagnostics.AddError("Creation of Unix connection failed", *apiResp.Msg)
 		return
@@ -462,7 +462,7 @@ func (r *unixConnectionResource) Read(ctx context.Context, req resource.ReadRequ
 		resp.Diagnostics.AddError("API Read Failed", fmt.Sprintf("Error: %v", err))
 		return
 	}
-	if apiResp!=nil && *apiResp.UNIXConnectionResponse.Errorcode !=0{
+	if apiResp != nil && *apiResp.UNIXConnectionResponse.Errorcode != 0 {
 		log.Printf("[ERROR]: Error in reading Unix connection resource. Errorcode: %v, Message: %v", *apiResp.UNIXConnectionResponse.Errorcode, *apiResp.UNIXConnectionResponse.Msg)
 		resp.Diagnostics.AddError("Reading Unix connection resource failed", *apiResp.UNIXConnectionResponse.Msg)
 		return
@@ -622,7 +622,7 @@ func (r *unixConnectionResource) Update(ctx context.Context, req resource.Update
 		resp.Diagnostics.AddError("API Update Failed", fmt.Sprintf("Error: %v", err))
 		return
 	}
-	if apiResp!=nil && *apiResp.ErrorCode !="0"{
+	if apiResp != nil && *apiResp.ErrorCode != "0" {
 		log.Printf("[ERROR]: Error in updating Unix connection resource. Errorcode: %v, Message: %v", *apiResp.ErrorCode, *apiResp.Msg)
 		resp.Diagnostics.AddError("Updation of Unix connection failed", *apiResp.Msg)
 		return
@@ -637,7 +637,7 @@ func (r *unixConnectionResource) Update(ctx context.Context, req resource.Update
 		resp.Diagnostics.AddError("API Read Failed", fmt.Sprintf("Error: %v", err))
 		return
 	}
-	if apiResp!=nil && *getResp.UNIXConnectionResponse.Errorcode !=0{
+	if apiResp != nil && *getResp.UNIXConnectionResponse.Errorcode != 0 {
 		log.Printf("[ERROR]: Error in reading Unix connection resource after updation. Errorcode: %v, Message: %v", *getResp.UNIXConnectionResponse.Errorcode, *getResp.UNIXConnectionResponse.Msg)
 		resp.Diagnostics.AddError("Reading Unix connection after updation failed", *getResp.UNIXConnectionResponse.Msg)
 		return

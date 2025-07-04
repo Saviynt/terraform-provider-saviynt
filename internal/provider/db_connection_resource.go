@@ -362,7 +362,7 @@ func (r *dbConnectionResource) Create(ctx context.Context, req resource.CreateRe
 		resp.Diagnostics.AddError("API Create Failed", fmt.Sprintf("Error: %v", err))
 		return
 	}
-	if apiResp!=nil && *apiResp.ErrorCode !="0"{
+	if apiResp != nil && *apiResp.ErrorCode != "0" {
 		log.Printf("[ERROR]: Error in creating DB connection resource. Errorcode: %v, Message: %v", *apiResp.ErrorCode, *apiResp.Msg)
 		resp.Diagnostics.AddError("Creation of DB connection failed", *apiResp.Msg)
 		return
@@ -429,7 +429,7 @@ func (r *dbConnectionResource) Read(ctx context.Context, req resource.ReadReques
 		resp.Diagnostics.AddError("API Read Failed In Read Block", fmt.Sprintf("Error: %v", err))
 		return
 	}
-	if apiResp!=nil && *apiResp.DBConnectionResponse.Errorcode !=0{
+	if apiResp != nil && *apiResp.DBConnectionResponse.Errorcode != 0 {
 		log.Printf("[ERROR]: Error in reading DB connection resource. Errorcode: %v, Message: %v", *apiResp.DBConnectionResponse.Errorcode, *apiResp.DBConnectionResponse.Msg)
 		resp.Diagnostics.AddError("Read DB connection resource failed", *apiResp.DBConnectionResponse.Msg)
 		return
@@ -586,7 +586,7 @@ func (r *dbConnectionResource) Update(ctx context.Context, req resource.UpdateRe
 		resp.Diagnostics.AddError("API Update Failed", fmt.Sprintf("Error: %v", err))
 		return
 	}
-	if apiResp!=nil && *apiResp.ErrorCode !="0"{
+	if apiResp != nil && *apiResp.ErrorCode != "0" {
 		log.Printf("[ERROR]: Error in updating DB connection. Errorcode: %v, Message: %v", *apiResp.ErrorCode, *apiResp.Msg)
 		resp.Diagnostics.AddError("Updation of DB connection failed", *apiResp.Msg)
 		return
@@ -601,7 +601,7 @@ func (r *dbConnectionResource) Update(ctx context.Context, req resource.UpdateRe
 		resp.Diagnostics.AddError("API Read Failed In Update Block", fmt.Sprintf("Error: %v", err))
 		return
 	}
-	if getResp!=nil && *getResp.DBConnectionResponse.Errorcode !=0{
+	if getResp != nil && *getResp.DBConnectionResponse.Errorcode != 0 {
 		log.Printf("[ERROR]: Error in reading DB connection after updation. Errorcode: %v, Message: %v", *getResp.DBConnectionResponse.Errorcode, *getResp.DBConnectionResponse.Msg)
 		resp.Diagnostics.AddError("Read DB connection after updation failed", *getResp.DBConnectionResponse.Msg)
 		return

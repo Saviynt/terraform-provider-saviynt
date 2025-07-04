@@ -55,50 +55,50 @@ type EntraIdConnectionAttributes struct {
 	ImportUserJSON         types.String `tfsdk:"import_user_json"`
 	ConnectionType         types.String `tfsdk:"connection_type"`
 	EnableAccountJSON      types.String `tfsdk:"enable_account_json"`
-	// ConnectionJSON                  types.String `tfsdk:"connection_json"`
-	// ClientID                        types.String `tfsdk:"client_id"`
-	DeleteGroupJSON types.String `tfsdk:"delete_group_json"`
-	ConfigJSON      types.String `tfsdk:"config_json"`
-	// AccessToken                     types.String `tfsdk:"access_token"`
-	AddAccessJSON              types.String `tfsdk:"add_access_json"`
-	CreateChannelJSON          types.String `tfsdk:"create_channel_json"`
-	UpdateAccountJSON          types.String `tfsdk:"update_account_json"`
-	IsTimeoutSupported         types.Bool   `tfsdk:"is_timeout_supported"`
-	RemoveServicePrincipalJSON types.String `tfsdk:"remove_service_principal_json"`
-	ImportDepth                types.String `tfsdk:"import_depth"`
-	CreateAccountJSON          types.String `tfsdk:"create_account_json"`
-	PamConfig                  types.String `tfsdk:"pam_config"`
-	UpdateServicePrincipalJSON types.String `tfsdk:"update_service_principal_json"`
-	AzureManagementEndpoint    types.String `tfsdk:"azure_management_endpoint"`
-	EntitlementAttribute       types.String `tfsdk:"entitlement_attribute"`
-	AccountsFilter             types.String `tfsdk:"accounts_filter"`
-	// WindowsConnectorJSON            types.String `tfsdk:"windows_connector_json"`
-	DeltaTokensJSON types.String `tfsdk:"deltatokens_json"`
-	// AzureMgmtAccessToken            types.String `tfsdk:"azure_mgmt_access_token"`
-	CreateTeamJSON         types.String `tfsdk:"create_team_json"`
-	EnhancedDirectoryRoles types.String `tfsdk:"enhanceddirectoryroles"`
-	StatusThresholdConfig  types.String `tfsdk:"status_threshold_config"`
-	AccountImportFields    types.String `tfsdk:"account_import_fields"`
-	RemoveAccountJSON      types.String `tfsdk:"remove_account_json"`
-	// ChangePassJSON                  types.String `tfsdk:"change_pass_json"`
-	// ClientSecret                    types.String `tfsdk:"client_secret"`
-	EntitlementFilterJSON           types.String `tfsdk:"entitlement_filter_json"`
-	ServiceAccountAttributes        types.String `tfsdk:"service_account_attributes"`
-	AddAccessToEntitlementJSON      types.String `tfsdk:"add_access_to_entitlement_json"`
-	AuthenticationEndpoint          types.String `tfsdk:"authentication_endpoint"`
-	CreateServicePrincipalJSON      types.String `tfsdk:"create_service_principal_json"`
-	ModifyUserDataJSON              types.String `tfsdk:"modifyuserdatajson"`
-	IsTimeoutConfigValidated        types.Bool   `tfsdk:"is_timeout_config_validated"`
-	RemoveAccessJSON                types.String `tfsdk:"remove_access_json"`
-	CreateUsers                     types.String `tfsdk:"createusers"`
-	RemoveAccessFromEntitlementJSON types.String `tfsdk:"remove_access_from_entitlement_json"`
-	DisableAccountJSON              types.String `tfsdk:"disable_account_json"`
-	CreateNewEndpoints              types.String `tfsdk:"create_new_endpoints"`
-	ManagedAccountType              types.String `tfsdk:"managed_account_type"`
-	AccountAttributes               types.String `tfsdk:"account_attributes"`
-	AadTenantID                     types.String `tfsdk:"aad_tenant_id"`
-	UpdateGroupJSON                 types.String `tfsdk:"update_group_json"`
-	CreateGroupJSON                 types.String `tfsdk:"create_group_json"`
+	// ConnectionJSON         types.String `tfsdk:"connection_json"`
+	// ClientID               types.String `tfsdk:"client_id"`
+	DeleteGroupJSON        types.String `tfsdk:"delete_group_json"`
+	ConfigJSON             types.String `tfsdk:"config_json"`
+	// AccessToken            types.String `tfsdk:"access_token"`
+	AddAccessJSON          types.String `tfsdk:"add_access_json"`
+	CreateChannelJSON      types.String `tfsdk:"create_channel_json"`
+	UpdateAccountJSON      types.String `tfsdk:"update_account_json"`
+	IsTimeoutSupported     types.Bool   `tfsdk:"is_timeout_supported"`
+	// RemoveServicePrincipalJSON      types.String `tfsdk:"remove_service_principal_json"`
+	// ImportDepth                     types.String `tfsdk:"import_depth"`
+	CreateAccountJSON types.String `tfsdk:"create_account_json"`
+	PamConfig         types.String `tfsdk:"pam_config"`
+	// UpdateServicePrincipalJSON      types.String `tfsdk:"update_service_principal_json"`
+	AzureManagementEndpoint types.String `tfsdk:"azure_management_endpoint"`
+	EntitlementAttribute    types.String `tfsdk:"entitlement_attribute"`
+	AccountsFilter          types.String `tfsdk:"accounts_filter"`
+	// WindowsConnectorJSON    types.String `tfsdk:"windows_connector_json"`
+	DeltaTokensJSON         types.String `tfsdk:"deltatokens_json"`
+	// AzureMgmtAccessToken    types.String `tfsdk:"azure_mgmt_access_token"`
+	CreateTeamJSON          types.String `tfsdk:"create_team_json"`
+	// EnhancedDirectoryRoles          types.String `tfsdk:"enhanceddirectoryroles"`
+	StatusThresholdConfig types.String `tfsdk:"status_threshold_config"`
+	AccountImportFields   types.String `tfsdk:"account_import_fields"`
+	RemoveAccountJSON     types.String `tfsdk:"remove_account_json"`
+	// ChangePassJSON        types.String `tfsdk:"change_pass_json"`
+	// ClientSecret          types.String `tfsdk:"client_secret"`
+	EntitlementFilterJSON types.String `tfsdk:"entitlement_filter_json"`
+	// ServiceAccountAttributes        types.String `tfsdk:"service_account_attributes"`
+	// AddAccessToEntitlementJSON      types.String `tfsdk:"add_access_to_entitlement_json"`
+	AuthenticationEndpoint types.String `tfsdk:"authentication_endpoint"`
+	// CreateServicePrincipalJSON      types.String `tfsdk:"create_service_principal_json"`
+	ModifyUserDataJSON       types.String `tfsdk:"modifyuserdatajson"`
+	IsTimeoutConfigValidated types.Bool   `tfsdk:"is_timeout_config_validated"`
+	RemoveAccessJSON         types.String `tfsdk:"remove_access_json"`
+	CreateUsers              types.String `tfsdk:"createusers"`
+	// RemoveAccessFromEntitlementJSON types.String `tfsdk:"remove_access_from_entitlement_json"`
+	DisableAccountJSON types.String `tfsdk:"disable_account_json"`
+	CreateNewEndpoints types.String `tfsdk:"create_new_endpoints"`
+	// ManagedAccountType              types.String `tfsdk:"managed_account_type"`
+	AccountAttributes types.String `tfsdk:"account_attributes"`
+	AadTenantID       types.String `tfsdk:"aad_tenant_id"`
+	UpdateGroupJSON   types.String `tfsdk:"update_group_json"`
+	CreateGroupJSON   types.String `tfsdk:"create_group_json"`
 	// ConnectionTimeoutConfig         *ConnectionTimeoutConfig `tfsdk:"connection_timeout_config"`
 }
 
@@ -127,50 +127,50 @@ func EntraIDConnectorsDataSourceSchema() map[string]schema.Attribute {
 				"import_user_json":         schema.StringAttribute{Computed: true},
 				"connection_type":          schema.StringAttribute{Computed: true},
 				"enable_account_json":      schema.StringAttribute{Computed: true},
-				// "connection_json":                     schema.StringAttribute{Computed: true},
-				// "client_id":                           schema.StringAttribute{Computed: true},
-				"delete_group_json": schema.StringAttribute{Computed: true},
-				"config_json":       schema.StringAttribute{Computed: true},
-				// "access_token":                        schema.StringAttribute{Computed: true},
-				"add_access_json":               schema.StringAttribute{Computed: true},
-				"create_channel_json":           schema.StringAttribute{Computed: true},
-				"update_account_json":           schema.StringAttribute{Computed: true},
-				"is_timeout_supported":          schema.BoolAttribute{Computed: true},
-				"remove_service_principal_json": schema.StringAttribute{Computed: true},
-				"import_depth":                  schema.StringAttribute{Computed: true},
-				"create_account_json":           schema.StringAttribute{Computed: true},
-				"pam_config":                    schema.StringAttribute{Computed: true},
-				"update_service_principal_json": schema.StringAttribute{Computed: true},
-				"azure_management_endpoint":     schema.StringAttribute{Computed: true},
-				"entitlement_attribute":         schema.StringAttribute{Computed: true},
-				"accounts_filter":               schema.StringAttribute{Computed: true},
-				// "windows_connector_json":              schema.StringAttribute{Computed: true},
-				"deltatokens_json": schema.StringAttribute{Computed: true},
-				// "azure_mgmt_access_token":             schema.StringAttribute{Computed: true},
-				"create_team_json":        schema.StringAttribute{Computed: true},
-				"enhanceddirectoryroles":  schema.StringAttribute{Computed: true},
+				// "connection_json":          schema.StringAttribute{Computed: true},
+				// "client_id":                schema.StringAttribute{Computed: true},
+				"delete_group_json":        schema.StringAttribute{Computed: true},
+				"config_json":              schema.StringAttribute{Computed: true},
+				// "access_token":             schema.StringAttribute{Computed: true},
+				"add_access_json":          schema.StringAttribute{Computed: true},
+				"create_channel_json":      schema.StringAttribute{Computed: true},
+				"update_account_json":      schema.StringAttribute{Computed: true},
+				"is_timeout_supported":     schema.BoolAttribute{Computed: true},
+				// "remove_service_principal_json":       schema.StringAttribute{Computed: true},
+				// "import_depth":                        schema.StringAttribute{Computed: true},
+				"create_account_json": schema.StringAttribute{Computed: true},
+				"pam_config":          schema.StringAttribute{Computed: true},
+				// "update_service_principal_json":       schema.StringAttribute{Computed: true},
+				"azure_management_endpoint": schema.StringAttribute{Computed: true},
+				"entitlement_attribute":     schema.StringAttribute{Computed: true},
+				"accounts_filter":           schema.StringAttribute{Computed: true},
+				// "windows_connector_json":    schema.StringAttribute{Computed: true},
+				"deltatokens_json":          schema.StringAttribute{Computed: true},
+				// "azure_mgmt_access_token":   schema.StringAttribute{Computed: true},
+				"create_team_json":          schema.StringAttribute{Computed: true},
+				// "enhanceddirectoryroles":              schema.StringAttribute{Computed: true},
 				"status_threshold_config": schema.StringAttribute{Computed: true},
 				"account_import_fields":   schema.StringAttribute{Computed: true},
 				"remove_account_json":     schema.StringAttribute{Computed: true},
-				// "change_pass_json":                    schema.StringAttribute{Computed: true},
-				// "client_secret":                       schema.StringAttribute{Computed: true},
-				"entitlement_filter_json":             schema.StringAttribute{Computed: true},
-				"service_account_attributes":          schema.StringAttribute{Computed: true},
-				"add_access_to_entitlement_json":      schema.StringAttribute{Computed: true},
-				"authentication_endpoint":             schema.StringAttribute{Computed: true},
-				"create_service_principal_json":       schema.StringAttribute{Computed: true},
-				"modifyuserdatajson":                  schema.StringAttribute{Computed: true},
-				"is_timeout_config_validated":         schema.BoolAttribute{Computed: true},
-				"remove_access_json":                  schema.StringAttribute{Computed: true},
-				"createusers":                         schema.StringAttribute{Computed: true},
-				"remove_access_from_entitlement_json": schema.StringAttribute{Computed: true},
-				"disable_account_json":                schema.StringAttribute{Computed: true},
-				"create_new_endpoints":                schema.StringAttribute{Computed: true},
-				"managed_account_type":                schema.StringAttribute{Computed: true},
-				"account_attributes":                  schema.StringAttribute{Computed: true},
-				"aad_tenant_id":                       schema.StringAttribute{Computed: true},
-				"update_group_json":                   schema.StringAttribute{Computed: true},
-				"create_group_json":                   schema.StringAttribute{Computed: true},
+				// "change_pass_json":        schema.StringAttribute{Computed: true},
+				// "client_secret":           schema.StringAttribute{Computed: true},
+				"entitlement_filter_json": schema.StringAttribute{Computed: true},
+				// "service_account_attributes":          schema.StringAttribute{Computed: true},
+				// "add_access_to_entitlement_json":      schema.StringAttribute{Computed: true},
+				"authentication_endpoint": schema.StringAttribute{Computed: true},
+				// "create_service_principal_json":       schema.StringAttribute{Computed: true},
+				"modifyuserdatajson":          schema.StringAttribute{Computed: true},
+				"is_timeout_config_validated": schema.BoolAttribute{Computed: true},
+				"remove_access_json":          schema.StringAttribute{Computed: true},
+				"createusers":                 schema.StringAttribute{Computed: true},
+				// "remove_access_from_entitlement_json": schema.StringAttribute{Computed: true},
+				"disable_account_json": schema.StringAttribute{Computed: true},
+				"create_new_endpoints": schema.StringAttribute{Computed: true},
+				// "managed_account_type":                schema.StringAttribute{Computed: true},
+				"account_attributes": schema.StringAttribute{Computed: true},
+				"aad_tenant_id":      schema.StringAttribute{Computed: true},
+				"update_group_json":  schema.StringAttribute{Computed: true},
+				"create_group_json":  schema.StringAttribute{Computed: true},
 				// "connection_timeout_config": schema.SingleNestedAttribute{
 				// 	Computed:   true,
 				// 	Attributes: ConnectionTimeoutConfigeSchema(),
@@ -296,48 +296,48 @@ func (d *entraIdConnectionDataSource) Read(ctx context.Context, req datasource.R
 			EnableAccountJSON:      util.SafeStringDatasource(apiResp.EntraIDConnectionResponse.Connectionattributes.EnableAccountJSON),
 			// ConnectionJSON:         util.SafeStringDatasource(apiResp.EntraIDConnectionResponse.Connectionattributes.ConnectionJSON),
 			// ClientID:               util.SafeStringDatasource(apiResp.EntraIDConnectionResponse.Connectionattributes.CLIENT_ID),
-			DeleteGroupJSON: util.SafeStringDatasource(apiResp.EntraIDConnectionResponse.Connectionattributes.DeleteGroupJSON),
-			ConfigJSON:      util.SafeStringDatasource(apiResp.EntraIDConnectionResponse.Connectionattributes.ConfigJSON),
-			// AccessToken:                     util.SafeStringDatasource(apiResp.EntraIDConnectionResponse.Connectionattributes.ACCESS_TOKEN),
-			AddAccessJSON:              util.SafeStringDatasource(apiResp.EntraIDConnectionResponse.Connectionattributes.AddAccessJSON),
-			CreateChannelJSON:          util.SafeStringDatasource(apiResp.EntraIDConnectionResponse.Connectionattributes.CreateChannelJSON),
-			UpdateAccountJSON:          util.SafeStringDatasource(apiResp.EntraIDConnectionResponse.Connectionattributes.UpdateAccountJSON),
-			IsTimeoutSupported:         util.SafeBoolDatasource(apiResp.EntraIDConnectionResponse.Connectionattributes.IsTimeoutSupported),
-			RemoveServicePrincipalJSON: util.SafeStringDatasource(apiResp.EntraIDConnectionResponse.Connectionattributes.RemoveServicePrincipalJSON),
-			ImportDepth:                util.SafeStringDatasource(apiResp.EntraIDConnectionResponse.Connectionattributes.IMPORT_DEPTH),
-			CreateAccountJSON:          util.SafeStringDatasource(apiResp.EntraIDConnectionResponse.Connectionattributes.CreateAccountJSON),
-			PamConfig:                  util.SafeStringDatasource(apiResp.EntraIDConnectionResponse.Connectionattributes.PAM_CONFIG),
-			UpdateServicePrincipalJSON: util.SafeStringDatasource(apiResp.EntraIDConnectionResponse.Connectionattributes.UpdateServicePrincipalJSON),
-			AzureManagementEndpoint:    util.SafeStringDatasource(apiResp.EntraIDConnectionResponse.Connectionattributes.AZURE_MANAGEMENT_ENDPOINT),
-			EntitlementAttribute:       util.SafeStringDatasource(apiResp.EntraIDConnectionResponse.Connectionattributes.ENTITLEMENT_ATTRIBUTE),
-			AccountsFilter:             util.SafeStringDatasource(apiResp.EntraIDConnectionResponse.Connectionattributes.ACCOUNTS_FILTER),
-			// WindowsConnectorJSON:            util.SafeStringDatasource(apiResp.EntraIDConnectionResponse.Connectionattributes.WINDOWS_CONNECTOR_JSON),
-			DeltaTokensJSON: util.SafeStringDatasource(apiResp.EntraIDConnectionResponse.Connectionattributes.DELTATOKENSJSON),
-			// AzureMgmtAccessToken:            util.SafeStringDatasource(apiResp.EntraIDConnectionResponse.Connectionattributes.AZURE_MGMT_ACCESS_TOKEN),
-			CreateTeamJSON:         util.SafeStringDatasource(apiResp.EntraIDConnectionResponse.Connectionattributes.CreateTeamJSON),
-			EnhancedDirectoryRoles: util.SafeStringDatasource(apiResp.EntraIDConnectionResponse.Connectionattributes.ENHANCEDDIRECTORYROLES),
-			StatusThresholdConfig:  util.SafeStringDatasource(apiResp.EntraIDConnectionResponse.Connectionattributes.STATUS_THRESHOLD_CONFIG),
-			AccountImportFields:    util.SafeStringDatasource(apiResp.EntraIDConnectionResponse.Connectionattributes.ACCOUNT_IMPORT_FIELDS),
-			RemoveAccountJSON:      util.SafeStringDatasource(apiResp.EntraIDConnectionResponse.Connectionattributes.RemoveAccountJSON),
-			// ChangePassJSON:                  util.SafeStringDatasource(apiResp.EntraIDConnectionResponse.Connectionattributes.ChangePassJSON),
-			// ClientSecret:                    util.SafeStringDatasource(apiResp.EntraIDConnectionResponse.Connectionattributes.CLIENT_SECRET),
-			EntitlementFilterJSON:           util.SafeStringDatasource(apiResp.EntraIDConnectionResponse.Connectionattributes.ENTITLEMENT_FILTER_JSON),
-			ServiceAccountAttributes:        util.SafeStringDatasource(apiResp.EntraIDConnectionResponse.Connectionattributes.SERVICE_ACCOUNT_ATTRIBUTES),
-			AddAccessToEntitlementJSON:      util.SafeStringDatasource(apiResp.EntraIDConnectionResponse.Connectionattributes.AddAccessToEntitlementJSON),
-			AuthenticationEndpoint:          util.SafeStringDatasource(apiResp.EntraIDConnectionResponse.Connectionattributes.AUTHENTICATION_ENDPOINT),
-			CreateServicePrincipalJSON:      util.SafeStringDatasource(apiResp.EntraIDConnectionResponse.Connectionattributes.CreateServicePrincipalJSON),
-			ModifyUserDataJSON:              util.SafeStringDatasource(apiResp.EntraIDConnectionResponse.Connectionattributes.MODIFYUSERDATAJSON),
-			IsTimeoutConfigValidated:        util.SafeBoolDatasource(apiResp.EntraIDConnectionResponse.Connectionattributes.IsTimeoutConfigValidated),
-			RemoveAccessJSON:                util.SafeStringDatasource(apiResp.EntraIDConnectionResponse.Connectionattributes.RemoveAccessJSON),
-			CreateUsers:                     util.SafeStringDatasource(apiResp.EntraIDConnectionResponse.Connectionattributes.CREATEUSERS),
-			RemoveAccessFromEntitlementJSON: util.SafeStringDatasource(apiResp.EntraIDConnectionResponse.Connectionattributes.RemoveAccessFromEntitlementJSON),
-			DisableAccountJSON:              util.SafeStringDatasource(apiResp.EntraIDConnectionResponse.Connectionattributes.DisableAccountJSON),
-			CreateNewEndpoints:              util.SafeStringDatasource(apiResp.EntraIDConnectionResponse.Connectionattributes.CREATE_NEW_ENDPOINTS),
-			ManagedAccountType:              util.SafeStringDatasource(apiResp.EntraIDConnectionResponse.Connectionattributes.MANAGED_ACCOUNT_TYPE),
-			AccountAttributes:               util.SafeStringDatasource(apiResp.EntraIDConnectionResponse.Connectionattributes.ACCOUNT_ATTRIBUTES),
-			AadTenantID:                     util.SafeStringDatasource(apiResp.EntraIDConnectionResponse.Connectionattributes.AAD_TENANT_ID),
-			UpdateGroupJSON:                 util.SafeStringDatasource(apiResp.EntraIDConnectionResponse.Connectionattributes.UpdateGroupJSON),
-			CreateGroupJSON:                 util.SafeStringDatasource(apiResp.EntraIDConnectionResponse.Connectionattributes.CreateGroupJSON),
+			DeleteGroupJSON:        util.SafeStringDatasource(apiResp.EntraIDConnectionResponse.Connectionattributes.DeleteGroupJSON),
+			ConfigJSON:             util.SafeStringDatasource(apiResp.EntraIDConnectionResponse.Connectionattributes.ConfigJSON),
+			// AccessToken:            util.SafeStringDatasource(apiResp.EntraIDConnectionResponse.Connectionattributes.ACCESS_TOKEN),
+			AddAccessJSON:          util.SafeStringDatasource(apiResp.EntraIDConnectionResponse.Connectionattributes.AddAccessJSON),
+			CreateChannelJSON:      util.SafeStringDatasource(apiResp.EntraIDConnectionResponse.Connectionattributes.CreateChannelJSON),
+			UpdateAccountJSON:      util.SafeStringDatasource(apiResp.EntraIDConnectionResponse.Connectionattributes.UpdateAccountJSON),
+			IsTimeoutSupported:     util.SafeBoolDatasource(apiResp.EntraIDConnectionResponse.Connectionattributes.IsTimeoutSupported),
+			// RemoveServicePrincipalJSON:      util.SafeStringDatasource(apiResp.EntraIDConnectionResponse.Connectionattributes.RemoveServicePrincipalJSON),
+			// ImportDepth:                     util.SafeStringDatasource(apiResp.EntraIDConnectionResponse.Connectionattributes.IMPORT_DEPTH),
+			CreateAccountJSON: util.SafeStringDatasource(apiResp.EntraIDConnectionResponse.Connectionattributes.CreateAccountJSON),
+			PamConfig:         util.SafeStringDatasource(apiResp.EntraIDConnectionResponse.Connectionattributes.PAM_CONFIG),
+			// UpdateServicePrincipalJSON:      util.SafeStringDatasource(apiResp.EntraIDConnectionResponse.Connectionattributes.UpdateServicePrincipalJSON),
+			AzureManagementEndpoint: util.SafeStringDatasource(apiResp.EntraIDConnectionResponse.Connectionattributes.AZURE_MANAGEMENT_ENDPOINT),
+			EntitlementAttribute:    util.SafeStringDatasource(apiResp.EntraIDConnectionResponse.Connectionattributes.ENTITLEMENT_ATTRIBUTE),
+			AccountsFilter:          util.SafeStringDatasource(apiResp.EntraIDConnectionResponse.Connectionattributes.ACCOUNTS_FILTER),
+			// WindowsConnectorJSON:    util.SafeStringDatasource(apiResp.EntraIDConnectionResponse.Connectionattributes.WINDOWS_CONNECTOR_JSON),
+			DeltaTokensJSON:         util.SafeStringDatasource(apiResp.EntraIDConnectionResponse.Connectionattributes.DELTATOKENSJSON),
+			// AzureMgmtAccessToken:    util.SafeStringDatasource(apiResp.EntraIDConnectionResponse.Connectionattributes.AZURE_MGMT_ACCESS_TOKEN),
+			CreateTeamJSON:          util.SafeStringDatasource(apiResp.EntraIDConnectionResponse.Connectionattributes.CreateTeamJSON),
+			// EnhancedDirectoryRoles:          util.SafeStringDatasource(apiResp.EntraIDConnectionResponse.Connectionattributes.ENHANCEDDIRECTORYROLES),
+			StatusThresholdConfig: util.SafeStringDatasource(apiResp.EntraIDConnectionResponse.Connectionattributes.STATUS_THRESHOLD_CONFIG),
+			AccountImportFields:   util.SafeStringDatasource(apiResp.EntraIDConnectionResponse.Connectionattributes.ACCOUNT_IMPORT_FIELDS),
+			RemoveAccountJSON:     util.SafeStringDatasource(apiResp.EntraIDConnectionResponse.Connectionattributes.RemoveAccountJSON),
+			// ChangePassJSON:        util.SafeStringDatasource(apiResp.EntraIDConnectionResponse.Connectionattributes.ChangePassJSON),
+			// ClientSecret:          util.SafeStringDatasource(apiResp.EntraIDConnectionResponse.Connectionattributes.CLIENT_SECRET),
+			EntitlementFilterJSON: util.SafeStringDatasource(apiResp.EntraIDConnectionResponse.Connectionattributes.ENTITLEMENT_FILTER_JSON),
+			// ServiceAccountAttributes:        util.SafeStringDatasource(apiResp.EntraIDConnectionResponse.Connectionattributes.SERVICE_ACCOUNT_ATTRIBUTES),
+			// AddAccessToEntitlementJSON:      util.SafeStringDatasource(apiResp.EntraIDConnectionResponse.Connectionattributes.AddAccessToEntitlementJSON),
+			AuthenticationEndpoint: util.SafeStringDatasource(apiResp.EntraIDConnectionResponse.Connectionattributes.AUTHENTICATION_ENDPOINT),
+			// CreateServicePrincipalJSON:      util.SafeStringDatasource(apiResp.EntraIDConnectionResponse.Connectionattributes.CreateServicePrincipalJSON),
+			ModifyUserDataJSON:       util.SafeStringDatasource(apiResp.EntraIDConnectionResponse.Connectionattributes.MODIFYUSERDATAJSON),
+			IsTimeoutConfigValidated: util.SafeBoolDatasource(apiResp.EntraIDConnectionResponse.Connectionattributes.IsTimeoutConfigValidated),
+			RemoveAccessJSON:         util.SafeStringDatasource(apiResp.EntraIDConnectionResponse.Connectionattributes.RemoveAccessJSON),
+			CreateUsers:              util.SafeStringDatasource(apiResp.EntraIDConnectionResponse.Connectionattributes.CREATEUSERS),
+			// RemoveAccessFromEntitlementJSON: util.SafeStringDatasource(apiResp.EntraIDConnectionResponse.Connectionattributes.RemoveAccessFromEntitlementJSON),
+			DisableAccountJSON: util.SafeStringDatasource(apiResp.EntraIDConnectionResponse.Connectionattributes.DisableAccountJSON),
+			CreateNewEndpoints: util.SafeStringDatasource(apiResp.EntraIDConnectionResponse.Connectionattributes.CREATE_NEW_ENDPOINTS),
+			// ManagedAccountType:              util.SafeStringDatasource(apiResp.EntraIDConnectionResponse.Connectionattributes.MANAGED_ACCOUNT_TYPE),
+			AccountAttributes: util.SafeStringDatasource(apiResp.EntraIDConnectionResponse.Connectionattributes.ACCOUNT_ATTRIBUTES),
+			AadTenantID:       util.SafeStringDatasource(apiResp.EntraIDConnectionResponse.Connectionattributes.AAD_TENANT_ID),
+			UpdateGroupJSON:   util.SafeStringDatasource(apiResp.EntraIDConnectionResponse.Connectionattributes.UpdateGroupJSON),
+			CreateGroupJSON:   util.SafeStringDatasource(apiResp.EntraIDConnectionResponse.Connectionattributes.CreateGroupJSON),
 		}
 		// if apiResp.EntraIDConnectionResponse.Connectionattributes.ConnectionTimeoutConfig != nil {
 		// 	state.ConnectionAttributes.ConnectionTimeoutConfig = &ConnectionTimeoutConfig{
