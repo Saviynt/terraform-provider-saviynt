@@ -325,7 +325,6 @@ func (r *restConnectionResource) Create(ctx context.Context, req resource.Create
 	restConnRequest := openapi.CreateOrUpdateRequest{
 		RESTConnector: &restConn,
 	}
-	log.Print("[DEBUG] Creating REST connection with request: ", restConn.ConnectionJSON)
 	// Initialize API client
 	apiResp, _, err := apiClient.ConnectionsAPI.CreateOrUpdate(ctx).CreateOrUpdateRequest(restConnRequest).Execute()
 	if err != nil {
@@ -333,7 +332,7 @@ func (r *restConnectionResource) Create(ctx context.Context, req resource.Create
 		resp.Diagnostics.AddError("API Create Failed", fmt.Sprintf("Error: %v", err))
 		return
 	}
-	if apiResp!=nil && *apiResp.ErrorCode !="0"{
+	if apiResp != nil && *apiResp.ErrorCode != "0" {
 		log.Printf("[ERROR]: Error in creating REST connection resource. Errorcode: %v, Message: %v", *apiResp.ErrorCode, *apiResp.Msg)
 		resp.Diagnostics.AddError("Creation of REST connection failed", *apiResp.Msg)
 		return
@@ -398,7 +397,7 @@ func (r *restConnectionResource) Read(ctx context.Context, req resource.ReadRequ
 		resp.Diagnostics.AddError("API Read Failed", fmt.Sprintf("Error: %v", err))
 		return
 	}
-	if apiResp!=nil && *apiResp.RESTConnectionResponse.Errorcode !=0{
+	if apiResp != nil && *apiResp.RESTConnectionResponse.Errorcode != 0 {
 		log.Printf("[ERROR]: Error in reading REST connection. Errorcode: %v, Message: %v", *apiResp.RESTConnectionResponse.Errorcode, *apiResp.RESTConnectionResponse.Msg)
 		resp.Diagnostics.AddError("Reading REST connection failed", *apiResp.RESTConnectionResponse.Msg)
 		return
@@ -545,7 +544,7 @@ func (r *restConnectionResource) Update(ctx context.Context, req resource.Update
 		resp.Diagnostics.AddError("API Update Failed", fmt.Sprintf("Error: %v", err))
 		return
 	}
-	if apiResp!=nil && *apiResp.ErrorCode !="0"{
+	if apiResp != nil && *apiResp.ErrorCode != "0" {
 		log.Printf("[ERROR]: Error in updating REST connection resource. Errorcode: %v, Message: %v", *apiResp.ErrorCode, *apiResp.Msg)
 		resp.Diagnostics.AddError("Updation of REST connection failed", *apiResp.Msg)
 		return
@@ -560,7 +559,7 @@ func (r *restConnectionResource) Update(ctx context.Context, req resource.Update
 		resp.Diagnostics.AddError("API Read Failed", fmt.Sprintf("Error: %v", err))
 		return
 	}
-	if getResp!=nil && *getResp.RESTConnectionResponse.Errorcode !=0{
+	if getResp != nil && *getResp.RESTConnectionResponse.Errorcode != 0 {
 		log.Printf("[ERROR]: Error in reading REST connection after updation. Errorcode: %v, Message: %v", *getResp.RESTConnectionResponse.Errorcode, *getResp.RESTConnectionResponse.Msg)
 		resp.Diagnostics.AddError("Reading REST connection after updation failed", *getResp.RESTConnectionResponse.Msg)
 		return
