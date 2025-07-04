@@ -37,6 +37,7 @@ var SAPConnDescription = "Create and manage SAP connector in Saviynt"
 var SalesforceConnDescription = "Create and manage Salesforce connector in Saviynt"
 var UnixConnDescription = "Create and manage Unix connector in Saviynt"
 var WorkdayConnDescription = "Create and manage Workday connector in Saviynt"
+var DynamicAttrDescription="Create and manage dynamic attributes in Saviynt"
 
 var ADConnDataSourceDescription = "Retrieve the details for a given AD connector by its name or key"
 var ADSIConnDataSourceDescription = "Retrieve the details for a given ADSI connector by its name or key"
