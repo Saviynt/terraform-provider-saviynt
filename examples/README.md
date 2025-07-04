@@ -16,7 +16,6 @@ Below are example configurations to help guide you through your Terraform journe
 - [saviynt_github_rest_connection_resource](./resources/saviynt_github_rest_connection_resource) For managing Github REST connections.
 - [saviynt_rest_connection_resource](./resources/saviynt_rest_connection_resource) For managing REST connections.
 - [saviynt_salesforce_connection_resource](./resources/saviynt_salesforce_connection_resource) For managing Salesforce connections.
-- [saviynt_sap_connection_resource](./resources/saviynt_sap_connection_resource) For managing SAP connections.
 - [saviynt_unix_connection_resource](./resources/saviynt_unix_connection_resource) For managing Unix connections.
 - [saviynt_workday_connection_resource](./resources/saviynt_workday_connection_resource) For managing Workday connections.
 
@@ -32,6 +31,5 @@ Below are example configurations to help guide you through your Terraform journe
 - [saviynt_github_rest_connection_datasource](./data-sources/saviynt_github_rest_connection_datasource) Retrieves an Github REST connection.
 - [saviynt_rest_connection_datasource](./data-sources/saviynt_rest_connection_datasource) Retrieves an REST connection.
 - [saviynt_salesforce_connection_datasource](./data-sources/saviynt_salesforce_connection_datasource) Retrieves a Salesforce connection.
-- [saviynt_sap_connection_datasource](./data-sources/saviynt_sap_connection_datasource) Retrieves a SAP connection.
 - [saviynt_unix_connection_datasource](./data-sources/saviynt_unix_connection_datasource) Retrieves a Unix connection.
 - [saviynt_workday_connection_datasource](./data-sources/saviynt_workday_connection_datasource) Retrieves a Workday connection.

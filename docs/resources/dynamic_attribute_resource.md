@@ -22,7 +22,7 @@ resource "saviynt_dynamic_attribute_resource" "example" {
   update_user     = "admin"
 
   dynamic_attributes = {
-    dynamic_attr_1 = { # Will typically be set automatically from the map key
+    dynamic_attr_1 = {
       attribute_name                            = "dynamic_attr_1"
       request_type                              = "ACCOUNT"
       attribute_type                            = "BOOLEAN"

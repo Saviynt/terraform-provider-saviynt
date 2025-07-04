@@ -6,6 +6,6 @@ Use the following operations to perform full lifecycle management of your Endpoi
 - **Read** (Retrieve) the connector’s current configuration  
 - **Update** its configuration
 
-[See Saviynt documentation for more details](https://docs.saviyntcloud.com/bundle/EIC-Admin-25/page/Content/Chapter13-Access-Requests/ars-uc-impl-appl-ep.htm)
+[See Saviynt documentation for more details](https://docs.saviyntcloud.com/bundle/EIC-Admin-v24x/page/Content/Chapter13-Access-Requests/ars-uc-impl-appl-ep.htm)
 
 - Simple example [can be found here](./resource.tf).

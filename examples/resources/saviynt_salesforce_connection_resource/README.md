@@ -6,6 +6,6 @@ Use the following operations to perform full lifecycle management of your Salesf
 - **Read** (Retrieve) the connector’s current configuration  
 - **Update** its configuration
 
-[See Saviynt documentation for more details](https://docs.saviyntcloud.com/bundle/EIC-Admin-25/page/Content/Chapter02-Identity-Repository/Viewing-or-Updating-Connections.htm)
+[See Saviynt documentation for more details](https://docs.saviyntcloud.com/bundle/Salesforce-v24x/page/Content/Integrating-Salesforce-Applications-v2022x.htm)
 
 - Simple example [can be found here](./resource.tf).

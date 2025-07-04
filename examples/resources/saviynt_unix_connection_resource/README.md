@@ -6,6 +6,6 @@ Use the following operations to perform full lifecycle management of your Unix c
 - **Read** (Retrieve) the connector’s current configuration  
 - **Update** its configuration
 
-[See Saviynt documentation for more details](https://docs.saviyntcloud.com/bundle/UNIX-25/page/Content/Integrating-Unix-Applications-v2022x.htm)
+[See Saviynt documentation for more details](https://docs.saviyntcloud.com/bundle/UNIX-v24x/page/Content/Integrating-Unix-Applications-v2022x.htm)
 
 - Simple example [can be found here](./resource.tf).
