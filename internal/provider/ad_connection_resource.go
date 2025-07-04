@@ -1,17 +1,5 @@
-/*
- * Copyright (c) 2025 Saviynt Inc.
- * All Rights Reserved.
- *
- * This software is the confidential and proprietary information of
- * Saviynt Inc. ("Confidential Information"). You shall not disclose,
- * use, or distribute such Confidential Information except in accordance
- * with the terms of the license agreement you entered into with Saviynt.
- *
- * SAVIYNT MAKES NO REPRESENTATIONS OR WARRANTIES ABOUT THE SUITABILITY OF
- * THE SOFTWARE, EITHER EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO
- * THE IMPLIED WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR
- * PURPOSE, OR NON-INFRINGEMENT.
- */
+// Copyright (c) Saviynt Inc.
+// SPDX-License-Identifier: MPL-2.0
 
 // saviynt_ad_connection_resource manages AD connectors in the Saviynt Security Manager.
 // The resource implements the full Terraform lifecycle:
@@ -472,7 +460,7 @@ func (r *adConnectionResource) Create(ctx context.Context, req resource.CreateRe
 			Connectiontype: "AD",
 			ConnectionName: plan.ConnectionName.ValueString(),
 			//optional field
-			// Description:     util.StringPointerOrEmpty(plan.Description),
+			Description:     util.StringPointerOrEmpty(plan.Description),
 			Defaultsavroles: util.StringPointerOrEmpty(plan.DefaultSavRoles),
 			EmailTemplate:   util.StringPointerOrEmpty(plan.EmailTemplate),
 		},
@@ -546,21 +534,15 @@ func (r *adConnectionResource) Create(ctx context.Context, req resource.CreateRe
 	}
 	// Initialize API client
 	apiResp, _, err := apiClient.ConnectionsAPI.CreateOrUpdate(ctx).CreateOrUpdateRequest(adConnRequest).Execute()
-	if err != nil {
+	if err != nil || *apiResp.ErrorCode != "0" {
 		log.Printf("[ERROR] Failed to create API resource. Error: %v", err)
 		resp.Diagnostics.AddError("API Create Failed", fmt.Sprintf("Error: %v", err))
 		return
 	}
-	if apiResp!=nil && *apiResp.ErrorCode !="0"{
-		log.Printf("[ERROR]: Error in creating AD connection resource. Errorcode: %v, Message: %v", *apiResp.ErrorCode, *apiResp.Msg)
-		resp.Diagnostics.AddError("Creation of AD connection failed", *apiResp.Msg)
-		return
-	}
-
 	plan.ID = types.StringValue(fmt.Sprintf("%d", *apiResp.ConnectionKey))
 	plan.ConnectionType = types.StringValue("AD")
 	plan.ConnectionKey = types.Int64Value(int64(*apiResp.ConnectionKey))
-	// plan.Description = util.SafeStringDatasource(plan.Description.ValueStringPointer())
+	plan.Description = util.SafeStringDatasource(plan.Description.ValueStringPointer())
 	plan.DefaultSavRoles = util.SafeStringDatasource(plan.DefaultSavRoles.ValueStringPointer())
 	plan.EmailTemplate = util.SafeStringDatasource(plan.EmailTemplate.ValueStringPointer())
 	plan.URL = util.SafeStringDatasource(plan.URL.ValueStringPointer())
@@ -650,16 +632,10 @@ func (r *adConnectionResource) Read(ctx context.Context, req resource.ReadReques
 		resp.Diagnostics.AddError("API Read Failed In Read Block", fmt.Sprintf("Error: %v", err))
 		return
 	}
-	if apiResp!=nil &&*apiResp.ADConnectionResponse.Errorcode !=0{
-		log.Printf("[ERROR]: Error in reading AD connection resource. Errorcode: %v, Message: %v", *apiResp.ADConnectionResponse.Errorcode, *apiResp.ADConnectionResponse.Msg)
-		resp.Diagnostics.AddError("Reading of AD connection resource failed", *apiResp.ADConnectionResponse.Msg)
-		return
-	}
-
 	state.ConnectionKey = types.Int64Value(int64(*apiResp.ADConnectionResponse.Connectionkey))
 	state.ID = types.StringValue(fmt.Sprintf("%d", *apiResp.ADConnectionResponse.Connectionkey))
 	state.ConnectionName = util.SafeStringDatasource(apiResp.ADConnectionResponse.Connectionname)
-	// state.Description = util.SafeStringDatasource(apiResp.ADConnectionResponse.Description)
+	state.Description = util.SafeStringDatasource(apiResp.ADConnectionResponse.Description)
 	state.DefaultSavRoles = util.SafeStringDatasource(apiResp.ADConnectionResponse.Defaultsavroles)
 	state.ConnectionType = util.SafeStringDatasource(apiResp.ADConnectionResponse.Connectiontype)
 	state.EmailTemplate = util.SafeStringDatasource(apiResp.ADConnectionResponse.Emailtemplate)
@@ -719,13 +695,6 @@ func (r *adConnectionResource) Read(ctx context.Context, req resource.ReadReques
 	state.CheckForUnique = util.SafeStringDatasource(apiResp.ADConnectionResponse.Connectionattributes.CHECKFORUNIQUE)
 	state.EnableGroupManagement = util.SafeStringDatasource(apiResp.ADConnectionResponse.Connectionattributes.ENABLEGROUPMANAGEMENT)
 	state.OrgImportJson = util.SafeStringDatasource(apiResp.ADConnectionResponse.Connectionattributes.ORGIMPORTJSON)
-	apiMessage := util.SafeDeref(apiResp.ADConnectionResponse.Msg)
-	if apiMessage == "success" {
-		state.Msg = types.StringValue("Connection Successful")
-	} else {
-		state.Msg = types.StringValue(apiMessage)
-	}
-	state.ErrorCode = util.Int32PtrToTFString(apiResp.ADConnectionResponse.Errorcode)
 	stateDiagnostics := resp.State.Set(ctx, &state)
 	resp.Diagnostics.Append(stateDiagnostics...)
 	if resp.Diagnostics.HasError() {
@@ -777,7 +746,7 @@ func (r *adConnectionResource) Update(ctx context.Context, req resource.UpdateRe
 			Connectiontype: "AD",
 			ConnectionName: plan.ConnectionName.ValueString(),
 			//optional field
-			// Description:     util.StringPointerOrEmpty(plan.Description),
+			Description:     util.StringPointerOrEmpty(plan.Description),
 			Defaultsavroles: util.StringPointerOrEmpty(plan.DefaultSavRoles),
 			EmailTemplate:   util.StringPointerOrEmpty(plan.EmailTemplate),
 		},
@@ -857,17 +826,11 @@ func (r *adConnectionResource) Update(ctx context.Context, req resource.UpdateRe
 	// Initialize API client
 	apiClient := openapi.NewAPIClient(cfg)
 	apiResp, _, err := apiClient.ConnectionsAPI.CreateOrUpdate(ctx).CreateOrUpdateRequest(adConnRequest).Execute()
-	if err != nil {
+	if err != nil || *apiResp.ErrorCode != "0" {
 		log.Printf("Problem with the update function")
 		resp.Diagnostics.AddError("API Update Failed", fmt.Sprintf("Error: %v", err))
 		return
 	}
-	if apiResp!=nil && *apiResp.ErrorCode !="0"{
-		log.Printf("[ERROR]: Error in updating AD connection resource. Errorcode: %v, Message: %v", *apiResp.ErrorCode, *apiResp.Msg)
-		resp.Diagnostics.AddError("Updation of AD connection failed", *apiResp.Msg)
-		return
-	}
-
 	reqParams := openapi.GetConnectionDetailsRequest{}
 
 	reqParams.SetConnectionname(plan.ConnectionName.ValueString())
@@ -877,16 +840,10 @@ func (r *adConnectionResource) Update(ctx context.Context, req resource.UpdateRe
 		resp.Diagnostics.AddError("API Read Failed In Update Block", fmt.Sprintf("Error: %v", err))
 		return
 	}
-	if getResp!=nil && *getResp.ADConnectionResponse.Errorcode !=0{
-		log.Printf("[ERROR]: Error in reading AD connection resource after updation. Errorcode: %v, Message: %v", *getResp.ADConnectionResponse.Errorcode, *getResp.ADConnectionResponse.Msg)
-		resp.Diagnostics.AddError("Reading of AD connection after updation failed", *getResp.ADConnectionResponse.Msg)
-		return
-	}
-
 	plan.ConnectionKey = types.Int64Value(int64(*getResp.ADConnectionResponse.Connectionkey))
 	plan.ID = types.StringValue(fmt.Sprintf("%d", *getResp.ADConnectionResponse.Connectionkey))
 	plan.ConnectionName = util.SafeStringDatasource(getResp.ADConnectionResponse.Connectionname)
-	// plan.Description = util.SafeStringDatasource(getResp.ADConnectionResponse.Description)
+	plan.Description = util.SafeStringDatasource(getResp.ADConnectionResponse.Description)
 	plan.DefaultSavRoles = util.SafeStringDatasource(getResp.ADConnectionResponse.Defaultsavroles)
 	plan.ConnectionType = util.SafeStringDatasource(getResp.ADConnectionResponse.Connectiontype)
 	plan.EmailTemplate = util.SafeStringDatasource(getResp.ADConnectionResponse.Emailtemplate)
@@ -946,13 +903,8 @@ func (r *adConnectionResource) Update(ctx context.Context, req resource.UpdateRe
 	plan.CheckForUnique = util.SafeStringDatasource(getResp.ADConnectionResponse.Connectionattributes.CHECKFORUNIQUE)
 	plan.EnableGroupManagement = util.SafeStringDatasource(getResp.ADConnectionResponse.Connectionattributes.ENABLEGROUPMANAGEMENT)
 	plan.OrgImportJson = util.SafeStringDatasource(getResp.ADConnectionResponse.Connectionattributes.ORGIMPORTJSON)
-	apiMessage := util.SafeDeref(getResp.ADConnectionResponse.Msg)
-	if apiMessage == "success" {
-		plan.Msg = types.StringValue("Connection Successful")
-	} else {
-		plan.Msg = types.StringValue(apiMessage)
-	}
-	plan.ErrorCode = util.Int32PtrToTFString(getResp.ADConnectionResponse.Errorcode)
+	plan.Msg = types.StringValue(util.SafeDeref(apiResp.Msg))
+	plan.ErrorCode = types.StringValue(util.SafeDeref(apiResp.ErrorCode))
 	stateUpdateDiagnostics := resp.State.Set(ctx, plan)
 	resp.Diagnostics.Append(stateUpdateDiagnostics...)
 }

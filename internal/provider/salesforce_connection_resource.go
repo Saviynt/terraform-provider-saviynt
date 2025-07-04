@@ -1,17 +1,5 @@
-/*
- * Copyright (c) 2025 Saviynt Inc.
- * All Rights Reserved.
- *
- * This software is the confidential and proprietary information of
- * Saviynt Inc. ("Confidential Information"). You shall not disclose,
- * use, or distribute such Confidential Information except in accordance
- * with the terms of the license agreement you entered into with Saviynt.
- *
- * SAVIYNT MAKES NO REPRESENTATIONS OR WARRANTIES ABOUT THE SUITABILITY OF
- * THE SOFTWARE, EITHER EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO
- * THE IMPLIED WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR
- * PURPOSE, OR NON-INFRINGEMENT.
- */
+// Copyright (c) Saviynt Inc.
+// SPDX-License-Identifier: MPL-2.0
 
 // saviynt_salesforce_connection_resource manages Salesforce connectors in the Saviynt Security Manager.
 // The resource implements the full Terraform lifecycle:
@@ -229,7 +217,7 @@ func (r *salesforceConnectionResource) Create(ctx context.Context, req resource.
 			Connectiontype: "SalesForce",
 			ConnectionName: plan.ConnectionName.ValueString(),
 			//optional fields
-			// Description:        util.StringPointerOrEmpty(plan.Description),
+			Description:        util.StringPointerOrEmpty(plan.Description),
 			Defaultsavroles:    util.StringPointerOrEmpty(plan.DefaultSavRoles),
 			EmailTemplate:      util.StringPointerOrEmpty(plan.EmailTemplate),
 			VaultConnection:    util.SafeStringConnector(plan.VaultConnection.ValueString()),
@@ -259,21 +247,15 @@ func (r *salesforceConnectionResource) Create(ctx context.Context, req resource.
 	}
 
 	apiResp, _, err := apiClient.ConnectionsAPI.CreateOrUpdate(ctx).CreateOrUpdateRequest(salesforceConnRequest).Execute()
-	if err != nil {
+	if err != nil || *apiResp.ErrorCode != "0" {
 		log.Printf("[ERROR] Failed to create API resource. Error: %v", err)
 		resp.Diagnostics.AddError("API Create Failed", fmt.Sprintf("Error: %v", err))
 		return
 	}
-	if apiResp!=nil && *apiResp.ErrorCode !="0"{
-		log.Printf("[ERROR]: Error in creating Salesforce connection resource. Errorcode: %v, Message: %v", *apiResp.ErrorCode, *apiResp.Msg)
-		resp.Diagnostics.AddError("Creation of Salesforce connection failed", *apiResp.Msg)
-		return
-	}
-
 	plan.ID = types.StringValue(fmt.Sprintf("%d", *apiResp.ConnectionKey))
 	plan.ConnectionType = types.StringValue("SalesForce")
 	plan.ConnectionKey = types.Int64Value(int64(*apiResp.ConnectionKey))
-	// plan.Description = util.SafeStringDatasource(plan.Description.ValueStringPointer())
+	plan.Description = util.SafeStringDatasource(plan.Description.ValueStringPointer())
 	plan.DefaultSavRoles = util.SafeStringDatasource(plan.DefaultSavRoles.ValueStringPointer())
 	plan.EmailTemplate = util.SafeStringDatasource(plan.EmailTemplate.ValueStringPointer())
 	plan.ClientId = util.SafeStringDatasource(plan.ClientId.ValueStringPointer())
@@ -321,16 +303,10 @@ func (r *salesforceConnectionResource) Read(ctx context.Context, req resource.Re
 		resp.Diagnostics.AddError("API Read Failed", fmt.Sprintf("Error: %v", err))
 		return
 	}
-	if apiResp!=nil && *apiResp.SalesforceConnectionResponse.Errorcode !=0{
-		log.Printf("[ERROR]: Error in reading Salesforce connection resource. Errorcode: %v, Message: %v", *apiResp.SalesforceConnectionResponse.Errorcode, *apiResp.SalesforceConnectionResponse.Msg)
-		resp.Diagnostics.AddError("Reading Salesforce connection failed", *apiResp.SalesforceConnectionResponse.Msg)
-		return
-	}
-
 	state.ConnectionKey = types.Int64Value(int64(*apiResp.SalesforceConnectionResponse.Connectionkey))
 	state.ID = types.StringValue(fmt.Sprintf("%d", *apiResp.SalesforceConnectionResponse.Connectionkey))
 	state.ConnectionName = util.SafeStringDatasource(apiResp.SalesforceConnectionResponse.Connectionname)
-	// state.Description = util.SafeStringDatasource(apiResp.SalesforceConnectionResponse.Description)
+	state.Description = util.SafeStringDatasource(apiResp.SalesforceConnectionResponse.Description)
 	state.DefaultSavRoles = util.SafeStringDatasource(apiResp.SalesforceConnectionResponse.Defaultsavroles)
 	state.ConnectionType = util.SafeStringDatasource(apiResp.SalesforceConnectionResponse.Connectiontype)
 	state.Msg = util.SafeStringDatasource(apiResp.SalesforceConnectionResponse.Msg)
@@ -404,7 +380,7 @@ func (r *salesforceConnectionResource) Update(ctx context.Context, req resource.
 			Connectiontype: "SalesForce",
 			ConnectionName: plan.ConnectionName.ValueString(),
 			//optional fields
-			// Description:        util.StringPointerOrEmpty(plan.Description),
+			Description:        util.StringPointerOrEmpty(plan.Description),
 			Defaultsavroles:    util.StringPointerOrEmpty(plan.DefaultSavRoles),
 			EmailTemplate:      util.StringPointerOrEmpty(plan.EmailTemplate),
 			VaultConnection:    util.SafeStringConnector(plan.VaultConnection.ValueString()),
@@ -435,17 +411,11 @@ func (r *salesforceConnectionResource) Update(ctx context.Context, req resource.
 	// Initialize API client
 	apiClient := openapi.NewAPIClient(cfg)
 	apiResp, _, err := apiClient.ConnectionsAPI.CreateOrUpdate(ctx).CreateOrUpdateRequest(salesforceConnRequest).Execute()
-	if err != nil {
+	if err != nil || *apiResp.ErrorCode != "0" {
 		log.Printf("[ERROR] Failed to create API resource. Error: %v", err)
 		resp.Diagnostics.AddError("API Create Failed", fmt.Sprintf("Error: %v", err))
 		return
 	}
-	if apiResp!=nil && *apiResp.ErrorCode !="0"{
-		log.Printf("[ERROR]: Error in updating Salesforce connection after updation. Errorcode: %v, Message: %v", *apiResp.ErrorCode, *apiResp.Msg)
-		resp.Diagnostics.AddError("Updation of Salesforce connection", *apiResp.Msg)
-		return
-	}
-
 	reqParams := openapi.GetConnectionDetailsRequest{}
 
 	reqParams.SetConnectionname(plan.ConnectionName.ValueString())
@@ -455,17 +425,10 @@ func (r *salesforceConnectionResource) Update(ctx context.Context, req resource.
 		resp.Diagnostics.AddError("API Read Failed", fmt.Sprintf("Error: %v", err))
 		return
 	}
-	if getResp!=nil && *getResp.SalesforceConnectionResponse.Errorcode !=0{
-		log.Printf("[ERROR]: Error in reading Salesforce connection after updation. Errorcode: %v, Message: %v", *getResp.SalesforceConnectionResponse.Errorcode, *getResp.SalesforceConnectionResponse.Msg)
-		resp.Diagnostics.AddError("Reading Salesforce connection after updation failed", *getResp.SalesforceConnectionResponse.Msg)
-		return
-	}
-
-
 	plan.ConnectionKey = types.Int64Value(int64(*getResp.SalesforceConnectionResponse.Connectionkey))
 	plan.ID = types.StringValue(fmt.Sprintf("%d", *getResp.SalesforceConnectionResponse.Connectionkey))
 	plan.ConnectionName = util.SafeStringDatasource(getResp.SalesforceConnectionResponse.Connectionname)
-	// plan.Description = util.SafeStringDatasource(getResp.SalesforceConnectionResponse.Description)
+	plan.Description = util.SafeStringDatasource(getResp.SalesforceConnectionResponse.Description)
 	plan.DefaultSavRoles = util.SafeStringDatasource(getResp.SalesforceConnectionResponse.Defaultsavroles)
 	plan.ConnectionType = util.SafeStringDatasource(getResp.SalesforceConnectionResponse.Connectiontype)
 	plan.Msg = util.SafeStringDatasource(getResp.SalesforceConnectionResponse.Msg)

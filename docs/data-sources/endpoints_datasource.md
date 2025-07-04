@@ -21,7 +21,7 @@ data "saviynt_endpoints_datasource" "all" {}
 
 # Get endpoint by name
 data "saviynt_endpoints_datasource" "by_name" {
-  endpointname = "sample"
+  endpoint_name = "sample"
 }
 ```
 
@@ -32,7 +32,6 @@ data "saviynt_endpoints_datasource" "by_name" {
 
 - `connection_type` (String) Filter by connection type
 - `displayname` (String) Filter by display name
-- `endpointkey` (List of String) List of endpoint keys to filter
 - `endpointname` (String) Filter by endpoint name
 - `filter_criteria` (Map of String) Filter criteria
 - `max` (String)
@@ -49,8 +48,9 @@ data "saviynt_endpoints_datasource" "by_name" {
 <a id="nestedatt--results"></a>
 ### Nested Schema for `results`
 
-Optional:
+Read-Only:
 
+- `accessquery` (String) Query to restrict endpoint visibility
 - `account_custom_property_10_label` (String) Label for account custom property 10.
 - `account_custom_property_11_label` (String) Label for account custom property 11.
 - `account_custom_property_12_label` (String) Label for account custom property 12.
@@ -81,40 +81,6 @@ Optional:
 - `account_custom_property_7_label` (String) Label for account custom property 7.
 - `account_custom_property_8_label` (String) Label for account custom property 8.
 - `account_custom_property_9_label` (String) Label for account custom property 9.
-- `custom_property31_label` (String) Label for custom property 31 of accounts of this endpoint.
-- `custom_property32_label` (String) Label for custom property 32 of accounts of this endpoint.
-- `custom_property33_label` (String) Label for custom property 33 of accounts of this endpoint.
-- `custom_property34_label` (String) Label for custom property 34 of accounts of this endpoint.
-- `custom_property35_label` (String) Label for custom property 35 of accounts of this endpoint.
-- `custom_property36_label` (String) Label for custom property 36 of accounts of this endpoint.
-- `custom_property37_label` (String) Label for custom property 37 of accounts of this endpoint.
-- `custom_property38_label` (String) Label for custom property 38 of accounts of this endpoint.
-- `custom_property39_label` (String) Label for custom property 39 of accounts of this endpoint.
-- `custom_property40_label` (String) Label for custom property 40 of accounts of this endpoint.
-- `custom_property41_label` (String) Label for custom property 41 of accounts of this endpoint.
-- `custom_property42_label` (String) Label for custom property 42 of accounts of this endpoint.
-- `custom_property43_label` (String) Label for custom property 43 of accounts of this endpoint.
-- `custom_property44_label` (String) Label for custom property 44 of accounts of this endpoint.
-- `custom_property45_label` (String) Label for custom property 45 of accounts of this endpoint.
-- `custom_property46_label` (String) Label for custom property 46 of accounts of this endpoint.
-- `custom_property47_label` (String) Label for custom property 47 of accounts of this endpoint.
-- `custom_property48_label` (String) Label for custom property 48 of accounts of this endpoint.
-- `custom_property49_label` (String) Label for custom property 49 of accounts of this endpoint.
-- `custom_property50_label` (String) Label for custom property 50 of accounts of this endpoint.
-- `custom_property51_label` (String) Label for custom property 51 of accounts of this endpoint.
-- `custom_property52_label` (String) Label for custom property 52 of accounts of this endpoint.
-- `custom_property53_label` (String) Label for custom property 53 of accounts of this endpoint.
-- `custom_property54_label` (String) Label for custom property 54 of accounts of this endpoint.
-- `custom_property55_label` (String) Label for custom property 55 of accounts of this endpoint.
-- `custom_property56_label` (String) Label for custom property 56 of accounts of this endpoint.
-- `custom_property57_label` (String) Label for custom property 57 of accounts of this endpoint.
-- `custom_property58_label` (String) Label for custom property 58 of accounts of this endpoint.
-- `custom_property59_label` (String) Label for custom property 59 of accounts of this endpoint.
-- `custom_property60_label` (String) Label for custom property 60 of accounts of this endpoint.
-
-Read-Only:
-
-- `accessquery` (String) Query to restrict endpoint visibility
 - `account_name_rule` (String) Rule to generate account names
 - `account_name_validator_regex` (String) Regex to validate account name
 - `account_type_no_deprovision` (String) Account types not allowed for deprovision
@@ -129,51 +95,81 @@ Read-Only:
 - `create_ent_taskfor_remove_acc` (String) Whether entitlement task is created for remove account
 - `created_by` (String) User who created the endpoint
 - `created_from` (String) Source of creation
-- `custom_property1` (String) Custom property 1 value for the endpoint.
-- `custom_property10` (String) Custom property 10 value for the endpoint.
-- `custom_property11` (String) Custom property 11 value for the endpoint.
-- `custom_property12` (String) Custom property 12 value for the endpoint.
-- `custom_property13` (String) Custom property 13 value for the endpoint.
-- `custom_property14` (String) Custom property 14 value for the endpoint.
-- `custom_property15` (String) Custom property 15 value for the endpoint.
-- `custom_property16` (String) Custom property 16 value for the endpoint.
-- `custom_property17` (String) Custom property 17 value for the endpoint.
-- `custom_property18` (String) Custom property 18 value for the endpoint.
-- `custom_property19` (String) Custom property 19 value for the endpoint.
-- `custom_property2` (String) Custom property 2 value for the endpoint.
-- `custom_property20` (String) Custom property 20 value for the endpoint.
-- `custom_property21` (String) Custom property 21 value for the endpoint.
-- `custom_property22` (String) Custom property 22 value for the endpoint.
-- `custom_property23` (String) Custom property 23 value for the endpoint.
-- `custom_property24` (String) Custom property 24 value for the endpoint.
-- `custom_property25` (String) Custom property 25 value for the endpoint.
-- `custom_property26` (String) Custom property 26 value for the endpoint.
-- `custom_property27` (String) Custom property 27 value for the endpoint.
-- `custom_property28` (String) Custom property 28 value for the endpoint.
-- `custom_property29` (String) Custom property 29 value for the endpoint.
-- `custom_property3` (String) Custom property 3 value for the endpoint.
-- `custom_property30` (String) Custom property 30 value for the endpoint.
-- `custom_property31` (String) Custom property 31 value for the endpoint.
-- `custom_property32` (String) Custom property 32 value for the endpoint.
-- `custom_property33` (String) Custom property 33 value for the endpoint.
-- `custom_property34` (String) Custom property 34 value for the endpoint.
-- `custom_property35` (String) Custom property 35 value for the endpoint.
-- `custom_property36` (String) Custom property 36 value for the endpoint.
-- `custom_property37` (String) Custom property 37 value for the endpoint.
-- `custom_property38` (String) Custom property 38 value for the endpoint.
-- `custom_property39` (String) Custom property 39 value for the endpoint.
-- `custom_property4` (String) Custom property 4 value for the endpoint.
-- `custom_property40` (String) Custom property 40 value for the endpoint.
-- `custom_property41` (String) Custom property 41 value for the endpoint.
-- `custom_property42` (String) Custom property 42 value for the endpoint.
-- `custom_property43` (String) Custom property 43 value for the endpoint.
-- `custom_property44` (String) Custom property 44 value for the endpoint.
-- `custom_property45` (String) Custom property 45 value for the endpoint.
-- `custom_property5` (String) Custom property 5 value for the endpoint.
-- `custom_property6` (String) Custom property 6 value for the endpoint.
-- `custom_property7` (String) Custom property 7 value for the endpoint.
-- `custom_property8` (String) Custom property 8 value for the endpoint.
-- `custom_property9` (String) Custom property 9 value for the endpoint.
+- `custom_property_1` (String) Custom property 1 value for the endpoint.
+- `custom_property_10` (String) Custom property 10 value for the endpoint.
+- `custom_property_11` (String) Custom property 11 value for the endpoint.
+- `custom_property_12` (String) Custom property 12 value for the endpoint.
+- `custom_property_13` (String) Custom property 13 value for the endpoint.
+- `custom_property_14` (String) Custom property 14 value for the endpoint.
+- `custom_property_15` (String) Custom property 15 value for the endpoint.
+- `custom_property_16` (String) Custom property 16 value for the endpoint.
+- `custom_property_17` (String) Custom property 17 value for the endpoint.
+- `custom_property_18` (String) Custom property 18 value for the endpoint.
+- `custom_property_19` (String) Custom property 19 value for the endpoint.
+- `custom_property_2` (String) Custom property 2 value for the endpoint.
+- `custom_property_20` (String) Custom property 20 value for the endpoint.
+- `custom_property_21` (String) Custom property 21 value for the endpoint.
+- `custom_property_22` (String) Custom property 22 value for the endpoint.
+- `custom_property_23` (String) Custom property 23 value for the endpoint.
+- `custom_property_24` (String) Custom property 24 value for the endpoint.
+- `custom_property_25` (String) Custom property 25 value for the endpoint.
+- `custom_property_26` (String) Custom property 26 value for the endpoint.
+- `custom_property_27` (String) Custom property 27 value for the endpoint.
+- `custom_property_28` (String) Custom property 28 value for the endpoint.
+- `custom_property_29` (String) Custom property 29 value for the endpoint.
+- `custom_property_3` (String) Custom property 3 value for the endpoint.
+- `custom_property_30` (String) Custom property 30 value for the endpoint.
+- `custom_property_31` (String) Custom property 31 value for the endpoint.
+- `custom_property_31_label` (String) Label for custom property 31.
+- `custom_property_32` (String) Custom property 32 value for the endpoint.
+- `custom_property_32_label` (String) Label for custom property 32.
+- `custom_property_33` (String) Custom property 33 value for the endpoint.
+- `custom_property_33_label` (String) Label for custom property 33.
+- `custom_property_34` (String) Custom property 34 value for the endpoint.
+- `custom_property_34_label` (String) Label for custom property 34.
+- `custom_property_35` (String) Custom property 35 value for the endpoint.
+- `custom_property_35_label` (String) Label for custom property 35.
+- `custom_property_36` (String) Custom property 36 value for the endpoint.
+- `custom_property_36_label` (String) Label for custom property 36.
+- `custom_property_37` (String) Custom property 37 value for the endpoint.
+- `custom_property_37_label` (String) Label for custom property 37.
+- `custom_property_38` (String) Custom property 38 value for the endpoint.
+- `custom_property_38_label` (String) Label for custom property 38.
+- `custom_property_39` (String) Custom property 39 value for the endpoint.
+- `custom_property_39_label` (String) Label for custom property 39.
+- `custom_property_4` (String) Custom property 4 value for the endpoint.
+- `custom_property_40` (String) Custom property 40 value for the endpoint.
+- `custom_property_40_label` (String) Label for custom property 40.
+- `custom_property_41` (String) Custom property 41 value for the endpoint.
+- `custom_property_41_label` (String) Label for custom property 41.
+- `custom_property_42` (String) Custom property 42 value for the endpoint.
+- `custom_property_42_label` (String) Label for custom property 42.
+- `custom_property_43` (String) Custom property 43 value for the endpoint.
+- `custom_property_43_label` (String) Label for custom property 43.
+- `custom_property_44` (String) Custom property 44 value for the endpoint.
+- `custom_property_44_label` (String) Label for custom property 44.
+- `custom_property_45` (String) Custom property 45 value for the endpoint.
+- `custom_property_45_label` (String) Label for custom property 45.
+- `custom_property_46_label` (String) Label for custom property 46.
+- `custom_property_47_label` (String) Label for custom property 47.
+- `custom_property_48_label` (String) Label for custom property 48.
+- `custom_property_49_label` (String) Label for custom property 49.
+- `custom_property_5` (String) Custom property 5 value for the endpoint.
+- `custom_property_50_label` (String) Label for custom property 50.
+- `custom_property_51_label` (String) Label for custom property 51.
+- `custom_property_52_label` (String) Label for custom property 52.
+- `custom_property_53_label` (String) Label for custom property 53.
+- `custom_property_54_label` (String) Label for custom property 54.
+- `custom_property_55_label` (String) Label for custom property 55.
+- `custom_property_56_label` (String) Label for custom property 56.
+- `custom_property_57_label` (String) Label for custom property 57.
+- `custom_property_58_label` (String) Label for custom property 58.
+- `custom_property_59_label` (String) Label for custom property 59.
+- `custom_property_6` (String) Custom property 6 value for the endpoint.
+- `custom_property_60_label` (String) Label for custom property 60.
+- `custom_property_7` (String) Custom property 7 value for the endpoint.
+- `custom_property_8` (String) Custom property 8 value for the endpoint.
+- `custom_property_9` (String) Custom property 9 value for the endpoint.
 - `description` (String) Description for the endpoint
 - `disableaccountrequest` (String) Disable account request
 - `disableaccountrequest_service_account` (String) Disable account request for service accounts

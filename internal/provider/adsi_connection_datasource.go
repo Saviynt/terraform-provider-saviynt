@@ -1,17 +1,5 @@
-/*
- * Copyright (c) 2025 Saviynt Inc.
- * All Rights Reserved.
- *
- * This software is the confidential and proprietary information of
- * Saviynt Inc. ("Confidential Information"). You shall not disclose,
- * use, or distribute such Confidential Information except in accordance
- * with the terms of the license agreement you entered into with Saviynt.
- *
- * SAVIYNT MAKES NO REPRESENTATIONS OR WARRANTIES ABOUT THE SUITABILITY OF
- * THE SOFTWARE, EITHER EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO
- * THE IMPLIED WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR
- * PURPOSE, OR NON-INFRINGEMENT.
- */
+// Copyright (c) Saviynt Inc.
+// SPDX-License-Identifier: MPL-2.0
 
 // saviynt_adsi_connection_datasource retrieves adsi connections details from the Saviynt Security Manager.
 // The data source supports a single Read operation to look up an existing adsi connections by name.
@@ -50,57 +38,57 @@ type ADSIConnectionDataSourceModel struct {
 }
 
 type ADSIConnectionAttributes struct {
-	ImportNestedMembership      types.String `tfsdk:"import_nested_membership"`
-	PASSWDPOLICYJSON            types.String `tfsdk:"password_policy_json"`
-	CREATEACCOUNTJSON           types.String `tfsdk:"create_account_json"`
-	ENDPOINTS_FILTER            types.String `tfsdk:"endpoints_filter"`
-	DISABLEACCOUNTJSON          types.String `tfsdk:"disable_account_json"`
-	REMOVEACCESSENTITLEMENTJSON types.String `tfsdk:"remove_access_entitlement_json"`
-	GroupSearchBaseDN           types.String `tfsdk:"group_search_base_dn"`
-	ConnectionType              types.String `tfsdk:"connection_type"`
-	STATUSKEYJSON               types.String `tfsdk:"status_key_json"`
-	DEFAULT_USER_ROLE           types.String `tfsdk:"default_user_role"`
-	FOREST_DETAILS              types.String `tfsdk:"forest_details"`
-	USERNAME                    types.String `tfsdk:"username"`
-	UPDATESERVICEACCOUNTJSON    types.String `tfsdk:"update_service_account_json"`
-	ADDACCESSJSON               types.String `tfsdk:"add_access_json"`
-	CREATESERVICEACCOUNTJSON    types.String `tfsdk:"create_service_account_json"`
-	ACCOUNTNAMERULE             types.String `tfsdk:"account_name_rule"`
-	CONNECTION_URL              types.String `tfsdk:"connection_url"`
-	IsTimeoutSupported          types.Bool   `tfsdk:"is_timeout_supported"`
-	CreateUpdateMappings        types.String `tfsdk:"create_update_mappings"`
-	ACCOUNT_ATTRIBUTE           types.String `tfsdk:"account_attribute"`
-	PASSWORD                    types.String `tfsdk:"password"`
-	PAM_CONFIG                  types.String `tfsdk:"pam_config"`
-	PAGE_SIZE                   types.String `tfsdk:"page_size"`
-	SEARCHFILTER                types.String `tfsdk:"search_filter"`
-	UPDATEGROUPJSON             types.String `tfsdk:"update_group_json"`
-	CREATEGROUPJSON             types.String `tfsdk:"create_group_json"`
-	ENTITLEMENT_ATTRIBUTE       types.String `tfsdk:"entitlement_attribute"`
-	CHECKFORUNIQUE              types.String `tfsdk:"check_for_unique"`
-	REMOVESERVICEACCOUNTJSON    types.String `tfsdk:"remove_service_account_json"`
-	// ConnectionTimeoutConfig     ConnectionTimeoutConfig `tfsdk:"connection_timeout_config"`
-	UPDATEUSERJSON            types.String `tfsdk:"update_user_json"`
-	URL                       types.String `tfsdk:"url"`
-	MOVEACCOUNTJSON           types.String `tfsdk:"move_account_json"`
-	CUSTOMCONFIGJSON          types.String `tfsdk:"custom_config_json"`
-	STATUS_THRESHOLD_CONFIG   types.String `tfsdk:"status_threshold_config"`
-	GroupImportMapping        types.String `tfsdk:"group_import_mapping"`
-	PROVISIONING_URL          types.String `tfsdk:"provisioning_url"`
-	REMOVEGROUPJSON           types.String `tfsdk:"remove_group_json"`
-	REMOVEACCESSJSON          types.String `tfsdk:"remove_access_json"`
-	IMPORTDATACOOKIES         types.String `tfsdk:"import_data_cookies"`
-	RESETANDCHANGEPASSWRDJSON types.String `tfsdk:"reset_and_change_password_json"`
-	USER_ATTRIBUTE            types.String `tfsdk:"user_attribute"`
-	ADDACCESSENTITLEMENTJSON  types.String `tfsdk:"add_access_entitlement_json"`
-	MODIFYUSERDATAJSON        types.String `tfsdk:"modify_user_data_json"`
-	IsTimeoutConfigValidated  types.Bool   `tfsdk:"is_timeout_config_validated"`
-	ENABLEGROUPMANAGEMENT     types.String `tfsdk:"enable_group_management"`
-	ENABLEACCOUNTJSON         types.String `tfsdk:"enable_account_json"`
-	FORESTLIST                types.String `tfsdk:"forest_list"`
-	OBJECTFILTER              types.String `tfsdk:"object_filter"`
-	UPDATEACCOUNTJSON         types.String `tfsdk:"update_account_json"`
-	REMOVEACCOUNTJSON         types.String `tfsdk:"remove_account_json"`
+	ImportNestedMembership      types.String            `tfsdk:"import_nested_membership"`
+	PASSWDPOLICYJSON            types.String            `tfsdk:"password_policy_json"`
+	CREATEACCOUNTJSON           types.String            `tfsdk:"create_account_json"`
+	ENDPOINTS_FILTER            types.String            `tfsdk:"endpoints_filter"`
+	DISABLEACCOUNTJSON          types.String            `tfsdk:"disable_account_json"`
+	REMOVEACCESSENTITLEMENTJSON types.String            `tfsdk:"remove_access_entitlement_json"`
+	GroupSearchBaseDN           types.String            `tfsdk:"group_search_base_dn"`
+	ConnectionType              types.String            `tfsdk:"connection_type"`
+	STATUSKEYJSON               types.String            `tfsdk:"status_key_json"`
+	DEFAULT_USER_ROLE           types.String            `tfsdk:"default_user_role"`
+	FOREST_DETAILS              types.String            `tfsdk:"forest_details"`
+	USERNAME                    types.String            `tfsdk:"username"`
+	UPDATESERVICEACCOUNTJSON    types.String            `tfsdk:"update_service_account_json"`
+	ADDACCESSJSON               types.String            `tfsdk:"add_access_json"`
+	CREATESERVICEACCOUNTJSON    types.String            `tfsdk:"create_service_account_json"`
+	ACCOUNTNAMERULE             types.String            `tfsdk:"account_name_rule"`
+	CONNECTION_URL              types.String            `tfsdk:"connection_url"`
+	IsTimeoutSupported          types.Bool              `tfsdk:"is_timeout_supported"`
+	CreateUpdateMappings        types.String            `tfsdk:"create_update_mappings"`
+	ACCOUNT_ATTRIBUTE           types.String            `tfsdk:"account_attribute"`
+	PASSWORD                    types.String            `tfsdk:"password"`
+	PAM_CONFIG                  types.String            `tfsdk:"pam_config"`
+	PAGE_SIZE                   types.String            `tfsdk:"page_size"`
+	SEARCHFILTER                types.String            `tfsdk:"search_filter"`
+	UPDATEGROUPJSON             types.String            `tfsdk:"update_group_json"`
+	CREATEGROUPJSON             types.String            `tfsdk:"create_group_json"`
+	ENTITLEMENT_ATTRIBUTE       types.String            `tfsdk:"entitlement_attribute"`
+	CHECKFORUNIQUE              types.String            `tfsdk:"check_for_unique"`
+	REMOVESERVICEACCOUNTJSON    types.String            `tfsdk:"remove_service_account_json"`
+	ConnectionTimeoutConfig     ConnectionTimeoutConfig `tfsdk:"connection_timeout_config"`
+	UPDATEUSERJSON              types.String            `tfsdk:"update_user_json"`
+	URL                         types.String            `tfsdk:"url"`
+	MOVEACCOUNTJSON             types.String            `tfsdk:"move_account_json"`
+	CUSTOMCONFIGJSON            types.String            `tfsdk:"custom_config_json"`
+	STATUS_THRESHOLD_CONFIG     types.String            `tfsdk:"status_threshold_config"`
+	GroupImportMapping          types.String            `tfsdk:"group_import_mapping"`
+	PROVISIONING_URL            types.String            `tfsdk:"provisioning_url"`
+	REMOVEGROUPJSON             types.String            `tfsdk:"remove_group_json"`
+	REMOVEACCESSJSON            types.String            `tfsdk:"remove_access_json"`
+	IMPORTDATACOOKIES           types.String            `tfsdk:"import_data_cookies"`
+	RESETANDCHANGEPASSWRDJSON   types.String            `tfsdk:"reset_and_change_password_json"`
+	USER_ATTRIBUTE              types.String            `tfsdk:"user_attribute"`
+	ADDACCESSENTITLEMENTJSON    types.String            `tfsdk:"add_access_entitlement_json"`
+	MODIFYUSERDATAJSON          types.String            `tfsdk:"modify_user_data_json"`
+	IsTimeoutConfigValidated    types.Bool              `tfsdk:"is_timeout_config_validated"`
+	ENABLEGROUPMANAGEMENT       types.String            `tfsdk:"enable_group_management"`
+	ENABLEACCOUNTJSON           types.String            `tfsdk:"enable_account_json"`
+	FORESTLIST                  types.String            `tfsdk:"forest_list"`
+	OBJECTFILTER                types.String            `tfsdk:"object_filter"`
+	UPDATEACCOUNTJSON           types.String            `tfsdk:"update_account_json"`
+	REMOVEACCOUNTJSON           types.String            `tfsdk:"remove_account_json"`
 }
 
 // NewSecuritySystemsDataSource returns a new instance
@@ -172,10 +160,10 @@ func ADSIConnectorsDataSourceSchema() map[string]schema.Attribute {
 				"object_filter":                  schema.StringAttribute{Computed: true},
 				"update_account_json":            schema.StringAttribute{Computed: true},
 				"remove_account_json":            schema.StringAttribute{Computed: true},
-				// "connection_timeout_config": schema.SingleNestedAttribute{
-				// 	Computed:   true,
-				// 	Attributes: ConnectionTimeoutConfigeSchema(),
-				// },
+				"connection_timeout_config": schema.SingleNestedAttribute{
+					Computed:   true,
+					Attributes: ConnectionTimeoutConfigeSchema(),
+				},
 			},
 		},
 	}
@@ -245,12 +233,6 @@ func (d *adsiConnectionsDataSource) Read(ctx context.Context, req datasource.Rea
 		resp.Diagnostics.AddError("API Call Failed", fmt.Sprintf("Error: %v", err))
 		return
 	}
-	if apiResp!=nil && *apiResp.ADSIConnectionResponse.Errorcode !=0{
-		log.Printf("[ERROR]: Error in reading ADSI connection. Errorcode: %v, Message: %v", *apiResp.ADSIConnectionResponse.Errorcode, *apiResp.ADSIConnectionResponse.Msg)
-		resp.Diagnostics.AddError("Read of ADSI connection failed", *apiResp.ADSIConnectionResponse.Msg)
-		return
-	}
-
 	log.Printf("[DEBUG] HTTP Status Code: %d", httpResp.StatusCode)
 
 	state.Msg = util.SafeStringDatasource(apiResp.ADSIConnectionResponse.Msg)
@@ -318,15 +300,15 @@ func (d *adsiConnectionsDataSource) Read(ctx context.Context, req datasource.Rea
 			OBJECTFILTER:                util.SafeStringDatasource(apiResp.ADSIConnectionResponse.Connectionattributes.OBJECTFILTER),
 			UPDATEACCOUNTJSON:           util.SafeStringDatasource(apiResp.ADSIConnectionResponse.Connectionattributes.UPDATEACCOUNTJSON),
 			REMOVEACCOUNTJSON:           util.SafeStringDatasource(apiResp.ADSIConnectionResponse.Connectionattributes.REMOVEACCOUNTJSON),
-			// ConnectionTimeoutConfig: ConnectionTimeoutConfig{
-			// 	RetryWait:               util.SafeInt64(apiResp.ADSIConnectionResponse.Connectionattributes.ConnectionTimeoutConfig.RetryWait),
-			// 	TokenRefreshMaxTryCount: util.SafeInt64(apiResp.ADSIConnectionResponse.Connectionattributes.ConnectionTimeoutConfig.TokenRefreshMaxTryCount),
-			// 	RetryWaitMaxValue:       util.SafeInt64(apiResp.ADSIConnectionResponse.Connectionattributes.ConnectionTimeoutConfig.RetryWaitMaxValue),
-			// 	RetryCount:              util.SafeInt64(apiResp.ADSIConnectionResponse.Connectionattributes.ConnectionTimeoutConfig.RetryCount),
-			// 	ReadTimeout:             util.SafeInt64(apiResp.ADSIConnectionResponse.Connectionattributes.ConnectionTimeoutConfig.ReadTimeout),
-			// 	ConnectionTimeout:       util.SafeInt64(apiResp.ADSIConnectionResponse.Connectionattributes.ConnectionTimeoutConfig.ConnectionTimeout),
-			// 	RetryFailureStatusCode:  util.SafeInt64(apiResp.ADSIConnectionResponse.Connectionattributes.ConnectionTimeoutConfig.RetryFailureStatusCode),
-			// },
+			ConnectionTimeoutConfig: ConnectionTimeoutConfig{
+				RetryWait:               util.SafeInt64(apiResp.ADSIConnectionResponse.Connectionattributes.ConnectionTimeoutConfig.RetryWait),
+				TokenRefreshMaxTryCount: util.SafeInt64(apiResp.ADSIConnectionResponse.Connectionattributes.ConnectionTimeoutConfig.TokenRefreshMaxTryCount),
+				RetryWaitMaxValue:       util.SafeInt64(apiResp.ADSIConnectionResponse.Connectionattributes.ConnectionTimeoutConfig.RetryWaitMaxValue),
+				RetryCount:              util.SafeInt64(apiResp.ADSIConnectionResponse.Connectionattributes.ConnectionTimeoutConfig.RetryCount),
+				ReadTimeout:             util.SafeInt64(apiResp.ADSIConnectionResponse.Connectionattributes.ConnectionTimeoutConfig.ReadTimeout),
+				ConnectionTimeout:       util.SafeInt64(apiResp.ADSIConnectionResponse.Connectionattributes.ConnectionTimeoutConfig.ConnectionTimeout),
+				RetryFailureStatusCode:  util.SafeInt64(apiResp.ADSIConnectionResponse.Connectionattributes.ConnectionTimeoutConfig.RetryFailureStatusCode),
+			},
 		}
 
 	}

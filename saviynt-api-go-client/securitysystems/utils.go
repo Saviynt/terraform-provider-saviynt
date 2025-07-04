@@ -1,7 +1,7 @@
 /*
 Account Management API
 
-API for managing security systems in EIC. 
+API for managing security systems in EIC.
 
 API version: 1.0.0
 */

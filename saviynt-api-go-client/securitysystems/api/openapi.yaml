@@ -1,5 +1,6 @@
-# Copyright (c) HashiCorp, Inc.
+# Copyright (c) Saviynt Inc.
 # SPDX-License-Identifier: MPL-2.0
+
 
 openapi: 3.0.0
 info:
@@ -31,7 +32,7 @@ paths:
           - `removeServiceAccountWorkflow`: (string) The workflow used for removing a service account.
           - `connectionparameters`: (string) JSON-formatted connection parameters to filter user access and display settings.
           - `automatedProvisioning`: (string) Indicates whether automated provisioning is enabled (`true`/`false`).
-          - `useopenconnector`: (boolean) Enables integration with open-source connectors such as REST (`true`/`false`).
+          - `useopenconnector`: (string) Enables integration with open-source connectors such as REST (`true`/`false`).
           - `reconApplication`: (string) If `true`, prevents users from requesting additional accounts on applications where they already have active accounts.
           - `provisioningTries`: (string) Number of provisioning attempts allowed before failure.
           - `instantprovision`: (string) If `true`, prevents users from submitting duplicate provisioning requests.
@@ -124,7 +125,7 @@ paths:
           - `removeServiceAccountWorkflow`: (string) The workflow used for removing a service account.
           - `connectionparameters`: (string) JSON-formatted connection parameters to filter user access and display settings.
           - `automatedProvisioning`: (string) Indicates whether automated provisioning is enabled (`true`/`false`).
-          - `useopenconnector`: (boolean) Enables integration with open-source connectors such as REST (`true`/`false`).
+          - `useopenconnector`: (string) Enables integration with open-source connectors such as REST (`true`/`false`).
           - `defaultSystem`: (string) Specify true to set the security system as the Default System. Following which accounts search will only be searched and displayed for this security system.
           - `reconApplication`: (string) Specify true to importing data from respective endpoint associated to security system.
           - `provisioningTries`: (string) Number of provisioning attempts allowed before failure.
@@ -178,6 +179,7 @@ paths:
             Set-Cookie:
               explode: false
               schema:
+                example: CCSRF-TOKEN=example-token; Path=/
                 type: string
               style: simple
             X-Content-Type-Options:
@@ -292,7 +294,7 @@ paths:
                       - Role
                       - Risk
                       - Description
-                      useopenconnector: false
+                      useopenconnector: "false"
                       reconApplication: "true"
                       status: enabled
                     displayCount: 1
@@ -357,8 +359,8 @@ components:
         useopenconnector:
           description: Specify true to enable the connectivity with any system over
             the open-source connectors such as REST.
-          example: true
-          type: boolean
+          example: "true"
+          type: string
         reconApplication:
           description: Specify true to importing data from respective endpoint associated
             to security system.
@@ -558,8 +560,8 @@ components:
         useopenconnector:
           description: Specify true to enable the connectivity with any system over
             the open-source connectors such as REST.
-          example: true
-          type: boolean
+          example: "true"
+          type: string
         defaultSystem:
           description: Specify true to set the security system as the Default System.
             Following which accounts search will only be searched and displayed for
@@ -662,7 +664,7 @@ components:
         hostname: EntitlementsOnly
         provisioningcomments: testt
         connection: delete_conn3
-        useopenconnector: "true"
+        useopenconnector: "false"
         firefighteridRequestAccessWorkflow: FirefighterRequestAccess
         proposedAccountOwnersworkflow: ManagerApprovalWorkflow
         reconApplication: "true"

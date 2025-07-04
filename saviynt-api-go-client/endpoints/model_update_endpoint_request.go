@@ -69,7 +69,7 @@ type UpdateEndpointRequest struct {
 	// SQL query to configure the accounts for which you can change passwords.
 	AllowChangePasswordSqlquery *string `json:"allowChangePassword_sqlquery,omitempty"`
 	// Is this endpoint requestable.
-	Requestable *bool `json:"requestable,omitempty"`
+	Requestable *string `json:"requestable,omitempty"`
 	// Specify the parent and child relationship for the Active Directory endpoint. The specified value is used to filter the parent and child objects in the Request Access tile.
 	ParentAccountPattern *string `json:"parentAccountPattern,omitempty"`
 	// Rule to generate a name for this endpoint while creating a new service account.
@@ -296,7 +296,7 @@ type UpdateEndpointRequest struct {
 	// Label for the custom property 60 of accounts of this endpoint
 	Customproperty60Label *string `json:"customproperty60Label,omitempty"`
 	// Specify true to displays the Remove All Roles option in the Request page that can be used to remove all the roles.
-	AllowRemoveAllRoleOnRequest *bool `json:"allowRemoveAllRoleOnRequest,omitempty"`
+	AllowRemoveAllRoleOnRequest *string `json:"allowRemoveAllRoleOnRequest,omitempty"`
 }
 
 type _UpdateEndpointRequest UpdateEndpointRequest
@@ -1144,9 +1144,9 @@ func (o *UpdateEndpointRequest) SetAllowChangePasswordSqlquery(v string) {
 }
 
 // GetRequestable returns the Requestable field value if set, zero value otherwise.
-func (o *UpdateEndpointRequest) GetRequestable() bool {
+func (o *UpdateEndpointRequest) GetRequestable() string {
 	if o == nil || IsNil(o.Requestable) {
-		var ret bool
+		var ret string
 		return ret
 	}
 	return *o.Requestable
@@ -1154,7 +1154,7 @@ func (o *UpdateEndpointRequest) GetRequestable() bool {
 
 // GetRequestableOk returns a tuple with the Requestable field value if set, nil otherwise
 // and a boolean to check if the value has been set.
-func (o *UpdateEndpointRequest) GetRequestableOk() (*bool, bool) {
+func (o *UpdateEndpointRequest) GetRequestableOk() (*string, bool) {
 	if o == nil || IsNil(o.Requestable) {
 		return nil, false
 	}
@@ -1170,8 +1170,8 @@ func (o *UpdateEndpointRequest) HasRequestable() bool {
 	return false
 }
 
-// SetRequestable gets a reference to the given bool and assigns it to the Requestable field.
-func (o *UpdateEndpointRequest) SetRequestable(v bool) {
+// SetRequestable gets a reference to the given string and assigns it to the Requestable field.
+func (o *UpdateEndpointRequest) SetRequestable(v string) {
 	o.Requestable = &v
 }
 
@@ -4792,9 +4792,9 @@ func (o *UpdateEndpointRequest) SetCustomproperty60Label(v string) {
 }
 
 // GetAllowRemoveAllRoleOnRequest returns the AllowRemoveAllRoleOnRequest field value if set, zero value otherwise.
-func (o *UpdateEndpointRequest) GetAllowRemoveAllRoleOnRequest() bool {
+func (o *UpdateEndpointRequest) GetAllowRemoveAllRoleOnRequest() string {
 	if o == nil || IsNil(o.AllowRemoveAllRoleOnRequest) {
-		var ret bool
+		var ret string
 		return ret
 	}
 	return *o.AllowRemoveAllRoleOnRequest
@@ -4802,7 +4802,7 @@ func (o *UpdateEndpointRequest) GetAllowRemoveAllRoleOnRequest() bool {
 
 // GetAllowRemoveAllRoleOnRequestOk returns a tuple with the AllowRemoveAllRoleOnRequest field value if set, nil otherwise
 // and a boolean to check if the value has been set.
-func (o *UpdateEndpointRequest) GetAllowRemoveAllRoleOnRequestOk() (*bool, bool) {
+func (o *UpdateEndpointRequest) GetAllowRemoveAllRoleOnRequestOk() (*string, bool) {
 	if o == nil || IsNil(o.AllowRemoveAllRoleOnRequest) {
 		return nil, false
 	}
@@ -4818,8 +4818,8 @@ func (o *UpdateEndpointRequest) HasAllowRemoveAllRoleOnRequest() bool {
 	return false
 }
 
-// SetAllowRemoveAllRoleOnRequest gets a reference to the given bool and assigns it to the AllowRemoveAllRoleOnRequest field.
-func (o *UpdateEndpointRequest) SetAllowRemoveAllRoleOnRequest(v bool) {
+// SetAllowRemoveAllRoleOnRequest gets a reference to the given string and assigns it to the AllowRemoveAllRoleOnRequest field.
+func (o *UpdateEndpointRequest) SetAllowRemoveAllRoleOnRequest(v string) {
 	o.AllowRemoveAllRoleOnRequest = &v
 }
 

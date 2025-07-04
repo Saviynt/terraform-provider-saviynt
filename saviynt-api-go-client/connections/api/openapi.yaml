@@ -145,6 +145,8 @@ components:
           type: string
         vaultConfiguration:
           description: JSON string specifying vault configuration
+          example: "{\"path\":\"/secrets/data/kv-dev-intgn1/-AD_Credential\",\"keyMapping\"\
+            :{\"PASSWORD\":\"AD_PASSWORD~#~None\"}}"
           type: string
         saveinvault:
           description: Flag indicating whether the encrypted attribute should be saved
@@ -954,7 +956,7 @@ components:
             type: string
           PASSWORD:
             description: Password for connection for Import
-            example: password
+            example: '@TMP_PASSWORD@'
             type: string
           JCO_LANG:
             description: LANGUAGE for the SAP Instance for Import

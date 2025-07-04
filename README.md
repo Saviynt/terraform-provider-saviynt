@@ -35,7 +35,6 @@ Following resources are available for management:
 - Security System
 - Endpoint
 - Connections
-- Dynamic Attributes
 
 Following connectors are available:
 - Active Directory(AD)
@@ -43,6 +42,7 @@ Following connectors are available:
 - ADSI
 - Database(DB)
 - EntraID(AzureAD)
+- SAP
 - Salesforce
 - Workday
 - Unix
@@ -50,7 +50,6 @@ Following connectors are available:
 
 Ephemeral resources available:
 - [File ephemeral resource](#ephemeral-file-credential-resource)
-- [Env ephemeral resource](#ephemeral-env-credential-resource)
 ---
 
 ##  Documentation
@@ -476,71 +475,54 @@ The ephemeral credential resource reads from a local JSON file structured with t
 
 > **Note:** This resource is ephemeral and does not store any state. It is designed for use cases where credentials must remain local and transient.
 
-## Ephemeral Env Credential Resource
-
-The **Ephemeral Env Credential Resource** is a transient Terraform resource that provides temporary, in-memory credentials to other connector resources by reading values from the environment variables at apply time. This allows secure and flexible provisioning without persisting sensitive data in the Terraform state.
-
-### Supported Connectors
-
-The following connectors are supported and can consume credentials provided by this resource:
-
-- **AD**: `username`, `password`
-- **ADSI**: `username`, `password`
-- **DB**: `username`, `password`, `change_pass_json`
-- **EntraId**: `client_id`, `client_secret`, `access_token`,`azure_mgmt_access_token`, `windows_connector_json`, `change_pass_json`, `connection_json`
-- **Github REST**: `connection_json`, `access_tokens`
-- **REST**: `connection_json`, `change_pass_json`
-- **Salesforce**: `client_id`, `client_secret`, `refresh_token`
-- **SAP**: `password`, `prov_password`
-- **Unix**: `username`, `password`, `change_password_json`,  `passphrase`, `ssh_key`, `ssh_pass_through_password`, `ssh_pass_through_sshkey`, `ssh_pass_through_passphrase`
-- **Workday**: `username`, `password`, `client_id`, `client_secret`, `refresh_token`
-
-### Usage
-
-The ephemeral credential resource reads from a local JSON file structured with the required fields for the target connector. These fields are then dynamically injected into the respective connector resources during the `apply` phase.
-
-> **Note:** This resource is ephemeral and does not store any state. It is designed for use cases where credentials must remain local and transient.
 ## Security Considerations
 
 - Ensure the credential file is secured and not committed to version control.
 - Avoid using this resource in long-lived plans, as it relies on local files that may change or expire.
 
-## Credential Management Best Practices
-To ensure secure handling of sensitive credentials, follow these best practices:
-1. **Use Vault-backed Secrets**   : Externalize sensitive values using a secure secrets manager such as HashiCorp Vault. This avoids hardcoding secrets in .tf files or storing them in Terraform state.
-2. **Prefer Environment Variables**   : If Vault integration is not available, use environment variables (e.g., TF_VAR_password) to pass secrets instead of storing them in source files.
-3. **Use Ephemeral Resources for Sensitive Data**  
-   Handle all sensitive data using **ephemeral resources** — those created only when needed and destroyed immediately afterward. Avoid long-term storage of secrets in:
-
-   - Terraform state files (`terraform.tfstate`)
-   - Version control systems (e.g., Git)
-   - Local plaintext configuration files
-
 ---
 
-## Known Limitations
+<!-- ##  Examples
 
-### Note: This provider is for Saviynt ECM v24.4 only.
+Examples are available for all resources. Follow the following steps to try out the examples
+
+1. Uncomment the code block corresponding to the object for which you want to try an operation (say create ad connection) in [provider.tf](provider.tf)
+2. Navigate to the file corresponding to the resource that you uncommented (the uncommented code block contains the path) and update the values.
+3. Review the changes using the following
+   ```
+   terraform plan
+   ```
+5. If everything works fine, apply the changes using the following
+   ```
+   terraform apply -var-file=<main tf file>
+   ``` -->
+
+<!-- --- -->
+## Known Limitations
 
 The following limitations are present in the latest version of the provider. These are being prioritized for resolution in the upcoming release alongside new feature additions:
 
 ### 1. All Resource objects
- - `terraform destroy` is not supported for all resources except for dynamic attributes.
+ - `terraform destroy` is not supported.
 
 ### 2. Endpoints
 
 - **State management is not supported** for the following attributes:
   - `Owner`
   - `ResourceOwner`
+  - `Requestable`
+  - `OutOfBandAccess`
 
-- For`saviynt_endpoint_resource.requestable_role_types.request_option`, the supported values for proper state tracking are:
+- The `MappedEndpoints` field **cannot be configured during endpoint creation**; it must be managed after the endpoint is created.
+
+- The `RequestableRoleType` attribute **can only be set during updates**, since the role must be assigned to the endpoint beforehand.
+
+- For `saviynt_endpoint_resource.requestable_role_types.request_option`, the supported values for proper state tracking are:
   - `DropdownSingle`
   - `Table`
   - `TableOnlyAdd`
 
-- The following settings are **not currently configurable via Terraform**:
-  - `mapped_endpoints`
-  - `show_on` attribute in 'requestable_role_types`
+- The following service account settings are **not currently configurable via Terraform**:
   - `Disable Remove Service Account`
   - `Disable Modify Service Account`
   - `Disable New Account Request if Account Exists`
@@ -555,26 +537,9 @@ The following limitations are present in the latest version of the provider. The
   - **Github REST**: `connection_json`, `access_tokens`
   - **REST**: `connection_json`
   - **Salesforce**: `client_secret`, `refresh_token`
+  - **SAP**: `password`, `prov_password`
   - **Unix**: `password`, `passphrase`, `ssh_key`, `ssh_pass_through_password`, `ssh_pass_through_sshkey`, `ssh_pass_through_passphrase`
   - **Workday**: `password`, `client_secret`, `refresh_token`
-- The following fields are **not currently configurable via Terraform**:
-  - **Github REST**: `Status_Threshold_Config`, `Pam_Config`
-  - **Workday**: `orgrole_import_payload`
-
-### 4. Dynamic Attributes
-- For `saviynt_dynamic_attribute_resource.dynamic_attributes.attribute_type`, the supported values for proper state tracking are:
-  - `NUMBER`
-  - `STRING`
-  - `ENUM`
-  - `BOOLEAN`
-  - `MULTIPLE SELECT FROM LIST`
-  - `MULTIPLE SELECT FROM SQL QUERY`
-  - `SINGLE SELECT FROM SQL QUERY`
-  - `PASSWORD`
-  - `LARGE TEXT`
-  - `CHECK BOX`
-  - `DATE`
-
 ---
 
 ##  Contributing

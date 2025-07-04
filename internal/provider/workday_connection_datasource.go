@@ -1,17 +1,5 @@
-/*
- * Copyright (c) 2025 Saviynt Inc.
- * All Rights Reserved.
- *
- * This software is the confidential and proprietary information of
- * Saviynt Inc. ("Confidential Information"). You shall not disclose,
- * use, or distribute such Confidential Information except in accordance
- * with the terms of the license agreement you entered into with Saviynt.
- *
- * SAVIYNT MAKES NO REPRESENTATIONS OR WARRANTIES ABOUT THE SUITABILITY OF
- * THE SOFTWARE, EITHER EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO
- * THE IMPLIED WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR
- * PURPOSE, OR NON-INFRINGEMENT.
- */
+// Copyright (c) Saviynt Inc.
+// SPDX-License-Identifier: MPL-2.0
 
 // saviynt_workday_connection_datasource retrieves workday connections details from the Saviynt Security Manager.
 // The data source supports a single Read operation to look up an existing workday connections by name.
@@ -50,48 +38,48 @@ type WorkdayConnectionDataSourceModel struct {
 }
 
 type WorkdayConnectionAttributes struct {
-	UseOauth               types.String `tfsdk:"use_oauth"`
-	UserImportMapping      types.String `tfsdk:"user_import_mapping"`
-	AccountsLastImportTime types.String `tfsdk:"accounts_last_import_time"`
-	StatusKeyJson          types.String `tfsdk:"status_key_json"`
-	// ConnectionTimeoutConfig     *ConnectionTimeoutConfig `tfsdk:"connection_timeout_config"`
-	ConnectionType              types.String `tfsdk:"connection_type"`
-	RaasMappingJson             types.String `tfsdk:"raas_mapping_json"`
-	AccountImportPayload        types.String `tfsdk:"account_import_payload"`
-	UpdateAccountPayload        types.String `tfsdk:"update_account_payload"`
-	ClientId                    types.String `tfsdk:"client_id"`
-	StatusThresholdConfig       types.String `tfsdk:"status_threshold_config"`
-	Username                    types.String `tfsdk:"username"`
-	AccessImportList            types.String `tfsdk:"access_import_list"`
-	IsTimeoutSupported          types.Bool   `tfsdk:"is_timeout_supported"`
-	AccountImportMapping        types.String `tfsdk:"account_import_mapping"`
-	ClientSecret                types.String `tfsdk:"client_secret"`
-	OrgroleImportPayload        types.String `tfsdk:"orgrole_import_payload"`
-	AssignOrgrolePayload        types.String `tfsdk:"assign_orgrole_payload"`
-	AccessImportMapping         types.String `tfsdk:"access_import_mapping"`
-	ApiVersion                  types.String `tfsdk:"api_version"`
-	RemoveOrgrolePayload        types.String `tfsdk:"remove_orgrole_payload"`
-	IncludeReferenceDescriptors types.String `tfsdk:"include_reference_descriptors"`
-	RefreshToken                types.String `tfsdk:"refresh_token"`
-	ModifyUserDataJson          types.String `tfsdk:"modifyuserdatajson"`
-	IsTimeoutConfigValidated    types.Bool   `tfsdk:"is_timeout_config_validated"`
-	UseX509AuthForSoap          types.String `tfsdk:"use_x509auth_for_soap"`
-	ReportOwner                 types.String `tfsdk:"report_owner"`
-	X509Key                     types.String `tfsdk:"x509_key"`
-	CustomConfig                types.String `tfsdk:"custom_config"`
-	UserAttributeJson           types.String `tfsdk:"userattributejson"`
-	X509Cert                    types.String `tfsdk:"x509_cert"`
-	Password                    types.String `tfsdk:"password"`
-	UserImportPayload           types.String `tfsdk:"user_import_payload"`
-	PamConfig                   types.String `tfsdk:"pam_config"`
-	AccessLastImportTime        types.String `tfsdk:"access_last_import_time"`
-	UsersLastImportTime         types.String `tfsdk:"users_last_import_time"`
-	UpdateUserPayload           types.String `tfsdk:"update_user_payload"`
-	PageSize                    types.String `tfsdk:"page_size"`
-	TenantName                  types.String `tfsdk:"tenant_name"`
-	UseEnhancedOrgrole          types.String `tfsdk:"use_enhanced_orgrole"`
-	CreateAccountPayload        types.String `tfsdk:"create_account_payload"`
-	BaseUrl                     types.String `tfsdk:"base_url"`
+	UseOauth                    types.String             `tfsdk:"use_oauth"`
+	UserImportMapping           types.String             `tfsdk:"user_import_mapping"`
+	AccountsLastImportTime      types.String             `tfsdk:"accounts_last_import_time"`
+	StatusKeyJson               types.String             `tfsdk:"status_key_json"`
+	ConnectionTimeoutConfig     *ConnectionTimeoutConfig `tfsdk:"connection_timeout_config"`
+	ConnectionType              types.String             `tfsdk:"connection_type"`
+	RaasMappingJson             types.String             `tfsdk:"raas_mapping_json"`
+	AccountImportPayload        types.String             `tfsdk:"account_import_payload"`
+	UpdateAccountPayload        types.String             `tfsdk:"update_account_payload"`
+	ClientId                    types.String             `tfsdk:"client_id"`
+	StatusThresholdConfig       types.String             `tfsdk:"status_threshold_config"`
+	Username                    types.String             `tfsdk:"username"`
+	AccessImportList            types.String             `tfsdk:"access_import_list"`
+	IsTimeoutSupported          types.Bool               `tfsdk:"is_timeout_supported"`
+	AccountImportMapping        types.String             `tfsdk:"account_import_mapping"`
+	ClientSecret                types.String             `tfsdk:"client_secret"`
+	OrgroleImportPayload        types.String             `tfsdk:"orgrole_import_payload"`
+	AssignOrgrolePayload        types.String             `tfsdk:"assign_orgrole_payload"`
+	AccessImportMapping         types.String             `tfsdk:"access_import_mapping"`
+	ApiVersion                  types.String             `tfsdk:"api_version"`
+	RemoveOrgrolePayload        types.String             `tfsdk:"remove_orgrole_payload"`
+	IncludeReferenceDescriptors types.String             `tfsdk:"include_reference_descriptors"`
+	RefreshToken                types.String             `tfsdk:"refresh_token"`
+	ModifyUserDataJson          types.String             `tfsdk:"modifyuserdatajson"`
+	IsTimeoutConfigValidated    types.Bool               `tfsdk:"is_timeout_config_validated"`
+	UseX509AuthForSoap          types.String             `tfsdk:"use_x509auth_for_soap"`
+	ReportOwner                 types.String             `tfsdk:"report_owner"`
+	X509Key                     types.String             `tfsdk:"x509_key"`
+	CustomConfig                types.String             `tfsdk:"custom_config"`
+	UserAttributeJson           types.String             `tfsdk:"userattributejson"`
+	X509Cert                    types.String             `tfsdk:"x509_cert"`
+	Password                    types.String             `tfsdk:"password"`
+	UserImportPayload           types.String             `tfsdk:"user_import_payload"`
+	PamConfig                   types.String             `tfsdk:"pam_config"`
+	AccessLastImportTime        types.String             `tfsdk:"access_last_import_time"`
+	UsersLastImportTime         types.String             `tfsdk:"users_last_import_time"`
+	UpdateUserPayload           types.String             `tfsdk:"update_user_payload"`
+	PageSize                    types.String             `tfsdk:"page_size"`
+	TenantName                  types.String             `tfsdk:"tenant_name"`
+	UseEnhancedOrgrole          types.String             `tfsdk:"use_enhanced_orgrole"`
+	CreateAccountPayload        types.String             `tfsdk:"create_account_payload"`
+	BaseUrl                     types.String             `tfsdk:"base_url"`
 }
 
 func NewWorkdayConnectionsDataSource() datasource.DataSource {
@@ -152,10 +140,10 @@ func WorkdayConnectorsDataSourceSchema() map[string]schema.Attribute {
 				"use_enhanced_orgrole":          schema.StringAttribute{Computed: true},
 				"create_account_payload":        schema.StringAttribute{Computed: true},
 				"base_url":                      schema.StringAttribute{Computed: true},
-				// "connection_timeout_config": schema.SingleNestedAttribute{
-				// 	Computed:   true,
-				// 	Attributes: ConnectionTimeoutConfigeSchema(),
-				// },
+				"connection_timeout_config": schema.SingleNestedAttribute{
+					Computed:   true,
+					Attributes: ConnectionTimeoutConfigeSchema(),
+				},
 			},
 		},
 	}
@@ -225,12 +213,6 @@ func (d *workdayConnectionDataSource) Read(ctx context.Context, req datasource.R
 		resp.Diagnostics.AddError("API Call Failed", fmt.Sprintf("Error: %v", err))
 		return
 	}
-	if apiResp!=nil && *apiResp.WorkdayConnectionResponse.Errorcode !=0{
-		log.Printf("[ERROR]: Error in reading Workday connection. Errorcode: %v, Message: %v", *apiResp.WorkdayConnectionResponse.Errorcode, *apiResp.WorkdayConnectionResponse.Msg)
-		resp.Diagnostics.AddError("Reading Workday connection failed", *apiResp.WorkdayConnectionResponse.Msg)
-		return
-	}
-
 	log.Printf("[DEBUG] HTTP Status Code: %d", httpResp.StatusCode)
 
 	state.Msg = util.SafeStringDatasource(apiResp.WorkdayConnectionResponse.Msg)
@@ -289,18 +271,18 @@ func (d *workdayConnectionDataSource) Read(ctx context.Context, req datasource.R
 			CreateAccountPayload:        util.SafeStringDatasource(apiResp.WorkdayConnectionResponse.Connectionattributes.CREATE_ACCOUNT_PAYLOAD),
 			BaseUrl:                     util.SafeStringDatasource(apiResp.WorkdayConnectionResponse.Connectionattributes.BASE_URL),
 		}
-		// if apiResp.WorkdayConnectionResponse.Connectionattributes.ConnectionTimeoutConfig != nil {
-		// 	state.ConnectionAttributes.ConnectionTimeoutConfig = &ConnectionTimeoutConfig{
-		// 		RetryWait:               util.SafeInt64(apiResp.WorkdayConnectionResponse.Connectionattributes.ConnectionTimeoutConfig.RetryWait),
-		// 		TokenRefreshMaxTryCount: util.SafeInt64(apiResp.WorkdayConnectionResponse.Connectionattributes.ConnectionTimeoutConfig.TokenRefreshMaxTryCount),
-		// 		RetryFailureStatusCode:  util.SafeInt64(apiResp.WorkdayConnectionResponse.Connectionattributes.ConnectionTimeoutConfig.RetryFailureStatusCode),
-		// 		// RetryFailureStatusCode: SafeInt64FromStringPointer(apiResp.WorkdayConnectionResponse.Connectionattributes.ConnectionTimeoutConfig.RetryFailureStatusCode),
-		// 		RetryWaitMaxValue: util.SafeInt64(apiResp.WorkdayConnectionResponse.Connectionattributes.ConnectionTimeoutConfig.RetryWaitMaxValue),
-		// 		RetryCount:        util.SafeInt64(apiResp.WorkdayConnectionResponse.Connectionattributes.ConnectionTimeoutConfig.RetryCount),
-		// 		ReadTimeout:       util.SafeInt64(apiResp.WorkdayConnectionResponse.Connectionattributes.ConnectionTimeoutConfig.ReadTimeout),
-		// 		ConnectionTimeout: util.SafeInt64(apiResp.WorkdayConnectionResponse.Connectionattributes.ConnectionTimeoutConfig.ConnectionTimeout),
-		// 	}
-		// }
+		if apiResp.WorkdayConnectionResponse.Connectionattributes.ConnectionTimeoutConfig != nil {
+			state.ConnectionAttributes.ConnectionTimeoutConfig = &ConnectionTimeoutConfig{
+				RetryWait:               util.SafeInt64(apiResp.WorkdayConnectionResponse.Connectionattributes.ConnectionTimeoutConfig.RetryWait),
+				TokenRefreshMaxTryCount: util.SafeInt64(apiResp.WorkdayConnectionResponse.Connectionattributes.ConnectionTimeoutConfig.TokenRefreshMaxTryCount),
+				RetryFailureStatusCode:  util.SafeInt64(apiResp.WorkdayConnectionResponse.Connectionattributes.ConnectionTimeoutConfig.RetryFailureStatusCode),
+				// RetryFailureStatusCode: SafeInt64FromStringPointer(apiResp.WorkdayConnectionResponse.Connectionattributes.ConnectionTimeoutConfig.RetryFailureStatusCode),
+				RetryWaitMaxValue: util.SafeInt64(apiResp.WorkdayConnectionResponse.Connectionattributes.ConnectionTimeoutConfig.RetryWaitMaxValue),
+				RetryCount:        util.SafeInt64(apiResp.WorkdayConnectionResponse.Connectionattributes.ConnectionTimeoutConfig.RetryCount),
+				ReadTimeout:       util.SafeInt64(apiResp.WorkdayConnectionResponse.Connectionattributes.ConnectionTimeoutConfig.ReadTimeout),
+				ConnectionTimeout: util.SafeInt64(apiResp.WorkdayConnectionResponse.Connectionattributes.ConnectionTimeoutConfig.ConnectionTimeout),
+			}
+		}
 	}
 
 	if apiResp.WorkdayConnectionResponse.Connectionattributes == nil {
