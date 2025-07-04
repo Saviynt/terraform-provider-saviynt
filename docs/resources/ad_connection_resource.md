@@ -13,8 +13,20 @@ Create and manage AD connector in Saviynt
 ## Example Usage
 
 ```terraform
-// Copyright (c) Saviynt Inc.
-// SPDX-License-Identifier: MPL-2.0
+/*
+ * Copyright (c) 2025 Saviynt Inc.
+ * All Rights Reserved.
+ *
+ * This software is the confidential and proprietary information of
+ * Saviynt Inc. ("Confidential Information"). You shall not disclose,
+ * use, or distribute such Confidential Information except in accordance
+ * with the terms of the license agreement you entered into with Saviynt.
+ *
+ * SAVIYNT MAKES NO REPRESENTATIONS OR WARRANTIES ABOUT THE SUITABILITY OF
+ * THE SOFTWARE, EITHER EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO
+ * THE IMPLIED WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR
+ * PURPOSE, OR NON-INFRINGEMENT.
+ */
 
 variable "IP_ADDRESS" {
   type        = string
@@ -296,7 +308,6 @@ resource "saviynt_ad_connection_resource" "example" {
 - `dc_locator` (String) Domain controller locator.
 - `default_user_role` (String) Default SAV Role for imported users. Example: "ROLE_TASK_ADMIN"
 - `defaultsavroles` (String) Default SAV roles for managing the connection. Example: "ROLE_ORG"
-- `description` (String) Description for the connection. Example: "ORG_AD"
 - `disable_account_json` (String) JSON to disable an account. Example: '{"userAccountControl":"546", ...}'
 - `email_template` (String) Email template for notifications. Example: "New Account Task Creation"
 - `enable_account_json` (String) JSON configuration to enable account actions. Example: '{"USEDNFROMACCOUNT":"NO", ...}'

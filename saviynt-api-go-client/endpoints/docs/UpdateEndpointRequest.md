@@ -30,7 +30,7 @@ Name | Type | Description | Notes
 **MappedEndpoints** | Pointer to [**[]UpdateEndpointRequestMappedEndpointsInner**](UpdateEndpointRequestMappedEndpointsInner.md) |  | [optional] 
 **AccountNameRule** | Pointer to **string** | Specify rule to generate an account name for this endpoint while creating a new account. | [optional] 
 **AllowChangePasswordSqlquery** | Pointer to **string** | SQL query to configure the accounts for which you can change passwords. | [optional] 
-**Requestable** | Pointer to **string** | Is this endpoint requestable. | [optional] 
+**Requestable** | Pointer to **bool** | Is this endpoint requestable. | [optional] 
 **ParentAccountPattern** | Pointer to **string** | Specify the parent and child relationship for the Active Directory endpoint. The specified value is used to filter the parent and child objects in the Request Access tile. | [optional] 
 **ServiceAccountNameRule** | Pointer to **string** | Rule to generate a name for this endpoint while creating a new service account. | [optional] 
 **ServiceAccountAccessQuery** | Pointer to **string** |  | [optional] 
@@ -144,7 +144,7 @@ Name | Type | Description | Notes
 **Customproperty58Label** | Pointer to **string** | Label for the custom property 58 of accounts of this endpoint | [optional] 
 **Customproperty59Label** | Pointer to **string** | Label for the custom property 59 of accounts of this endpoint | [optional] 
 **Customproperty60Label** | Pointer to **string** | Label for the custom property 60 of accounts of this endpoint | [optional] 
-**AllowRemoveAllRoleOnRequest** | Pointer to **string** | Specify true to displays the Remove All Roles option in the Request page that can be used to remove all the roles. | [optional] 
+**AllowRemoveAllRoleOnRequest** | Pointer to **bool** | Specify true to displays the Remove All Roles option in the Request page that can be used to remove all the roles. | [optional] 
 
 ## Methods
 
@@ -812,20 +812,20 @@ HasAllowChangePasswordSqlquery returns a boolean if a field has been set.
 
 ### GetRequestable
 
-`func (o *UpdateEndpointRequest) GetRequestable() string`
+`func (o *UpdateEndpointRequest) GetRequestable() bool`
 
 GetRequestable returns the Requestable field if non-nil, zero value otherwise.
 
 ### GetRequestableOk
 
-`func (o *UpdateEndpointRequest) GetRequestableOk() (*string, bool)`
+`func (o *UpdateEndpointRequest) GetRequestableOk() (*bool, bool)`
 
 GetRequestableOk returns a tuple with the Requestable field if it's non-nil, zero value otherwise
 and a boolean to check if the value has been set.
 
 ### SetRequestable
 
-`func (o *UpdateEndpointRequest) SetRequestable(v string)`
+`func (o *UpdateEndpointRequest) SetRequestable(v bool)`
 
 SetRequestable sets Requestable field to given value.
 
@@ -3662,20 +3662,20 @@ HasCustomproperty60Label returns a boolean if a field has been set.
 
 ### GetAllowRemoveAllRoleOnRequest
 
-`func (o *UpdateEndpointRequest) GetAllowRemoveAllRoleOnRequest() string`
+`func (o *UpdateEndpointRequest) GetAllowRemoveAllRoleOnRequest() bool`
 
 GetAllowRemoveAllRoleOnRequest returns the AllowRemoveAllRoleOnRequest field if non-nil, zero value otherwise.
 
 ### GetAllowRemoveAllRoleOnRequestOk
 
-`func (o *UpdateEndpointRequest) GetAllowRemoveAllRoleOnRequestOk() (*string, bool)`
+`func (o *UpdateEndpointRequest) GetAllowRemoveAllRoleOnRequestOk() (*bool, bool)`
 
 GetAllowRemoveAllRoleOnRequestOk returns a tuple with the AllowRemoveAllRoleOnRequest field if it's non-nil, zero value otherwise
 and a boolean to check if the value has been set.
 
 ### SetAllowRemoveAllRoleOnRequest
 
-`func (o *UpdateEndpointRequest) SetAllowRemoveAllRoleOnRequest(v string)`
+`func (o *UpdateEndpointRequest) SetAllowRemoveAllRoleOnRequest(v bool)`
 
 SetAllowRemoveAllRoleOnRequest sets AllowRemoveAllRoleOnRequest field to given value.
 
