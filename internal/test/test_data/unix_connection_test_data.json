@@ -1,0 +1,182 @@
+{
+  "create": {
+    "connection_type": "Unix",
+    "connection_name": "Terraform_Unix_acc_{{PIPELINE_ID}}",
+    "host_name": "unix.example.com",
+    "port_number": "22",
+    "username": "***",
+    "password": "***",
+    "groups_file": "/etc/group",
+    "ssh_key": "----------",
+    "status_threshold_config": {
+      "statusAndThresholdConfig": {
+        "accountThresholdValue": 25,
+        "accountEntThresholdValue": 3,
+        "entThresholdValue": 10,
+        "deleteAccEntForActiveAccounts": true,
+        "statusColumn": "customproperty1",
+        "deleteLinks": false,
+        "correlateInactiveAccounts": true,
+        "inactivateAccountsNotInFile": false,
+        "inactivateEntsNotInFeed": true,
+        "activeStatus": [
+          "1",
+          "Active"
+        ],
+        "lockedStatusColumn": "userlock",
+        "lockedStatusMapping": {
+          "Locked": [
+            "1"
+          ],
+          "Unlocked": [
+            "0"
+          ]
+        }
+      }
+    }
+  },
+  "update": {
+    "connection_type": "Unix",
+    "connection_name": "Terraform_Unix_acc_{{PIPELINE_ID}}",
+    "host_name": "unix.example.com",
+    "port_number": "23",
+    "username": "****",
+    "password": "****",
+    "groups_file": "/etc/group",
+    "ssh_key": "----------",
+    "status_threshold_config": {
+      "statusAndThresholdConfig": {
+        "accountThresholdValue": 25,
+        "accountEntThresholdValue": 3,
+        "entThresholdValue": 10,
+        "deleteAccEntForActiveAccounts": true,
+        "statusColumn": "customproperty1",
+        "deleteLinks": false,
+        "correlateInactiveAccounts": true,
+        "inactivateAccountsNotInFile": false,
+        "inactivateEntsNotInFeed": true,
+        "activeStatus": [
+          "1",
+          "Active"
+        ],
+        "lockedStatusColumn": "userlock",
+        "lockedStatusMapping": {
+          "Locked": [
+            "1"
+          ],
+          "Unlocked": [
+            "0"
+          ]
+        }
+      }
+    }
+  },
+  "update_connection_name": {
+    "connection_type": "Unix",
+    "connection_name": "Terraform_Unix_acc_{{PIPELINE_ID}}_change",
+    "host_name": "unix.example.com",
+    "port_number": "22",
+    "username": "****",
+    "password": "****",
+    "groups_file": "/etc/group",
+    "ssh_key": "----------",
+    "status_threshold_config": {
+      "statusAndThresholdConfig": {
+        "accountThresholdValue": 25,
+        "accountEntThresholdValue": 3,
+        "entThresholdValue": 10,
+        "deleteAccEntForActiveAccounts": true,
+        "statusColumn": "customproperty1",
+        "deleteLinks": false,
+        "correlateInactiveAccounts": true,
+        "inactivateAccountsNotInFile": false,
+        "inactivateEntsNotInFeed": true,
+        "activeStatus": [
+          "1",
+          "Active"
+        ],
+        "lockedStatusColumn": "userlock",
+        "lockedStatusMapping": {
+          "Locked": [
+            "1"
+          ],
+          "Unlocked": [
+            "0"
+          ]
+        }
+      }
+    }
+  },
+  "update_connection_type": {
+    "connection_type": "SAP",
+    "connection_name": "Terraform_Unix_acc_{{PIPELINE_ID}}",
+    "host_name": "unix.example.com",
+    "port_number": "22",
+    "username": "****",
+    "password": "****",
+    "groups_file": "/etc/group",
+    "ssh_key": "----------",
+    "status_threshold_config": {
+      "statusAndThresholdConfig": {
+        "accountThresholdValue": 25,
+        "accountEntThresholdValue": 3,
+        "entThresholdValue": 10,
+        "deleteAccEntForActiveAccounts": true,
+        "statusColumn": "customproperty1",
+        "deleteLinks": false,
+        "correlateInactiveAccounts": true,
+        "inactivateAccountsNotInFile": false,
+        "inactivateEntsNotInFeed": true,
+        "activeStatus": [
+          "1",
+          "Active"
+        ],
+        "lockedStatusColumn": "userlock",
+        "lockedStatusMapping": {
+          "Locked": [
+            "1"
+          ],
+          "Unlocked": [
+            "0"
+          ]
+        }
+      }
+    }
+  },
+   "ds": {
+    "connection_type": "Unix",
+    "connection_name": "Terraform_Unix_acc_{{PIPELINE_ID}}_ds",
+    "host_name": "unix.example.com",
+    "port_number": "22",
+    "username": "***",
+    "password": "***",
+    "groups_file": "/etc/group",
+    "ssh_key": "----------",
+    "status_threshold_config": {
+      "statusAndThresholdConfig": {
+        "accountThresholdValue": 25,
+        "accountEntThresholdValue": 3,
+        "entThresholdValue": 10,
+        "deleteAccEntForActiveAccounts": true,
+        "statusColumn": "customproperty1",
+        "deleteLinks": false,
+        "correlateInactiveAccounts": true,
+        "inactivateAccountsNotInFile": false,
+        "inactivateEntsNotInFeed": true,
+        "activeStatus": [
+          "1",
+          "Active"
+        ],
+        "lockedStatusColumn": "userlock",
+        "lockedStatusMapping": {
+          "Locked": [
+            "1"
+          ],
+          "Unlocked": [
+            "0"
+          ]
+        }
+      }
+    }
+  }
+}

@@ -1,0 +1,48 @@
+{
+    "create": {
+      "systemname":                   "Terraform_SS_acc_{{PIPELINE_ID}}",
+      "display_name":                 "Terraform_SS_acc_{{PIPELINE_ID}}",
+      "access_add_workflow":          "Autoapprovalwf",
+      "access_remove_workflow":       "Autoapprovalwf",
+      "add_service_account_workflow": "Autoapprovalwf",
+      "remove_service_account_workflow":"Autoapprovalwf",
+      "automated_provisioning":       true
+    },
+    "update": {
+      "systemname":                   "Terraform_SS_acc_{{PIPELINE_ID}}",
+      "display_name":                 "Terraform_SS_acc_{{PIPELINE_ID}}",
+      "access_add_workflow":          "Manager Approval",
+      "access_remove_workflow":       "Manager Approval",
+      "add_service_account_workflow": "Manager Approval",
+      "remove_service_account_workflow":"Manager Approval",
+      "automated_provisioning":       false
+    },
+    "update_security_system_name":{
+      "systemname":                   "Terraform_SS_acc_{{PIPELINE_ID}}_change",
+      "display_name":                 "Terraform_SS_acc_{{PIPELINE_ID}}",
+      "access_add_workflow":          "Manager Approval",
+      "access_remove_workflow":       "Manager Approval",
+      "add_service_account_workflow": "Manager Approval",
+      "remove_service_account_workflow":"Manager Approval",
+      "automated_provisioning":       false
+    },
+    "create_duplicate_security_system":{
+      "systemname":                   "Terraform_SS_acc_{{PIPELINE_ID}}",
+      "display_name":                 "Terraform_SS_acc_{{PIPELINE_ID}}",
+      "access_add_workflow":          "Autoapprovalwf",
+      "access_remove_workflow":       "Autoapprovalwf",
+      "add_service_account_workflow": "Autoapprovalwf",
+      "remove_service_account_workflow":"Autoapprovalwf",
+      "automated_provisioning":       true
+    },
+     "ds": {
+      "systemname":                   "Terraform_SS_acc_{{PIPELINE_ID}}_ds",
+      "display_name":                 "Terraform_SS_acc_{{PIPELINE_ID}}_ds",
+      "access_add_workflow":          "Autoapprovalwf",
+      "access_remove_workflow":       "Autoapprovalwf",
+      "add_service_account_workflow": "Autoapprovalwf",
+      "remove_service_account_workflow":"Autoapprovalwf",
+      "automated_provisioning":       true
+    }
+}
+  
