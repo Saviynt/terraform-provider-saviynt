@@ -13,20 +13,7 @@ Create and manage endpoints in Saviynt
 ## Example Usage
 
 ```terraform
-/*
- * Copyright (c) 2025 Saviynt Inc.
- * All Rights Reserved.
- *
- * This software is the confidential and proprietary information of
- * Saviynt Inc. ("Confidential Information"). You shall not disclose,
- * use, or distribute such Confidential Information except in accordance
- * with the terms of the license agreement you entered into with Saviynt.
- *
- * SAVIYNT MAKES NO REPRESENTATIONS OR WARRANTIES ABOUT THE SUITABILITY OF
- * THE SOFTWARE, EITHER EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO
- * THE IMPLIED WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR
- * PURPOSE, OR NON-INFRINGEMENT.
- */
+// Copyright (c) Saviynt Inc.
 
 resource "saviynt_endpoint_resource" "endpoint" {
   endpoint_name                                 = "Terraform_Endpoint"
@@ -42,7 +29,7 @@ resource "saviynt_endpoint_resource" "endpoint" {
   user_account_correlation_rule                 = "MATCH_ON_USERNAME"
   create_ent_task_for_remove_acc                = "true"
   out_of_band_action                            = "2"
-  requestable                                   = "true"
+  requestable                                   = true
   service_account_access_query                  = "SELECT * FROM ACCESS WHERE account_type='SERVICE'"
   block_inflight_request                        = "false"
   account_name_rule                             = "acct-$${user.email}"
@@ -71,7 +58,7 @@ resource "saviynt_endpoint_resource" "endpoint" {
 
   custom_property60_label = "Custom Label 60"
 
-  allow_remove_all_role_on_request = "false"
+  allow_remove_all_role_on_request = true
   change_password_access_query     = "SELECT * FROM USERS WHERE changepassword = 1"
 
 }

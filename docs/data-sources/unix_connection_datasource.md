@@ -13,7 +13,7 @@ Retrieve the details for a given Unix connector by its name or key
 ## Example Usage
 
 ```terraform
-// Copyright (c) Saviynt Inc.
+// Copyright (c) 2025 Saviynt Inc.
 // SPDX-License-Identifier: MPL-2.0
 
 data "saviynt_unix_connection_datasource" "example" {
@@ -27,6 +27,7 @@ data "saviynt_unix_connection_datasource" "example" {
 
 ### Optional
 
+- `authenticate` (Boolean) If false, do not store connection_attributes in state
 - `connection_key` (Number) The key of the connection.
 - `connection_name` (String) The name of the connection.
 
@@ -55,7 +56,6 @@ Read-Only:
 - `add_access_command` (String)
 - `add_group_owner_command` (String)
 - `add_primary_group_command` (String)
-- `change_passwrd_json` (String)
 - `connection_type` (String)
 - `create_group_command` (String)
 - `custom_config_json` (String)
@@ -72,18 +72,11 @@ Read-Only:
 - `is_timeout_supported` (Boolean)
 - `lock_account_command` (String)
 - `pass_through_connection_details` (String)
-- `passphrase` (String)
-- `password` (String)
 - `pem_key_file` (String)
 - `port_number` (String)
 - `provision_account_command` (String)
 - `remove_access_command` (String)
 - `shadow_file` (String)
-- `ssh_key` (String)
-- `ssh_pass_through_passphrase` (String)
-- `ssh_pass_through_password` (String)
-- `ssh_pass_through_ssh_key` (String)
 - `status_threshold_config` (String)
 - `unlock_account_command` (String)
 - `update_account_command` (String)
-- `username` (String)

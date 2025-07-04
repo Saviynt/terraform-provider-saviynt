@@ -13,7 +13,7 @@ Retrieve the details for a given DB connector by its name or key
 ## Example Usage
 
 ```terraform
-// Copyright (c) Saviynt Inc.
+// Copyright (c) 2025 Saviynt Inc.
 // SPDX-License-Identifier: MPL-2.0
 
 data "saviynt_db_connection_datasource" "example" {
@@ -27,6 +27,7 @@ data "saviynt_db_connection_datasource" "example" {
 
 ### Optional
 
+- `authenticate` (Boolean) If false, do not store connection_attributes in state
 - `connection_key` (Number) The key of the connection.
 - `connection_name` (String) The name of the connection.
 
@@ -52,7 +53,6 @@ Read-Only:
 
 - `accountexists_json` (String)
 - `accounts_import` (String)
-- `changepass_json` (String)
 - `cli_command_json` (String)
 - `connection_type` (String)
 - `connectionproperties` (String)
@@ -67,7 +67,6 @@ Read-Only:
 - `is_timeout_supported` (Boolean)
 - `max_pagination_size` (String)
 - `modifyuserdata_json` (String)
-- `password` (String)
 - `password_max_length` (String)
 - `password_min_length` (String)
 - `password_noofcapsalpha` (String)
@@ -82,4 +81,3 @@ Read-Only:
 - `updateuser_json` (String)
 - `url` (String)
 - `user_import` (String)
-- `username` (String)

@@ -13,7 +13,7 @@ Retrieve the details for a given ADSI connector by its name or key
 ## Example Usage
 
 ```terraform
-// Copyright (c) Saviynt Inc.
+// Copyright (c) 2025 Saviynt Inc.
 // SPDX-License-Identifier: MPL-2.0
 
 data "saviynt_adsi_connection_datasource" "example" {
@@ -27,6 +27,7 @@ data "saviynt_adsi_connection_datasource" "example" {
 
 ### Optional
 
+- `authenticate` (Boolean) If false, do not store connection_attributes in state
 - `connection_key` (Number) The key of the connection.
 - `connection_name` (String) The name of the connection.
 
@@ -81,7 +82,6 @@ Read-Only:
 - `object_filter` (String)
 - `page_size` (String)
 - `pam_config` (String)
-- `password` (String)
 - `password_policy_json` (String)
 - `provisioning_url` (String)
 - `remove_access_entitlement_json` (String)
@@ -99,4 +99,3 @@ Read-Only:
 - `update_user_json` (String)
 - `url` (String)
 - `user_attribute` (String)
-- `username` (String)
