@@ -79,21 +79,21 @@ Name | Type | Description | Notes
 **CustomProperty28** | Pointer to **string** | Custom Property 28 | [optional] 
 **CustomProperty29** | Pointer to **string** | Custom Property 29 | [optional] 
 **CustomProperty30** | Pointer to **string** | Custom Property 30 | [optional] 
-**CustomProperty31** | Pointer to **string** | Custom Property 31 | [optional] 
-**CustomProperty32** | Pointer to **string** | Custom Property 32 | [optional] 
-**CustomProperty33** | Pointer to **string** | Custom Property 33 | [optional] 
-**CustomProperty34** | Pointer to **string** | Custom Property 34 | [optional] 
-**CustomProperty35** | Pointer to **string** | Custom Property 35 | [optional] 
-**CustomProperty36** | Pointer to **string** | Custom Property 36 | [optional] 
-**CustomProperty37** | Pointer to **string** | Custom Property 37 | [optional] 
-**CustomProperty38** | Pointer to **string** | Custom Property 38 | [optional] 
-**CustomProperty39** | Pointer to **string** | Custom Property 39 | [optional] 
-**CustomProperty40** | Pointer to **string** | Custom Property 40 | [optional] 
-**CustomProperty41** | Pointer to **string** | Custom Property 41 | [optional] 
-**CustomProperty42** | Pointer to **string** | Custom Property 42 | [optional] 
-**CustomProperty43** | Pointer to **string** | Custom Property 43 | [optional] 
-**CustomProperty44** | Pointer to **string** | Custom Property 44 | [optional] 
-**CustomProperty45** | Pointer to **string** | Custom Property 45 | [optional] 
+**Customproperty31** | Pointer to **string** | Custom Property 31 | [optional] 
+**Customproperty32** | Pointer to **string** | Custom Property 32 | [optional] 
+**Customproperty33** | Pointer to **string** | Custom Property 33 | [optional] 
+**Customproperty34** | Pointer to **string** | Custom Property 34 | [optional] 
+**Customproperty35** | Pointer to **string** | Custom Property 35 | [optional] 
+**Customproperty36** | Pointer to **string** | Custom Property 36 | [optional] 
+**Customproperty37** | Pointer to **string** | Custom Property 37 | [optional] 
+**Customproperty38** | Pointer to **string** | Custom Property 38 | [optional] 
+**Customproperty39** | Pointer to **string** | Custom Property 39 | [optional] 
+**Customproperty40** | Pointer to **string** | Custom Property 40 | [optional] 
+**Customproperty41** | Pointer to **string** | Custom Property 41 | [optional] 
+**Customproperty42** | Pointer to **string** | Custom Property 42 | [optional] 
+**Customproperty43** | Pointer to **string** | Custom Property 43 | [optional] 
+**Customproperty44** | Pointer to **string** | Custom Property 44 | [optional] 
+**Customproperty45** | Pointer to **string** | Custom Property 45 | [optional] 
 **AccountCustomProperty1Label** | Pointer to **string** | Custom Property 1 Label | [optional] 
 **AccountCustomProperty2Label** | Pointer to **string** | Custom Property 2 Label | [optional] 
 **AccountCustomProperty3Label** | Pointer to **string** | Custom Property 3 Label | [optional] 
@@ -2049,380 +2049,380 @@ SetCustomProperty30 sets CustomProperty30 field to given value.
 
 HasCustomProperty30 returns a boolean if a field has been set.
 
-### GetCustomProperty31
+### GetCustomproperty31
 
-`func (o *GetEndpoints200ResponseEndpointsInner) GetCustomProperty31() string`
+`func (o *GetEndpoints200ResponseEndpointsInner) GetCustomproperty31() string`
 
-GetCustomProperty31 returns the CustomProperty31 field if non-nil, zero value otherwise.
+GetCustomproperty31 returns the Customproperty31 field if non-nil, zero value otherwise.
 
-### GetCustomProperty31Ok
+### GetCustomproperty31Ok
 
-`func (o *GetEndpoints200ResponseEndpointsInner) GetCustomProperty31Ok() (*string, bool)`
+`func (o *GetEndpoints200ResponseEndpointsInner) GetCustomproperty31Ok() (*string, bool)`
 
-GetCustomProperty31Ok returns a tuple with the CustomProperty31 field if it's non-nil, zero value otherwise
+GetCustomproperty31Ok returns a tuple with the Customproperty31 field if it's non-nil, zero value otherwise
 and a boolean to check if the value has been set.
 
-### SetCustomProperty31
+### SetCustomproperty31
 
-`func (o *GetEndpoints200ResponseEndpointsInner) SetCustomProperty31(v string)`
+`func (o *GetEndpoints200ResponseEndpointsInner) SetCustomproperty31(v string)`
 
-SetCustomProperty31 sets CustomProperty31 field to given value.
+SetCustomproperty31 sets Customproperty31 field to given value.
 
-### HasCustomProperty31
+### HasCustomproperty31
 
-`func (o *GetEndpoints200ResponseEndpointsInner) HasCustomProperty31() bool`
+`func (o *GetEndpoints200ResponseEndpointsInner) HasCustomproperty31() bool`
 
-HasCustomProperty31 returns a boolean if a field has been set.
+HasCustomproperty31 returns a boolean if a field has been set.
 
-### GetCustomProperty32
+### GetCustomproperty32
 
-`func (o *GetEndpoints200ResponseEndpointsInner) GetCustomProperty32() string`
+`func (o *GetEndpoints200ResponseEndpointsInner) GetCustomproperty32() string`
 
-GetCustomProperty32 returns the CustomProperty32 field if non-nil, zero value otherwise.
+GetCustomproperty32 returns the Customproperty32 field if non-nil, zero value otherwise.
 
-### GetCustomProperty32Ok
+### GetCustomproperty32Ok
 
-`func (o *GetEndpoints200ResponseEndpointsInner) GetCustomProperty32Ok() (*string, bool)`
+`func (o *GetEndpoints200ResponseEndpointsInner) GetCustomproperty32Ok() (*string, bool)`
 
-GetCustomProperty32Ok returns a tuple with the CustomProperty32 field if it's non-nil, zero value otherwise
+GetCustomproperty32Ok returns a tuple with the Customproperty32 field if it's non-nil, zero value otherwise
 and a boolean to check if the value has been set.
 
-### SetCustomProperty32
+### SetCustomproperty32
 
-`func (o *GetEndpoints200ResponseEndpointsInner) SetCustomProperty32(v string)`
+`func (o *GetEndpoints200ResponseEndpointsInner) SetCustomproperty32(v string)`
 
-SetCustomProperty32 sets CustomProperty32 field to given value.
+SetCustomproperty32 sets Customproperty32 field to given value.
 
-### HasCustomProperty32
+### HasCustomproperty32
 
-`func (o *GetEndpoints200ResponseEndpointsInner) HasCustomProperty32() bool`
+`func (o *GetEndpoints200ResponseEndpointsInner) HasCustomproperty32() bool`
 
-HasCustomProperty32 returns a boolean if a field has been set.
+HasCustomproperty32 returns a boolean if a field has been set.
 
-### GetCustomProperty33
+### GetCustomproperty33
 
-`func (o *GetEndpoints200ResponseEndpointsInner) GetCustomProperty33() string`
+`func (o *GetEndpoints200ResponseEndpointsInner) GetCustomproperty33() string`
 
-GetCustomProperty33 returns the CustomProperty33 field if non-nil, zero value otherwise.
+GetCustomproperty33 returns the Customproperty33 field if non-nil, zero value otherwise.
 
-### GetCustomProperty33Ok
+### GetCustomproperty33Ok
 
-`func (o *GetEndpoints200ResponseEndpointsInner) GetCustomProperty33Ok() (*string, bool)`
+`func (o *GetEndpoints200ResponseEndpointsInner) GetCustomproperty33Ok() (*string, bool)`
 
-GetCustomProperty33Ok returns a tuple with the CustomProperty33 field if it's non-nil, zero value otherwise
+GetCustomproperty33Ok returns a tuple with the Customproperty33 field if it's non-nil, zero value otherwise
 and a boolean to check if the value has been set.
 
-### SetCustomProperty33
+### SetCustomproperty33
 
-`func (o *GetEndpoints200ResponseEndpointsInner) SetCustomProperty33(v string)`
+`func (o *GetEndpoints200ResponseEndpointsInner) SetCustomproperty33(v string)`
 
-SetCustomProperty33 sets CustomProperty33 field to given value.
+SetCustomproperty33 sets Customproperty33 field to given value.
 
-### HasCustomProperty33
+### HasCustomproperty33
 
-`func (o *GetEndpoints200ResponseEndpointsInner) HasCustomProperty33() bool`
+`func (o *GetEndpoints200ResponseEndpointsInner) HasCustomproperty33() bool`
 
-HasCustomProperty33 returns a boolean if a field has been set.
+HasCustomproperty33 returns a boolean if a field has been set.
 
-### GetCustomProperty34
+### GetCustomproperty34
 
-`func (o *GetEndpoints200ResponseEndpointsInner) GetCustomProperty34() string`
+`func (o *GetEndpoints200ResponseEndpointsInner) GetCustomproperty34() string`
 
-GetCustomProperty34 returns the CustomProperty34 field if non-nil, zero value otherwise.
+GetCustomproperty34 returns the Customproperty34 field if non-nil, zero value otherwise.
 
-### GetCustomProperty34Ok
+### GetCustomproperty34Ok
 
-`func (o *GetEndpoints200ResponseEndpointsInner) GetCustomProperty34Ok() (*string, bool)`
+`func (o *GetEndpoints200ResponseEndpointsInner) GetCustomproperty34Ok() (*string, bool)`
 
-GetCustomProperty34Ok returns a tuple with the CustomProperty34 field if it's non-nil, zero value otherwise
+GetCustomproperty34Ok returns a tuple with the Customproperty34 field if it's non-nil, zero value otherwise
 and a boolean to check if the value has been set.
 
-### SetCustomProperty34
+### SetCustomproperty34
 
-`func (o *GetEndpoints200ResponseEndpointsInner) SetCustomProperty34(v string)`
+`func (o *GetEndpoints200ResponseEndpointsInner) SetCustomproperty34(v string)`
 
-SetCustomProperty34 sets CustomProperty34 field to given value.
+SetCustomproperty34 sets Customproperty34 field to given value.
 
-### HasCustomProperty34
+### HasCustomproperty34
 
-`func (o *GetEndpoints200ResponseEndpointsInner) HasCustomProperty34() bool`
+`func (o *GetEndpoints200ResponseEndpointsInner) HasCustomproperty34() bool`
 
-HasCustomProperty34 returns a boolean if a field has been set.
+HasCustomproperty34 returns a boolean if a field has been set.
 
-### GetCustomProperty35
+### GetCustomproperty35
 
-`func (o *GetEndpoints200ResponseEndpointsInner) GetCustomProperty35() string`
+`func (o *GetEndpoints200ResponseEndpointsInner) GetCustomproperty35() string`
 
-GetCustomProperty35 returns the CustomProperty35 field if non-nil, zero value otherwise.
+GetCustomproperty35 returns the Customproperty35 field if non-nil, zero value otherwise.
 
-### GetCustomProperty35Ok
+### GetCustomproperty35Ok
 
-`func (o *GetEndpoints200ResponseEndpointsInner) GetCustomProperty35Ok() (*string, bool)`
+`func (o *GetEndpoints200ResponseEndpointsInner) GetCustomproperty35Ok() (*string, bool)`
 
-GetCustomProperty35Ok returns a tuple with the CustomProperty35 field if it's non-nil, zero value otherwise
+GetCustomproperty35Ok returns a tuple with the Customproperty35 field if it's non-nil, zero value otherwise
 and a boolean to check if the value has been set.
 
-### SetCustomProperty35
+### SetCustomproperty35
 
-`func (o *GetEndpoints200ResponseEndpointsInner) SetCustomProperty35(v string)`
+`func (o *GetEndpoints200ResponseEndpointsInner) SetCustomproperty35(v string)`
 
-SetCustomProperty35 sets CustomProperty35 field to given value.
+SetCustomproperty35 sets Customproperty35 field to given value.
 
-### HasCustomProperty35
+### HasCustomproperty35
 
-`func (o *GetEndpoints200ResponseEndpointsInner) HasCustomProperty35() bool`
+`func (o *GetEndpoints200ResponseEndpointsInner) HasCustomproperty35() bool`
 
-HasCustomProperty35 returns a boolean if a field has been set.
+HasCustomproperty35 returns a boolean if a field has been set.
 
-### GetCustomProperty36
+### GetCustomproperty36
 
-`func (o *GetEndpoints200ResponseEndpointsInner) GetCustomProperty36() string`
+`func (o *GetEndpoints200ResponseEndpointsInner) GetCustomproperty36() string`
 
-GetCustomProperty36 returns the CustomProperty36 field if non-nil, zero value otherwise.
+GetCustomproperty36 returns the Customproperty36 field if non-nil, zero value otherwise.
 
-### GetCustomProperty36Ok
+### GetCustomproperty36Ok
 
-`func (o *GetEndpoints200ResponseEndpointsInner) GetCustomProperty36Ok() (*string, bool)`
+`func (o *GetEndpoints200ResponseEndpointsInner) GetCustomproperty36Ok() (*string, bool)`
 
-GetCustomProperty36Ok returns a tuple with the CustomProperty36 field if it's non-nil, zero value otherwise
+GetCustomproperty36Ok returns a tuple with the Customproperty36 field if it's non-nil, zero value otherwise
 and a boolean to check if the value has been set.
 
-### SetCustomProperty36
+### SetCustomproperty36
 
-`func (o *GetEndpoints200ResponseEndpointsInner) SetCustomProperty36(v string)`
+`func (o *GetEndpoints200ResponseEndpointsInner) SetCustomproperty36(v string)`
 
-SetCustomProperty36 sets CustomProperty36 field to given value.
+SetCustomproperty36 sets Customproperty36 field to given value.
 
-### HasCustomProperty36
+### HasCustomproperty36
 
-`func (o *GetEndpoints200ResponseEndpointsInner) HasCustomProperty36() bool`
+`func (o *GetEndpoints200ResponseEndpointsInner) HasCustomproperty36() bool`
 
-HasCustomProperty36 returns a boolean if a field has been set.
+HasCustomproperty36 returns a boolean if a field has been set.
 
-### GetCustomProperty37
+### GetCustomproperty37
 
-`func (o *GetEndpoints200ResponseEndpointsInner) GetCustomProperty37() string`
+`func (o *GetEndpoints200ResponseEndpointsInner) GetCustomproperty37() string`
 
-GetCustomProperty37 returns the CustomProperty37 field if non-nil, zero value otherwise.
+GetCustomproperty37 returns the Customproperty37 field if non-nil, zero value otherwise.
 
-### GetCustomProperty37Ok
+### GetCustomproperty37Ok
 
-`func (o *GetEndpoints200ResponseEndpointsInner) GetCustomProperty37Ok() (*string, bool)`
+`func (o *GetEndpoints200ResponseEndpointsInner) GetCustomproperty37Ok() (*string, bool)`
 
-GetCustomProperty37Ok returns a tuple with the CustomProperty37 field if it's non-nil, zero value otherwise
+GetCustomproperty37Ok returns a tuple with the Customproperty37 field if it's non-nil, zero value otherwise
 and a boolean to check if the value has been set.
 
-### SetCustomProperty37
+### SetCustomproperty37
 
-`func (o *GetEndpoints200ResponseEndpointsInner) SetCustomProperty37(v string)`
+`func (o *GetEndpoints200ResponseEndpointsInner) SetCustomproperty37(v string)`
 
-SetCustomProperty37 sets CustomProperty37 field to given value.
+SetCustomproperty37 sets Customproperty37 field to given value.
 
-### HasCustomProperty37
+### HasCustomproperty37
 
-`func (o *GetEndpoints200ResponseEndpointsInner) HasCustomProperty37() bool`
+`func (o *GetEndpoints200ResponseEndpointsInner) HasCustomproperty37() bool`
 
-HasCustomProperty37 returns a boolean if a field has been set.
+HasCustomproperty37 returns a boolean if a field has been set.
 
-### GetCustomProperty38
+### GetCustomproperty38
 
-`func (o *GetEndpoints200ResponseEndpointsInner) GetCustomProperty38() string`
+`func (o *GetEndpoints200ResponseEndpointsInner) GetCustomproperty38() string`
 
-GetCustomProperty38 returns the CustomProperty38 field if non-nil, zero value otherwise.
+GetCustomproperty38 returns the Customproperty38 field if non-nil, zero value otherwise.
 
-### GetCustomProperty38Ok
+### GetCustomproperty38Ok
 
-`func (o *GetEndpoints200ResponseEndpointsInner) GetCustomProperty38Ok() (*string, bool)`
+`func (o *GetEndpoints200ResponseEndpointsInner) GetCustomproperty38Ok() (*string, bool)`
 
-GetCustomProperty38Ok returns a tuple with the CustomProperty38 field if it's non-nil, zero value otherwise
+GetCustomproperty38Ok returns a tuple with the Customproperty38 field if it's non-nil, zero value otherwise
 and a boolean to check if the value has been set.
 
-### SetCustomProperty38
+### SetCustomproperty38
 
-`func (o *GetEndpoints200ResponseEndpointsInner) SetCustomProperty38(v string)`
+`func (o *GetEndpoints200ResponseEndpointsInner) SetCustomproperty38(v string)`
 
-SetCustomProperty38 sets CustomProperty38 field to given value.
+SetCustomproperty38 sets Customproperty38 field to given value.
 
-### HasCustomProperty38
+### HasCustomproperty38
 
-`func (o *GetEndpoints200ResponseEndpointsInner) HasCustomProperty38() bool`
+`func (o *GetEndpoints200ResponseEndpointsInner) HasCustomproperty38() bool`
 
-HasCustomProperty38 returns a boolean if a field has been set.
+HasCustomproperty38 returns a boolean if a field has been set.
 
-### GetCustomProperty39
+### GetCustomproperty39
 
-`func (o *GetEndpoints200ResponseEndpointsInner) GetCustomProperty39() string`
+`func (o *GetEndpoints200ResponseEndpointsInner) GetCustomproperty39() string`
 
-GetCustomProperty39 returns the CustomProperty39 field if non-nil, zero value otherwise.
+GetCustomproperty39 returns the Customproperty39 field if non-nil, zero value otherwise.
 
-### GetCustomProperty39Ok
+### GetCustomproperty39Ok
 
-`func (o *GetEndpoints200ResponseEndpointsInner) GetCustomProperty39Ok() (*string, bool)`
+`func (o *GetEndpoints200ResponseEndpointsInner) GetCustomproperty39Ok() (*string, bool)`
 
-GetCustomProperty39Ok returns a tuple with the CustomProperty39 field if it's non-nil, zero value otherwise
+GetCustomproperty39Ok returns a tuple with the Customproperty39 field if it's non-nil, zero value otherwise
 and a boolean to check if the value has been set.
 
-### SetCustomProperty39
+### SetCustomproperty39
 
-`func (o *GetEndpoints200ResponseEndpointsInner) SetCustomProperty39(v string)`
+`func (o *GetEndpoints200ResponseEndpointsInner) SetCustomproperty39(v string)`
 
-SetCustomProperty39 sets CustomProperty39 field to given value.
+SetCustomproperty39 sets Customproperty39 field to given value.
 
-### HasCustomProperty39
+### HasCustomproperty39
 
-`func (o *GetEndpoints200ResponseEndpointsInner) HasCustomProperty39() bool`
+`func (o *GetEndpoints200ResponseEndpointsInner) HasCustomproperty39() bool`
 
-HasCustomProperty39 returns a boolean if a field has been set.
+HasCustomproperty39 returns a boolean if a field has been set.
 
-### GetCustomProperty40
+### GetCustomproperty40
 
-`func (o *GetEndpoints200ResponseEndpointsInner) GetCustomProperty40() string`
+`func (o *GetEndpoints200ResponseEndpointsInner) GetCustomproperty40() string`
 
-GetCustomProperty40 returns the CustomProperty40 field if non-nil, zero value otherwise.
+GetCustomproperty40 returns the Customproperty40 field if non-nil, zero value otherwise.
 
-### GetCustomProperty40Ok
+### GetCustomproperty40Ok
 
-`func (o *GetEndpoints200ResponseEndpointsInner) GetCustomProperty40Ok() (*string, bool)`
+`func (o *GetEndpoints200ResponseEndpointsInner) GetCustomproperty40Ok() (*string, bool)`
 
-GetCustomProperty40Ok returns a tuple with the CustomProperty40 field if it's non-nil, zero value otherwise
+GetCustomproperty40Ok returns a tuple with the Customproperty40 field if it's non-nil, zero value otherwise
 and a boolean to check if the value has been set.
 
-### SetCustomProperty40
+### SetCustomproperty40
 
-`func (o *GetEndpoints200ResponseEndpointsInner) SetCustomProperty40(v string)`
+`func (o *GetEndpoints200ResponseEndpointsInner) SetCustomproperty40(v string)`
 
-SetCustomProperty40 sets CustomProperty40 field to given value.
+SetCustomproperty40 sets Customproperty40 field to given value.
 
-### HasCustomProperty40
+### HasCustomproperty40
 
-`func (o *GetEndpoints200ResponseEndpointsInner) HasCustomProperty40() bool`
+`func (o *GetEndpoints200ResponseEndpointsInner) HasCustomproperty40() bool`
 
-HasCustomProperty40 returns a boolean if a field has been set.
+HasCustomproperty40 returns a boolean if a field has been set.
 
-### GetCustomProperty41
+### GetCustomproperty41
 
-`func (o *GetEndpoints200ResponseEndpointsInner) GetCustomProperty41() string`
+`func (o *GetEndpoints200ResponseEndpointsInner) GetCustomproperty41() string`
 
-GetCustomProperty41 returns the CustomProperty41 field if non-nil, zero value otherwise.
+GetCustomproperty41 returns the Customproperty41 field if non-nil, zero value otherwise.
 
-### GetCustomProperty41Ok
+### GetCustomproperty41Ok
 
-`func (o *GetEndpoints200ResponseEndpointsInner) GetCustomProperty41Ok() (*string, bool)`
+`func (o *GetEndpoints200ResponseEndpointsInner) GetCustomproperty41Ok() (*string, bool)`
 
-GetCustomProperty41Ok returns a tuple with the CustomProperty41 field if it's non-nil, zero value otherwise
+GetCustomproperty41Ok returns a tuple with the Customproperty41 field if it's non-nil, zero value otherwise
 and a boolean to check if the value has been set.
 
-### SetCustomProperty41
+### SetCustomproperty41
 
-`func (o *GetEndpoints200ResponseEndpointsInner) SetCustomProperty41(v string)`
+`func (o *GetEndpoints200ResponseEndpointsInner) SetCustomproperty41(v string)`
 
-SetCustomProperty41 sets CustomProperty41 field to given value.
+SetCustomproperty41 sets Customproperty41 field to given value.
 
-### HasCustomProperty41
+### HasCustomproperty41
 
-`func (o *GetEndpoints200ResponseEndpointsInner) HasCustomProperty41() bool`
+`func (o *GetEndpoints200ResponseEndpointsInner) HasCustomproperty41() bool`
 
-HasCustomProperty41 returns a boolean if a field has been set.
+HasCustomproperty41 returns a boolean if a field has been set.
 
-### GetCustomProperty42
+### GetCustomproperty42
 
-`func (o *GetEndpoints200ResponseEndpointsInner) GetCustomProperty42() string`
+`func (o *GetEndpoints200ResponseEndpointsInner) GetCustomproperty42() string`
 
-GetCustomProperty42 returns the CustomProperty42 field if non-nil, zero value otherwise.
+GetCustomproperty42 returns the Customproperty42 field if non-nil, zero value otherwise.
 
-### GetCustomProperty42Ok
+### GetCustomproperty42Ok
 
-`func (o *GetEndpoints200ResponseEndpointsInner) GetCustomProperty42Ok() (*string, bool)`
+`func (o *GetEndpoints200ResponseEndpointsInner) GetCustomproperty42Ok() (*string, bool)`
 
-GetCustomProperty42Ok returns a tuple with the CustomProperty42 field if it's non-nil, zero value otherwise
+GetCustomproperty42Ok returns a tuple with the Customproperty42 field if it's non-nil, zero value otherwise
 and a boolean to check if the value has been set.
 
-### SetCustomProperty42
+### SetCustomproperty42
 
-`func (o *GetEndpoints200ResponseEndpointsInner) SetCustomProperty42(v string)`
+`func (o *GetEndpoints200ResponseEndpointsInner) SetCustomproperty42(v string)`
 
-SetCustomProperty42 sets CustomProperty42 field to given value.
+SetCustomproperty42 sets Customproperty42 field to given value.
 
-### HasCustomProperty42
+### HasCustomproperty42
 
-`func (o *GetEndpoints200ResponseEndpointsInner) HasCustomProperty42() bool`
+`func (o *GetEndpoints200ResponseEndpointsInner) HasCustomproperty42() bool`
 
-HasCustomProperty42 returns a boolean if a field has been set.
+HasCustomproperty42 returns a boolean if a field has been set.
 
-### GetCustomProperty43
+### GetCustomproperty43
 
-`func (o *GetEndpoints200ResponseEndpointsInner) GetCustomProperty43() string`
+`func (o *GetEndpoints200ResponseEndpointsInner) GetCustomproperty43() string`
 
-GetCustomProperty43 returns the CustomProperty43 field if non-nil, zero value otherwise.
+GetCustomproperty43 returns the Customproperty43 field if non-nil, zero value otherwise.
 
-### GetCustomProperty43Ok
+### GetCustomproperty43Ok
 
-`func (o *GetEndpoints200ResponseEndpointsInner) GetCustomProperty43Ok() (*string, bool)`
+`func (o *GetEndpoints200ResponseEndpointsInner) GetCustomproperty43Ok() (*string, bool)`
 
-GetCustomProperty43Ok returns a tuple with the CustomProperty43 field if it's non-nil, zero value otherwise
+GetCustomproperty43Ok returns a tuple with the Customproperty43 field if it's non-nil, zero value otherwise
 and a boolean to check if the value has been set.
 
-### SetCustomProperty43
+### SetCustomproperty43
 
-`func (o *GetEndpoints200ResponseEndpointsInner) SetCustomProperty43(v string)`
+`func (o *GetEndpoints200ResponseEndpointsInner) SetCustomproperty43(v string)`
 
-SetCustomProperty43 sets CustomProperty43 field to given value.
+SetCustomproperty43 sets Customproperty43 field to given value.
 
-### HasCustomProperty43
+### HasCustomproperty43
 
-`func (o *GetEndpoints200ResponseEndpointsInner) HasCustomProperty43() bool`
+`func (o *GetEndpoints200ResponseEndpointsInner) HasCustomproperty43() bool`
 
-HasCustomProperty43 returns a boolean if a field has been set.
+HasCustomproperty43 returns a boolean if a field has been set.
 
-### GetCustomProperty44
+### GetCustomproperty44
 
-`func (o *GetEndpoints200ResponseEndpointsInner) GetCustomProperty44() string`
+`func (o *GetEndpoints200ResponseEndpointsInner) GetCustomproperty44() string`
 
-GetCustomProperty44 returns the CustomProperty44 field if non-nil, zero value otherwise.
+GetCustomproperty44 returns the Customproperty44 field if non-nil, zero value otherwise.
 
-### GetCustomProperty44Ok
+### GetCustomproperty44Ok
 
-`func (o *GetEndpoints200ResponseEndpointsInner) GetCustomProperty44Ok() (*string, bool)`
+`func (o *GetEndpoints200ResponseEndpointsInner) GetCustomproperty44Ok() (*string, bool)`
 
-GetCustomProperty44Ok returns a tuple with the CustomProperty44 field if it's non-nil, zero value otherwise
+GetCustomproperty44Ok returns a tuple with the Customproperty44 field if it's non-nil, zero value otherwise
 and a boolean to check if the value has been set.
 
-### SetCustomProperty44
+### SetCustomproperty44
 
-`func (o *GetEndpoints200ResponseEndpointsInner) SetCustomProperty44(v string)`
+`func (o *GetEndpoints200ResponseEndpointsInner) SetCustomproperty44(v string)`
 
-SetCustomProperty44 sets CustomProperty44 field to given value.
+SetCustomproperty44 sets Customproperty44 field to given value.
 
-### HasCustomProperty44
+### HasCustomproperty44
 
-`func (o *GetEndpoints200ResponseEndpointsInner) HasCustomProperty44() bool`
+`func (o *GetEndpoints200ResponseEndpointsInner) HasCustomproperty44() bool`
 
-HasCustomProperty44 returns a boolean if a field has been set.
+HasCustomproperty44 returns a boolean if a field has been set.
 
-### GetCustomProperty45
+### GetCustomproperty45
 
-`func (o *GetEndpoints200ResponseEndpointsInner) GetCustomProperty45() string`
+`func (o *GetEndpoints200ResponseEndpointsInner) GetCustomproperty45() string`
 
-GetCustomProperty45 returns the CustomProperty45 field if non-nil, zero value otherwise.
+GetCustomproperty45 returns the Customproperty45 field if non-nil, zero value otherwise.
 
-### GetCustomProperty45Ok
+### GetCustomproperty45Ok
 
-`func (o *GetEndpoints200ResponseEndpointsInner) GetCustomProperty45Ok() (*string, bool)`
+`func (o *GetEndpoints200ResponseEndpointsInner) GetCustomproperty45Ok() (*string, bool)`
 
-GetCustomProperty45Ok returns a tuple with the CustomProperty45 field if it's non-nil, zero value otherwise
+GetCustomproperty45Ok returns a tuple with the Customproperty45 field if it's non-nil, zero value otherwise
 and a boolean to check if the value has been set.
 
-### SetCustomProperty45
+### SetCustomproperty45
 
-`func (o *GetEndpoints200ResponseEndpointsInner) SetCustomProperty45(v string)`
+`func (o *GetEndpoints200ResponseEndpointsInner) SetCustomproperty45(v string)`
 
-SetCustomProperty45 sets CustomProperty45 field to given value.
+SetCustomproperty45 sets Customproperty45 field to given value.
 
-### HasCustomProperty45
+### HasCustomproperty45
 
-`func (o *GetEndpoints200ResponseEndpointsInner) HasCustomProperty45() bool`
+`func (o *GetEndpoints200ResponseEndpointsInner) HasCustomproperty45() bool`
 
-HasCustomProperty45 returns a boolean if a field has been set.
+HasCustomproperty45 returns a boolean if a field has been set.
 
 ### GetAccountCustomProperty1Label
 

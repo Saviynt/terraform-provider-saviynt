@@ -1,5 +1,17 @@
-// Copyright (c) Saviynt Inc.
-// SPDX-License-Identifier: MPL-2.0
+/*
+ * Copyright (c) 2025 Saviynt Inc.
+ * All Rights Reserved.
+ *
+ * This software is the confidential and proprietary information of
+ * Saviynt Inc. ("Confidential Information"). You shall not disclose,
+ * use, or distribute such Confidential Information except in accordance
+ * with the terms of the license agreement you entered into with Saviynt.
+ *
+ * SAVIYNT MAKES NO REPRESENTATIONS OR WARRANTIES ABOUT THE SUITABILITY OF
+ * THE SOFTWARE, EITHER EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO
+ * THE IMPLIED WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR
+ * PURPOSE, OR NON-INFRINGEMENT.
+ */
 
 // saviynt_github_rest_connection_resource manages GithubRest connectors in the Saviynt Security Manager.
 // The resource implements the full Terraform lifecycle:
@@ -35,13 +47,13 @@ var _ resource.ResourceWithImportState = &githubRestConnectionResource{}
 
 type GithubRestConnectorResourceModel struct {
 	BaseConnectorResourceModel
-	ID                      types.String `tfsdk:"id"`
-	ConnectionJSON          types.String `tfsdk:"connection_json"`
-	ImportAccountEntJSON    types.String `tfsdk:"import_account_ent_json"`
-	Access_Tokens           types.String `tfsdk:"access_tokens"`
-	Organization_List       types.String `tfsdk:"organization_list"`
-	Status_Threshold_Config types.String `tfsdk:"status_threshold_config"`
-	Pam_Config              types.String `tfsdk:"pam_config"`
+	ID                   types.String `tfsdk:"id"`
+	ConnectionJSON       types.String `tfsdk:"connection_json"`
+	ImportAccountEntJSON types.String `tfsdk:"import_account_ent_json"`
+	Access_Tokens        types.String `tfsdk:"access_tokens"`
+	Organization_List    types.String `tfsdk:"organization_list"`
+	// Status_Threshold_Config types.String `tfsdk:"status_threshold_config"`
+	// Pam_Config              types.String `tfsdk:"pam_config"`
 }
 
 type githubRestConnectionResource struct {
@@ -83,16 +95,16 @@ func GithubRestConnectorResourceSchema() map[string]schema.Attribute {
 			Computed:    true,
 			Description: "Property for ORGANIZATION_LIST",
 		},
-		"status_threshold_config": schema.StringAttribute{
-			Optional:    true,
-			Computed:    true,
-			Description: "Property for STATUS_THRESHOLD_CONFIG",
-		},
-		"pam_config": schema.StringAttribute{
-			Optional:    true,
-			Computed:    true,
-			Description: "Property for PAM_CONFIG",
-		},
+		// "status_threshold_config": schema.StringAttribute{
+		// 	Optional:    true,
+		// 	Computed:    true,
+		// 	Description: "Property for STATUS_THRESHOLD_CONFIG",
+		// },
+		// "pam_config": schema.StringAttribute{
+		// 	Optional:    true,
+		// 	Computed:    true,
+		// 	Description: "Property for PAM_CONFIG",
+		// },
 	}
 }
 
@@ -156,17 +168,17 @@ func (r *githubRestConnectionResource) Create(ctx context.Context, req resource.
 			Connectiontype: "GithubRest",
 			ConnectionName: plan.ConnectionName.ValueString(),
 			//optional values
-			Description:     util.StringPointerOrEmpty(plan.Description),
+			// Description:     util.StringPointerOrEmpty(plan.Description),
 			Defaultsavroles: util.StringPointerOrEmpty(plan.DefaultSavRoles),
 			EmailTemplate:   util.StringPointerOrEmpty(plan.EmailTemplate),
 		},
 		//optional values
-		ConnectionJSON:          util.StringPointerOrEmpty(config.ConnectionJSON),
-		ImportAccountEntJSON:    util.StringPointerOrEmpty(plan.ImportAccountEntJSON),
-		ACCESS_TOKENS:           util.StringPointerOrEmpty(config.Access_Tokens),
-		ORGANIZATION_LIST:       util.StringPointerOrEmpty(plan.Organization_List),
-		STATUS_THRESHOLD_CONFIG: util.StringPointerOrEmpty(plan.Status_Threshold_Config),
-		PAM_CONFIG:              util.StringPointerOrEmpty(plan.Pam_Config),
+		ConnectionJSON:       util.StringPointerOrEmpty(config.ConnectionJSON),
+		ImportAccountEntJSON: util.StringPointerOrEmpty(plan.ImportAccountEntJSON),
+		ACCESS_TOKENS:        util.StringPointerOrEmpty(config.Access_Tokens),
+		ORGANIZATION_LIST:    util.StringPointerOrEmpty(plan.Organization_List),
+		// STATUS_THRESHOLD_CONFIG: util.StringPointerOrEmpty(plan.Status_Threshold_Config),
+		// PAM_CONFIG:              util.StringPointerOrEmpty(plan.Pam_Config),
 	}
 	if plan.VaultConnection.ValueString() != "" {
 		githubRestConn.BaseConnector.VaultConnection = util.SafeStringConnector(plan.VaultConnection.ValueString())
@@ -178,21 +190,27 @@ func (r *githubRestConnectionResource) Create(ctx context.Context, req resource.
 	}
 
 	apiResp, _, err := apiClient.ConnectionsAPI.CreateOrUpdate(ctx).CreateOrUpdateRequest(githubRestRequest).Execute()
-	if err != nil || *apiResp.ErrorCode != "0" {
+	if err != nil {
 		log.Printf("[ERROR] Failed to create API resource. Error: %v", err)
 		resp.Diagnostics.AddError("API Create Failed", fmt.Sprintf("Error: %v", err))
 		return
 	}
+	if apiResp!=nil && *apiResp.ErrorCode !="0"{
+		log.Printf("[ERROR]: Error in creating Github Rest connection resource. Errorcode: %v, Message: %v", *apiResp.ErrorCode, *apiResp.Msg)
+		resp.Diagnostics.AddError("Creation of Github Rest connection failed", *apiResp.Msg)
+		return
+	}
+
 	plan.ID = types.StringValue(fmt.Sprintf("%d", *apiResp.ConnectionKey))
 	plan.ConnectionType = types.StringValue("GithubRest")
 	plan.ConnectionKey = types.Int64Value(int64(*apiResp.ConnectionKey))
-	plan.Description = util.SafeStringDatasource(plan.Description.ValueStringPointer())
+	// plan.Description = util.SafeStringDatasource(plan.Description.ValueStringPointer())
 	plan.DefaultSavRoles = util.SafeStringDatasource(plan.DefaultSavRoles.ValueStringPointer())
 	plan.EmailTemplate = util.SafeStringDatasource(plan.EmailTemplate.ValueStringPointer())
 	plan.ImportAccountEntJSON = util.SafeStringDatasource(plan.ImportAccountEntJSON.ValueStringPointer())
 	plan.Organization_List = util.SafeStringDatasource(plan.Organization_List.ValueStringPointer())
-	plan.Status_Threshold_Config = util.SafeStringDatasource(plan.Status_Threshold_Config.ValueStringPointer())
-	plan.Pam_Config = util.SafeStringDatasource(plan.Pam_Config.ValueStringPointer())
+	// plan.Status_Threshold_Config = util.SafeStringDatasource(plan.Status_Threshold_Config.ValueStringPointer())
+	// plan.Pam_Config = util.SafeStringDatasource(plan.Pam_Config.ValueStringPointer())
 	plan.Msg = types.StringValue(util.SafeDeref(apiResp.Msg))
 	plan.ErrorCode = types.StringValue(util.SafeDeref(apiResp.ErrorCode))
 	resp.Diagnostics.Append(resp.State.Set(ctx, &plan)...)
@@ -224,17 +242,23 @@ func (r *githubRestConnectionResource) Read(ctx context.Context, req resource.Re
 		resp.Diagnostics.AddError("API Read Failed", fmt.Sprintf("Error: %v", err))
 		return
 	}
+	if apiResp!=nil && *apiResp.GithubRESTConnectionResponse.Errorcode !=0{
+		log.Printf("[ERROR]: Error in reading Github Rest connection resource. Errorcode: %v, Message: %v", *apiResp.GithubRESTConnectionResponse.Errorcode, *apiResp.GithubRESTConnectionResponse.Msg)
+		resp.Diagnostics.AddError("Read Github Rest connection resource failed", *apiResp.GithubRESTConnectionResponse.Msg)
+		return
+	}
+
 	state.ConnectionKey = types.Int64Value(int64(*apiResp.GithubRESTConnectionResponse.Connectionkey))
 	state.ID = types.StringValue(fmt.Sprintf("%d", *apiResp.GithubRESTConnectionResponse.Connectionkey))
 	state.ConnectionName = util.SafeStringDatasource(apiResp.GithubRESTConnectionResponse.Connectionname)
-	state.Description = util.SafeStringDatasource(apiResp.GithubRESTConnectionResponse.Description)
+	// state.Description = util.SafeStringDatasource(apiResp.GithubRESTConnectionResponse.Description)
 	state.DefaultSavRoles = util.SafeStringDatasource(apiResp.GithubRESTConnectionResponse.Defaultsavroles)
 	state.ConnectionType = util.SafeStringDatasource(apiResp.GithubRESTConnectionResponse.Connectiontype)
 	state.EmailTemplate = util.SafeStringDatasource(apiResp.GithubRESTConnectionResponse.Emailtemplate)
 	state.ImportAccountEntJSON = util.SafeStringDatasource(apiResp.GithubRESTConnectionResponse.Connectionattributes.ImportAccountEntJSON)
 	state.Organization_List = util.SafeStringDatasource(apiResp.GithubRESTConnectionResponse.Connectionattributes.ORGANIZATION_LIST)
-	state.Status_Threshold_Config = util.SafeStringDatasource(apiResp.GithubRESTConnectionResponse.Connectionattributes.STATUS_THRESHOLD_CONFIG)
-	state.Pam_Config = util.SafeStringDatasource(apiResp.GithubRESTConnectionResponse.Connectionattributes.PAM_CONFIG)
+	// state.Status_Threshold_Config = util.SafeStringDatasource(apiResp.GithubRESTConnectionResponse.Connectionattributes.STATUS_THRESHOLD_CONFIG)
+	// state.Pam_Config = util.SafeStringDatasource(apiResp.GithubRESTConnectionResponse.Connectionattributes.PAM_CONFIG)
 	apiMessage := util.SafeDeref(apiResp.GithubRESTConnectionResponse.Msg)
 	if apiMessage == "success" {
 		state.Msg = types.StringValue("Connection Successful")
@@ -291,17 +315,17 @@ func (r *githubRestConnectionResource) Update(ctx context.Context, req resource.
 			Connectiontype: "GithubRest",
 			ConnectionName: plan.ConnectionName.ValueString(),
 			//optional values
-			Description:     util.StringPointerOrEmpty(plan.Description),
+			// Description:     util.StringPointerOrEmpty(plan.Description),
 			Defaultsavroles: util.StringPointerOrEmpty(plan.DefaultSavRoles),
 			EmailTemplate:   util.StringPointerOrEmpty(plan.EmailTemplate),
 		},
 		//optional values
-		ConnectionJSON:          util.StringPointerOrEmpty(config.ConnectionJSON),
-		ImportAccountEntJSON:    util.StringPointerOrEmpty(plan.ImportAccountEntJSON),
-		ACCESS_TOKENS:           util.StringPointerOrEmpty(config.Access_Tokens),
-		ORGANIZATION_LIST:       util.StringPointerOrEmpty(plan.Organization_List),
-		STATUS_THRESHOLD_CONFIG: util.StringPointerOrEmpty(plan.Status_Threshold_Config),
-		PAM_CONFIG:              util.StringPointerOrEmpty(plan.Pam_Config),
+		ConnectionJSON:       util.StringPointerOrEmpty(config.ConnectionJSON),
+		ImportAccountEntJSON: util.StringPointerOrEmpty(plan.ImportAccountEntJSON),
+		ACCESS_TOKENS:        util.StringPointerOrEmpty(config.Access_Tokens),
+		ORGANIZATION_LIST:    util.StringPointerOrEmpty(plan.Organization_List),
+		// STATUS_THRESHOLD_CONFIG: util.StringPointerOrEmpty(plan.Status_Threshold_Config),
+		// PAM_CONFIG:              util.StringPointerOrEmpty(plan.Pam_Config),
 	}
 	if plan.VaultConnection.ValueString() != "" {
 		githubRestConn.BaseConnector.VaultConnection = util.SafeStringConnector(plan.VaultConnection.ValueString())
@@ -320,11 +344,17 @@ func (r *githubRestConnectionResource) Update(ctx context.Context, req resource.
 	// Initialize API client
 	apiClient := openapi.NewAPIClient(cfg)
 	apiResp, _, err := apiClient.ConnectionsAPI.CreateOrUpdate(ctx).CreateOrUpdateRequest(githubRestRequest).Execute()
-	if err != nil || *apiResp.ErrorCode != "0" {
+	if err != nil {
 		log.Printf("Problem with the update function")
 		resp.Diagnostics.AddError("API Update Failed", fmt.Sprintf("Error: %v", err))
 		return
 	}
+	if apiResp!=nil && *apiResp.ErrorCode !="0"{
+		log.Printf("[ERROR]: Error in updation Github Rest connection. Errorcode: %v, Message: %v", *apiResp.ErrorCode, *apiResp.Msg)
+		resp.Diagnostics.AddError("Updation of Github Rest connection failed", *apiResp.Msg)
+		return
+	}
+
 	reqParams := openapi.GetConnectionDetailsRequest{}
 
 	reqParams.SetConnectionname(plan.ConnectionName.ValueString())
@@ -334,17 +364,23 @@ func (r *githubRestConnectionResource) Update(ctx context.Context, req resource.
 		resp.Diagnostics.AddError("API Read Failed", fmt.Sprintf("Error: %v", err))
 		return
 	}
+	if getResp!=nil && *getResp.GithubRESTConnectionResponse.Errorcode !=0{
+		log.Printf("[ERROR]: Error in reading Github Rest connection after updation. Errorcode: %v, Message: %v", *getResp.GithubRESTConnectionResponse.Errorcode, *getResp.GithubRESTConnectionResponse.Msg)
+		resp.Diagnostics.AddError("Reading Github Rest connection after updation failed", *getResp.GithubRESTConnectionResponse.Msg)
+		return
+	}
+
 	plan.ConnectionKey = types.Int64Value(int64(*getResp.GithubRESTConnectionResponse.Connectionkey))
 	plan.ID = types.StringValue(fmt.Sprintf("%d", *getResp.GithubRESTConnectionResponse.Connectionkey))
 	plan.ConnectionName = util.SafeStringDatasource(getResp.GithubRESTConnectionResponse.Connectionname)
-	plan.Description = util.SafeStringDatasource(getResp.GithubRESTConnectionResponse.Description)
+	// plan.Description = util.SafeStringDatasource(getResp.GithubRESTConnectionResponse.Description)
 	plan.DefaultSavRoles = util.SafeStringDatasource(getResp.GithubRESTConnectionResponse.Defaultsavroles)
 	plan.ConnectionType = util.SafeStringDatasource(getResp.GithubRESTConnectionResponse.Connectiontype)
 	plan.EmailTemplate = util.SafeStringDatasource(getResp.GithubRESTConnectionResponse.Emailtemplate)
 	plan.ImportAccountEntJSON = util.SafeStringDatasource(getResp.GithubRESTConnectionResponse.Connectionattributes.ImportAccountEntJSON)
 	plan.Organization_List = util.SafeStringDatasource(getResp.GithubRESTConnectionResponse.Connectionattributes.ORGANIZATION_LIST)
-	plan.Status_Threshold_Config = util.SafeStringDatasource(getResp.GithubRESTConnectionResponse.Connectionattributes.STATUS_THRESHOLD_CONFIG)
-	plan.Pam_Config = util.SafeStringDatasource(getResp.GithubRESTConnectionResponse.Connectionattributes.PAM_CONFIG)
+	// plan.Status_Threshold_Config = util.SafeStringDatasource(getResp.GithubRESTConnectionResponse.Connectionattributes.STATUS_THRESHOLD_CONFIG)
+	// plan.Pam_Config = util.SafeStringDatasource(getResp.GithubRESTConnectionResponse.Connectionattributes.PAM_CONFIG)
 	apiMessage := util.SafeDeref(getResp.GithubRESTConnectionResponse.Msg)
 	if apiMessage == "success" {
 		plan.Msg = types.StringValue("Connection Successful")

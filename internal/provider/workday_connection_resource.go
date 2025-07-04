@@ -1,5 +1,17 @@
-// Copyright (c) Saviynt Inc.
-// SPDX-License-Identifier: MPL-2.0
+/*
+ * Copyright (c) 2025 Saviynt Inc.
+ * All Rights Reserved.
+ *
+ * This software is the confidential and proprietary information of
+ * Saviynt Inc. ("Confidential Information"). You shall not disclose,
+ * use, or distribute such Confidential Information except in accordance
+ * with the terms of the license agreement you entered into with Saviynt.
+ *
+ * SAVIYNT MAKES NO REPRESENTATIONS OR WARRANTIES ABOUT THE SUITABILITY OF
+ * THE SOFTWARE, EITHER EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO
+ * THE IMPLIED WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR
+ * PURPOSE, OR NON-INFRINGEMENT.
+ */
 
 // saviynt_workday_connection_resource manages Workday connectors in the Saviynt Security Manager.
 // The resource implements the full Terraform lifecycle:
@@ -62,18 +74,18 @@ type WorkdayConnectorResourceModel struct {
 	AccessImportList       types.String `tfsdk:"access_import_list"`
 	RAASMappingJSON        types.String `tfsdk:"raas_mapping_json"`
 	AccessImportMapping    types.String `tfsdk:"access_import_mapping"`
-	OrgRoleImportPayload   types.String `tfsdk:"orgrole_import_payload"`
-	StatusKeyJSON          types.String `tfsdk:"status_key_json"`
-	UserAttributeJSON      types.String `tfsdk:"userattributejson"`
-	CustomConfig           types.String `tfsdk:"custom_config"`
-	PAMConfig              types.String `tfsdk:"pam_config"`
-	ModifyUserDataJSON     types.String `tfsdk:"modify_user_data_json"`
-	StatusThresholdConfig  types.String `tfsdk:"status_threshold_config"`
-	CreateAccountPayload   types.String `tfsdk:"create_account_payload"`
-	UpdateAccountPayload   types.String `tfsdk:"update_account_payload"`
-	UpdateUserPayload      types.String `tfsdk:"update_user_payload"`
-	AssignOrgRolePayload   types.String `tfsdk:"assign_orgrole_payload"`
-	RemoveOrgRolePayload   types.String `tfsdk:"remove_orgrole_payload"`
+	// OrgRoleImportPayload   types.String `tfsdk:"orgrole_import_payload"`
+	StatusKeyJSON         types.String `tfsdk:"status_key_json"`
+	UserAttributeJSON     types.String `tfsdk:"userattributejson"`
+	CustomConfig          types.String `tfsdk:"custom_config"`
+	PAMConfig             types.String `tfsdk:"pam_config"`
+	ModifyUserDataJSON    types.String `tfsdk:"modify_user_data_json"`
+	StatusThresholdConfig types.String `tfsdk:"status_threshold_config"`
+	CreateAccountPayload  types.String `tfsdk:"create_account_payload"`
+	UpdateAccountPayload  types.String `tfsdk:"update_account_payload"`
+	UpdateUserPayload     types.String `tfsdk:"update_user_payload"`
+	AssignOrgRolePayload  types.String `tfsdk:"assign_orgrole_payload"`
+	RemoveOrgRolePayload  types.String `tfsdk:"remove_orgrole_payload"`
 }
 
 // workdayConnectionResource implements the resource.Resource interface.
@@ -228,11 +240,11 @@ func WorkdayConnectorResourceSchema() map[string]schema.Attribute {
 			Computed:    true,
 			Description: "Additional access attribute mapping for Workday access objects.",
 		},
-		"orgrole_import_payload": schema.StringAttribute{
-			Optional:    true,
-			Computed:    true,
-			Description: "Custom SOAP body for organization role import.",
-		},
+		// "orgrole_import_payload": schema.StringAttribute{
+		// 	Optional:    true,
+		// 	Computed:    true,
+		// 	Description: "Custom SOAP body for organization role import.",
+		// },
 		"status_key_json": schema.StringAttribute{
 			Optional:    true,
 			Computed:    true,
@@ -353,7 +365,7 @@ func (r *workdayConnectionResource) Create(ctx context.Context, req resource.Cre
 			Connectiontype: "Workday",
 			ConnectionName: plan.ConnectionName.ValueString(),
 			//optional fields
-			Description:        util.StringPointerOrEmpty(plan.Description),
+			// Description:        util.StringPointerOrEmpty(plan.Description),
 			Defaultsavroles:    util.StringPointerOrEmpty(plan.DefaultSavRoles),
 			EmailTemplate:      util.StringPointerOrEmpty(plan.EmailTemplate),
 			VaultConnection:    util.SafeStringConnector(plan.VaultConnection.ValueString()),
@@ -388,36 +400,42 @@ func (r *workdayConnectionResource) Create(ctx context.Context, req resource.Cre
 		ACCESS_IMPORT_LIST:            util.StringPointerOrEmpty(plan.AccessImportList),
 		RAAS_MAPPING_JSON:             util.StringPointerOrEmpty(plan.RAASMappingJSON),
 		ACCESS_IMPORT_MAPPING:         util.StringPointerOrEmpty(plan.AccessImportMapping),
-		ORGROLE_IMPORT_PAYLOAD:        util.StringPointerOrEmpty(plan.OrgRoleImportPayload),
-		STATUS_KEY_JSON:               util.StringPointerOrEmpty(plan.StatusKeyJSON),
-		USERATTRIBUTEJSON:             util.StringPointerOrEmpty(plan.UserAttributeJSON),
-		CUSTOM_CONFIG:                 util.StringPointerOrEmpty(plan.CustomConfig),
-		PAM_CONFIG:                    util.StringPointerOrEmpty(plan.PAMConfig),
-		MODIFYUSERDATAJSON:            util.StringPointerOrEmpty(plan.ModifyUserDataJSON),
-		STATUS_THRESHOLD_CONFIG:       util.StringPointerOrEmpty(plan.StatusThresholdConfig),
-		CREATE_ACCOUNT_PAYLOAD:        util.StringPointerOrEmpty(plan.CreateAccountPayload),
-		UPDATE_ACCOUNT_PAYLOAD:        util.StringPointerOrEmpty(plan.UpdateAccountPayload),
-		UPDATE_USER_PAYLOAD:           util.StringPointerOrEmpty(plan.UpdateUserPayload),
-		ASSIGN_ORGROLE_PAYLOAD:        util.StringPointerOrEmpty(plan.AssignOrgRolePayload),
-		REMOVE_ORGROLE_PAYLOAD:        util.StringPointerOrEmpty(plan.RemoveOrgRolePayload),
+		// ORGROLE_IMPORT_PAYLOAD:        util.StringPointerOrEmpty(plan.OrgRoleImportPayload),
+		STATUS_KEY_JSON:         util.StringPointerOrEmpty(plan.StatusKeyJSON),
+		USERATTRIBUTEJSON:       util.StringPointerOrEmpty(plan.UserAttributeJSON),
+		CUSTOM_CONFIG:           util.StringPointerOrEmpty(plan.CustomConfig),
+		PAM_CONFIG:              util.StringPointerOrEmpty(plan.PAMConfig),
+		MODIFYUSERDATAJSON:      util.StringPointerOrEmpty(plan.ModifyUserDataJSON),
+		STATUS_THRESHOLD_CONFIG: util.StringPointerOrEmpty(plan.StatusThresholdConfig),
+		CREATE_ACCOUNT_PAYLOAD:  util.StringPointerOrEmpty(plan.CreateAccountPayload),
+		UPDATE_ACCOUNT_PAYLOAD:  util.StringPointerOrEmpty(plan.UpdateAccountPayload),
+		UPDATE_USER_PAYLOAD:     util.StringPointerOrEmpty(plan.UpdateUserPayload),
+		ASSIGN_ORGROLE_PAYLOAD:  util.StringPointerOrEmpty(plan.AssignOrgRolePayload),
+		REMOVE_ORGROLE_PAYLOAD:  util.StringPointerOrEmpty(plan.RemoveOrgRolePayload),
 	}
 	workdayConnRequest := openapi.CreateOrUpdateRequest{
 		WorkdayConnector: &workdayConn,
 	}
 
 	apiResp, _, err := apiClient.ConnectionsAPI.CreateOrUpdate(ctx).CreateOrUpdateRequest(workdayConnRequest).Execute()
-	if err != nil || *apiResp.ErrorCode != "0" {
+	if err != nil {
 		log.Printf("[ERROR] Failed to create API resource. Error: %v", err)
 		resp.Diagnostics.AddError("API Create Failed", fmt.Sprintf("Error: %v", err))
 		return
 	}
+	if apiResp!=nil && *apiResp.ErrorCode !="0"{
+		log.Printf("[ERROR]: Error in creating Workday connection resource. Errorcode: %v, Message: %v", *apiResp.ErrorCode, *apiResp.Msg)
+		resp.Diagnostics.AddError("Creation of Workday connection failed", *apiResp.Msg)
+		return
+	}
+
 	if plan.UseEnhancedOrgRole.IsNull() || plan.UseEnhancedOrgRole.ValueString() == "" {
 		plan.UseEnhancedOrgRole = types.StringValue("TRUE")
 	}
 	plan.ID = types.StringValue(fmt.Sprintf("%d", *apiResp.ConnectionKey))
 	plan.ConnectionType = types.StringValue("Workday")
 	plan.ConnectionKey = types.Int64Value(int64(*apiResp.ConnectionKey))
-	plan.Description = util.SafeStringDatasource(plan.Description.ValueStringPointer())
+	// plan.Description = util.SafeStringDatasource(plan.Description.ValueStringPointer())
 	plan.DefaultSavRoles = util.SafeStringDatasource(plan.DefaultSavRoles.ValueStringPointer())
 	plan.EmailTemplate = util.SafeStringDatasource(plan.EmailTemplate.ValueStringPointer())
 	plan.UsersLastImportTime = util.SafeStringDatasource(plan.UsersLastImportTime.ValueStringPointer())
@@ -442,7 +460,7 @@ func (r *workdayConnectionResource) Create(ctx context.Context, req resource.Cre
 	plan.AccessImportList = util.SafeStringDatasource(plan.AccessImportList.ValueStringPointer())
 	plan.RAASMappingJSON = util.SafeStringDatasource(plan.RAASMappingJSON.ValueStringPointer())
 	plan.AccessImportMapping = util.SafeStringDatasource(plan.AccessImportMapping.ValueStringPointer())
-	plan.OrgRoleImportPayload = util.SafeStringDatasource(plan.OrgRoleImportPayload.ValueStringPointer())
+	// plan.OrgRoleImportPayload = util.SafeStringDatasource(plan.OrgRoleImportPayload.ValueStringPointer())
 	plan.StatusKeyJSON = util.SafeStringDatasource(plan.StatusKeyJSON.ValueStringPointer())
 	plan.UserAttributeJSON = util.SafeStringDatasource(plan.UserAttributeJSON.ValueStringPointer())
 	plan.CustomConfig = util.SafeStringDatasource(plan.CustomConfig.ValueStringPointer())
@@ -483,10 +501,16 @@ func (r *workdayConnectionResource) Read(ctx context.Context, req resource.ReadR
 		resp.Diagnostics.AddError("API Read Failed", fmt.Sprintf("Error: %v", err))
 		return
 	}
+	if apiResp!=nil && *apiResp.WorkdayConnectionResponse.Errorcode !=0{
+		log.Printf("[ERROR]: Error in reading Workday connection resource. Errorcode: %v, Message: %v", *apiResp.WorkdayConnectionResponse.Errorcode, *apiResp.WorkdayConnectionResponse.Msg)
+		resp.Diagnostics.AddError("Reading Workday connection resource failed", *apiResp.WorkdayConnectionResponse.Msg)
+		return
+	}
+
 	state.ConnectionKey = types.Int64Value(int64(*apiResp.WorkdayConnectionResponse.Connectionkey))
 	state.ID = types.StringValue(fmt.Sprintf("%d", *apiResp.WorkdayConnectionResponse.Connectionkey))
 	state.ConnectionName = util.SafeStringDatasource(apiResp.WorkdayConnectionResponse.Connectionname)
-	state.Description = util.SafeStringDatasource(apiResp.WorkdayConnectionResponse.Description)
+	// state.Description = util.SafeStringDatasource(apiResp.WorkdayConnectionResponse.Description)
 	state.DefaultSavRoles = util.SafeStringDatasource(apiResp.WorkdayConnectionResponse.Defaultsavroles)
 	state.ConnectionType = util.SafeStringDatasource(apiResp.WorkdayConnectionResponse.Connectiontype)
 	state.EmailTemplate = util.SafeStringDatasource(apiResp.WorkdayConnectionResponse.Emailtemplate)
@@ -503,7 +527,7 @@ func (r *workdayConnectionResource) Read(ctx context.Context, req resource.ReadR
 	state.Username = util.SafeStringDatasource(apiResp.WorkdayConnectionResponse.Connectionattributes.USERNAME)
 	state.AccessImportList = util.SafeStringDatasource(apiResp.WorkdayConnectionResponse.Connectionattributes.ACCESS_IMPORT_LIST)
 	state.AccountImportMapping = util.SafeStringDatasource(apiResp.WorkdayConnectionResponse.Connectionattributes.ACCOUNT_IMPORT_MAPPING)
-	state.OrgRoleImportPayload = util.SafeStringDatasource(apiResp.WorkdayConnectionResponse.Connectionattributes.ORGROLE_IMPORT_PAYLOAD)
+	// state.OrgRoleImportPayload = util.SafeStringDatasource(apiResp.WorkdayConnectionResponse.Connectionattributes.ORGROLE_IMPORT_PAYLOAD)
 	state.AssignOrgRolePayload = util.SafeStringDatasource(apiResp.WorkdayConnectionResponse.Connectionattributes.ASSIGN_ORGROLE_PAYLOAD)
 	state.AccessImportMapping = util.SafeStringDatasource(apiResp.WorkdayConnectionResponse.Connectionattributes.ACCESS_IMPORT_MAPPING)
 	state.APIVersion = util.SafeStringDatasource(apiResp.WorkdayConnectionResponse.Connectionattributes.API_VERSION)
@@ -580,7 +604,7 @@ func (r *workdayConnectionResource) Update(ctx context.Context, req resource.Upd
 			Connectiontype: "Workday",
 			ConnectionName: plan.ConnectionName.ValueString(),
 			//optional fields
-			Description:        util.StringPointerOrEmpty(plan.Description),
+			// Description:        util.StringPointerOrEmpty(plan.Description),
 			Defaultsavroles:    util.StringPointerOrEmpty(plan.DefaultSavRoles),
 			EmailTemplate:      util.StringPointerOrEmpty(plan.EmailTemplate),
 			VaultConnection:    util.SafeStringConnector(plan.VaultConnection.ValueString()),
@@ -615,18 +639,18 @@ func (r *workdayConnectionResource) Update(ctx context.Context, req resource.Upd
 		ACCESS_IMPORT_LIST:            util.StringPointerOrEmpty(plan.AccessImportList),
 		RAAS_MAPPING_JSON:             util.StringPointerOrEmpty(plan.RAASMappingJSON),
 		ACCESS_IMPORT_MAPPING:         util.StringPointerOrEmpty(plan.AccessImportMapping),
-		ORGROLE_IMPORT_PAYLOAD:        util.StringPointerOrEmpty(plan.OrgRoleImportPayload),
-		STATUS_KEY_JSON:               util.StringPointerOrEmpty(plan.StatusKeyJSON),
-		USERATTRIBUTEJSON:             util.StringPointerOrEmpty(plan.UserAttributeJSON),
-		CUSTOM_CONFIG:                 util.StringPointerOrEmpty(plan.CustomConfig),
-		PAM_CONFIG:                    util.StringPointerOrEmpty(plan.PAMConfig),
-		MODIFYUSERDATAJSON:            util.StringPointerOrEmpty(plan.ModifyUserDataJSON),
-		STATUS_THRESHOLD_CONFIG:       util.StringPointerOrEmpty(plan.StatusThresholdConfig),
-		CREATE_ACCOUNT_PAYLOAD:        util.StringPointerOrEmpty(plan.CreateAccountPayload),
-		UPDATE_ACCOUNT_PAYLOAD:        util.StringPointerOrEmpty(plan.UpdateAccountPayload),
-		UPDATE_USER_PAYLOAD:           util.StringPointerOrEmpty(plan.UpdateUserPayload),
-		ASSIGN_ORGROLE_PAYLOAD:        util.StringPointerOrEmpty(plan.AssignOrgRolePayload),
-		REMOVE_ORGROLE_PAYLOAD:        util.StringPointerOrEmpty(plan.RemoveOrgRolePayload),
+		// ORGROLE_IMPORT_PAYLOAD:        util.StringPointerOrEmpty(plan.OrgRoleImportPayload),
+		STATUS_KEY_JSON:         util.StringPointerOrEmpty(plan.StatusKeyJSON),
+		USERATTRIBUTEJSON:       util.StringPointerOrEmpty(plan.UserAttributeJSON),
+		CUSTOM_CONFIG:           util.StringPointerOrEmpty(plan.CustomConfig),
+		PAM_CONFIG:              util.StringPointerOrEmpty(plan.PAMConfig),
+		MODIFYUSERDATAJSON:      util.StringPointerOrEmpty(plan.ModifyUserDataJSON),
+		STATUS_THRESHOLD_CONFIG: util.StringPointerOrEmpty(plan.StatusThresholdConfig),
+		CREATE_ACCOUNT_PAYLOAD:  util.StringPointerOrEmpty(plan.CreateAccountPayload),
+		UPDATE_ACCOUNT_PAYLOAD:  util.StringPointerOrEmpty(plan.UpdateAccountPayload),
+		UPDATE_USER_PAYLOAD:     util.StringPointerOrEmpty(plan.UpdateUserPayload),
+		ASSIGN_ORGROLE_PAYLOAD:  util.StringPointerOrEmpty(plan.AssignOrgRolePayload),
+		REMOVE_ORGROLE_PAYLOAD:  util.StringPointerOrEmpty(plan.RemoveOrgRolePayload),
 	}
 	workdayConnRequest := openapi.CreateOrUpdateRequest{
 		WorkdayConnector: &workdayConn,
@@ -635,10 +659,16 @@ func (r *workdayConnectionResource) Update(ctx context.Context, req resource.Upd
 	// Initialize API client
 	apiClient := openapi.NewAPIClient(cfg)
 	apiResp, _, err := apiClient.ConnectionsAPI.CreateOrUpdate(ctx).CreateOrUpdateRequest(workdayConnRequest).Execute()
-	if err != nil || *apiResp.ErrorCode != "0" {
+	if err != nil {
 		resp.Diagnostics.AddError("API Create Failed", fmt.Sprintf("Error: %v", err))
 		return
 	}
+	if apiResp!=nil && *apiResp.ErrorCode !="0"{
+		log.Printf("[ERROR]: Error in updating Workday connection resource. Errorcode: %v, Message: %v", *apiResp.ErrorCode, *apiResp.Msg)
+		resp.Diagnostics.AddError("Updation of Workday connection failed", *apiResp.Msg)
+		return
+	}
+
 	reqParams := openapi.GetConnectionDetailsRequest{}
 
 	reqParams.SetConnectionname(plan.ConnectionName.ValueString())
@@ -647,11 +677,17 @@ func (r *workdayConnectionResource) Update(ctx context.Context, req resource.Upd
 		log.Printf("Problem with the get function in update block")
 		resp.Diagnostics.AddError("API Read Failed", fmt.Sprintf("Error: %v", err))
 		return
+	}	
+	if getResp!=nil && *getResp.WorkdayConnectionResponse.Errorcode !=0{
+		log.Printf("[ERROR]: Error in reading Workday connection resource after updation. Errorcode: %v, Message: %v", *getResp.WorkdayConnectionResponse.Errorcode, *getResp.WorkdayConnectionResponse.Msg)
+		resp.Diagnostics.AddError("Reading Workday connection after updation failed", *getResp.WorkdayConnectionResponse.Msg)
+		return
 	}
+
 	plan.ConnectionKey = types.Int64Value(int64(*getResp.WorkdayConnectionResponse.Connectionkey))
 	plan.ID = types.StringValue(fmt.Sprintf("%d", *getResp.WorkdayConnectionResponse.Connectionkey))
 	plan.ConnectionName = util.SafeStringDatasource(getResp.WorkdayConnectionResponse.Connectionname)
-	plan.Description = util.SafeStringDatasource(getResp.WorkdayConnectionResponse.Description)
+	// plan.Description = util.SafeStringDatasource(getResp.WorkdayConnectionResponse.Description)
 	plan.DefaultSavRoles = util.SafeStringDatasource(getResp.WorkdayConnectionResponse.Defaultsavroles)
 	plan.ConnectionType = util.SafeStringDatasource(getResp.WorkdayConnectionResponse.Connectiontype)
 	plan.EmailTemplate = util.SafeStringDatasource(getResp.WorkdayConnectionResponse.Emailtemplate)
@@ -668,7 +704,7 @@ func (r *workdayConnectionResource) Update(ctx context.Context, req resource.Upd
 	plan.Username = util.SafeStringDatasource(getResp.WorkdayConnectionResponse.Connectionattributes.USERNAME)
 	plan.AccessImportList = util.SafeStringDatasource(getResp.WorkdayConnectionResponse.Connectionattributes.ACCESS_IMPORT_LIST)
 	plan.AccountImportMapping = util.SafeStringDatasource(getResp.WorkdayConnectionResponse.Connectionattributes.ACCOUNT_IMPORT_MAPPING)
-	plan.OrgRoleImportPayload = util.SafeStringDatasource(getResp.WorkdayConnectionResponse.Connectionattributes.ORGROLE_IMPORT_PAYLOAD)
+	// plan.OrgRoleImportPayload = util.SafeStringDatasource(getResp.WorkdayConnectionResponse.Connectionattributes.ORGROLE_IMPORT_PAYLOAD)
 	plan.AssignOrgRolePayload = util.SafeStringDatasource(getResp.WorkdayConnectionResponse.Connectionattributes.ASSIGN_ORGROLE_PAYLOAD)
 	plan.AccessImportMapping = util.SafeStringDatasource(getResp.WorkdayConnectionResponse.Connectionattributes.ACCESS_IMPORT_MAPPING)
 	plan.APIVersion = util.SafeStringDatasource(getResp.WorkdayConnectionResponse.Connectionattributes.API_VERSION)

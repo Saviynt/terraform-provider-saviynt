@@ -1,3 +1,6 @@
+# Copyright (c) HashiCorp, Inc.
+# SPDX-License-Identifier: MPL-2.0
+
 openapi: 3.1.0
 info:
   description: |
@@ -961,63 +964,63 @@ components:
           description: Custom Property 30
           example: value30
           type: string
-        Custom Property 31:
+        customproperty31:
           description: Custom Property 31
           example: value31
           type: string
-        Custom Property 32:
+        customproperty32:
           description: Custom Property 32
           example: value32
           type: string
-        Custom Property 33:
+        customproperty33:
           description: Custom Property 33
           example: value33
           type: string
-        Custom Property 34:
+        customproperty34:
           description: Custom Property 34
           example: value34
           type: string
-        Custom Property 35:
+        customproperty35:
           description: Custom Property 35
           example: value35
           type: string
-        Custom Property 36:
+        customproperty36:
           description: Custom Property 36
           example: value36
           type: string
-        Custom Property 37:
+        customproperty37:
           description: Custom Property 37
           example: value37
           type: string
-        Custom Property 38:
+        customproperty38:
           description: Custom Property 38
           example: value38
           type: string
-        Custom Property 39:
+        customproperty39:
           description: Custom Property 39
           example: value39
           type: string
-        Custom Property 40:
+        customproperty40:
           description: Custom Property 40
           example: value40
           type: string
-        Custom Property 41:
+        customproperty41:
           description: Custom Property 41
           example: value41
           type: string
-        Custom Property 42:
+        customproperty42:
           description: Custom Property 42
           example: value42
           type: string
-        Custom Property 43:
+        customproperty43:
           description: Custom Property 43
           example: value43
           type: string
-        Custom Property 44:
+        customproperty44:
           description: Custom Property 44
           example: value44
           type: string
-        Custom Property 45:
+        customproperty45:
           description: Custom Property 45
           example: value45
           type: string
@@ -1303,7 +1306,7 @@ components:
           type: string
         requestable:
           description: Is this endpoint requestable
-          type: string
+          type: boolean
         parentAccountPattern:
           description: Specify the parent and child relationship for the Active Directory
             endpoint. The specified value is used to filter the parent and child objects
@@ -1782,8 +1785,8 @@ components:
         allowRemoveAllRoleOnRequest:
           description: Whether to display 'Remove All Roles' option in the Request
             page
-          example: "true"
-          type: string
+          example: true
+          type: boolean
       required:
       - displayName
       - endpointname
@@ -2271,8 +2274,8 @@ components:
           type: string
         requestable:
           description: Is this endpoint requestable.
-          example: "false"
-          type: string
+          example: false
+          type: boolean
         parentAccountPattern:
           description: Specify the parent and child relationship for the Active Directory
             endpoint. The specified value is used to filter the parent and child objects
@@ -2736,7 +2739,7 @@ components:
         allowRemoveAllRoleOnRequest:
           description: Specify true to displays the Remove All Roles option in the
             Request page that can be used to remove all the roles.
-          example: "true"
-          type: string
+          example: true
+          type: boolean
       required:
       - endpointname

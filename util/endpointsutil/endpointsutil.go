@@ -1,9 +1,22 @@
-// Copyright (c) Saviynt Inc.
-// SPDX-License-Identifier: MPL-2.0
+/*
+ * Copyright (c) 2025 Saviynt Inc.
+ * All Rights Reserved.
+ *
+ * This software is the confidential and proprietary information of
+ * Saviynt Inc. ("Confidential Information"). You shall not disclose,
+ * use, or distribute such Confidential Information except in accordance
+ * with the terms of the license agreement you entered into with Saviynt.
+ *
+ * SAVIYNT MAKES NO REPRESENTATIONS OR WARRANTIES ABOUT THE SUITABILITY OF
+ * THE SOFTWARE, EITHER EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO
+ * THE IMPLIED WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR
+ * PURPOSE, OR NON-INFRINGEMENT.
+ */
 
 package endpointsutil
 
 import (
+	"encoding/json"
 	"strings"
 )
 
@@ -64,4 +77,17 @@ func NormalizeToStringBool(val string) string {
 	default:
 		return "false" // or handle unknowns explicitly
 	}
+}
+
+func NormalizeJSON(input string) (string, error) {
+	var jsonObj interface{}
+	if err := json.Unmarshal([]byte(input), &jsonObj); err != nil {
+		return "", err
+	}
+
+	compact, err := json.Marshal(jsonObj)
+	if err != nil {
+		return "", err
+	}
+	return string(compact), nil
 }

@@ -1,5 +1,17 @@
-// Copyright (c) Saviynt Inc.
-// SPDX-License-Identifier: MPL-2.0
+/*
+ * Copyright (c) 2025 Saviynt Inc.
+ * All Rights Reserved.
+ *
+ * This software is the confidential and proprietary information of
+ * Saviynt Inc. ("Confidential Information"). You shall not disclose,
+ * use, or distribute such Confidential Information except in accordance
+ * with the terms of the license agreement you entered into with Saviynt.
+ *
+ * SAVIYNT MAKES NO REPRESENTATIONS OR WARRANTIES ABOUT THE SUITABILITY OF
+ * THE SOFTWARE, EITHER EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO
+ * THE IMPLIED WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR
+ * PURPOSE, OR NON-INFRINGEMENT.
+ */
 
 variable "BASE_URL" {
   type        = string
@@ -137,12 +149,6 @@ resource "saviynt_workday_connection_resource" "soap" {
           <bsvc:Exclude_Gift_Hierarchies>true</bsvc:Exclude_Gift_Hierarchies>
       </bsvc:Response_Group>
   </bsvc:Get_Workers_Request>
-  EOF
-  )
-
-  orgrole_import_payload = trimspace(
-    <<EOF
-  <bsvc:Get_Organizations_Request bsvc:version="$${API_VERSION}"><bsvc:Request_Criteria><bsvc:Include_Inactive>1</bsvc:Include_Inactive>$${INCREMENTAL_IMPORT_CRITERIA}</bsvc:Request_Criteria><bsvc:Response_Filter><bsvc:Page>$${PAGE_NUMBER}</bsvc:Page><bsvc:Count>$${PAGE_SIZE}</bsvc:Count></bsvc:Response_Filter><bsvc:Response_Group><bsvc:Include_Roles_Data>1</bsvc:Include_Roles_Data><bsvc:Include_Hierarchy_Data>0</bsvc:Include_Hierarchy_Data><bsvc:Include_Supervisory_Data>0</bsvc:Include_Supervisory_Data><bsvc:Include_Staffing_Restrictions_Data>0</bsvc:Include_Staffing_Restrictions_Data></bsvc:Response_Group></bsvc:Get_Organizations_Request>
   EOF
   )
 

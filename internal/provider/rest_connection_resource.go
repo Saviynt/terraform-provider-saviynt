@@ -1,5 +1,17 @@
-// Copyright (c) Saviynt Inc.
-// SPDX-License-Identifier: MPL-2.0
+/*
+ * Copyright (c) 2025 Saviynt Inc.
+ * All Rights Reserved.
+ *
+ * This software is the confidential and proprietary information of
+ * Saviynt Inc. ("Confidential Information"). You shall not disclose,
+ * use, or distribute such Confidential Information except in accordance
+ * with the terms of the license agreement you entered into with Saviynt.
+ *
+ * SAVIYNT MAKES NO REPRESENTATIONS OR WARRANTIES ABOUT THE SUITABILITY OF
+ * THE SOFTWARE, EITHER EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO
+ * THE IMPLIED WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR
+ * PURPOSE, OR NON-INFRINGEMENT.
+ */
 
 // saviynt_rest_connection_resource manages Rest connectors in the Saviynt Security Manager.
 // The resource implements the full Terraform lifecycle:
@@ -12,6 +24,7 @@ package provider
 import (
 	"context"
 	"os"
+
 	// "encoding/json"
 	"fmt"
 	"log"
@@ -269,14 +282,14 @@ func (r *restConnectionResource) Create(ctx context.Context, req resource.Create
 		resp.Diagnostics.AddError("API Create Failed", "Connection name already exists. Please import or use a different name")
 		return
 	}
-	log.Print("Debug the config connection json", config.ConnectionJSON)
+
 	restConn := openapi.RESTConnector{
 		BaseConnector: openapi.BaseConnector{
 			//required fields
 			Connectiontype: "REST",
 			ConnectionName: plan.ConnectionName.ValueString(),
 			//optional fields
-			Description:        util.StringPointerOrEmpty(plan.Description),
+			// Description:        util.StringPointerOrEmpty(plan.Description),
 			Defaultsavroles:    util.StringPointerOrEmpty(plan.DefaultSavRoles),
 			EmailTemplate:      util.StringPointerOrEmpty(plan.EmailTemplate),
 			VaultConnection:    util.StringPointerOrEmpty(plan.VaultConnection),
@@ -315,15 +328,21 @@ func (r *restConnectionResource) Create(ctx context.Context, req resource.Create
 	log.Print("[DEBUG] Creating REST connection with request: ", restConn.ConnectionJSON)
 	// Initialize API client
 	apiResp, _, err := apiClient.ConnectionsAPI.CreateOrUpdate(ctx).CreateOrUpdateRequest(restConnRequest).Execute()
-	if err != nil || *apiResp.ErrorCode != "0" {
-		log.Printf("[ERROR] Failed to create API resource. Error: %v", *apiResp.Msg)
-		resp.Diagnostics.AddError("API Create Failed", fmt.Sprintf("Error: %v", *apiResp.Msg))
+	if err != nil {
+		log.Printf("[ERROR] Failed to create API resource. Error: %v", err)
+		resp.Diagnostics.AddError("API Create Failed", fmt.Sprintf("Error: %v", err))
 		return
 	}
+	if apiResp!=nil && *apiResp.ErrorCode !="0"{
+		log.Printf("[ERROR]: Error in creating REST connection resource. Errorcode: %v, Message: %v", *apiResp.ErrorCode, *apiResp.Msg)
+		resp.Diagnostics.AddError("Creation of REST connection failed", *apiResp.Msg)
+		return
+	}
+
 	plan.ID = types.StringValue(fmt.Sprintf("%d", *apiResp.ConnectionKey))
 	plan.ConnectionType = types.StringValue("REST")
 	plan.ConnectionKey = types.Int64Value(int64(*apiResp.ConnectionKey))
-	plan.Description = util.SafeStringDatasource(plan.Description.ValueStringPointer())
+	// plan.Description = util.SafeStringDatasource(plan.Description.ValueStringPointer())
 	plan.DefaultSavRoles = util.SafeStringDatasource(plan.DefaultSavRoles.ValueStringPointer())
 	plan.EmailTemplate = util.SafeStringDatasource(plan.EmailTemplate.ValueStringPointer())
 	plan.ImportUserJson = util.SafeStringDatasource(plan.ImportUserJson.ValueStringPointer())
@@ -379,10 +398,16 @@ func (r *restConnectionResource) Read(ctx context.Context, req resource.ReadRequ
 		resp.Diagnostics.AddError("API Read Failed", fmt.Sprintf("Error: %v", err))
 		return
 	}
+	if apiResp!=nil && *apiResp.RESTConnectionResponse.Errorcode !=0{
+		log.Printf("[ERROR]: Error in reading REST connection. Errorcode: %v, Message: %v", *apiResp.RESTConnectionResponse.Errorcode, *apiResp.RESTConnectionResponse.Msg)
+		resp.Diagnostics.AddError("Reading REST connection failed", *apiResp.RESTConnectionResponse.Msg)
+		return
+	}
+
 	state.ConnectionKey = types.Int64Value(int64(*apiResp.RESTConnectionResponse.Connectionkey))
 	state.ID = types.StringValue(fmt.Sprintf("%d", *apiResp.RESTConnectionResponse.Connectionkey))
 	state.ConnectionName = util.SafeStringDatasource(apiResp.RESTConnectionResponse.Connectionname)
-	state.Description = util.SafeStringDatasource(apiResp.RESTConnectionResponse.Description)
+	// state.Description = util.SafeStringDatasource(apiResp.RESTConnectionResponse.Description)
 	state.DefaultSavRoles = util.SafeStringDatasource(apiResp.RESTConnectionResponse.Defaultsavroles)
 	state.ConnectionType = util.SafeStringDatasource(apiResp.RESTConnectionResponse.Connectiontype)
 	state.EmailTemplate = util.SafeStringDatasource(apiResp.RESTConnectionResponse.Emailtemplate)
@@ -474,7 +499,7 @@ func (r *restConnectionResource) Update(ctx context.Context, req resource.Update
 			Connectiontype: "REST",
 			ConnectionName: plan.ConnectionName.ValueString(),
 			//optional fields
-			Description:        util.StringPointerOrEmpty(plan.Description),
+			// Description:        util.StringPointerOrEmpty(plan.Description),
 			Defaultsavroles:    util.StringPointerOrEmpty(plan.DefaultSavRoles),
 			EmailTemplate:      util.StringPointerOrEmpty(plan.EmailTemplate),
 			VaultConnection:    util.StringPointerOrEmpty(plan.VaultConnection),
@@ -515,11 +540,17 @@ func (r *restConnectionResource) Update(ctx context.Context, req resource.Update
 	apiClient := openapi.NewAPIClient(cfg)
 
 	apiResp, _, err := apiClient.ConnectionsAPI.CreateOrUpdate(ctx).CreateOrUpdateRequest(restConnRequest).Execute()
-	if err != nil || *apiResp.ErrorCode != "0" {
+	if err != nil {
 		log.Printf("Problem with the update function")
-		resp.Diagnostics.AddError("API Update Failed", fmt.Sprintf("Error: %v", *apiResp.Msg))
+		resp.Diagnostics.AddError("API Update Failed", fmt.Sprintf("Error: %v", err))
 		return
 	}
+	if apiResp!=nil && *apiResp.ErrorCode !="0"{
+		log.Printf("[ERROR]: Error in updating REST connection resource. Errorcode: %v, Message: %v", *apiResp.ErrorCode, *apiResp.Msg)
+		resp.Diagnostics.AddError("Updation of REST connection failed", *apiResp.Msg)
+		return
+	}
+
 	reqParams := openapi.GetConnectionDetailsRequest{}
 
 	reqParams.SetConnectionname(plan.ConnectionName.ValueString())
@@ -529,10 +560,16 @@ func (r *restConnectionResource) Update(ctx context.Context, req resource.Update
 		resp.Diagnostics.AddError("API Read Failed", fmt.Sprintf("Error: %v", err))
 		return
 	}
+	if getResp!=nil && *getResp.RESTConnectionResponse.Errorcode !=0{
+		log.Printf("[ERROR]: Error in reading REST connection after updation. Errorcode: %v, Message: %v", *getResp.RESTConnectionResponse.Errorcode, *getResp.RESTConnectionResponse.Msg)
+		resp.Diagnostics.AddError("Reading REST connection after updation failed", *getResp.RESTConnectionResponse.Msg)
+		return
+	}
+
 	plan.ConnectionKey = types.Int64Value(int64(*getResp.RESTConnectionResponse.Connectionkey))
 	plan.ID = types.StringValue(fmt.Sprintf("%d", *getResp.RESTConnectionResponse.Connectionkey))
 	plan.ConnectionName = util.SafeStringDatasource(getResp.RESTConnectionResponse.Connectionname)
-	plan.Description = util.SafeStringDatasource(getResp.RESTConnectionResponse.Description)
+	// plan.Description = util.SafeStringDatasource(getResp.RESTConnectionResponse.Description)
 	plan.DefaultSavRoles = util.SafeStringDatasource(getResp.RESTConnectionResponse.Defaultsavroles)
 	plan.ConnectionType = util.SafeStringDatasource(getResp.RESTConnectionResponse.Connectiontype)
 	plan.EmailTemplate = util.SafeStringDatasource(getResp.RESTConnectionResponse.Emailtemplate)
