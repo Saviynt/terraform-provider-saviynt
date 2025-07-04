@@ -55,6 +55,7 @@ Read-Only:
 - `add_access_entitlement_json` (String)
 - `add_access_json` (String)
 - `check_for_unique` (String)
+- `connection_timeout_config` (Attributes) (see [below for nested schema](#nestedatt--connection_attributes--connection_timeout_config))
 - `connection_type` (String)
 - `connection_url` (String)
 - `create_account_json` (String)
@@ -100,3 +101,16 @@ Read-Only:
 - `url` (String)
 - `user_attribute` (String)
 - `username` (String)
+
+<a id="nestedatt--connection_attributes--connection_timeout_config"></a>
+### Nested Schema for `connection_attributes.connection_timeout_config`
+
+Read-Only:
+
+- `connection_timeout` (Number)
+- `read_timeout` (Number)
+- `retry_count` (Number)
+- `retry_failure_status_code` (Number)
+- `retry_wait` (Number)
+- `retry_wait_max_value` (Number)
+- `token_refresh_max_try_count` (Number)

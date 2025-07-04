@@ -1,17 +1,5 @@
-/*
- * Copyright (c) 2025 Saviynt Inc.
- * All Rights Reserved.
- *
- * This software is the confidential and proprietary information of
- * Saviynt Inc. ("Confidential Information"). You shall not disclose,
- * use, or distribute such Confidential Information except in accordance
- * with the terms of the license agreement you entered into with Saviynt.
- *
- * SAVIYNT MAKES NO REPRESENTATIONS OR WARRANTIES ABOUT THE SUITABILITY OF
- * THE SOFTWARE, EITHER EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO
- * THE IMPLIED WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR
- * PURPOSE, OR NON-INFRINGEMENT.
- */
+// Copyright (c) Saviynt Inc.
+// SPDX-License-Identifier: MPL-2.0
 
 // securitysystem_resource_test.go contains the Terraform acceptance test suite for
 // the `saviynt_security_system_resource`. It validates the resource’s full lifecycle against
@@ -46,7 +34,6 @@ func TestAccSaviyntSecuritySystemResource(t *testing.T) {
 	createCfg := testutil.LoadConnectorData(t, filePath, "create")
 	updateCfg := testutil.LoadConnectorData(t, filePath, "update")
 	resourceName := "saviynt_security_system_resource.ss"
-	securitySystemName := createCfg["systemname"]
 	resource.Test(t, resource.TestCase{
 		PreCheck:                 func() { TestAccPreCheck(t) },
 		ProtoV6ProviderFactories: TestAccProtoV6ProviderFactories,
@@ -91,10 +78,8 @@ func TestAccSaviyntSecuritySystemResource(t *testing.T) {
 			},
 			// Create a new resource with the same Systemname
 			{
-				Config: testAccSecuritySecuritySystemWithSameNameConfig(filePath, "create_duplicate_security_system"),
-				ExpectError: regexp.MustCompile(
-					fmt.Sprintf(`systemname %s already exists`, securitySystemName),
-				),
+				Config:      testAccSecuritySecuritySystemWithSameNameConfig(filePath, "create_duplicate_security_system"),
+				ExpectError: regexp.MustCompile(`Security System Already Exists`),
 			},
 		},
 	})

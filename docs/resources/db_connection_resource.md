@@ -3,30 +3,18 @@
 page_title: "saviynt_db_connection_resource Resource - saviynt"
 subcategory: ""
 description: |-
-  Create and manage AD connector in Saviynt
+  Create and manage DB connector in Saviynt
 ---
 
 # saviynt_db_connection_resource (Resource)
 
-Create and manage AD connector in Saviynt
+Create and manage DB connector in Saviynt
 
 ## Example Usage
 
 ```terraform
-/*
- * Copyright (c) 2025 Saviynt Inc.
- * All Rights Reserved.
- *
- * This software is the confidential and proprietary information of
- * Saviynt Inc. ("Confidential Information"). You shall not disclose,
- * use, or distribute such Confidential Information except in accordance
- * with the terms of the license agreement you entered into with Saviynt.
- *
- * SAVIYNT MAKES NO REPRESENTATIONS OR WARRANTIES ABOUT THE SUITABILITY OF
- * THE SOFTWARE, EITHER EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO
- * THE IMPLIED WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR
- * PURPOSE, OR NON-INFRINGEMENT.
- */
+// Copyright (c) Saviynt Inc.
+// SPDX-License-Identifier: MPL-2.0
 
 variable "URL" {
   type        = string
@@ -270,6 +258,7 @@ EOF
 - `create_account_json` (String) JSON to specify the queries/stored procedures used to create a new account (e.g., randomPassword, task, user, accountName, role, endpoint, etc.)
 - `defaultsavroles` (String) Default SAV roles for managing the connection. Example: "ROLE_ORG"
 - `delete_account_json` (String) JSON to specify the queries/stored procedures used to delete an account
+- `description` (String) Description for the connection. Example: "ORG_AD"
 - `disable_account_json` (String) JSON to specify the queries/stored procedures used to disable an account
 - `email_template` (String) Email template for notifications. Example: "New Account Task Creation"
 - `enable_account_json` (String) JSON to specify the queries/stored procedures used to enable an account

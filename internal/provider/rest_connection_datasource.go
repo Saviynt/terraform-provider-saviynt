@@ -1,17 +1,5 @@
-/*
- * Copyright (c) 2025 Saviynt Inc.
- * All Rights Reserved.
- *
- * This software is the confidential and proprietary information of
- * Saviynt Inc. ("Confidential Information"). You shall not disclose,
- * use, or distribute such Confidential Information except in accordance
- * with the terms of the license agreement you entered into with Saviynt.
- *
- * SAVIYNT MAKES NO REPRESENTATIONS OR WARRANTIES ABOUT THE SUITABILITY OF
- * THE SOFTWARE, EITHER EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO
- * THE IMPLIED WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR
- * PURPOSE, OR NON-INFRINGEMENT.
- */
+// Copyright (c) Saviynt Inc.
+// SPDX-License-Identifier: MPL-2.0
 
 // saviynt_rest_connection_datasource retrieves rest connections details from the Saviynt Security Manager.
 // The data source supports a single Read operation to look up an existing rest connections by name.
@@ -49,34 +37,34 @@ type RESTConnectionDataSourceModel struct {
 }
 
 type RESTConnectionAttributes struct {
-	UpdateUserJSON        types.String `tfsdk:"update_user_json"`
-	ChangePassJSON        types.String `tfsdk:"change_pass_json"`
-	RemoveAccountJSON     types.String `tfsdk:"remove_account_json"`
-	TicketStatusJSON      types.String `tfsdk:"ticket_status_json"`
-	CreateTicketJSON      types.String `tfsdk:"create_ticket_json"`
-	ConnectionType        types.String `tfsdk:"connection_type"`
-	EndpointsFilter       types.String `tfsdk:"endpoints_filter"`
-	PasswdPolicyJSON      types.String `tfsdk:"passwd_policy_json"`
-	ConfigJSON            types.String `tfsdk:"config_json"`
-	AddFFIDAccessJSON     types.String `tfsdk:"add_ffid_access_json"`
-	RemoveFFIDAccessJSON  types.String `tfsdk:"remove_ffid_access_json"`
-	StatusThresholdConfig types.String `tfsdk:"status_threshold_config"`
-	ModifyUserDataJSON    types.String `tfsdk:"modify_user_data_json"`
-	SendOtpJSON           types.String `tfsdk:"send_otp_json"`
-	ValidateOtpJSON       types.String `tfsdk:"validate_otp_json"`
-	PamConfig             types.String `tfsdk:"pam_config"`
-	// ConnectionTimeoutConfig  ConnectionTimeoutConfig `tfsdk:"connection_timeout_config"`
-	CreateAccountJSON        types.String `tfsdk:"create_account_json"`
-	UpdateAccountJSON        types.String `tfsdk:"update_account_json"`
-	EnableAccountJSON        types.String `tfsdk:"enable_account_json"`
-	DisableAccountJSON       types.String `tfsdk:"disable_account_json"`
-	AddAccessJSON            types.String `tfsdk:"add_access_json"`
-	RemoveAccessJSON         types.String `tfsdk:"remove_access_json"`
-	ImportUserJSON           types.String `tfsdk:"import_user_json"`
-	IsTimeoutSupported       types.Bool   `tfsdk:"is_timeout_supported"`
-	ImportAccountEntJSON     types.String `tfsdk:"import_account_ent_json"`
-	IsTimeoutConfigValidated types.Bool   `tfsdk:"is_timeout_config_validated"`
-	ConnectionJSON           types.String `tfsdk:"connection_json"`
+	UpdateUserJSON           types.String            `tfsdk:"update_user_json"`
+	ChangePassJSON           types.String            `tfsdk:"change_pass_json"`
+	RemoveAccountJSON        types.String            `tfsdk:"remove_account_json"`
+	TicketStatusJSON         types.String            `tfsdk:"ticket_status_json"`
+	CreateTicketJSON         types.String            `tfsdk:"create_ticket_json"`
+	ConnectionType           types.String            `tfsdk:"connection_type"`
+	EndpointsFilter          types.String            `tfsdk:"endpoints_filter"`
+	PasswdPolicyJSON         types.String            `tfsdk:"passwd_policy_json"`
+	ConfigJSON               types.String            `tfsdk:"config_json"`
+	AddFFIDAccessJSON        types.String            `tfsdk:"add_ffid_access_json"`
+	RemoveFFIDAccessJSON     types.String            `tfsdk:"remove_ffid_access_json"`
+	StatusThresholdConfig    types.String            `tfsdk:"status_threshold_config"`
+	ModifyUserDataJSON       types.String            `tfsdk:"modify_user_data_json"`
+	SendOtpJSON              types.String            `tfsdk:"send_otp_json"`
+	ValidateOtpJSON          types.String            `tfsdk:"validate_otp_json"`
+	PamConfig                types.String            `tfsdk:"pam_config"`
+	ConnectionTimeoutConfig  ConnectionTimeoutConfig `tfsdk:"connection_timeout_config"`
+	CreateAccountJSON        types.String            `tfsdk:"create_account_json"`
+	UpdateAccountJSON        types.String            `tfsdk:"update_account_json"`
+	EnableAccountJSON        types.String            `tfsdk:"enable_account_json"`
+	DisableAccountJSON       types.String            `tfsdk:"disable_account_json"`
+	AddAccessJSON            types.String            `tfsdk:"add_access_json"`
+	RemoveAccessJSON         types.String            `tfsdk:"remove_access_json"`
+	ImportUserJSON           types.String            `tfsdk:"import_user_json"`
+	IsTimeoutSupported       types.Bool              `tfsdk:"is_timeout_supported"`
+	ImportAccountEntJSON     types.String            `tfsdk:"import_account_ent_json"`
+	IsTimeoutConfigValidated types.Bool              `tfsdk:"is_timeout_config_validated"`
+	ConnectionJSON           types.String            `tfsdk:"connection_json"`
 }
 
 func NewRESTConnectionDatasource() datasource.DataSource {
@@ -123,10 +111,10 @@ func RESTConnectorsDataSourceSchema() map[string]schema.Attribute {
 				"import_account_ent_json":     schema.StringAttribute{Computed: true},
 				"is_timeout_config_validated": schema.BoolAttribute{Computed: true},
 				"connection_json":             schema.StringAttribute{Computed: true},
-				// "connection_timeout_config": schema.SingleNestedAttribute{
-				// 	Computed:   true,
-				// 	Attributes: ConnectionTimeoutConfigeSchema(),
-				// },
+				"connection_timeout_config": schema.SingleNestedAttribute{
+					Computed:   true,
+					Attributes: ConnectionTimeoutConfigeSchema(),
+				},
 			},
 		},
 	}
@@ -196,12 +184,6 @@ func (d *restConnectionDatasource) Read(ctx context.Context, req datasource.Read
 		resp.Diagnostics.AddError("API Call Failed", fmt.Sprintf("Error: %v", err))
 		return
 	}
-	if apiResp!=nil && *apiResp.RESTConnectionResponse.Errorcode !=0{
-		log.Printf("[ERROR]: Error in reading REST connection. Errorcode: %v, Message: %v", *apiResp.RESTConnectionResponse.Errorcode, *apiResp.RESTConnectionResponse.Msg)
-		resp.Diagnostics.AddError("Reading REST connection failed", *apiResp.RESTConnectionResponse.Msg)
-		return
-	}
-
 	log.Printf("[DEBUG] HTTP Status Code: %d", httpResp.StatusCode)
 
 	state.Msg = util.SafeStringDatasource(apiResp.RESTConnectionResponse.Msg)
@@ -245,16 +227,16 @@ func (d *restConnectionDatasource) Read(ctx context.Context, req datasource.Read
 			ImportAccountEntJSON:     util.SafeStringDatasource(apiResp.RESTConnectionResponse.Connectionattributes.ImportAccountEntJSON),
 			IsTimeoutConfigValidated: util.SafeBoolDatasource(apiResp.RESTConnectionResponse.Connectionattributes.IsTimeoutConfigValidated),
 			ConnectionJSON:           util.SafeStringDatasource(apiResp.RESTConnectionResponse.Connectionattributes.ConnectionJSON),
-			// ConnectionTimeoutConfig: ConnectionTimeoutConfig{
-			// 	RetryWait:               util.SafeInt64(apiResp.RESTConnectionResponse.Connectionattributes.ConnectionTimeoutConfig.RetryWait),
-			// 	TokenRefreshMaxTryCount: util.SafeInt64(apiResp.RESTConnectionResponse.Connectionattributes.ConnectionTimeoutConfig.TokenRefreshMaxTryCount),
-			// 	RetryWaitMaxValue:       util.SafeInt64(apiResp.RESTConnectionResponse.Connectionattributes.ConnectionTimeoutConfig.RetryWaitMaxValue),
-			// 	RetryCount:              util.SafeInt64(apiResp.RESTConnectionResponse.Connectionattributes.ConnectionTimeoutConfig.RetryCount),
-			// 	ReadTimeout:             util.SafeInt64(apiResp.RESTConnectionResponse.Connectionattributes.ConnectionTimeoutConfig.ReadTimeout),
-			// 	ConnectionTimeout:       util.SafeInt64(apiResp.RESTConnectionResponse.Connectionattributes.ConnectionTimeoutConfig.ConnectionTimeout),
-			// 	RetryFailureStatusCode:  util.SafeInt64(apiResp.RESTConnectionResponse.Connectionattributes.ConnectionTimeoutConfig.RetryFailureStatusCode),
-			// 	// RetryFailureStatusCode: SafeInt64FromStringPointer(apiResp.RESTConnectionResponse.Connectionattributes.ConnectionTimeoutConfig.RetryFailureStatusCode),
-			// },
+			ConnectionTimeoutConfig: ConnectionTimeoutConfig{
+				RetryWait:               util.SafeInt64(apiResp.RESTConnectionResponse.Connectionattributes.ConnectionTimeoutConfig.RetryWait),
+				TokenRefreshMaxTryCount: util.SafeInt64(apiResp.RESTConnectionResponse.Connectionattributes.ConnectionTimeoutConfig.TokenRefreshMaxTryCount),
+				RetryWaitMaxValue:       util.SafeInt64(apiResp.RESTConnectionResponse.Connectionattributes.ConnectionTimeoutConfig.RetryWaitMaxValue),
+				RetryCount:              util.SafeInt64(apiResp.RESTConnectionResponse.Connectionattributes.ConnectionTimeoutConfig.RetryCount),
+				ReadTimeout:             util.SafeInt64(apiResp.RESTConnectionResponse.Connectionattributes.ConnectionTimeoutConfig.ReadTimeout),
+				ConnectionTimeout:       util.SafeInt64(apiResp.RESTConnectionResponse.Connectionattributes.ConnectionTimeoutConfig.ConnectionTimeout),
+				RetryFailureStatusCode:  util.SafeInt64(apiResp.RESTConnectionResponse.Connectionattributes.ConnectionTimeoutConfig.RetryFailureStatusCode),
+				// RetryFailureStatusCode: SafeInt64FromStringPointer(apiResp.RESTConnectionResponse.Connectionattributes.ConnectionTimeoutConfig.RetryFailureStatusCode),
+			},
 		}
 	}
 	if apiResp.RESTConnectionResponse.Connectionattributes == nil {

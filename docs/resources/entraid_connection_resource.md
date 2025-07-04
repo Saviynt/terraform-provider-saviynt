@@ -13,20 +13,8 @@ Create and manage EntraID (AzureAD) connector in Saviynt
 ## Example Usage
 
 ```terraform
-/*
- * Copyright (c) 2025 Saviynt Inc.
- * All Rights Reserved.
- *
- * This software is the confidential and proprietary information of
- * Saviynt Inc. ("Confidential Information"). You shall not disclose,
- * use, or distribute such Confidential Information except in accordance
- * with the terms of the license agreement you entered into with Saviynt.
- *
- * SAVIYNT MAKES NO REPRESENTATIONS OR WARRANTIES ABOUT THE SUITABILITY OF
- * THE SOFTWARE, EITHER EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO
- * THE IMPLIED WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR
- * PURPOSE, OR NON-INFRINGEMENT.
- */
+// Copyright (c) Saviynt Inc.
+// SPDX-License-Identifier: MPL-2.0
 
 variable "CLIENT_ID" {
   type        = string
@@ -45,17 +33,6 @@ variable "TENANT_ID" {
   description = "Saviynt AzureAD TENANT_ID"
   sensitive   = true
 }
-
-locals {
-  import_user_json        = file("${path.module}/json/import_user.json")
-  account_attributes      = file("${path.module}/json/account_attributes.json")
-  entitlement_attribute   = file("${path.module}/json/entitlement_attribute.json")
-  create_account_json     = file("${path.module}/json/create_account.json")
-  add_access_json         = file("${path.module}/json/add_access.json")
-  connection_json         = file("${path.module}/json/connection.json")
-  status_threshold_config = file("${path.module}/json/status_threshold_config.json")
-}
-
 resource "saviynt_entraid_connection_resource" "example" {
   connection_type           = "AzureAD"
   connection_name           = "Terraform_EntraId_Connector"
@@ -69,16 +46,258 @@ resource "saviynt_entraid_connection_resource" "example" {
   create_new_endpoints      = "YES"
   managed_account_type      = "ACCOUNTS"
   import_depth              = "FINE GRAINED"
+  import_user_json = jsonencode({
+    connection = "userAuth"
+    method     = "GET"
+    url        = "https://graph.microsoft.com/v1.0/users?$select=Id,userPrincipalName,accountEnabled,mail,userType,createdDateTime,country,preferredLanguage,displayName,surname,givenName,mobilePhone,businessPhones,mailNickname,mail",
+    headers = {
+      Authorization = "Bearer $${access_token}"
+      Accept        = "application/json"
+    }
+    statusConfig = {
+      active   = "true"
+      inactive = "false"
+    }
+    colsToPropsMap = {
+      username        = "userPrincipalName~#~char"
+      displayname     = "displayName~#~char"
+      firstname       = "givenName~#~char"
+      lastname        = "surname~#~char"
+      country         = "country~#~char"
+      phonenumber     = "mobilePhone~#~char"
+      statuskey       = "accountEnabled~#~char"
+      email           = "mail~#~char"
+      employeetype    = "userType~#~char"
+      customproperty1 = "preferredLanguage~#~char"
+      customproperty2 = "businessPhones~#~char"
+      customproperty3 = "mailNickname~#~char"
+      customproperty4 = "Id~#~char"
+      customproperty5 = "userPrincipalName~#~char"
+      customproperty6 = "createdDateTime~#~char"
+    }
+    userResponsePath = "value"
+    pagination = {
+      nextUrl = {
+        nextUrlPath = "$${(response?.completeResponseMap?.get('@odata.nextLink')==null)? null : response?.completeResponseMap?.get('@odata.nextLink')}"
+      }
+    }
+  })
 
-  import_user_json        = local.import_user_json
-  account_attributes      = local.account_attributes
-  entitlement_attribute   = local.entitlement_attribute
-  create_account_json     = local.create_account_json
-  add_access_json         = local.add_access_json
-  connection_json         = local.connection_json
-  status_threshold_config = local.status_threshold_config
+  account_attributes = jsonencode({
+    acctLabels = {
+      customproperty1  = "FirstName"
+      customproperty2  = "LastName"
+      customproperty3  = "OfficePhone"
+      customproperty10 = "AccountStatus"
+    },
+    colsToPropsMap = {
+      accountID        = "id~#~char"
+      name             = "userPrincipalName~#~char"
+      customproperty1  = "givenName~#~char"
+      customproperty2  = "surname~#~char"
+      customproperty3  = "businessPhones~#~char"
+      customproperty10 = "accountEnabled~#~char"
+    }
+  })
 
   account_import_fields = "accountEnabled,mail,businessPhone,surname,givenName,displayName,userPrincipalName,id"
+  entitlement_attribute = jsonencode(
+    {
+      entitlementAttribute = {
+        AADGroup = {
+          colsToPropsMap = {
+            entitlementID     = "id~#~char",
+            entitlement_value = "displayName~#~char",
+            customproperty1   = "deletedDateTime~#~char",
+            customproperty2   = "description~#~char",
+            customproperty5   = "onPremisesSyncEnabled~#~char",
+            customproperty6   = "onPremisesLastSyncDateTime~#~char",
+            customproperty7   = "mail~#~char",
+            customproperty8   = "mailEnabled~#~char",
+            customproperty9   = "onPremisesSecurityIdentifier~#~char",
+            customproperty10  = "securityEnabled~#~char",
+            customproperty11  = "groupTypes~#~listAsString",
+            customproperty12  = "membershipRule~#~char",
+            customproperty13  = "membershipRuleProcessingState~#~char",
+            customproperty16  = "resourceProvisioningOptions~#~char"
+          }
+        },
+        AADGroupOwners = {
+          colsToPropsMap = {
+            entitlementID     = "id~#~char",
+            entitlement_value = "displayName~#~char"
+          }
+        },
+        Team = {
+          colsToPropsMap = {
+            entitlementID     = "id~#~char",
+            entitlement_value = "displayName~#~char",
+            description       = "description~#~char",
+            customproperty1   = "internalId~#~char",
+            customproperty2   = "webUrl~#~char",
+            customproperty3   = "discoverySettings~#~char",
+            customproperty6   = "isArchived~#~char"
+          }
+        },
+        Channel = {
+          colsToPropsMap = {
+            entitlementID     = "id~#~char",
+            entitlement_value = "displayName~#~char",
+            description       = "description~#~char",
+            customproperty1   = "email~#~char",
+            customproperty2   = "webUrl~#~char"
+          }
+        },
+        DirectoryRole = {
+          colsToPropsMap = {
+            entitlementID     = "id~#~char",
+            entitlement_value = "displayName~#~char",
+            customproperty4   = "description~#~char",
+            customproperty6   = "deletedDateTime~#~char",
+            customproperty8   = "roleTemplateId~#~char"
+          }
+        },
+        Subscription = {
+          colsToPropsMap = {
+            entitlementID     = "subscriptionId~#~char",
+            entitlement_value = "displayName~#~char",
+            displayname       = "displayName~#~char",
+            customproperty1   = "state~#~char",
+            customproperty2   = "subscriptionPolicies.locationPlacementId~#~char",
+            customproperty4   = "subscriptionPolicies.quotaId~#~char",
+            customproperty6   = "subscriptionPolicies.spendingLimit~#~char",
+            customproperty7   = "authorizationSource~#~char"
+          }
+        },
+        Application = {
+          colsToPropsMap = {
+            entitlementID     = "id~#~char",
+            entitlement_value = "displayName~#~char",
+            customproperty1   = "id~#~bool",
+            customproperty2   = "resourceAppId~#~bool",
+            customproperty4   = "orgRestrictions~#~boolListInverse",
+            customproperty5   = "oauth2AllowImplicitFlow~#~bool",
+            customproperty6   = "allowPublicClient~#~bool",
+            customproperty7   = "createdDateTime~#~char"
+          }
+        },
+        ApplicationInstance = {
+          colsToPropsMap = {
+            entitlementID     = "id~#~char",
+            entitlement_value = "displayName~#~char",
+            displayname       = "appDisplayName~#~char",
+            customproperty1   = "appId~#~char",
+            customproperty4   = "appOwnerOrganizationId~#~char",
+            customproperty5   = "appRoleAssignmentRequired~#~char",
+            customproperty6   = "servicePrincipalNames~#~char",
+            customproperty7   = "accountEnabled~#~bool",
+            customproperty9   = "publisherName~#~char"
+          }
+        },
+        SKU = {
+          colsToPropsMap = {
+            entitlementID     = "skuId~#~char",
+            entitlement_value = "skuPartNumber~#~char",
+            customproperty1   = "appliesTo~#~char",
+            customproperty2   = "capabilityStatus~#~char",
+            customproperty5   = "consumedUnits~#~char",
+            customproperty7   = "prepaidUnits~#~listAsString"
+          }
+        },
+        updateApplications = {
+          colsToPropsMap = {
+            customproperty1  = "id~#~char",
+            customproperty11 = "createdDateTime~#~char"
+          }
+        },
+        AppRole = {
+          colsToPropsMap = {
+            entitlementID     = "id~#~char",
+            entitlement_value = "displayName~#~char",
+            customproperty1   = "isEnabled~#~char",
+            customproperty2   = "value~#~char",
+            customproperty4   = "id~#~char",
+            customproperty5   = "allowedMemberTypes~#~char"
+          }
+        },
+        Oauth2Permission = {
+          colsToPropsMap = {
+            entitlementID     = "id~#~char",
+            entitlement_value = "userConsentDisplayName~#~char",
+            customproperty1   = "isEnabled~#~char",
+            customproperty2   = "adminConsentDisplayName~#~char",
+            customproperty4   = "id~#~char",
+            customproperty5   = "type~#~char",
+            customproperty6   = "userConsentDescription~#~char",
+            customproperty7   = "adminConsentDescription~#~char",
+            customproperty8   = "value~#~char"
+          }
+        },
+        ApplicationInstanceAppRole = {
+          colsToPropsMap = {
+            entitlementID     = "id~#~char",
+            entitlement_value = "displayName~#~char",
+            customproperty1   = "isEnabled~#~char",
+            customproperty2   = "value~#~char",
+            customproperty4   = "id~#~char",
+            customproperty5   = "allowedMemberTypes~#~char"
+          }
+        },
+        ApplicationInstanceOauth2Permission = {
+          colsToPropsMap = {
+            entitlementID     = "id~#~char",
+            entitlement_value = "userConsentDisplayName~#~char",
+            customproperty1   = "isEnabled~#~char",
+            customproperty2   = "adminConsentDescription~#~char",
+            customproperty4   = "id~#~char",
+            customproperty6   = "userConsentDescription~#~char",
+            customproperty7   = "adminConsentDisplayName~#~char",
+            customproperty8   = "value~#~char"
+          }
+        },
+        SKUServicePlans = {
+          colsToPropsMap = {
+            entitlementID     = "servicePlanId~#~char",
+            entitlement_value = "servicePlanName~#~char",
+            customproperty1   = "provisioningStatus~#~char",
+            customproperty2   = "appliesTo~#~char",
+            customproperty4   = "servicePlanId~#~char"
+          }
+        }
+      }
+    }
+  )
+
+  create_account_json = jsonencode({
+    accountIdPath = "call1.message.id",
+    dateFormat    = "yyyy-MM-dd'T'HH:mm:ssXXX",
+    responseColsToPropsMap = {
+      comments    = "call1.message.displayName~#~char",
+      displayName = "call1.message.displayName~#~char",
+      name        = "call1.message.userPrincipalName~#~char"
+    },
+    call = [
+      {
+        name       = "call1",
+        connection = "userAuth",
+        url        = "https://graph.microsoft.com/v1.0/users",
+        httpMethod = "POST",
+        httpParams = "{\"accountEnabled\":\"true\",\"displayName\":\"$${user.displayname}\",\"passwordProfile\":\r\n{\"password\":\"Passw0rd\",\"forceChangePasswordNextSignIn\":\"true\"},\"UsageLocation\":\"US\",\"userPrincipalName\":\"$${user.email}\",\"mailNickname\":\"$${user.firstname}\",\"givenName\":\"$${user.firstname}\",\"surname\":\"$${user.lastname}\"}",
+        httpHeaders = {
+          Authorization = "$${access_token}"
+        },
+        httpContentType = "application/json",
+        successResponses = {
+          statusCode = [
+            200,
+            201,
+            204,
+            205
+          ]
+        }
+      }
+    ]
+  })
 
   update_account_json = jsonencode({
     call = [
@@ -144,6 +363,116 @@ resource "saviynt_entraid_connection_resource" "example" {
       }
     ]
   })
+
+  add_access_json = jsonencode({
+    "call" : [
+      {
+        name       = "SKU",
+        connection = "userAuth",
+        url        = "https://graph.microsoft.com/v1.0/users/$${account.accountID}/assignLicense",
+        httpMethod = "POST",
+        httpParams = "{\"addLicenses\": [{\"disabledPlans\": [],\"skuId\": \"$${entitlementValue.entitlementID}\"}],\"removeLicenses\": []}",
+        httpHeaders = {
+          Authorization = "$${access_token}"
+        },
+        httpContentType = "application/json",
+        successResponses = {
+          statusCode = [
+            200,
+            201,
+            204,
+            205
+          ]
+        }
+      },
+      {
+        name       = "DirectoryRole",
+        connection = "userAuth",
+        url        = "https://graph.microsoft.com/v1.0/directoryRoles/$${entitlementValue.entitlementID}/members/\\$ref",
+        httpMethod = "POST",
+        httpParams = "{\"@odata.id\":\"https://graph.microsoft.com/v1.0/directoryObjects/$${account.accountID}\"}",
+        httpHeaders = {
+          Authorization = "$${access_token}"
+        },
+        httpContentType = "application/json",
+        successResponses = {
+          statusCode = [
+            200,
+            201,
+            204,
+            205
+          ]
+        },
+        "unsuccessResponses" : {
+          "odata~dot#error.code" : [
+            "Request_BadRequest",
+            "Authentication_MissingOrMalformed",
+            "Request_ResourceNotFound",
+            "Authorization_RequestDenied",
+            "Authentication_Unauthorized"
+          ]
+        }
+      },
+      {
+        name       = "AADGroup",
+        connection = "userAuth",
+        url        = "https://graph.microsoft.com/v1.0/groups/$${entitlementValue.entitlementID}/members/\\$ref",
+        httpMethod = "POST",
+        httpParams = "{\"@odata.id\":\"https://graph.microsoft.com/v1.0/directoryObjects/$${account.accountID}\"}",
+        httpHeaders = {
+          Authorization = "$${access_token}"
+        },
+        httpContentType = "application/json",
+        successResponses = {
+          statusCode = [
+            200,
+            201,
+            204,
+            205
+          ]
+        }
+      },
+      {
+        name       = "ApplicationInstance",
+        connection = "entAuth",
+        url        = "https://graph.windows.net/myorganization/users/$${account.accountID}/appRoleAssignedTo?api-version=1.6",
+        httpMethod = "POST",
+        httpParams = "{\"principalId\": \"$${account.accountID}\", \"id\": \"$${}\", \"resourceId\": \"$${entitlementValue.entitlementID}\"}",
+        httpHeaders = {
+          Authorization = "$${access_token}"
+        },
+        httpContentType = "application/json",
+        successResponses = {
+          statusCode = [
+            200,
+            201,
+            204,
+            205
+          ]
+        }
+      },
+      {
+        name       = "Team",
+        connection = "userAuth",
+        url        = "https://graph.microsoft.com/v1.0/groups/$${entitlementValue.entitlementID}/members/\\$ref",
+        httpMethod = "POST",
+        httpParams = "{\"@odata.id\":\"https://graph.microsoft.com/v1.0/directoryObjects/$$ {account.accountID}\"}",
+        httpHeaders = {
+          Authorization = "$${access_token}"
+        },
+        httpContentType = "application/json",
+        successResponses = {
+          statusCode = [
+            200,
+            201,
+            204,
+            205
+          ]
+        }
+      }
+    ]
+  })
+
 
   remove_access_json = jsonencode({
     call = [
@@ -359,6 +688,281 @@ resource "saviynt_entraid_connection_resource" "example" {
     ]
   })
 
+  connection_json = jsonencode({
+    authentications = {
+      userAuth = {
+        authType   = "oauth2",
+        url        = "https://login.microsoftonline.com/<tenantid>/oauth2/token",
+        httpMethod = "POST",
+        httpParams = {
+          grant_type    = "client_credentials",
+          client_secret = "<client_secret>",
+          client_id     = "<client_id>",
+          resource      = "https://graph.microsoft.com/"
+        },
+        httpHeaders = {
+          contentType = "application/x-www-form-urlencoded"
+        },
+        httpContentType = "application/x-www-form-urlencoded",
+        expiryError     = "ExpiredAuthenticationToken",
+        authError = [
+          "InvalidAuthenticationToken"
+        ],
+        retryFailureStatusCode = [
+          401
+        ],
+        timeOutError       = "Read timed out",
+        errorPath          = "error.code",
+        maxRefreshTryCount = 5,
+        tokenResponsePath  = "access_token",
+        tokenType          = "Bearer",
+        accessToken        = "Bearer abcd"
+      },
+      entAuth = {
+        authType   = "oauth2",
+        url        = "https://login.microsoftonline.com/<tenantid>/oauth2/token",
+        httpMethod = "POST",
+        httpParams = {
+          grant_type    = "client_credentials",
+          client_secret = "<client_secret>",
+          client_id     = "<client_id>",
+          resource      = "https://graph.windows.net/"
+        },
+        httpHeaders = {
+          contentType = "application/x-www-form-urlencoded"
+        },
+        httpContentType = "application/x-www-form-urlencoded",
+        expiryError     = "ExpiredAuthenticationToken",
+        authError = [
+          "InvalidAuthenticationToken",
+          "Authentication_MissingOrMalformed"
+        ],
+        retryFailureStatusCode = [
+          401
+        ],
+        timeOutError       = "Read timed out",
+        errorPath          = "odata~dot#error.code",
+        maxRefreshTryCount = 3,
+        tokenResponsePath  = "access_token",
+        tokenType          = "Bearer",
+        accessToken        = "Bearer abcde"
+      }
+    }
+  })
+
+  create_group_json = jsonencode({
+    connection = "userAuth",
+    url        = "https://graph.microsoft.com/v1.0/groups",
+    httpMethod = "Post",
+    httpParams = "{\"description\": \"$${roles.description==null || roles.description==''? roles.displayname : roles.description}\", \"displayName\": \"$${roles.displayname==null || roles.displayname==''? roles.role_name : roles.displayname}\", \"groupTypes\": [\"$${roles.customproperty21=='Office365'? 'Unified' : ''}\"], \"mailEnabled\": \"$${roles.customproperty22 == '1' ? true : false}\", \"mailNickname\": \"$${roles.displayname==null || roles.displayname==''? roles.role_name : roles.displayname}\", \"securityEnabled\": \"$${roles.customproperty23 == '1' ? true : false}\",\"owners@odata.bind\": [\"$${allOwner}\"]}",
+    httpHeaders = {
+      Authorization = "$${access_token}",
+      Content-Type  = "application/json"
+    },
+    httpContentType = "application/json"
+  })
+
+  update_group_json = jsonencode({
+    connection = "userAuth",
+    url        = "https://graph.microsoft.com/v1.0/groups/$${entitlementValue.entitlementID}",
+    httpMethod = "PATCH",
+    httpParams = "{\"description\": \"$${roles.description==null || roles.description==''? roles.displayname : roles.description}\", \"displayName\": \"$${roles.displayname==null || roles.displayname==''? roles.role_name : roles.displayname}\", \"groupTypes\": [\"$${roles.customproperty21=='Office365'? 'Unified' : ''}\"], \"mailEnabled\": \"$${roles.customproperty22 == '1' ? true : false}\", \"mailNickname\": \"$${roles.displayname==null || roles.displayname==''? roles.role_name : roles.displayname}\", \"securityEnabled\": \"$${roles.customproperty23 == '1' ? true : false}\",\"owners@odata.bind\": [\"$${allOwner}\"]}",
+    httpHeaders = {
+      Authorization = "$${access_token}",
+      Content-Type  = "application/json"
+    },
+    httpContentType = "application/json"
+  })
+
+  add_access_to_entitlement_json = jsonencode({
+    connection = "AzureADGroupProvisioning",
+    url        = "https://graph.microsoft.com/v1.0/$${parentGroupType}/$${parentEntitlementValuesObj.entitlementID}/members/\\$ref",
+    httpMethod = "POST",
+    httpParams = "{\"@odata.id\": \"https://graph.microsoft.com/v1.0/groups/$${childEntitlementValuesObj.entitlementID}\"}",
+    httpHeaders = {
+      Authorization = "$${access_token}",
+      Content-Type  = "application/json"
+    },
+    httpContentType = "application/json"
+  })
+
+  remove_access_from_entitlement_json = jsonencode({
+    connection = "AzureADGroupProvisioning",
+    url        = "https://graph.microsoft.com/v1.0/$${parentGroupType}/$${parentEntitlementValuesObj.entitlementID}/members/$${childEntitlementValuesObj.entitlementID}/\\$ref",
+    httpMethod = "DELETE",
+    httpParams = "",
+    httpHeaders = {
+      Authorization = "$${access_token}",
+      Content-Type  = "application/json"
+    },
+    httpContentType = "application/json"
+  })
+
+  delete_group_json = jsonencode({
+    connection = "userAuth",
+    url        = "https://graph.microsoft.com/v1.0/groups/$${entitlementValue.entitlementID}",
+    httpMethod = "DELETE",
+    httpParams = "",
+    httpHeaders = {
+      Authorization = "$${access_token}",
+      Content-Type  = "application/json"
+    },
+    httpContentType = "application/json"
+  })
+
+  create_service_principal_json = jsonencode({
+    "accountIdPath" : "ServicePrincipal.message.id",
+    "dateFormat" : "yyyy-MM-dd'T'HH:mm:ssXXX",
+    "responseColsToPropsMap" : {
+      "displayName" : "CreateApplication.message.displayName~#~char",
+      "customproperty2" : "CreateApplication.message.appId~#~char"
+    },
+    "call" : [
+      {
+        name       = "CreateApplication",
+        callOrder  = 0,
+        connection = "$${connectionName}",
+        url        = "https://graph.microsoft.com/v1.0/applications",
+        httpMethod = "POST",
+        httpParams = "{\"displayName\":\"$${accountName}\"}",
+        httpHeaders = {
+          Authorization = "$${access_token}"
+        },
+        httpContentType = "application/json",
+        successResponses = {
+          statusCode = [200, 201]
+        }
+      },
+      {
+        name       = "ServicePrincipal",
+        callOrder  = 1,
+        connection = "$${connectionName}",
+        url        = "https://graph.microsoft.com/v1.0/servicePrincipals",
+        httpMethod = "POST",
+        httpParams = "{\"appId\":\"$${response.CreateApplication.message.appId}\"}",
+        httpHeaders = {
+          Authorization = "$${access_token}"
+        },
+        httpContentType = "application/json",
+        successResponses = {
+          statusCode = [200, 201]
+        }
+      }
+    ]
+    }
+  )
+
+  update_service_principal_json = jsonencode({
+    call = [
+      {
+        name       = "UpdateAccount",
+        connection = "$${connectionName}",
+        url        = "https://graph.microsoft.com/v1.0/servicePrincipals/$${account.accountID}",
+        httpMethod = "PATCH",
+        httpParams = "{\"appRoleAssignmentRequired\": \"$${requestAccessAttributes.AssignmentRequired}\"}",
+        httpHeaders = {
+          Authorization = "$${access_token}",
+          Accept        = "application/json"
+        },
+        httpContentType = "application/json",
+        successResponses = {
+          statusCode = [
+            204
+          ]
+        }
+      }
+    ]
+  })
+
+  remove_service_principal_json = jsonencode({
+    call = [
+      {
+        name       = "DeleteSPN",
+        callOrder  = "0",
+        connection = "$${connectionName}",
+        url        = "https://graph.microsoft.com/v1.0/servicePrincipals/$${account.accountID}",
+        httpMethod = "DELETE",
+        httpHeaders = {
+          Authorization = "$${access_token}",
+          Accept        = "application/json"
+        },
+        httpContentType = "application/json",
+        successResponses = {
+          statusCode = [204]
+        }
+      },
+      {
+        name       = "GetAppId",
+        callOrder  = "1",
+        connection = "$${connectionName}",
+        url        = "https://graph.microsoft.com/v1.0/applications?%24filter=appId%20eq%20%27$${account.customproperty2}%27",
+        httpMethod = "GET",
+        httpHeaders = {
+          Authorization = "$${access_token}",
+          Accept        = "application/json"
+        },
+        httpContentType = "application/json",
+        successResponses = {
+          statusCode = [204, 200]
+        }
+      },
+      {
+        name       = "DeleteApp",
+        callOrder  = "2",
+        connection = "$${connectionName}",
+        url        = "https://graph.microsoft.com/v1.0/applications/$${response.GetAppId.message.value[0].id}",
+        httpMethod = "DELETE",
+        httpHeaders = {
+          Authorization = "$${access_token}",
+          Accept        = "application/json"
+        },
+        httpContentType = "application/json",
+        successResponses = {
+          statusCode = [204]
+        }
+      }
+    ]
+  })
+
+  entitlement_filter_json = jsonencode({
+    filter = "(displayName startsWith '$${filterValue}')"
+  })
+
+  create_team_json = jsonencode({
+    connection = "userAuth",
+    url        = "https://graph.microsoft.com/v1.0/groups/$${groupId}/team/",
+    httpMethod = "PUT",
+    httpParams = "{\"memberSettings\":{\"allowCreateUpdateChannels\": false,\"allowDeleteChannels\": false,\"allowAddRemoveApps\": true,\"allowCreateUpdateRemoveTabs\": true,\"allowCreateUpdateRemoveConnectors\": true},\"guestSettings\":{\"allowCreateUpdateChannels\": false,\"allowDeleteChannels\": true},\"messagingSettings\":{\"allowUserEditMessages\": true,\"allowUserDeleteMessages\": true,\"allowOwnerDeleteMessages\": true,\"allowTeamMentions\": true,\"allowChannelMentions\": true},\"funSettings\":{\"allowGiphy\": true,\"giphyContentRating\":\"strict\",\"allowStickersAndMemes\":true,\"allowCustomMemes\":true}}",
+    httpHeaders = {
+      Authorization = "$${access_token}",
+      Content-Type  = "application/json"
+    },
+    httpContentType = "application/json"
+  })
+
+  create_channel_json = jsonencode({
+    connection = "userAuth",
+    url        = "https://graph.microsoft.com/v1.0/teams/$${groupId}/channels",
+    httpMethod = "POST",
+    httpParams = "{\"description\": \"$${rolesObj.customproperty27}\", \"displayName\": \"$${rolesObj.customproperty26}\"}",
+    httpHeaders = {
+      Authorization = "$${access_token}",
+      Content-Type  = "application/json"
+    },
+    httpContentType = "application/json"
+  })
+
+  status_threshold_config = jsonencode({
+    statusAndThresholdConfig = {
+      accountThresholdValue     = 1000,
+      appAccountThresholdValue  = 50,
+      correlateInactiveAccounts = true,
+      statusColumn              = "customproperty10",
+      activeStatus              = ["true"],
+      deleteLinks               = true
+    }
+  })
+
   endpoints_filter = jsonencode({
     APPLICATION_DEV = [
       {
@@ -370,9 +974,7 @@ resource "saviynt_entraid_connection_resource" "example" {
       }
     ]
   })
-
   accounts_filter = "(userType%20eq%20%27Member%27%20and%20(employeeType%20eq%20%27Employee%27%20or%20employeeType%20eq%20%27External%27%20or%20employeeType%20eq%20%27AdminAccount%27%20or%20employeeType%20eq%20%27Frontline%27)"
-
   config_json = jsonencode({
     connectionTimeoutConfig = {
       connectionTimeout = 10,
@@ -382,7 +984,6 @@ resource "saviynt_entraid_connection_resource" "example" {
       retryCount        = 3
     }
   })
-
   windows_connector_json = jsonencode({
     http = {
       url = "http://<domain-name>/FIMAzure/PS/ExecutePSCommand",
@@ -405,7 +1006,6 @@ resource "saviynt_entraid_connection_resource" "example" {
       customproperty16 = "MFADateTime~#~char"
     }
   })
-
   service_account_attributes = jsonencode({
     colsToPropsMap = {
       accountID        = "id~#~char",
@@ -462,6 +1062,7 @@ resource "saviynt_entraid_connection_resource" "example" {
 - `defaultsavroles` (String) Default SAV roles for managing the connection. Example: "ROLE_ORG"
 - `delete_group_json` (String) JSON to delete group.
 - `delta_tokens_json` (String) Delta tokens JSON data.
+- `description` (String) Description for the connection. Example: "ORG_AD"
 - `disable_account_json` (String) JSON template to disable an account.
 - `email_template` (String) Email template for notifications. Example: "New Account Task Creation"
 - `enable_account_json` (String) JSON template to enable an account.

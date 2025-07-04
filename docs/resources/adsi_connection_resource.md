@@ -13,20 +13,8 @@ Create and manage ADSI connector in Saviynt
 ## Example Usage
 
 ```terraform
-/*
- * Copyright (c) 2025 Saviynt Inc.
- * All Rights Reserved.
- *
- * This software is the confidential and proprietary information of
- * Saviynt Inc. ("Confidential Information"). You shall not disclose,
- * use, or distribute such Confidential Information except in accordance
- * with the terms of the license agreement you entered into with Saviynt.
- *
- * SAVIYNT MAKES NO REPRESENTATIONS OR WARRANTIES ABOUT THE SUITABILITY OF
- * THE SOFTWARE, EITHER EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO
- * THE IMPLIED WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR
- * PURPOSE, OR NON-INFRINGEMENT.
- */
+// Copyright (c) Saviynt Inc.
+// SPDX-License-Identifier: MPL-2.0
 
 variable "LDAP_PROTOCOL" {
   type        = string
@@ -456,6 +444,7 @@ resource "saviynt_adsi_connection_resource" "example" {
 - `customconfigjson` (String) Custom configuration JSON
 - `default_user_role` (String) Default SAV Role to be assigned to all the new users that gets imported via User Import
 - `defaultsavroles` (String) Default SAV roles for managing the connection. Example: "ROLE_ORG"
+- `description` (String) Description for the connection. Example: "ORG_AD"
 - `disableaccountjson` (String) Specify the actions and attributes updates to be performed for disabling an account.
 - `email_template` (String) Email template for notifications. Example: "New Account Task Creation"
 - `enableaccountjson` (String) Specify the actions and attribute updates to be performed for enabling an account.
