@@ -1,17 +1,5 @@
-/*
- * Copyright (c) 2025 Saviynt Inc.
- * All Rights Reserved.
- *
- * This software is the confidential and proprietary information of
- * Saviynt Inc. ("Confidential Information"). You shall not disclose,
- * use, or distribute such Confidential Information except in accordance
- * with the terms of the license agreement you entered into with Saviynt.
- *
- * SAVIYNT MAKES NO REPRESENTATIONS OR WARRANTIES ABOUT THE SUITABILITY OF
- * THE SOFTWARE, EITHER EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO
- * THE IMPLIED WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR
- * PURPOSE, OR NON-INFRINGEMENT.
- */
+// Copyright (c) Saviynt Inc.
+// SPDX-License-Identifier: MPL-2.0
 
 // saviynt_unix_connection_datasource retrieves unix connections details from the Saviynt Security Manager.
 // The data source supports a single Read operation to look up an existing unix connections by name.
@@ -50,44 +38,44 @@ type UnixConnectionDataSourceModel struct {
 }
 
 type UnixConnectionAttributes struct {
-	GroupsFile                       types.String `tfsdk:"groups_file"`
-	SSHKey                           types.String `tfsdk:"ssh_key"`
-	AccountEntitlementMappingCommand types.String `tfsdk:"account_entitlement_mapping_command"`
-	RemoveAccessCommand              types.String `tfsdk:"remove_access_command"`
-	PEMKeyFile                       types.String `tfsdk:"pem_key_file"`
-	PassThroughConnectionDetails     types.String `tfsdk:"pass_through_connection_details"`
-	DisableAccountCommand            types.String `tfsdk:"disable_account_command"`
-	// ConnectionTimeoutConfig          *ConnectionTimeoutConfig `tfsdk:"connection_timeout_config"`
-	PortNumber                       types.String `tfsdk:"port_number"`
-	ConnectionType                   types.String `tfsdk:"connection_type"`
-	CreateGroupCommand               types.String `tfsdk:"create_group_command"`
-	AccountsFile                     types.String `tfsdk:"accounts_file"`
-	Passphrase                       types.String `tfsdk:"passphrase"`
-	DeleteGroupCommand               types.String `tfsdk:"delete_group_command"`
-	HostName                         types.String `tfsdk:"host_name"`
-	AddGroupOwnerCommand             types.String `tfsdk:"add_group_owner_command"`
-	StatusThresholdConfig            types.String `tfsdk:"status_threshold_config"`
-	Username                         types.String `tfsdk:"username"`
-	InactiveLockAccount              types.String `tfsdk:"inactive_lock_account"`
-	AddAccessCommand                 types.String `tfsdk:"add_access_command"`
-	UpdateAccountCommand             types.String `tfsdk:"update_account_command"`
-	SSHPassThroughPassphrase         types.String `tfsdk:"ssh_pass_through_passphrase"`
-	ShadowFile                       types.String `tfsdk:"shadow_file"`
-	IsTimeoutSupported               types.Bool   `tfsdk:"is_timeout_supported"`
-	SSHPassThroughSSHKey             types.String `tfsdk:"ssh_pass_through_ssh_key"`
-	ProvisionAccountCommand          types.String `tfsdk:"provision_account_command"`
-	FirefighterIDGrantAccessCommand  types.String `tfsdk:"firefighterid_grant_access_command"`
-	UnlockAccountCommand             types.String `tfsdk:"unlock_account_command"`
-	DeprovisionAccountCommand        types.String `tfsdk:"deprovision_account_command"`
-	ChangePasswordJSON               types.String `tfsdk:"change_passwrd_json"`
-	SSHPassThroughPassword           types.String `tfsdk:"ssh_pass_through_password"`
-	FirefighterIDRevokeAccessCommand types.String `tfsdk:"firefighterid_revoke_access_command"`
-	AddPrimaryGroupCommand           types.String `tfsdk:"add_primary_group_command"`
-	IsTimeoutConfigValidated         types.Bool   `tfsdk:"is_timeout_config_validated"`
-	LockAccountCommand               types.String `tfsdk:"lock_account_command"`
-	Password                         types.String `tfsdk:"password"`
-	CustomConfigJSON                 types.String `tfsdk:"custom_config_json"`
-	EnableAccountCommand             types.String `tfsdk:"enable_account_command"`
+	GroupsFile                       types.String             `tfsdk:"groups_file"`
+	SSHKey                           types.String             `tfsdk:"ssh_key"`
+	AccountEntitlementMappingCommand types.String             `tfsdk:"account_entitlement_mapping_command"`
+	RemoveAccessCommand              types.String             `tfsdk:"remove_access_command"`
+	PEMKeyFile                       types.String             `tfsdk:"pem_key_file"`
+	PassThroughConnectionDetails     types.String             `tfsdk:"pass_through_connection_details"`
+	DisableAccountCommand            types.String             `tfsdk:"disable_account_command"`
+	ConnectionTimeoutConfig          *ConnectionTimeoutConfig `tfsdk:"connection_timeout_config"`
+	PortNumber                       types.String             `tfsdk:"port_number"`
+	ConnectionType                   types.String             `tfsdk:"connection_type"`
+	CreateGroupCommand               types.String             `tfsdk:"create_group_command"`
+	AccountsFile                     types.String             `tfsdk:"accounts_file"`
+	Passphrase                       types.String             `tfsdk:"passphrase"`
+	DeleteGroupCommand               types.String             `tfsdk:"delete_group_command"`
+	HostName                         types.String             `tfsdk:"host_name"`
+	AddGroupOwnerCommand             types.String             `tfsdk:"add_group_owner_command"`
+	StatusThresholdConfig            types.String             `tfsdk:"status_threshold_config"`
+	Username                         types.String             `tfsdk:"username"`
+	InactiveLockAccount              types.String             `tfsdk:"inactive_lock_account"`
+	AddAccessCommand                 types.String             `tfsdk:"add_access_command"`
+	UpdateAccountCommand             types.String             `tfsdk:"update_account_command"`
+	SSHPassThroughPassphrase         types.String             `tfsdk:"ssh_pass_through_passphrase"`
+	ShadowFile                       types.String             `tfsdk:"shadow_file"`
+	IsTimeoutSupported               types.Bool               `tfsdk:"is_timeout_supported"`
+	SSHPassThroughSSHKey             types.String             `tfsdk:"ssh_pass_through_ssh_key"`
+	ProvisionAccountCommand          types.String             `tfsdk:"provision_account_command"`
+	FirefighterIDGrantAccessCommand  types.String             `tfsdk:"firefighterid_grant_access_command"`
+	UnlockAccountCommand             types.String             `tfsdk:"unlock_account_command"`
+	DeprovisionAccountCommand        types.String             `tfsdk:"deprovision_account_command"`
+	ChangePasswordJSON               types.String             `tfsdk:"change_passwrd_json"`
+	SSHPassThroughPassword           types.String             `tfsdk:"ssh_pass_through_password"`
+	FirefighterIDRevokeAccessCommand types.String             `tfsdk:"firefighterid_revoke_access_command"`
+	AddPrimaryGroupCommand           types.String             `tfsdk:"add_primary_group_command"`
+	IsTimeoutConfigValidated         types.Bool               `tfsdk:"is_timeout_config_validated"`
+	LockAccountCommand               types.String             `tfsdk:"lock_account_command"`
+	Password                         types.String             `tfsdk:"password"`
+	CustomConfigJSON                 types.String             `tfsdk:"custom_config_json"`
+	EnableAccountCommand             types.String             `tfsdk:"enable_account_command"`
 }
 
 func NewUnixConnectionsDataSource() datasource.DataSource {
@@ -144,10 +132,10 @@ func UnixConnectorsDataSourceSchema() map[string]schema.Attribute {
 				"password":                            schema.StringAttribute{Computed: true},
 				"custom_config_json":                  schema.StringAttribute{Computed: true},
 				"enable_account_command":              schema.StringAttribute{Computed: true},
-				// "connection_timeout_config": schema.SingleNestedAttribute{
-				// 	Computed:   true,
-				// 	Attributes: ConnectionTimeoutConfigeSchema(),
-				// },
+				"connection_timeout_config": schema.SingleNestedAttribute{
+					Computed:   true,
+					Attributes: ConnectionTimeoutConfigeSchema(),
+				},
 			},
 		},
 	}
@@ -217,12 +205,6 @@ func (d *unixConnectionDataSource) Read(ctx context.Context, req datasource.Read
 		resp.Diagnostics.AddError("API Call Failed", fmt.Sprintf("Error: %v", err))
 		return
 	}
-	if apiResp!=nil && *apiResp.UNIXConnectionResponse.Errorcode !=0{
-		log.Printf("[ERROR]: Error in reading Unix connection. Errorcode: %v, Message: %v", *apiResp.UNIXConnectionResponse.Errorcode, *apiResp.UNIXConnectionResponse.Msg)
-		resp.Diagnostics.AddError("Reading Unix connection failed", *apiResp.UNIXConnectionResponse.Msg)
-		return
-	}
-
 	log.Printf("[DEBUG] HTTP Status Code: %d", httpResp.StatusCode)
 
 	state.Msg = util.SafeStringDatasource(apiResp.UNIXConnectionResponse.Msg)
@@ -277,17 +259,17 @@ func (d *unixConnectionDataSource) Read(ctx context.Context, req datasource.Read
 			CustomConfigJSON:                 util.SafeStringDatasource(apiResp.UNIXConnectionResponse.Connectionattributes.CUSTOM_CONFIG_JSON),
 			EnableAccountCommand:             util.SafeStringDatasource(apiResp.UNIXConnectionResponse.Connectionattributes.ENABLE_ACCOUNT_COMMAND),
 		}
-		// if apiResp.UNIXConnectionResponse.Connectionattributes.ConnectionTimeoutConfig != nil {
-		// 	state.ConnectionAttributes.ConnectionTimeoutConfig = &ConnectionTimeoutConfig{
-		// 		RetryWait:               util.SafeInt64(apiResp.UNIXConnectionResponse.Connectionattributes.ConnectionTimeoutConfig.RetryWait),
-		// 		TokenRefreshMaxTryCount: util.SafeInt64(apiResp.UNIXConnectionResponse.Connectionattributes.ConnectionTimeoutConfig.TokenRefreshMaxTryCount),
-		// 		RetryFailureStatusCode:  util.SafeInt64(apiResp.UNIXConnectionResponse.Connectionattributes.ConnectionTimeoutConfig.RetryFailureStatusCode),
-		// 		RetryWaitMaxValue:       util.SafeInt64(apiResp.UNIXConnectionResponse.Connectionattributes.ConnectionTimeoutConfig.RetryWaitMaxValue),
-		// 		RetryCount:              util.SafeInt64(apiResp.UNIXConnectionResponse.Connectionattributes.ConnectionTimeoutConfig.RetryCount),
-		// 		ReadTimeout:             util.SafeInt64(apiResp.UNIXConnectionResponse.Connectionattributes.ConnectionTimeoutConfig.ReadTimeout),
-		// 		ConnectionTimeout:       util.SafeInt64(apiResp.UNIXConnectionResponse.Connectionattributes.ConnectionTimeoutConfig.ConnectionTimeout),
-		// 	}
-		// }
+		if apiResp.UNIXConnectionResponse.Connectionattributes.ConnectionTimeoutConfig != nil {
+			state.ConnectionAttributes.ConnectionTimeoutConfig = &ConnectionTimeoutConfig{
+				RetryWait:               util.SafeInt64(apiResp.UNIXConnectionResponse.Connectionattributes.ConnectionTimeoutConfig.RetryWait),
+				TokenRefreshMaxTryCount: util.SafeInt64(apiResp.UNIXConnectionResponse.Connectionattributes.ConnectionTimeoutConfig.TokenRefreshMaxTryCount),
+				RetryFailureStatusCode:  util.SafeInt64(apiResp.UNIXConnectionResponse.Connectionattributes.ConnectionTimeoutConfig.RetryFailureStatusCode),
+				RetryWaitMaxValue:       util.SafeInt64(apiResp.UNIXConnectionResponse.Connectionattributes.ConnectionTimeoutConfig.RetryWaitMaxValue),
+				RetryCount:              util.SafeInt64(apiResp.UNIXConnectionResponse.Connectionattributes.ConnectionTimeoutConfig.RetryCount),
+				ReadTimeout:             util.SafeInt64(apiResp.UNIXConnectionResponse.Connectionattributes.ConnectionTimeoutConfig.ReadTimeout),
+				ConnectionTimeout:       util.SafeInt64(apiResp.UNIXConnectionResponse.Connectionattributes.ConnectionTimeoutConfig.ConnectionTimeout),
+			}
+		}
 	}
 
 	if apiResp.UNIXConnectionResponse.Connectionattributes == nil {

@@ -1,17 +1,5 @@
-/*
- * Copyright (c) 2025 Saviynt Inc.
- * All Rights Reserved.
- *
- * This software is the confidential and proprietary information of
- * Saviynt Inc. ("Confidential Information"). You shall not disclose,
- * use, or distribute such Confidential Information except in accordance
- * with the terms of the license agreement you entered into with Saviynt.
- *
- * SAVIYNT MAKES NO REPRESENTATIONS OR WARRANTIES ABOUT THE SUITABILITY OF
- * THE SOFTWARE, EITHER EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO
- * THE IMPLIED WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR
- * PURPOSE, OR NON-INFRINGEMENT.
- */
+// Copyright (c) Saviynt Inc.
+// SPDX-License-Identifier: MPL-2.0
 
 package util
 
@@ -21,7 +9,6 @@ import (
 	"os"
 	"sort"
 	"strconv"
-	"strings"
 
 	"github.com/hashicorp/terraform-plugin-framework/attr"
 	"github.com/hashicorp/terraform-plugin-framework/diag"
@@ -79,8 +66,8 @@ func SafeList(items []string) (types.List, diag.Diagnostics) {
 	return types.ListValue(types.StringType, values)
 }
 
-// StringsToTypeStrings converts a slice of Go strings to a slice of types.String.
-func StringsToTypeStrings(items []string) []types.String {
+// ToTypesStringSlice converts a slice of Go strings to a slice of types.String.
+func ToTypesStringSlice(items []string) []types.String {
 	var result []types.String
 	for _, s := range items {
 		result = append(result, types.StringValue(s))
@@ -88,17 +75,17 @@ func StringsToTypeStrings(items []string) []types.String {
 	return result
 }
 
-func StringsToSet(items []string) types.Set {
+func ConvertStringsToTFListString(items []string) types.List {
 	var elements []attr.Value
 	for _, item := range items {
 		elements = append(elements, types.StringValue(item))
 	}
 
 	if len(elements) == 0 {
-		return types.SetNull(types.StringType)
+		return types.ListNull(types.StringType)
 	}
 
-	return types.SetValueMust(types.StringType, elements)
+	return types.ListValueMust(types.StringType, elements)
 }
 
 // ConvertStringsToTypesString converts a slice of Go strings to a slice of types.String.
@@ -136,15 +123,6 @@ func MarshalDeterministic(m map[string]string) (string, error) {
 	}
 	return string(b), nil
 }
-
-func BoolPointerOrEmtpy(tfBool types.Bool) *bool {
-	if tfBool.IsNull() || tfBool.IsUnknown() {
-		return nil
-	}
-	val := tfBool.ValueBool()
-	return &val
-}
-
 func StringPtr(v string) *string {
 	return &v
 }
@@ -185,12 +163,12 @@ func SanitizeTypesStringList(input []types.String) []types.String {
 		}
 	}
 	if len(result) == 0 {
-		return nil
+		return nil // or you can return []types.String{} if you prefer an empty list
 	}
 	return result
 }
 
-func StringsFromSet(input types.Set) []string {
+func ConvertTFStringsToGoStrings(input types.List) []string {
 	if input.IsNull() || input.IsUnknown() {
 		return nil
 	}
@@ -212,31 +190,9 @@ func StringsFromSet(input types.Set) []string {
 	return result
 }
 
-func StringsFromList(input types.List) []string {
-	if input.IsNull() || input.IsUnknown() {
-		return nil
-	}
-
-	var result []string
-
-	for _, val := range input.Elements() {
-		strVal, ok := val.(types.String)
-		if !ok || strVal.IsNull() || strVal.IsUnknown() {
-			continue
-		}
-		result = append(result, strVal.ValueString())
-	}
-
-	if len(result) == 0 {
-		return nil
-	}
-
-	return result
-}
-
-func NormalizeTFSetString(list types.Set) types.Set {
+func NormalizeTFListString(list types.List) types.List {
 	if list.IsNull() || list.IsUnknown() || len(list.Elements()) == 0 {
-		return types.SetNull(types.StringType)
+		return types.ListNull(types.StringType)
 	}
 	return list
 }
@@ -298,48 +254,4 @@ func LoadConnectorDataForEphemeral(filePath string) map[string]string {
 	}
 
 	return result
-}
-
-func TypesStringOrOriginal(original types.String, apiValue *string) types.String {
-	if apiValue != nil && *apiValue != "" {
-		return types.StringValue(*apiValue)
-	}
-	return original
-}
-
-func SafeStringAlt(s *string, replace string) types.String {
-	if types.StringValue(*s) == types.StringValue("") {
-		return types.StringValue(replace)
-	}
-
-	return types.StringValue(*s)
-}
-
-// func PreserveString(apiVal *string, oldVal types.String) types.String {
-// 	if apiVal != nil {
-// 		return types.StringValue(*apiVal)
-// 	}
-// 	if !oldVal.IsNull() && !oldVal.IsUnknown() {
-// 		return oldVal
-// 	}
-// 	return types.StringNull()
-// }
-func PreserveString(apiVal *string, oldVal types.String) types.String {
-	if apiVal != nil && strings.TrimSpace(*apiVal) != "" {
-		// Return the value from the API only if it's non-empty
-		return types.StringValue(*apiVal)
-	}
-	if !oldVal.IsNull() && !oldVal.IsUnknown() {
-		// Preserve value from state if it's valid
-		return oldVal
-	}
-	// Fallback to null if API and old value are empty
-	return types.StringNull()
-}
-
-func SafeStringPreserveNull(s *string) types.String {
-	if s == nil {
-		return types.StringNull()
-	}
-	return types.StringValue(*s)
 }
