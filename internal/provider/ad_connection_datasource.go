@@ -19,6 +19,7 @@ package provider
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"log"
 	"net/http"
@@ -51,23 +52,23 @@ type ADConnectionDataSourceModel struct {
 }
 
 type ADConnectionAttributes struct {
-	URL                        types.String `tfsdk:"url"`
-	ConnectionType             types.String `tfsdk:"connection_type"`
-	LastImportTime             types.String `tfsdk:"last_import_time"`
-	CreateAccountJSON          types.String `tfsdk:"create_account_json"`
-	DisableAccountJSON         types.String `tfsdk:"disable_account_json"`
-	GroupSearchBaseDN          types.String `tfsdk:"group_search_base_dn"`
-	PasswordNoOfSplChars       types.String `tfsdk:"password_no_of_spl_chars"`
-	PasswordNoOfDigits         types.String `tfsdk:"password_no_of_digits"`
-	StatusKeyJSON              types.String `tfsdk:"status_key_json"`
-	SearchFilter               types.String `tfsdk:"search_filter"`
-	ConfigJSON                 types.String `tfsdk:"config_json"`
-	RemoveAccountAction        types.String `tfsdk:"remove_account_action"`
-	AccountAttribute           types.String `tfsdk:"account_attribute"`
-	AccountNameRule            types.String `tfsdk:"account_name_rule"`
-	AdvSearch                  types.String `tfsdk:"adv_search"`
-	Username                   types.String `tfsdk:"username"`
-	Password                   types.String `tfsdk:"password"`
+	URL                  types.String `tfsdk:"url"`
+	ConnectionType       types.String `tfsdk:"connection_type"`
+	LastImportTime       types.String `tfsdk:"last_import_time"`
+	CreateAccountJSON    types.String `tfsdk:"create_account_json"`
+	DisableAccountJSON   types.String `tfsdk:"disable_account_json"`
+	GroupSearchBaseDN    types.String `tfsdk:"group_search_base_dn"`
+	PasswordNoOfSplChars types.String `tfsdk:"password_no_of_spl_chars"`
+	PasswordNoOfDigits   types.String `tfsdk:"password_no_of_digits"`
+	StatusKeyJSON        types.String `tfsdk:"status_key_json"`
+	SearchFilter         types.String `tfsdk:"search_filter"`
+	ConfigJSON           types.String `tfsdk:"config_json"`
+	RemoveAccountAction  types.String `tfsdk:"remove_account_action"`
+	AccountAttribute     types.String `tfsdk:"account_attribute"`
+	AccountNameRule      types.String `tfsdk:"account_name_rule"`
+	AdvSearch            types.String `tfsdk:"adv_search"`
+	// Username                   types.String `tfsdk:"username"`
+	// Password                   types.String `tfsdk:"password"`
 	LDAPOrAD                   types.String `tfsdk:"ldap_or_ad"`
 	EntitlementAttribute       types.String `tfsdk:"entitlement_attribute"`
 	SetRandomPassword          types.String `tfsdk:"set_random_password"`
@@ -134,23 +135,23 @@ func ADConnectorsDataSourceSchema() map[string]schema.Attribute {
 		"connection_attributes": schema.SingleNestedAttribute{
 			Computed: true,
 			Attributes: map[string]schema.Attribute{
-				"url":                            schema.StringAttribute{Computed: true},
-				"connection_type":                schema.StringAttribute{Computed: true},
-				"last_import_time":               schema.StringAttribute{Computed: true},
-				"create_account_json":            schema.StringAttribute{Computed: true},
-				"disable_account_json":           schema.StringAttribute{Computed: true},
-				"group_search_base_dn":           schema.StringAttribute{Computed: true},
-				"password_no_of_spl_chars":       schema.StringAttribute{Computed: true},
-				"password_no_of_digits":          schema.StringAttribute{Computed: true},
-				"status_key_json":                schema.StringAttribute{Computed: true},
-				"search_filter":                  schema.StringAttribute{Computed: true},
-				"config_json":                    schema.StringAttribute{Computed: true},
-				"remove_account_action":          schema.StringAttribute{Computed: true},
-				"account_attribute":              schema.StringAttribute{Computed: true},
-				"account_name_rule":              schema.StringAttribute{Computed: true},
-				"adv_search":                     schema.StringAttribute{Computed: true},
-				"username":                       schema.StringAttribute{Computed: true},
-				"password":                       schema.StringAttribute{Computed: true},
+				"url":                      schema.StringAttribute{Computed: true},
+				"connection_type":          schema.StringAttribute{Computed: true},
+				"last_import_time":         schema.StringAttribute{Computed: true},
+				"create_account_json":      schema.StringAttribute{Computed: true},
+				"disable_account_json":     schema.StringAttribute{Computed: true},
+				"group_search_base_dn":     schema.StringAttribute{Computed: true},
+				"password_no_of_spl_chars": schema.StringAttribute{Computed: true},
+				"password_no_of_digits":    schema.StringAttribute{Computed: true},
+				"status_key_json":          schema.StringAttribute{Computed: true},
+				"search_filter":            schema.StringAttribute{Computed: true},
+				"config_json":              schema.StringAttribute{Computed: true},
+				"remove_account_action":    schema.StringAttribute{Computed: true},
+				"account_attribute":        schema.StringAttribute{Computed: true},
+				"account_name_rule":        schema.StringAttribute{Computed: true},
+				"adv_search":               schema.StringAttribute{Computed: true},
+				// "username":                       schema.StringAttribute{Computed: true},
+				// "password":                       schema.StringAttribute{Computed: true},
 				"ldap_or_ad":                     schema.StringAttribute{Computed: true},
 				"entitlement_attribute":          schema.StringAttribute{Computed: true},
 				"set_random_password":            schema.StringAttribute{Computed: true},
@@ -263,13 +264,41 @@ func (d *adConnectionsDataSource) Read(ctx context.Context, req datasource.ReadR
 	// Execute API request
 	apiResp, httpResp, err := apiReq.Execute()
 	if err != nil {
-		log.Printf("[ERROR] API Call Failed: %v", err)
-		resp.Diagnostics.AddError("API Call Failed", fmt.Sprintf("Error: %v", err))
+		if httpResp != nil && httpResp.StatusCode != 200 {
+			log.Printf("[ERROR] HTTP error while creating AD Connector: %s", httpResp.Status)
+			var fetchResp map[string]interface{}
+			if err := json.NewDecoder(httpResp.Body).Decode(&fetchResp); err != nil {
+				resp.Diagnostics.AddError("Failed to decode error response", err.Error())
+				return
+			}
+			resp.Diagnostics.AddError(
+				"HTTP Error",
+				fmt.Sprintf("HTTP error while creating AD Connector for the reasons: %s", fetchResp["msg"]),
+			)
+
+		} else {
+			log.Printf("[ERROR] API Call Failed: %v", err)
+			resp.Diagnostics.AddError("API Call Failed", fmt.Sprintf("Error: %v", err))
+		}
 		return
 	}
-	if apiResp!=nil &&*apiResp.ADConnectionResponse.Errorcode !=0{
-		log.Printf("[ERROR]: Error in reading AD connection. Errorcode: %v, Message: %v", *apiResp.ADConnectionResponse.Errorcode, *apiResp.ADConnectionResponse.Msg)
-		resp.Diagnostics.AddError("Read of AD connection failed", *apiResp.ADConnectionResponse.Msg)
+
+	// if apiResp != nil {
+	// 	if apiResp.ADConnectionResponse != nil && *apiResp.ADConnectionResponse.Errorcode != 0 {
+	// 		log.Printf("[ERROR]: Error in reading AD connection. Errorcode: %v, Message: %v", *apiResp.ADConnectionResponse.Errorcode, *apiResp.ADConnectionResponse.Msg)
+	// 		resp.Diagnostics.AddError("Read of AD connection failed", *apiResp.ADConnectionResponse.Msg)
+	// 	} else if apiResp.ADConnectionResponse == nil {
+	// 		error := "Verify the connection type"
+	// 		log.Printf("[ERROR]: Verify the connection type given")
+	// 		resp.Diagnostics.AddError("Read of AD connection failed", error)
+	// 	}
+	// 	return
+	// }
+
+	if apiResp != nil && apiResp.ADConnectionResponse == nil {
+		error := "Verify the connection type"
+		log.Printf("[ERROR]: Verify the connection type given")
+		resp.Diagnostics.AddError("Read of AD connection failed", error)
 		return
 	}
 
@@ -290,23 +319,23 @@ func (d *adConnectionsDataSource) Read(ctx context.Context, req datasource.ReadR
 
 	if apiResp.ADConnectionResponse.Connectionattributes != nil {
 		state.ConnectionAttributes = &ADConnectionAttributes{
-			URL:                       util.SafeStringDatasource(apiResp.ADConnectionResponse.Connectionattributes.URL),
-			ConnectionType:            util.SafeStringDatasource(apiResp.ADConnectionResponse.Connectionattributes.ConnectionType),
-			AdvSearch:                 util.SafeStringDatasource(apiResp.ADConnectionResponse.Connectionattributes.ADVSEARCH),
-			LastImportTime:            util.SafeStringDatasource(apiResp.ADConnectionResponse.Connectionattributes.LAST_IMPORT_TIME),
-			CreateAccountJSON:         util.SafeStringDatasource(apiResp.ADConnectionResponse.Connectionattributes.CREATEACCOUNTJSON),
-			DisableAccountJSON:        util.SafeStringDatasource(apiResp.ADConnectionResponse.Connectionattributes.DISABLEACCOUNTJSON),
-			GroupSearchBaseDN:         util.SafeStringDatasource(apiResp.ADConnectionResponse.Connectionattributes.GroupSearchBaseDN),
-			PasswordNoOfSplChars:      util.SafeStringDatasource(apiResp.ADConnectionResponse.Connectionattributes.PASSWORD_NOOFSPLCHARS),
-			PasswordNoOfDigits:        util.SafeStringDatasource(apiResp.ADConnectionResponse.Connectionattributes.PASSWORD_NOOFDIGITS),
-			StatusKeyJSON:             util.SafeStringDatasource(apiResp.ADConnectionResponse.Connectionattributes.STATUSKEYJSON),
-			SearchFilter:              util.SafeStringDatasource(apiResp.ADConnectionResponse.Connectionattributes.SEARCHFILTER),
-			ConfigJSON:                util.SafeStringDatasource(apiResp.ADConnectionResponse.Connectionattributes.ConfigJSON),
-			RemoveAccountAction:       util.SafeStringDatasource(apiResp.ADConnectionResponse.Connectionattributes.REMOVEACCOUNTACTION),
-			AccountAttribute:          util.SafeStringDatasource(apiResp.ADConnectionResponse.Connectionattributes.ACCOUNT_ATTRIBUTE),
-			AccountNameRule:           util.SafeStringDatasource(apiResp.ADConnectionResponse.Connectionattributes.ACCOUNTNAMERULE),
-			Username:                  util.SafeStringDatasource(apiResp.ADConnectionResponse.Connectionattributes.USERNAME),
-			Password:                  util.SafeStringDatasource(apiResp.ADConnectionResponse.Connectionattributes.PASSWORD),
+			URL:                  util.SafeStringDatasource(apiResp.ADConnectionResponse.Connectionattributes.URL),
+			ConnectionType:       util.SafeStringDatasource(apiResp.ADConnectionResponse.Connectionattributes.ConnectionType),
+			AdvSearch:            util.SafeStringDatasource(apiResp.ADConnectionResponse.Connectionattributes.ADVSEARCH),
+			LastImportTime:       util.SafeStringDatasource(apiResp.ADConnectionResponse.Connectionattributes.LAST_IMPORT_TIME),
+			CreateAccountJSON:    util.SafeStringDatasource(apiResp.ADConnectionResponse.Connectionattributes.CREATEACCOUNTJSON),
+			DisableAccountJSON:   util.SafeStringDatasource(apiResp.ADConnectionResponse.Connectionattributes.DISABLEACCOUNTJSON),
+			GroupSearchBaseDN:    util.SafeStringDatasource(apiResp.ADConnectionResponse.Connectionattributes.GroupSearchBaseDN),
+			PasswordNoOfSplChars: util.SafeStringDatasource(apiResp.ADConnectionResponse.Connectionattributes.PASSWORD_NOOFSPLCHARS),
+			PasswordNoOfDigits:   util.SafeStringDatasource(apiResp.ADConnectionResponse.Connectionattributes.PASSWORD_NOOFDIGITS),
+			StatusKeyJSON:        util.SafeStringDatasource(apiResp.ADConnectionResponse.Connectionattributes.STATUSKEYJSON),
+			SearchFilter:         util.SafeStringDatasource(apiResp.ADConnectionResponse.Connectionattributes.SEARCHFILTER),
+			ConfigJSON:           util.SafeStringDatasource(apiResp.ADConnectionResponse.Connectionattributes.ConfigJSON),
+			RemoveAccountAction:  util.SafeStringDatasource(apiResp.ADConnectionResponse.Connectionattributes.REMOVEACCOUNTACTION),
+			AccountAttribute:     util.SafeStringDatasource(apiResp.ADConnectionResponse.Connectionattributes.ACCOUNT_ATTRIBUTE),
+			AccountNameRule:      util.SafeStringDatasource(apiResp.ADConnectionResponse.Connectionattributes.ACCOUNTNAMERULE),
+			// Username:                  util.SafeStringDatasource(apiResp.ADConnectionResponse.Connectionattributes.USERNAME),
+			// Password:                  util.SafeStringDatasource(apiResp.ADConnectionResponse.Connectionattributes.PASSWORD),
 			LDAPOrAD:                  util.SafeStringDatasource(apiResp.ADConnectionResponse.Connectionattributes.LDAP_OR_AD),
 			EntitlementAttribute:      util.SafeStringDatasource(apiResp.ADConnectionResponse.Connectionattributes.ENTITLEMENT_ATTRIBUTE),
 			SetRandomPassword:         util.SafeStringDatasource(apiResp.ADConnectionResponse.Connectionattributes.SETRANDOMPASSWORD),
@@ -365,6 +394,21 @@ func (d *adConnectionsDataSource) Read(ctx context.Context, req datasource.ReadR
 	}
 	if apiResp.ADConnectionResponse.Connectionattributes == nil {
 		state.ConnectionAttributes = nil
+	}
+
+	if !state.Authenticate.IsNull() && !state.Authenticate.IsUnknown() {
+		if state.Authenticate.ValueBool() {
+			resp.Diagnostics.AddWarning(
+				"Authentication Enabled",
+				"`authenticate` is true; all connection_attributes will be returned in state.",
+			)
+		} else {
+			resp.Diagnostics.AddWarning(
+				"Authentication Disabled",
+				"`authenticate` is false; connection_attributes will be removed from state.",
+			)
+			state.ConnectionAttributes = nil
+		}
 	}
 	stateDiagnostics := resp.State.Set(ctx, &state)
 	resp.Diagnostics.Append(stateDiagnostics...)

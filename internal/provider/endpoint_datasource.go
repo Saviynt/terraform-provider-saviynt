@@ -19,6 +19,7 @@ package provider
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"log"
 	"net/http"
@@ -479,11 +480,26 @@ func (d *endpointsDataSource) Read(ctx context.Context, req datasource.ReadReque
 
 	endpointsResponse, httpResp, err := apiReq.Execute()
 	if err != nil {
-		log.Printf("[ERROR] API Call Failed: %v", err)
-		resp.Diagnostics.AddError("API Call Failed", fmt.Sprintf("Error: %v", err))
+		if httpResp != nil && httpResp.StatusCode != 200 {
+			log.Printf("[ERROR] HTTP error while creating endpoint: %s", httpResp.Status)
+			var fetchResp map[string]interface{}
+			if err := json.NewDecoder(httpResp.Body).Decode(&fetchResp); err != nil {
+				resp.Diagnostics.AddError("Failed to decode error response", err.Error())
+				return
+			}
+			resp.Diagnostics.AddError(
+				"HTTP Error",
+				fmt.Sprintf("HTTP error while creating endpoint for the reasons: %s", fetchResp),
+			)
+
+		} else {
+			log.Printf("[ERROR] API Call Failed: %v", err)
+			resp.Diagnostics.AddError("API Call Failed", fmt.Sprintf("Error: %v", err))
+		}
 		return
 	}
-	if endpointsResponse!=nil && *endpointsResponse.ErrorCode !="0"{
+
+	if endpointsResponse != nil && *endpointsResponse.ErrorCode != "0" {
 		log.Printf("[ERROR]: Error in reading endpoint. Errorcode: %v, Message: %v", *endpointsResponse.ErrorCode, *endpointsResponse.Message)
 		resp.Diagnostics.AddError("Read endpoint failed", *endpointsResponse.Message)
 	}

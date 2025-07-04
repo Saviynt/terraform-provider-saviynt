@@ -19,6 +19,7 @@ package provider
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"log"
 	"net/http"
@@ -61,24 +62,24 @@ type ADSIConnectionAttributes struct {
 	STATUSKEYJSON               types.String `tfsdk:"status_key_json"`
 	DEFAULT_USER_ROLE           types.String `tfsdk:"default_user_role"`
 	FOREST_DETAILS              types.String `tfsdk:"forest_details"`
-	USERNAME                    types.String `tfsdk:"username"`
-	UPDATESERVICEACCOUNTJSON    types.String `tfsdk:"update_service_account_json"`
-	ADDACCESSJSON               types.String `tfsdk:"add_access_json"`
-	CREATESERVICEACCOUNTJSON    types.String `tfsdk:"create_service_account_json"`
-	ACCOUNTNAMERULE             types.String `tfsdk:"account_name_rule"`
-	CONNECTION_URL              types.String `tfsdk:"connection_url"`
-	IsTimeoutSupported          types.Bool   `tfsdk:"is_timeout_supported"`
-	CreateUpdateMappings        types.String `tfsdk:"create_update_mappings"`
-	ACCOUNT_ATTRIBUTE           types.String `tfsdk:"account_attribute"`
-	PASSWORD                    types.String `tfsdk:"password"`
-	PAM_CONFIG                  types.String `tfsdk:"pam_config"`
-	PAGE_SIZE                   types.String `tfsdk:"page_size"`
-	SEARCHFILTER                types.String `tfsdk:"search_filter"`
-	UPDATEGROUPJSON             types.String `tfsdk:"update_group_json"`
-	CREATEGROUPJSON             types.String `tfsdk:"create_group_json"`
-	ENTITLEMENT_ATTRIBUTE       types.String `tfsdk:"entitlement_attribute"`
-	CHECKFORUNIQUE              types.String `tfsdk:"check_for_unique"`
-	REMOVESERVICEACCOUNTJSON    types.String `tfsdk:"remove_service_account_json"`
+	// USERNAME                    types.String `tfsdk:"username"`
+	UPDATESERVICEACCOUNTJSON types.String `tfsdk:"update_service_account_json"`
+	ADDACCESSJSON            types.String `tfsdk:"add_access_json"`
+	CREATESERVICEACCOUNTJSON types.String `tfsdk:"create_service_account_json"`
+	ACCOUNTNAMERULE          types.String `tfsdk:"account_name_rule"`
+	CONNECTION_URL           types.String `tfsdk:"connection_url"`
+	IsTimeoutSupported       types.Bool   `tfsdk:"is_timeout_supported"`
+	CreateUpdateMappings     types.String `tfsdk:"create_update_mappings"`
+	ACCOUNT_ATTRIBUTE        types.String `tfsdk:"account_attribute"`
+	// PASSWORD                    types.String `tfsdk:"password"`
+	PAM_CONFIG               types.String `tfsdk:"pam_config"`
+	PAGE_SIZE                types.String `tfsdk:"page_size"`
+	SEARCHFILTER             types.String `tfsdk:"search_filter"`
+	UPDATEGROUPJSON          types.String `tfsdk:"update_group_json"`
+	CREATEGROUPJSON          types.String `tfsdk:"create_group_json"`
+	ENTITLEMENT_ATTRIBUTE    types.String `tfsdk:"entitlement_attribute"`
+	CHECKFORUNIQUE           types.String `tfsdk:"check_for_unique"`
+	REMOVESERVICEACCOUNTJSON types.String `tfsdk:"remove_service_account_json"`
 	// ConnectionTimeoutConfig     ConnectionTimeoutConfig `tfsdk:"connection_timeout_config"`
 	UPDATEUSERJSON            types.String `tfsdk:"update_user_json"`
 	URL                       types.String `tfsdk:"url"`
@@ -133,16 +134,16 @@ func ADSIConnectorsDataSourceSchema() map[string]schema.Attribute {
 				"status_key_json":                schema.StringAttribute{Computed: true},
 				"default_user_role":              schema.StringAttribute{Computed: true},
 				"forest_details":                 schema.StringAttribute{Computed: true},
-				"username":                       schema.StringAttribute{Computed: true},
-				"update_service_account_json":    schema.StringAttribute{Computed: true},
-				"add_access_json":                schema.StringAttribute{Computed: true},
-				"create_service_account_json":    schema.StringAttribute{Computed: true},
-				"account_name_rule":              schema.StringAttribute{Computed: true},
-				"connection_url":                 schema.StringAttribute{Computed: true},
-				"is_timeout_supported":           schema.BoolAttribute{Computed: true},
-				"create_update_mappings":         schema.StringAttribute{Computed: true},
-				"account_attribute":              schema.StringAttribute{Computed: true},
-				"password":                       schema.StringAttribute{Computed: true},
+				// "username":                       schema.StringAttribute{Computed: true},
+				"update_service_account_json": schema.StringAttribute{Computed: true},
+				"add_access_json":             schema.StringAttribute{Computed: true},
+				"create_service_account_json": schema.StringAttribute{Computed: true},
+				"account_name_rule":           schema.StringAttribute{Computed: true},
+				"connection_url":              schema.StringAttribute{Computed: true},
+				"is_timeout_supported":        schema.BoolAttribute{Computed: true},
+				"create_update_mappings":      schema.StringAttribute{Computed: true},
+				"account_attribute":           schema.StringAttribute{Computed: true},
+				// "password":                       schema.StringAttribute{Computed: true},
 				"pam_config":                     schema.StringAttribute{Computed: true},
 				"page_size":                      schema.StringAttribute{Computed: true},
 				"search_filter":                  schema.StringAttribute{Computed: true},
@@ -241,13 +242,33 @@ func (d *adsiConnectionsDataSource) Read(ctx context.Context, req datasource.Rea
 	// Execute API request
 	apiResp, httpResp, err := apiReq.Execute()
 	if err != nil {
-		log.Printf("[ERROR] API Call Failed: %v", err)
-		resp.Diagnostics.AddError("API Call Failed", fmt.Sprintf("Error: %v", err))
+		if httpResp != nil && httpResp.StatusCode != 200 {
+			log.Printf("[ERROR] HTTP error while creating ADSI Connector: %s", httpResp.Status)
+			var fetchResp map[string]interface{}
+			if err := json.NewDecoder(httpResp.Body).Decode(&fetchResp); err != nil {
+				resp.Diagnostics.AddError("Failed to decode error response", err.Error())
+				return
+			}
+			resp.Diagnostics.AddError(
+				"HTTP Error",
+				fmt.Sprintf("HTTP error while creating ADSI Connector for the reasons: %s", fetchResp["msg"]),
+			)
+
+		} else {
+			log.Printf("[ERROR] API Call Failed: %v", err)
+			resp.Diagnostics.AddError("API Call Failed", fmt.Sprintf("Error: %v", err))
+		}
 		return
 	}
-	if apiResp!=nil && *apiResp.ADSIConnectionResponse.Errorcode !=0{
-		log.Printf("[ERROR]: Error in reading ADSI connection. Errorcode: %v, Message: %v", *apiResp.ADSIConnectionResponse.Errorcode, *apiResp.ADSIConnectionResponse.Msg)
-		resp.Diagnostics.AddError("Read of ADSI connection failed", *apiResp.ADSIConnectionResponse.Msg)
+	// if apiResp != nil && *apiResp.ADSIConnectionResponse.Errorcode != 0 {
+	// 	log.Printf("[ERROR]: Error in reading ADSI connection. Errorcode: %v, Message: %v", *apiResp.ADSIConnectionResponse.Errorcode, *apiResp.ADSIConnectionResponse.Msg)
+	// 	resp.Diagnostics.AddError("Read of ADSI connection failed", *apiResp.ADSIConnectionResponse.Msg)
+	// 	return
+	// }
+	if apiResp != nil && apiResp.ADSIConnectionResponse == nil {
+		error := "Verify the connection type"
+		log.Printf("[ERROR]: Verify the connection type given")
+		resp.Diagnostics.AddError("Read of ADSI connection failed", error)
 		return
 	}
 
@@ -279,45 +300,45 @@ func (d *adsiConnectionsDataSource) Read(ctx context.Context, req datasource.Rea
 			STATUSKEYJSON:               util.SafeStringDatasource(apiResp.ADSIConnectionResponse.Connectionattributes.STATUSKEYJSON),
 			DEFAULT_USER_ROLE:           util.SafeStringDatasource(apiResp.ADSIConnectionResponse.Connectionattributes.DEFAULT_USER_ROLE),
 			FOREST_DETAILS:              util.SafeStringDatasource(apiResp.ADSIConnectionResponse.Connectionattributes.FOREST_DETAILS),
-			USERNAME:                    util.SafeStringDatasource(apiResp.ADSIConnectionResponse.Connectionattributes.USERNAME),
-			UPDATESERVICEACCOUNTJSON:    util.SafeStringDatasource(apiResp.ADSIConnectionResponse.Connectionattributes.UPDATESERVICEACCOUNTJSON),
-			ADDACCESSJSON:               util.SafeStringDatasource(apiResp.ADSIConnectionResponse.Connectionattributes.ADDACCESSJSON),
-			CREATESERVICEACCOUNTJSON:    util.SafeStringDatasource(apiResp.ADSIConnectionResponse.Connectionattributes.CREATESERVICEACCOUNTJSON),
-			ACCOUNTNAMERULE:             util.SafeStringDatasource(apiResp.ADSIConnectionResponse.Connectionattributes.ACCOUNTNAMERULE),
-			CONNECTION_URL:              util.SafeStringDatasource(apiResp.ADSIConnectionResponse.Connectionattributes.CONNECTION_URL),
-			IsTimeoutSupported:          util.SafeBoolDatasource(apiResp.ADSIConnectionResponse.Connectionattributes.IsTimeoutSupported),
-			CreateUpdateMappings:        util.SafeStringDatasource(apiResp.ADSIConnectionResponse.Connectionattributes.CreateUpdateMappings),
-			ACCOUNT_ATTRIBUTE:           util.SafeStringDatasource(apiResp.ADSIConnectionResponse.Connectionattributes.ACCOUNT_ATTRIBUTE),
-			PASSWORD:                    util.SafeStringDatasource(apiResp.ADSIConnectionResponse.Connectionattributes.PASSWORD),
-			PAM_CONFIG:                  util.SafeStringDatasource(apiResp.ADSIConnectionResponse.Connectionattributes.PAM_CONFIG),
-			PAGE_SIZE:                   util.SafeStringDatasource(apiResp.ADSIConnectionResponse.Connectionattributes.PAGE_SIZE),
-			SEARCHFILTER:                util.SafeStringDatasource(apiResp.ADSIConnectionResponse.Connectionattributes.SEARCHFILTER),
-			UPDATEGROUPJSON:             util.SafeStringDatasource(apiResp.ADSIConnectionResponse.Connectionattributes.UPDATEGROUPJSON),
-			CREATEGROUPJSON:             util.SafeStringDatasource(apiResp.ADSIConnectionResponse.Connectionattributes.CREATEGROUPJSON),
-			ENTITLEMENT_ATTRIBUTE:       util.SafeStringDatasource(apiResp.ADSIConnectionResponse.Connectionattributes.ENTITLEMENT_ATTRIBUTE),
-			CHECKFORUNIQUE:              util.SafeStringDatasource(apiResp.ADSIConnectionResponse.Connectionattributes.CHECKFORUNIQUE),
-			REMOVESERVICEACCOUNTJSON:    util.SafeStringDatasource(apiResp.ADSIConnectionResponse.Connectionattributes.REMOVESERVICEACCOUNTJSON),
-			UPDATEUSERJSON:              util.SafeStringDatasource(apiResp.ADSIConnectionResponse.Connectionattributes.UPDATEUSERJSON),
-			URL:                         util.SafeStringDatasource(apiResp.ADSIConnectionResponse.Connectionattributes.URL),
-			MOVEACCOUNTJSON:             util.SafeStringDatasource(apiResp.ADSIConnectionResponse.Connectionattributes.MOVEACCOUNTJSON),
-			CUSTOMCONFIGJSON:            util.SafeStringDatasource(apiResp.ADSIConnectionResponse.Connectionattributes.CUSTOMCONFIGJSON),
-			STATUS_THRESHOLD_CONFIG:     util.SafeStringDatasource(apiResp.ADSIConnectionResponse.Connectionattributes.STATUS_THRESHOLD_CONFIG),
-			GroupImportMapping:          util.SafeStringDatasource(apiResp.ADSIConnectionResponse.Connectionattributes.GroupImportMapping),
-			PROVISIONING_URL:            util.SafeStringDatasource(apiResp.ADSIConnectionResponse.Connectionattributes.PROVISIONING_URL),
-			REMOVEGROUPJSON:             util.SafeStringDatasource(apiResp.ADSIConnectionResponse.Connectionattributes.REMOVEGROUPJSON),
-			REMOVEACCESSJSON:            util.SafeStringDatasource(apiResp.ADSIConnectionResponse.Connectionattributes.REMOVEACCESSJSON),
-			IMPORTDATACOOKIES:           util.SafeStringDatasource(apiResp.ADSIConnectionResponse.Connectionattributes.IMPORTDATACOOKIES),
-			RESETANDCHANGEPASSWRDJSON:   util.SafeStringDatasource(apiResp.ADSIConnectionResponse.Connectionattributes.RESETANDCHANGEPASSWRDJSON),
-			USER_ATTRIBUTE:              util.SafeStringDatasource(apiResp.ADSIConnectionResponse.Connectionattributes.USER_ATTRIBUTE),
-			ADDACCESSENTITLEMENTJSON:    util.SafeStringDatasource(apiResp.ADSIConnectionResponse.Connectionattributes.ADDACCESSENTITLEMENTJSON),
-			MODIFYUSERDATAJSON:          util.SafeStringDatasource(apiResp.ADSIConnectionResponse.Connectionattributes.MODIFYUSERDATAJSON),
-			IsTimeoutConfigValidated:    util.SafeBoolDatasource(apiResp.ADSIConnectionResponse.Connectionattributes.IsTimeoutConfigValidated),
-			ENABLEGROUPMANAGEMENT:       util.SafeStringDatasource(apiResp.ADSIConnectionResponse.Connectionattributes.ENABLEGROUPMANAGEMENT),
-			ENABLEACCOUNTJSON:           util.SafeStringDatasource(apiResp.ADSIConnectionResponse.Connectionattributes.ENABLEACCOUNTJSON),
-			FORESTLIST:                  util.SafeStringDatasource(apiResp.ADSIConnectionResponse.Connectionattributes.FORESTLIST),
-			OBJECTFILTER:                util.SafeStringDatasource(apiResp.ADSIConnectionResponse.Connectionattributes.OBJECTFILTER),
-			UPDATEACCOUNTJSON:           util.SafeStringDatasource(apiResp.ADSIConnectionResponse.Connectionattributes.UPDATEACCOUNTJSON),
-			REMOVEACCOUNTJSON:           util.SafeStringDatasource(apiResp.ADSIConnectionResponse.Connectionattributes.REMOVEACCOUNTJSON),
+			// USERNAME:                    util.SafeStringDatasource(apiResp.ADSIConnectionResponse.Connectionattributes.USERNAME),
+			UPDATESERVICEACCOUNTJSON: util.SafeStringDatasource(apiResp.ADSIConnectionResponse.Connectionattributes.UPDATESERVICEACCOUNTJSON),
+			ADDACCESSJSON:            util.SafeStringDatasource(apiResp.ADSIConnectionResponse.Connectionattributes.ADDACCESSJSON),
+			CREATESERVICEACCOUNTJSON: util.SafeStringDatasource(apiResp.ADSIConnectionResponse.Connectionattributes.CREATESERVICEACCOUNTJSON),
+			ACCOUNTNAMERULE:          util.SafeStringDatasource(apiResp.ADSIConnectionResponse.Connectionattributes.ACCOUNTNAMERULE),
+			CONNECTION_URL:           util.SafeStringDatasource(apiResp.ADSIConnectionResponse.Connectionattributes.CONNECTION_URL),
+			IsTimeoutSupported:       util.SafeBoolDatasource(apiResp.ADSIConnectionResponse.Connectionattributes.IsTimeoutSupported),
+			CreateUpdateMappings:     util.SafeStringDatasource(apiResp.ADSIConnectionResponse.Connectionattributes.CreateUpdateMappings),
+			ACCOUNT_ATTRIBUTE:        util.SafeStringDatasource(apiResp.ADSIConnectionResponse.Connectionattributes.ACCOUNT_ATTRIBUTE),
+			// PASSWORD:                    util.SafeStringDatasource(apiResp.ADSIConnectionResponse.Connectionattributes.PASSWORD),
+			PAM_CONFIG:                util.SafeStringDatasource(apiResp.ADSIConnectionResponse.Connectionattributes.PAM_CONFIG),
+			PAGE_SIZE:                 util.SafeStringDatasource(apiResp.ADSIConnectionResponse.Connectionattributes.PAGE_SIZE),
+			SEARCHFILTER:              util.SafeStringDatasource(apiResp.ADSIConnectionResponse.Connectionattributes.SEARCHFILTER),
+			UPDATEGROUPJSON:           util.SafeStringDatasource(apiResp.ADSIConnectionResponse.Connectionattributes.UPDATEGROUPJSON),
+			CREATEGROUPJSON:           util.SafeStringDatasource(apiResp.ADSIConnectionResponse.Connectionattributes.CREATEGROUPJSON),
+			ENTITLEMENT_ATTRIBUTE:     util.SafeStringDatasource(apiResp.ADSIConnectionResponse.Connectionattributes.ENTITLEMENT_ATTRIBUTE),
+			CHECKFORUNIQUE:            util.SafeStringDatasource(apiResp.ADSIConnectionResponse.Connectionattributes.CHECKFORUNIQUE),
+			REMOVESERVICEACCOUNTJSON:  util.SafeStringDatasource(apiResp.ADSIConnectionResponse.Connectionattributes.REMOVESERVICEACCOUNTJSON),
+			UPDATEUSERJSON:            util.SafeStringDatasource(apiResp.ADSIConnectionResponse.Connectionattributes.UPDATEUSERJSON),
+			URL:                       util.SafeStringDatasource(apiResp.ADSIConnectionResponse.Connectionattributes.URL),
+			MOVEACCOUNTJSON:           util.SafeStringDatasource(apiResp.ADSIConnectionResponse.Connectionattributes.MOVEACCOUNTJSON),
+			CUSTOMCONFIGJSON:          util.SafeStringDatasource(apiResp.ADSIConnectionResponse.Connectionattributes.CUSTOMCONFIGJSON),
+			STATUS_THRESHOLD_CONFIG:   util.SafeStringDatasource(apiResp.ADSIConnectionResponse.Connectionattributes.STATUS_THRESHOLD_CONFIG),
+			GroupImportMapping:        util.SafeStringDatasource(apiResp.ADSIConnectionResponse.Connectionattributes.GroupImportMapping),
+			PROVISIONING_URL:          util.SafeStringDatasource(apiResp.ADSIConnectionResponse.Connectionattributes.PROVISIONING_URL),
+			REMOVEGROUPJSON:           util.SafeStringDatasource(apiResp.ADSIConnectionResponse.Connectionattributes.REMOVEGROUPJSON),
+			REMOVEACCESSJSON:          util.SafeStringDatasource(apiResp.ADSIConnectionResponse.Connectionattributes.REMOVEACCESSJSON),
+			IMPORTDATACOOKIES:         util.SafeStringDatasource(apiResp.ADSIConnectionResponse.Connectionattributes.IMPORTDATACOOKIES),
+			RESETANDCHANGEPASSWRDJSON: util.SafeStringDatasource(apiResp.ADSIConnectionResponse.Connectionattributes.RESETANDCHANGEPASSWRDJSON),
+			USER_ATTRIBUTE:            util.SafeStringDatasource(apiResp.ADSIConnectionResponse.Connectionattributes.USER_ATTRIBUTE),
+			ADDACCESSENTITLEMENTJSON:  util.SafeStringDatasource(apiResp.ADSIConnectionResponse.Connectionattributes.ADDACCESSENTITLEMENTJSON),
+			MODIFYUSERDATAJSON:        util.SafeStringDatasource(apiResp.ADSIConnectionResponse.Connectionattributes.MODIFYUSERDATAJSON),
+			IsTimeoutConfigValidated:  util.SafeBoolDatasource(apiResp.ADSIConnectionResponse.Connectionattributes.IsTimeoutConfigValidated),
+			ENABLEGROUPMANAGEMENT:     util.SafeStringDatasource(apiResp.ADSIConnectionResponse.Connectionattributes.ENABLEGROUPMANAGEMENT),
+			ENABLEACCOUNTJSON:         util.SafeStringDatasource(apiResp.ADSIConnectionResponse.Connectionattributes.ENABLEACCOUNTJSON),
+			FORESTLIST:                util.SafeStringDatasource(apiResp.ADSIConnectionResponse.Connectionattributes.FORESTLIST),
+			OBJECTFILTER:              util.SafeStringDatasource(apiResp.ADSIConnectionResponse.Connectionattributes.OBJECTFILTER),
+			UPDATEACCOUNTJSON:         util.SafeStringDatasource(apiResp.ADSIConnectionResponse.Connectionattributes.UPDATEACCOUNTJSON),
+			REMOVEACCOUNTJSON:         util.SafeStringDatasource(apiResp.ADSIConnectionResponse.Connectionattributes.REMOVEACCOUNTJSON),
 			// ConnectionTimeoutConfig: ConnectionTimeoutConfig{
 			// 	RetryWait:               util.SafeInt64(apiResp.ADSIConnectionResponse.Connectionattributes.ConnectionTimeoutConfig.RetryWait),
 			// 	TokenRefreshMaxTryCount: util.SafeInt64(apiResp.ADSIConnectionResponse.Connectionattributes.ConnectionTimeoutConfig.TokenRefreshMaxTryCount),
@@ -332,6 +353,20 @@ func (d *adsiConnectionsDataSource) Read(ctx context.Context, req datasource.Rea
 	}
 	if apiResp.ADSIConnectionResponse.Connectionattributes == nil {
 		state.ConnectionAttributes = nil
+	}
+	if !state.Authenticate.IsNull() && !state.Authenticate.IsUnknown() {
+		if state.Authenticate.ValueBool() {
+			resp.Diagnostics.AddWarning(
+				"Authentication Enabled",
+				"`authenticate` is true; all connection_attributes will be returned in state.",
+			)
+		} else {
+			resp.Diagnostics.AddWarning(
+				"Authentication Disabled",
+				"`authenticate` is false; connection_attributes will be removed from state.",
+			)
+			state.ConnectionAttributes = nil
+		}
 	}
 	stateDiagnostics := resp.State.Set(ctx, &state)
 	resp.Diagnostics.Append(stateDiagnostics...)

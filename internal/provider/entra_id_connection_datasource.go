@@ -19,6 +19,7 @@ package provider
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"log"
 	"net/http"
@@ -48,39 +49,39 @@ type EntraIdConnectionDataSourceModel struct {
 }
 
 type EntraIdConnectionAttributes struct {
-	UpdateUserJSON                  types.String `tfsdk:"update_user_json"`
-	MicrosoftGraphEndpoint          types.String `tfsdk:"microsoft_graph_endpoint"`
-	EndpointsFilter                 types.String `tfsdk:"endpoints_filter"`
-	ImportUserJSON                  types.String `tfsdk:"import_user_json"`
-	ConnectionType                  types.String `tfsdk:"connection_type"`
-	EnableAccountJSON               types.String `tfsdk:"enable_account_json"`
-	ConnectionJSON                  types.String `tfsdk:"connection_json"`
-	ClientID                        types.String `tfsdk:"client_id"`
-	DeleteGroupJSON                 types.String `tfsdk:"delete_group_json"`
-	ConfigJSON                      types.String `tfsdk:"config_json"`
-	AccessToken                     types.String `tfsdk:"access_token"`
-	AddAccessJSON                   types.String `tfsdk:"add_access_json"`
-	CreateChannelJSON               types.String `tfsdk:"create_channel_json"`
-	UpdateAccountJSON               types.String `tfsdk:"update_account_json"`
-	IsTimeoutSupported              types.Bool   `tfsdk:"is_timeout_supported"`
-	RemoveServicePrincipalJSON      types.String `tfsdk:"remove_service_principal_json"`
-	ImportDepth                     types.String `tfsdk:"import_depth"`
-	CreateAccountJSON               types.String `tfsdk:"create_account_json"`
-	PamConfig                       types.String `tfsdk:"pam_config"`
-	UpdateServicePrincipalJSON      types.String `tfsdk:"update_service_principal_json"`
-	AzureManagementEndpoint         types.String `tfsdk:"azure_management_endpoint"`
-	EntitlementAttribute            types.String `tfsdk:"entitlement_attribute"`
-	AccountsFilter                  types.String `tfsdk:"accounts_filter"`
-	WindowsConnectorJSON            types.String `tfsdk:"windows_connector_json"`
-	DeltaTokensJSON                 types.String `tfsdk:"deltatokens_json"`
-	AzureMgmtAccessToken            types.String `tfsdk:"azure_mgmt_access_token"`
-	CreateTeamJSON                  types.String `tfsdk:"create_team_json"`
-	EnhancedDirectoryRoles          types.String `tfsdk:"enhanceddirectoryroles"`
-	StatusThresholdConfig           types.String `tfsdk:"status_threshold_config"`
-	AccountImportFields             types.String `tfsdk:"account_import_fields"`
-	RemoveAccountJSON               types.String `tfsdk:"remove_account_json"`
-	ChangePassJSON                  types.String `tfsdk:"change_pass_json"`
-	ClientSecret                    types.String `tfsdk:"client_secret"`
+	UpdateUserJSON         types.String `tfsdk:"update_user_json"`
+	MicrosoftGraphEndpoint types.String `tfsdk:"microsoft_graph_endpoint"`
+	EndpointsFilter        types.String `tfsdk:"endpoints_filter"`
+	ImportUserJSON         types.String `tfsdk:"import_user_json"`
+	ConnectionType         types.String `tfsdk:"connection_type"`
+	EnableAccountJSON      types.String `tfsdk:"enable_account_json"`
+	// ConnectionJSON                  types.String `tfsdk:"connection_json"`
+	// ClientID                        types.String `tfsdk:"client_id"`
+	DeleteGroupJSON types.String `tfsdk:"delete_group_json"`
+	ConfigJSON      types.String `tfsdk:"config_json"`
+	// AccessToken                     types.String `tfsdk:"access_token"`
+	AddAccessJSON              types.String `tfsdk:"add_access_json"`
+	CreateChannelJSON          types.String `tfsdk:"create_channel_json"`
+	UpdateAccountJSON          types.String `tfsdk:"update_account_json"`
+	IsTimeoutSupported         types.Bool   `tfsdk:"is_timeout_supported"`
+	RemoveServicePrincipalJSON types.String `tfsdk:"remove_service_principal_json"`
+	ImportDepth                types.String `tfsdk:"import_depth"`
+	CreateAccountJSON          types.String `tfsdk:"create_account_json"`
+	PamConfig                  types.String `tfsdk:"pam_config"`
+	UpdateServicePrincipalJSON types.String `tfsdk:"update_service_principal_json"`
+	AzureManagementEndpoint    types.String `tfsdk:"azure_management_endpoint"`
+	EntitlementAttribute       types.String `tfsdk:"entitlement_attribute"`
+	AccountsFilter             types.String `tfsdk:"accounts_filter"`
+	// WindowsConnectorJSON            types.String `tfsdk:"windows_connector_json"`
+	DeltaTokensJSON types.String `tfsdk:"deltatokens_json"`
+	// AzureMgmtAccessToken            types.String `tfsdk:"azure_mgmt_access_token"`
+	CreateTeamJSON         types.String `tfsdk:"create_team_json"`
+	EnhancedDirectoryRoles types.String `tfsdk:"enhanceddirectoryroles"`
+	StatusThresholdConfig  types.String `tfsdk:"status_threshold_config"`
+	AccountImportFields    types.String `tfsdk:"account_import_fields"`
+	RemoveAccountJSON      types.String `tfsdk:"remove_account_json"`
+	// ChangePassJSON                  types.String `tfsdk:"change_pass_json"`
+	// ClientSecret                    types.String `tfsdk:"client_secret"`
 	EntitlementFilterJSON           types.String `tfsdk:"entitlement_filter_json"`
 	ServiceAccountAttributes        types.String `tfsdk:"service_account_attributes"`
 	AddAccessToEntitlementJSON      types.String `tfsdk:"add_access_to_entitlement_json"`
@@ -120,39 +121,39 @@ func EntraIDConnectorsDataSourceSchema() map[string]schema.Attribute {
 		"connection_attributes": schema.SingleNestedAttribute{
 			Computed: true,
 			Attributes: map[string]schema.Attribute{
-				"update_user_json":                    schema.StringAttribute{Computed: true},
-				"microsoft_graph_endpoint":            schema.StringAttribute{Computed: true},
-				"endpoints_filter":                    schema.StringAttribute{Computed: true},
-				"import_user_json":                    schema.StringAttribute{Computed: true},
-				"connection_type":                     schema.StringAttribute{Computed: true},
-				"enable_account_json":                 schema.StringAttribute{Computed: true},
-				"connection_json":                     schema.StringAttribute{Computed: true},
-				"client_id":                           schema.StringAttribute{Computed: true},
-				"delete_group_json":                   schema.StringAttribute{Computed: true},
-				"config_json":                         schema.StringAttribute{Computed: true},
-				"access_token":                        schema.StringAttribute{Computed: true},
-				"add_access_json":                     schema.StringAttribute{Computed: true},
-				"create_channel_json":                 schema.StringAttribute{Computed: true},
-				"update_account_json":                 schema.StringAttribute{Computed: true},
-				"is_timeout_supported":                schema.BoolAttribute{Computed: true},
-				"remove_service_principal_json":       schema.StringAttribute{Computed: true},
-				"import_depth":                        schema.StringAttribute{Computed: true},
-				"create_account_json":                 schema.StringAttribute{Computed: true},
-				"pam_config":                          schema.StringAttribute{Computed: true},
-				"update_service_principal_json":       schema.StringAttribute{Computed: true},
-				"azure_management_endpoint":           schema.StringAttribute{Computed: true},
-				"entitlement_attribute":               schema.StringAttribute{Computed: true},
-				"accounts_filter":                     schema.StringAttribute{Computed: true},
-				"windows_connector_json":              schema.StringAttribute{Computed: true},
-				"deltatokens_json":                    schema.StringAttribute{Computed: true},
-				"azure_mgmt_access_token":             schema.StringAttribute{Computed: true},
-				"create_team_json":                    schema.StringAttribute{Computed: true},
-				"enhanceddirectoryroles":              schema.StringAttribute{Computed: true},
-				"status_threshold_config":             schema.StringAttribute{Computed: true},
-				"account_import_fields":               schema.StringAttribute{Computed: true},
-				"remove_account_json":                 schema.StringAttribute{Computed: true},
-				"change_pass_json":                    schema.StringAttribute{Computed: true},
-				"client_secret":                       schema.StringAttribute{Computed: true},
+				"update_user_json":         schema.StringAttribute{Computed: true},
+				"microsoft_graph_endpoint": schema.StringAttribute{Computed: true},
+				"endpoints_filter":         schema.StringAttribute{Computed: true},
+				"import_user_json":         schema.StringAttribute{Computed: true},
+				"connection_type":          schema.StringAttribute{Computed: true},
+				"enable_account_json":      schema.StringAttribute{Computed: true},
+				// "connection_json":                     schema.StringAttribute{Computed: true},
+				// "client_id":                           schema.StringAttribute{Computed: true},
+				"delete_group_json": schema.StringAttribute{Computed: true},
+				"config_json":       schema.StringAttribute{Computed: true},
+				// "access_token":                        schema.StringAttribute{Computed: true},
+				"add_access_json":               schema.StringAttribute{Computed: true},
+				"create_channel_json":           schema.StringAttribute{Computed: true},
+				"update_account_json":           schema.StringAttribute{Computed: true},
+				"is_timeout_supported":          schema.BoolAttribute{Computed: true},
+				"remove_service_principal_json": schema.StringAttribute{Computed: true},
+				"import_depth":                  schema.StringAttribute{Computed: true},
+				"create_account_json":           schema.StringAttribute{Computed: true},
+				"pam_config":                    schema.StringAttribute{Computed: true},
+				"update_service_principal_json": schema.StringAttribute{Computed: true},
+				"azure_management_endpoint":     schema.StringAttribute{Computed: true},
+				"entitlement_attribute":         schema.StringAttribute{Computed: true},
+				"accounts_filter":               schema.StringAttribute{Computed: true},
+				// "windows_connector_json":              schema.StringAttribute{Computed: true},
+				"deltatokens_json": schema.StringAttribute{Computed: true},
+				// "azure_mgmt_access_token":             schema.StringAttribute{Computed: true},
+				"create_team_json":        schema.StringAttribute{Computed: true},
+				"enhanceddirectoryroles":  schema.StringAttribute{Computed: true},
+				"status_threshold_config": schema.StringAttribute{Computed: true},
+				"account_import_fields":   schema.StringAttribute{Computed: true},
+				"remove_account_json":     schema.StringAttribute{Computed: true},
+				// "change_pass_json":                    schema.StringAttribute{Computed: true},
+				// "client_secret":                       schema.StringAttribute{Computed: true},
 				"entitlement_filter_json":             schema.StringAttribute{Computed: true},
 				"service_account_attributes":          schema.StringAttribute{Computed: true},
 				"add_access_to_entitlement_json":      schema.StringAttribute{Computed: true},
@@ -239,13 +240,35 @@ func (d *entraIdConnectionDataSource) Read(ctx context.Context, req datasource.R
 	// Execute API request
 	apiResp, httpResp, err := apiReq.Execute()
 	if err != nil {
-		log.Printf("[ERROR] API Call Failed: %v", err)
-		resp.Diagnostics.AddError("API Call Failed", fmt.Sprintf("Error: %v", err))
+		if httpResp != nil && httpResp.StatusCode != 200 {
+			log.Printf("[ERROR] HTTP error while creating EntraId Connector: %s", httpResp.Status)
+			var fetchResp map[string]interface{}
+			if err := json.NewDecoder(httpResp.Body).Decode(&fetchResp); err != nil {
+				resp.Diagnostics.AddError("Failed to decode error response", err.Error())
+				return
+			}
+			resp.Diagnostics.AddError(
+				"HTTP Error",
+				fmt.Sprintf("HTTP error while creating EntraId Connector for the reasons: %s", fetchResp["msg"]),
+			)
+
+		} else {
+			log.Printf("[ERROR] API Call Failed: %v", err)
+			resp.Diagnostics.AddError("API Call Failed", fmt.Sprintf("Error: %v", err))
+		}
 		return
 	}
-	if apiResp!=nil && *apiResp.EntraIDConnectionResponse.Errorcode !=0{
-		log.Printf("[ERROR]: Error in reading EntraId connection. Errorcode: %v, Message: %v", *apiResp.EntraIDConnectionResponse.Errorcode, *apiResp.EntraIDConnectionResponse.Msg)
-		resp.Diagnostics.AddError("Read DB connection failed", *apiResp.EntraIDConnectionResponse.Msg)
+
+	// if apiResp != nil && *apiResp.EntraIDConnectionResponse.Errorcode != 0 {
+	// 	log.Printf("[ERROR]: Error in reading EntraId connection. Errorcode: %v, Message: %v", *apiResp.EntraIDConnectionResponse.Errorcode, *apiResp.EntraIDConnectionResponse.Msg)
+	// 	resp.Diagnostics.AddError("Read DB connection failed", *apiResp.EntraIDConnectionResponse.Msg)
+	// 	return
+	// }
+
+	if apiResp != nil && apiResp.EntraIDConnectionResponse == nil {
+		error := "Verify the connection type"
+		log.Printf("[ERROR]: Verify the connection type given")
+		resp.Diagnostics.AddError("Read of EntraID connection failed", error)
 		return
 	}
 
@@ -265,39 +288,39 @@ func (d *entraIdConnectionDataSource) Read(ctx context.Context, req datasource.R
 
 	if apiResp.EntraIDConnectionResponse.Connectionattributes != nil {
 		state.ConnectionAttributes = &EntraIdConnectionAttributes{
-			UpdateUserJSON:                  util.SafeStringDatasource(apiResp.EntraIDConnectionResponse.Connectionattributes.UpdateUserJSON),
-			MicrosoftGraphEndpoint:          util.SafeStringDatasource(apiResp.EntraIDConnectionResponse.Connectionattributes.MICROSOFT_GRAPH_ENDPOINT),
-			EndpointsFilter:                 util.SafeStringDatasource(apiResp.EntraIDConnectionResponse.Connectionattributes.ENDPOINTS_FILTER),
-			ImportUserJSON:                  util.SafeStringDatasource(apiResp.EntraIDConnectionResponse.Connectionattributes.ImportUserJSON),
-			ConnectionType:                  util.SafeStringDatasource(apiResp.EntraIDConnectionResponse.Connectionattributes.ConnectionType),
-			EnableAccountJSON:               util.SafeStringDatasource(apiResp.EntraIDConnectionResponse.Connectionattributes.EnableAccountJSON),
-			ConnectionJSON:                  util.SafeStringDatasource(apiResp.EntraIDConnectionResponse.Connectionattributes.ConnectionJSON),
-			ClientID:                        util.SafeStringDatasource(apiResp.EntraIDConnectionResponse.Connectionattributes.CLIENT_ID),
-			DeleteGroupJSON:                 util.SafeStringDatasource(apiResp.EntraIDConnectionResponse.Connectionattributes.DeleteGroupJSON),
-			ConfigJSON:                      util.SafeStringDatasource(apiResp.EntraIDConnectionResponse.Connectionattributes.ConfigJSON),
-			AccessToken:                     util.SafeStringDatasource(apiResp.EntraIDConnectionResponse.Connectionattributes.ACCESS_TOKEN),
-			AddAccessJSON:                   util.SafeStringDatasource(apiResp.EntraIDConnectionResponse.Connectionattributes.AddAccessJSON),
-			CreateChannelJSON:               util.SafeStringDatasource(apiResp.EntraIDConnectionResponse.Connectionattributes.CreateChannelJSON),
-			UpdateAccountJSON:               util.SafeStringDatasource(apiResp.EntraIDConnectionResponse.Connectionattributes.UpdateAccountJSON),
-			IsTimeoutSupported:              util.SafeBoolDatasource(apiResp.EntraIDConnectionResponse.Connectionattributes.IsTimeoutSupported),
-			RemoveServicePrincipalJSON:      util.SafeStringDatasource(apiResp.EntraIDConnectionResponse.Connectionattributes.RemoveServicePrincipalJSON),
-			ImportDepth:                     util.SafeStringDatasource(apiResp.EntraIDConnectionResponse.Connectionattributes.IMPORT_DEPTH),
-			CreateAccountJSON:               util.SafeStringDatasource(apiResp.EntraIDConnectionResponse.Connectionattributes.CreateAccountJSON),
-			PamConfig:                       util.SafeStringDatasource(apiResp.EntraIDConnectionResponse.Connectionattributes.PAM_CONFIG),
-			UpdateServicePrincipalJSON:      util.SafeStringDatasource(apiResp.EntraIDConnectionResponse.Connectionattributes.UpdateServicePrincipalJSON),
-			AzureManagementEndpoint:         util.SafeStringDatasource(apiResp.EntraIDConnectionResponse.Connectionattributes.AZURE_MANAGEMENT_ENDPOINT),
-			EntitlementAttribute:            util.SafeStringDatasource(apiResp.EntraIDConnectionResponse.Connectionattributes.ENTITLEMENT_ATTRIBUTE),
-			AccountsFilter:                  util.SafeStringDatasource(apiResp.EntraIDConnectionResponse.Connectionattributes.ACCOUNTS_FILTER),
-			WindowsConnectorJSON:            util.SafeStringDatasource(apiResp.EntraIDConnectionResponse.Connectionattributes.WINDOWS_CONNECTOR_JSON),
-			DeltaTokensJSON:                 util.SafeStringDatasource(apiResp.EntraIDConnectionResponse.Connectionattributes.DELTATOKENSJSON),
-			AzureMgmtAccessToken:            util.SafeStringDatasource(apiResp.EntraIDConnectionResponse.Connectionattributes.AZURE_MGMT_ACCESS_TOKEN),
-			CreateTeamJSON:                  util.SafeStringDatasource(apiResp.EntraIDConnectionResponse.Connectionattributes.CreateTeamJSON),
-			EnhancedDirectoryRoles:          util.SafeStringDatasource(apiResp.EntraIDConnectionResponse.Connectionattributes.ENHANCEDDIRECTORYROLES),
-			StatusThresholdConfig:           util.SafeStringDatasource(apiResp.EntraIDConnectionResponse.Connectionattributes.STATUS_THRESHOLD_CONFIG),
-			AccountImportFields:             util.SafeStringDatasource(apiResp.EntraIDConnectionResponse.Connectionattributes.ACCOUNT_IMPORT_FIELDS),
-			RemoveAccountJSON:               util.SafeStringDatasource(apiResp.EntraIDConnectionResponse.Connectionattributes.RemoveAccountJSON),
-			ChangePassJSON:                  util.SafeStringDatasource(apiResp.EntraIDConnectionResponse.Connectionattributes.ChangePassJSON),
-			ClientSecret:                    util.SafeStringDatasource(apiResp.EntraIDConnectionResponse.Connectionattributes.CLIENT_SECRET),
+			UpdateUserJSON:         util.SafeStringDatasource(apiResp.EntraIDConnectionResponse.Connectionattributes.UpdateUserJSON),
+			MicrosoftGraphEndpoint: util.SafeStringDatasource(apiResp.EntraIDConnectionResponse.Connectionattributes.MICROSOFT_GRAPH_ENDPOINT),
+			EndpointsFilter:        util.SafeStringDatasource(apiResp.EntraIDConnectionResponse.Connectionattributes.ENDPOINTS_FILTER),
+			ImportUserJSON:         util.SafeStringDatasource(apiResp.EntraIDConnectionResponse.Connectionattributes.ImportUserJSON),
+			ConnectionType:         util.SafeStringDatasource(apiResp.EntraIDConnectionResponse.Connectionattributes.ConnectionType),
+			EnableAccountJSON:      util.SafeStringDatasource(apiResp.EntraIDConnectionResponse.Connectionattributes.EnableAccountJSON),
+			// ConnectionJSON:         util.SafeStringDatasource(apiResp.EntraIDConnectionResponse.Connectionattributes.ConnectionJSON),
+			// ClientID:               util.SafeStringDatasource(apiResp.EntraIDConnectionResponse.Connectionattributes.CLIENT_ID),
+			DeleteGroupJSON: util.SafeStringDatasource(apiResp.EntraIDConnectionResponse.Connectionattributes.DeleteGroupJSON),
+			ConfigJSON:      util.SafeStringDatasource(apiResp.EntraIDConnectionResponse.Connectionattributes.ConfigJSON),
+			// AccessToken:                     util.SafeStringDatasource(apiResp.EntraIDConnectionResponse.Connectionattributes.ACCESS_TOKEN),
+			AddAccessJSON:              util.SafeStringDatasource(apiResp.EntraIDConnectionResponse.Connectionattributes.AddAccessJSON),
+			CreateChannelJSON:          util.SafeStringDatasource(apiResp.EntraIDConnectionResponse.Connectionattributes.CreateChannelJSON),
+			UpdateAccountJSON:          util.SafeStringDatasource(apiResp.EntraIDConnectionResponse.Connectionattributes.UpdateAccountJSON),
+			IsTimeoutSupported:         util.SafeBoolDatasource(apiResp.EntraIDConnectionResponse.Connectionattributes.IsTimeoutSupported),
+			RemoveServicePrincipalJSON: util.SafeStringDatasource(apiResp.EntraIDConnectionResponse.Connectionattributes.RemoveServicePrincipalJSON),
+			ImportDepth:                util.SafeStringDatasource(apiResp.EntraIDConnectionResponse.Connectionattributes.IMPORT_DEPTH),
+			CreateAccountJSON:          util.SafeStringDatasource(apiResp.EntraIDConnectionResponse.Connectionattributes.CreateAccountJSON),
+			PamConfig:                  util.SafeStringDatasource(apiResp.EntraIDConnectionResponse.Connectionattributes.PAM_CONFIG),
+			UpdateServicePrincipalJSON: util.SafeStringDatasource(apiResp.EntraIDConnectionResponse.Connectionattributes.UpdateServicePrincipalJSON),
+			AzureManagementEndpoint:    util.SafeStringDatasource(apiResp.EntraIDConnectionResponse.Connectionattributes.AZURE_MANAGEMENT_ENDPOINT),
+			EntitlementAttribute:       util.SafeStringDatasource(apiResp.EntraIDConnectionResponse.Connectionattributes.ENTITLEMENT_ATTRIBUTE),
+			AccountsFilter:             util.SafeStringDatasource(apiResp.EntraIDConnectionResponse.Connectionattributes.ACCOUNTS_FILTER),
+			// WindowsConnectorJSON:            util.SafeStringDatasource(apiResp.EntraIDConnectionResponse.Connectionattributes.WINDOWS_CONNECTOR_JSON),
+			DeltaTokensJSON: util.SafeStringDatasource(apiResp.EntraIDConnectionResponse.Connectionattributes.DELTATOKENSJSON),
+			// AzureMgmtAccessToken:            util.SafeStringDatasource(apiResp.EntraIDConnectionResponse.Connectionattributes.AZURE_MGMT_ACCESS_TOKEN),
+			CreateTeamJSON:         util.SafeStringDatasource(apiResp.EntraIDConnectionResponse.Connectionattributes.CreateTeamJSON),
+			EnhancedDirectoryRoles: util.SafeStringDatasource(apiResp.EntraIDConnectionResponse.Connectionattributes.ENHANCEDDIRECTORYROLES),
+			StatusThresholdConfig:  util.SafeStringDatasource(apiResp.EntraIDConnectionResponse.Connectionattributes.STATUS_THRESHOLD_CONFIG),
+			AccountImportFields:    util.SafeStringDatasource(apiResp.EntraIDConnectionResponse.Connectionattributes.ACCOUNT_IMPORT_FIELDS),
+			RemoveAccountJSON:      util.SafeStringDatasource(apiResp.EntraIDConnectionResponse.Connectionattributes.RemoveAccountJSON),
+			// ChangePassJSON:                  util.SafeStringDatasource(apiResp.EntraIDConnectionResponse.Connectionattributes.ChangePassJSON),
+			// ClientSecret:                    util.SafeStringDatasource(apiResp.EntraIDConnectionResponse.Connectionattributes.CLIENT_SECRET),
 			EntitlementFilterJSON:           util.SafeStringDatasource(apiResp.EntraIDConnectionResponse.Connectionattributes.ENTITLEMENT_FILTER_JSON),
 			ServiceAccountAttributes:        util.SafeStringDatasource(apiResp.EntraIDConnectionResponse.Connectionattributes.SERVICE_ACCOUNT_ATTRIBUTES),
 			AddAccessToEntitlementJSON:      util.SafeStringDatasource(apiResp.EntraIDConnectionResponse.Connectionattributes.AddAccessToEntitlementJSON),
@@ -331,6 +354,20 @@ func (d *entraIdConnectionDataSource) Read(ctx context.Context, req datasource.R
 
 	if apiResp.EntraIDConnectionResponse.Connectionattributes == nil {
 		state.ConnectionAttributes = nil
+	}
+	if !state.Authenticate.IsNull() && !state.Authenticate.IsUnknown() {
+		if state.Authenticate.ValueBool() {
+			resp.Diagnostics.AddWarning(
+				"Authentication Enabled",
+				"`authenticate` is true; all connection_attributes will be returned in state.",
+			)
+		} else {
+			resp.Diagnostics.AddWarning(
+				"Authentication Disabled",
+				"`authenticate` is false; connection_attributes will be removed from state.",
+			)
+			state.ConnectionAttributes = nil
+		}
 	}
 	stateDiagnostics := resp.State.Set(ctx, &state)
 	resp.Diagnostics.Append(stateDiagnostics...)

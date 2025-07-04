@@ -19,6 +19,7 @@ package provider
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"log"
 	"net/http"
@@ -50,26 +51,26 @@ type SalesforceConnectionDataSourceModel struct {
 }
 
 type SalesforceConnectionAttributes struct {
-	IsTimeoutSupported types.Bool   `tfsdk:"is_timeout_supported"`
-	ClientSecret       types.String `tfsdk:"client_secret"`
+	IsTimeoutSupported types.Bool `tfsdk:"is_timeout_supported"`
+	// ClientSecret       types.String `tfsdk:"client_secret"`
 	ObjectToBeImported types.String `tfsdk:"object_to_be_imported"`
 	FeatureLicenseJson types.String `tfsdk:"feature_license_json"`
 	CreateAccountJson  types.String `tfsdk:"createaccountjson"`
 	RedirectUri        types.String `tfsdk:"redirect_uri"`
-	RefreshToken       types.String `tfsdk:"refresh_token"`
+	// RefreshToken       types.String `tfsdk:"refresh_token"`
 	// ConnectionTimeoutConfig  *ConnectionTimeoutConfig `tfsdk:"connection_timeout_config"`
 	ModifyAccountJson        types.String `tfsdk:"modifyaccountjson"`
 	ConnectionType           types.String `tfsdk:"connection_type"`
 	IsTimeoutConfigValidated types.Bool   `tfsdk:"is_timeout_config_validated"`
-	ClientId                 types.String `tfsdk:"client_id"`
-	PamConfig                types.String `tfsdk:"pam_config"`
-	CustomConfigJson         types.String `tfsdk:"customconfigjson"`
-	FieldMappingJson         types.String `tfsdk:"field_mapping_json"`
-	StatusThresholdConfig    types.String `tfsdk:"status_threshold_config"`
-	AccountFieldQuery        types.String `tfsdk:"account_field_query"`
-	CustomCreateAccountUrl   types.String `tfsdk:"custom_createaccount_url"`
-	AccountFilterQuery       types.String `tfsdk:"account_filter_query"`
-	InstanceUrl              types.String `tfsdk:"instance_url"`
+	// ClientId                 types.String `tfsdk:"client_id"`
+	PamConfig              types.String `tfsdk:"pam_config"`
+	CustomConfigJson       types.String `tfsdk:"customconfigjson"`
+	FieldMappingJson       types.String `tfsdk:"field_mapping_json"`
+	StatusThresholdConfig  types.String `tfsdk:"status_threshold_config"`
+	AccountFieldQuery      types.String `tfsdk:"account_field_query"`
+	CustomCreateAccountUrl types.String `tfsdk:"custom_createaccount_url"`
+	AccountFilterQuery     types.String `tfsdk:"account_filter_query"`
+	InstanceUrl            types.String `tfsdk:"instance_url"`
 }
 
 func NewSalesforceConnectionsDataSource() datasource.DataSource {
@@ -89,25 +90,25 @@ func SalesforceConnectorsDataSourceSchema() map[string]schema.Attribute {
 		"connection_attributes": schema.SingleNestedAttribute{
 			Computed: true,
 			Attributes: map[string]schema.Attribute{
-				"is_timeout_supported":        schema.BoolAttribute{Computed: true},
-				"client_secret":               schema.StringAttribute{Computed: true},
-				"object_to_be_imported":       schema.StringAttribute{Computed: true},
-				"feature_license_json":        schema.StringAttribute{Computed: true},
-				"createaccountjson":           schema.StringAttribute{Computed: true},
-				"redirect_uri":                schema.StringAttribute{Computed: true},
-				"refresh_token":               schema.StringAttribute{Computed: true},
+				"is_timeout_supported": schema.BoolAttribute{Computed: true},
+				// "client_secret":               schema.StringAttribute{Computed: true},
+				"object_to_be_imported": schema.StringAttribute{Computed: true},
+				"feature_license_json":  schema.StringAttribute{Computed: true},
+				"createaccountjson":     schema.StringAttribute{Computed: true},
+				"redirect_uri":          schema.StringAttribute{Computed: true},
+				// "refresh_token":               schema.StringAttribute{Computed: true},
 				"modifyaccountjson":           schema.StringAttribute{Computed: true},
 				"connection_type":             schema.StringAttribute{Computed: true},
 				"is_timeout_config_validated": schema.BoolAttribute{Computed: true},
-				"client_id":                   schema.StringAttribute{Computed: true},
-				"pam_config":                  schema.StringAttribute{Computed: true},
-				"customconfigjson":            schema.StringAttribute{Computed: true},
-				"field_mapping_json":          schema.StringAttribute{Computed: true},
-				"status_threshold_config":     schema.StringAttribute{Computed: true},
-				"account_field_query":         schema.StringAttribute{Computed: true},
-				"custom_createaccount_url":    schema.StringAttribute{Computed: true},
-				"account_filter_query":        schema.StringAttribute{Computed: true},
-				"instance_url":                schema.StringAttribute{Computed: true},
+				// "client_id":                   schema.StringAttribute{Computed: true},
+				"pam_config":               schema.StringAttribute{Computed: true},
+				"customconfigjson":         schema.StringAttribute{Computed: true},
+				"field_mapping_json":       schema.StringAttribute{Computed: true},
+				"status_threshold_config":  schema.StringAttribute{Computed: true},
+				"account_field_query":      schema.StringAttribute{Computed: true},
+				"custom_createaccount_url": schema.StringAttribute{Computed: true},
+				"account_filter_query":     schema.StringAttribute{Computed: true},
+				"instance_url":             schema.StringAttribute{Computed: true},
 				// "connection_timeout_config": schema.SingleNestedAttribute{
 				// 	Computed:   true,
 				// 	Attributes: ConnectionTimeoutConfigeSchema(),
@@ -177,16 +178,36 @@ func (d *salesforceConnectionDataSource) Read(ctx context.Context, req datasourc
 	// Execute API request
 	apiResp, httpResp, err := apiReq.Execute()
 	if err != nil {
-		log.Printf("[ERROR] API Call Failed: %v", err)
-		resp.Diagnostics.AddError("API Call Failed", fmt.Sprintf("Error: %v", err))
-		return
-	}
-	if apiResp!=nil && *apiResp.SalesforceConnectionResponse.Errorcode !=0{
-		log.Printf("[ERROR]: Error in reading Salesforce connection. Errorcode: %v, Message: %v", *apiResp.SalesforceConnectionResponse.Errorcode, *apiResp.SalesforceConnectionResponse.Msg)
-		resp.Diagnostics.AddError("Reading Salesforce connection failed", *apiResp.SalesforceConnectionResponse.Msg)
-		return
-	}
+		if httpResp != nil && httpResp.StatusCode != 200 {
+			log.Printf("[ERROR] HTTP error while creating Salesforce Connection: %s", httpResp.Status)
+			var fetchResp map[string]interface{}
+			if err := json.NewDecoder(httpResp.Body).Decode(&fetchResp); err != nil {
+				resp.Diagnostics.AddError("Failed to decode error response", err.Error())
+				return
+			}
+			resp.Diagnostics.AddError(
+				"HTTP Error",
+				fmt.Sprintf("HTTP error while creating Salesforce Connection for the reasons: %s", fetchResp["msg"]),
+			)
 
+		} else {
+			log.Printf("[ERROR] API Call Failed: %v", err)
+			resp.Diagnostics.AddError("API Call Failed", fmt.Sprintf("Error: %v", err))
+		}
+		return
+	}
+	// if apiResp != nil && *apiResp.SalesforceConnectionResponse.Errorcode != 0 {
+	// 	log.Printf("[ERROR]: Error in reading Salesforce connection. Errorcode: %v, Message: %v", *apiResp.SalesforceConnectionResponse.Errorcode, *apiResp.SalesforceConnectionResponse.Msg)
+	// 	resp.Diagnostics.AddError("Reading Salesforce connection failed", *apiResp.SalesforceConnectionResponse.Msg)
+	// 	return
+	// }
+
+	if apiResp != nil && apiResp.SalesforceConnectionResponse == nil {
+		error := "Verify the connection type"
+		log.Printf("[ERROR]: Verify the connection type given")
+		resp.Diagnostics.AddError("Read of Salesforce connection failed", error)
+		return
+	}
 	log.Printf("[DEBUG] HTTP Status Code: %d", httpResp.StatusCode)
 
 	state.Msg = util.SafeStringDatasource(apiResp.SalesforceConnectionResponse.Msg)
@@ -203,25 +224,25 @@ func (d *salesforceConnectionDataSource) Read(ctx context.Context, req datasourc
 
 	if apiResp.SalesforceConnectionResponse.Connectionattributes != nil {
 		state.ConnectionAttributes = &SalesforceConnectionAttributes{
-			IsTimeoutSupported:       util.SafeBoolDatasource(apiResp.SalesforceConnectionResponse.Connectionattributes.IsTimeoutSupported),
-			ClientSecret:             util.SafeStringDatasource(apiResp.SalesforceConnectionResponse.Connectionattributes.CLIENT_SECRET),
-			ObjectToBeImported:       util.SafeStringDatasource(apiResp.SalesforceConnectionResponse.Connectionattributes.OBJECT_TO_BE_IMPORTED),
-			FeatureLicenseJson:       util.SafeStringDatasource(apiResp.SalesforceConnectionResponse.Connectionattributes.FEATURE_LICENSE_JSON),
-			CreateAccountJson:        util.SafeStringDatasource(apiResp.SalesforceConnectionResponse.Connectionattributes.CREATEACCOUNTJSON),
-			RedirectUri:              util.SafeStringDatasource(apiResp.SalesforceConnectionResponse.Connectionattributes.REDIRECT_URI),
-			RefreshToken:             util.SafeStringDatasource(apiResp.SalesforceConnectionResponse.Connectionattributes.REFRESH_TOKEN),
+			IsTimeoutSupported: util.SafeBoolDatasource(apiResp.SalesforceConnectionResponse.Connectionattributes.IsTimeoutSupported),
+			// ClientSecret:             util.SafeStringDatasource(apiResp.SalesforceConnectionResponse.Connectionattributes.CLIENT_SECRET),
+			ObjectToBeImported: util.SafeStringDatasource(apiResp.SalesforceConnectionResponse.Connectionattributes.OBJECT_TO_BE_IMPORTED),
+			FeatureLicenseJson: util.SafeStringDatasource(apiResp.SalesforceConnectionResponse.Connectionattributes.FEATURE_LICENSE_JSON),
+			CreateAccountJson:  util.SafeStringDatasource(apiResp.SalesforceConnectionResponse.Connectionattributes.CREATEACCOUNTJSON),
+			RedirectUri:        util.SafeStringDatasource(apiResp.SalesforceConnectionResponse.Connectionattributes.REDIRECT_URI),
+			// RefreshToken:             util.SafeStringDatasource(apiResp.SalesforceConnectionResponse.Connectionattributes.REFRESH_TOKEN),
 			ConnectionType:           util.SafeStringDatasource(apiResp.SalesforceConnectionResponse.Connectionattributes.ConnectionType),
 			ModifyAccountJson:        util.SafeStringDatasource(apiResp.SalesforceConnectionResponse.Connectionattributes.MODIFYACCOUNTJSON),
 			IsTimeoutConfigValidated: util.SafeBoolDatasource(apiResp.SalesforceConnectionResponse.Connectionattributes.IsTimeoutConfigValidated),
-			ClientId:                 util.SafeStringDatasource(apiResp.SalesforceConnectionResponse.Connectionattributes.CLIENT_ID),
-			PamConfig:                util.SafeStringDatasource(apiResp.SalesforceConnectionResponse.Connectionattributes.PAM_CONFIG),
-			CustomConfigJson:         util.SafeStringDatasource(apiResp.SalesforceConnectionResponse.Connectionattributes.CUSTOMCONFIGJSON),
-			FieldMappingJson:         util.SafeStringDatasource(apiResp.SalesforceConnectionResponse.Connectionattributes.FIELD_MAPPING_JSON),
-			StatusThresholdConfig:    util.SafeStringDatasource(apiResp.SalesforceConnectionResponse.Connectionattributes.STATUS_THRESHOLD_CONFIG),
-			AccountFieldQuery:        util.SafeStringDatasource(apiResp.SalesforceConnectionResponse.Connectionattributes.ACCOUNT_FIELD_QUERY),
-			CustomCreateAccountUrl:   util.SafeStringDatasource(apiResp.SalesforceConnectionResponse.Connectionattributes.CUSTOM_CREATEACCOUNT_URL),
-			AccountFilterQuery:       util.SafeStringDatasource(apiResp.SalesforceConnectionResponse.Connectionattributes.ACCOUNT_FILTER_QUERY),
-			InstanceUrl:              util.SafeStringDatasource(apiResp.SalesforceConnectionResponse.Connectionattributes.INSTANCE_URL),
+			// ClientId:                 util.SafeStringDatasource(apiResp.SalesforceConnectionResponse.Connectionattributes.CLIENT_ID),
+			PamConfig:              util.SafeStringDatasource(apiResp.SalesforceConnectionResponse.Connectionattributes.PAM_CONFIG),
+			CustomConfigJson:       util.SafeStringDatasource(apiResp.SalesforceConnectionResponse.Connectionattributes.CUSTOMCONFIGJSON),
+			FieldMappingJson:       util.SafeStringDatasource(apiResp.SalesforceConnectionResponse.Connectionattributes.FIELD_MAPPING_JSON),
+			StatusThresholdConfig:  util.SafeStringDatasource(apiResp.SalesforceConnectionResponse.Connectionattributes.STATUS_THRESHOLD_CONFIG),
+			AccountFieldQuery:      util.SafeStringDatasource(apiResp.SalesforceConnectionResponse.Connectionattributes.ACCOUNT_FIELD_QUERY),
+			CustomCreateAccountUrl: util.SafeStringDatasource(apiResp.SalesforceConnectionResponse.Connectionattributes.CUSTOM_CREATEACCOUNT_URL),
+			AccountFilterQuery:     util.SafeStringDatasource(apiResp.SalesforceConnectionResponse.Connectionattributes.ACCOUNT_FILTER_QUERY),
+			InstanceUrl:            util.SafeStringDatasource(apiResp.SalesforceConnectionResponse.Connectionattributes.INSTANCE_URL),
 		}
 
 		// if apiResp.SalesforceConnectionResponse.Connectionattributes.ConnectionTimeoutConfig != nil {
@@ -240,6 +261,20 @@ func (d *salesforceConnectionDataSource) Read(ctx context.Context, req datasourc
 
 	if apiResp.SalesforceConnectionResponse.Connectionattributes == nil {
 		state.ConnectionAttributes = nil
+	}
+	if !state.Authenticate.IsNull() && !state.Authenticate.IsUnknown() {
+		if state.Authenticate.ValueBool() {
+			resp.Diagnostics.AddWarning(
+				"Authentication Enabled",
+				"`authenticate` is true; all connection_attributes will be returned in state.",
+			)
+		} else {
+			resp.Diagnostics.AddWarning(
+				"Authentication Disabled",
+				"`authenticate` is false; connection_attributes will be removed from state.",
+			)
+			state.ConnectionAttributes = nil
+		}
 	}
 	stateDiagnostics := resp.State.Set(ctx, &state)
 	resp.Diagnostics.Append(stateDiagnostics...)

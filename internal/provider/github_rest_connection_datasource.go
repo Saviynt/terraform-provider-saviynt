@@ -19,6 +19,7 @@ package provider
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"log"
 	"net/http"
@@ -50,12 +51,12 @@ type GithubRestConnectionDataSourceModel struct {
 }
 
 type GithubRestConnectionAttributes struct {
-	IsTimeoutSupported   types.Bool   `tfsdk:"is_timeout_supported"`
-	ConnectionJSON       types.String `tfsdk:"connection_json"`
+	IsTimeoutSupported types.Bool `tfsdk:"is_timeout_supported"`
+	// ConnectionJSON       types.String `tfsdk:"connection_json"`
 	OrganizationList     types.String `tfsdk:"organization_list"`
 	ImportAccountEntJSON types.String `tfsdk:"import_account_ent_json"`
 	// StatusThresholdConfig    types.String             `tfsdk:"status_threshold_config"`
-	AccessTokens types.String `tfsdk:"access_tokens"`
+	// AccessTokens types.String `tfsdk:"access_tokens"`
 	// ConnectionTimeoutConfig  *ConnectionTimeoutConfig `tfsdk:"connection_timeout_config"`
 	ConnectionType           types.String `tfsdk:"connection_type"`
 	IsTimeoutConfigValidated types.Bool   `tfsdk:"is_timeout_config_validated"`
@@ -78,13 +79,13 @@ func GithubRestConnectorsDataSourceSchema() map[string]schema.Attribute {
 		"connection_attributes": schema.SingleNestedAttribute{
 			Computed: true,
 			Attributes: map[string]schema.Attribute{
-				"is_timeout_supported":    schema.BoolAttribute{Computed: true},
-				"connection_json":         schema.StringAttribute{Computed: true},
+				"is_timeout_supported": schema.BoolAttribute{Computed: true},
+				// "connection_json":         schema.StringAttribute{Computed: true},
 				"organization_list":       schema.StringAttribute{Computed: true},
 				"connection_type":         schema.StringAttribute{Computed: true},
 				"import_account_ent_json": schema.StringAttribute{Computed: true},
 				// "status_threshold_config":     schema.StringAttribute{Computed: true},
-				"access_tokens":               schema.StringAttribute{Computed: true},
+				// "access_tokens":               schema.StringAttribute{Computed: true},
 				"is_timeout_config_validated": schema.BoolAttribute{Computed: true},
 				// "connection_timeout_config": schema.SingleNestedAttribute{
 				// 	Computed:   true,
@@ -155,16 +156,36 @@ func (d *githubRestConnectionDataSource) Read(ctx context.Context, req datasourc
 	// Execute API request
 	apiResp, httpResp, err := apiReq.Execute()
 	if err != nil {
-		log.Printf("[ERROR] API Call Failed: %v", err)
-		resp.Diagnostics.AddError("API Call Failed", fmt.Sprintf("Error: %v", err))
-		return
-	}
-	if apiResp!=nil && *apiResp.GithubRESTConnectionResponse.Errorcode !=0{
-		log.Printf("[ERROR]: Error in reading Github Rest connection. Errorcode: %v, Message: %v", *apiResp.GithubRESTConnectionResponse.Errorcode, *apiResp.GithubRESTConnectionResponse.Msg)
-		resp.Diagnostics.AddError("Read Github Rest connection failed", *apiResp.GithubRESTConnectionResponse.Msg)
-		return
-	}
+		if httpResp != nil && httpResp.StatusCode != 200 {
+			log.Printf("[ERROR] HTTP error while creating GithubRest Connector: %s", httpResp.Status)
+			var fetchResp map[string]interface{}
+			if err := json.NewDecoder(httpResp.Body).Decode(&fetchResp); err != nil {
+				resp.Diagnostics.AddError("Failed to decode error response", err.Error())
+				return
+			}
+			resp.Diagnostics.AddError(
+				"HTTP Error",
+				fmt.Sprintf("HTTP error while creating GithubRest Connector for the reasons: %s", fetchResp["msg"]),
+			)
 
+		} else {
+			log.Printf("[ERROR] API Call Failed: %v", err)
+			resp.Diagnostics.AddError("API Call Failed", fmt.Sprintf("Error: %v", err))
+		}
+		return
+	}
+	// if apiResp != nil && *apiResp.GithubRESTConnectionResponse.Errorcode != 0 {
+	// 	log.Printf("[ERROR]: Error in reading Github Rest connection. Errorcode: %v, Message: %v", *apiResp.GithubRESTConnectionResponse.Errorcode, *apiResp.GithubRESTConnectionResponse.Msg)
+	// 	resp.Diagnostics.AddError("Read Github Rest connection failed", *apiResp.GithubRESTConnectionResponse.Msg)
+	// 	return
+	// }
+
+	if apiResp != nil && apiResp.GithubRESTConnectionResponse == nil {
+		error := "Verify the connection type"
+		log.Printf("[ERROR]: Verify the connection type given")
+		resp.Diagnostics.AddError("Read of Github_Rest connection failed", error)
+		return
+	}
 	log.Printf("[DEBUG] HTTP Status Code: %d", httpResp.StatusCode)
 
 	state.Msg = util.SafeStringDatasource(apiResp.GithubRESTConnectionResponse.Msg)
@@ -182,12 +203,12 @@ func (d *githubRestConnectionDataSource) Read(ctx context.Context, req datasourc
 	if apiResp.GithubRESTConnectionResponse.Connectionattributes != nil {
 
 		state.ConnectionAttributes = &GithubRestConnectionAttributes{
-			IsTimeoutSupported:   util.SafeBoolDatasource(apiResp.GithubRESTConnectionResponse.Connectionattributes.IsTimeoutSupported),
-			ConnectionJSON:       util.SafeStringDatasource(apiResp.GithubRESTConnectionResponse.Connectionattributes.ConnectionJSON),
+			IsTimeoutSupported: util.SafeBoolDatasource(apiResp.GithubRESTConnectionResponse.Connectionattributes.IsTimeoutSupported),
+			// ConnectionJSON:       util.SafeStringDatasource(apiResp.GithubRESTConnectionResponse.Connectionattributes.ConnectionJSON),
 			OrganizationList:     util.SafeStringDatasource(apiResp.GithubRESTConnectionResponse.Connectionattributes.ORGANIZATION_LIST),
 			ImportAccountEntJSON: util.SafeStringDatasource(apiResp.GithubRESTConnectionResponse.Connectionattributes.ImportAccountEntJSON),
 			// StatusThresholdConfig:    util.SafeStringDatasource(apiResp.GithubRESTConnectionResponse.Connectionattributes.STATUS_THRESHOLD_CONFIG),
-			AccessTokens:             util.SafeStringDatasource(apiResp.GithubRESTConnectionResponse.Connectionattributes.ACCESS_TOKENS),
+			// AccessTokens:             util.SafeStringDatasource(apiResp.GithubRESTConnectionResponse.Connectionattributes.ACCESS_TOKENS),
 			ConnectionType:           util.SafeStringDatasource(apiResp.GithubRESTConnectionResponse.Connectionattributes.ConnectionType),
 			IsTimeoutConfigValidated: util.SafeBoolDatasource(apiResp.GithubRESTConnectionResponse.Connectionattributes.IsTimeoutConfigValidated),
 		}
@@ -206,6 +227,20 @@ func (d *githubRestConnectionDataSource) Read(ctx context.Context, req datasourc
 
 	if apiResp.GithubRESTConnectionResponse.Connectionattributes == nil {
 		state.ConnectionAttributes = nil
+	}
+	if !state.Authenticate.IsNull() && !state.Authenticate.IsUnknown() {
+		if state.Authenticate.ValueBool() {
+			resp.Diagnostics.AddWarning(
+				"Authentication Enabled",
+				"`authenticate` is true; all connection_attributes will be returned in state.",
+			)
+		} else {
+			resp.Diagnostics.AddWarning(
+				"Authentication Disabled",
+				"`authenticate` is false; connection_attributes will be removed from state.",
+			)
+			state.ConnectionAttributes = nil
+		}
 	}
 	stateDiagnostics := resp.State.Set(ctx, &state)
 	resp.Diagnostics.Append(stateDiagnostics...)

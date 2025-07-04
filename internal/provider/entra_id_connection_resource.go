@@ -484,7 +484,7 @@ func (r *entraIdConnectionResource) Create(ctx context.Context, req resource.Cre
 		resp.Diagnostics.AddError("API Create Failed", fmt.Sprintf("Error: %v", err))
 		return
 	}
-	if apiResp!=nil && *apiResp.ErrorCode !="0"{
+	if apiResp != nil && *apiResp.ErrorCode != "0" {
 		log.Printf("[ERROR]: Error in creating EntraId connection resource. Errorcode: %v, Message: %v", *apiResp.ErrorCode, *apiResp.Msg)
 		resp.Diagnostics.AddError("Creation of EntraId connection failed", *apiResp.Msg)
 		return
@@ -567,7 +567,7 @@ func (r *entraIdConnectionResource) Read(ctx context.Context, req resource.ReadR
 		resp.Diagnostics.AddError("API Read Failed In Read Block", fmt.Sprintf("Error: %v", err))
 		return
 	}
-	if apiResp!=nil && *apiResp.EntraIDConnectionResponse.Errorcode !=0{
+	if apiResp != nil && *apiResp.EntraIDConnectionResponse.Errorcode != 0 {
 		log.Printf("[ERROR]: Error in reading EntraId connection. Errorcode: %v, Message: %v", *apiResp.EntraIDConnectionResponse.Errorcode, *apiResp.EntraIDConnectionResponse.Msg)
 		resp.Diagnostics.AddError("Read EntraId connection failed", *apiResp.EntraIDConnectionResponse.Msg)
 		return
@@ -749,7 +749,7 @@ func (r *entraIdConnectionResource) Update(ctx context.Context, req resource.Upd
 		resp.Diagnostics.AddError("API Update Failed", fmt.Sprintf("Error: %v", err))
 		return
 	}
-	if apiResp!=nil && *apiResp.ErrorCode !="0"{
+	if apiResp != nil && *apiResp.ErrorCode != "0" {
 		log.Printf("[ERROR]: Error in updation EntraId connection. Errorcode: %v, Message: %v", *apiResp.ErrorCode, *apiResp.Msg)
 		resp.Diagnostics.AddError("Updation of EntraId connection failed", *apiResp.Msg)
 		return
@@ -764,7 +764,7 @@ func (r *entraIdConnectionResource) Update(ctx context.Context, req resource.Upd
 		resp.Diagnostics.AddError("API Read Failed In Update Block", fmt.Sprintf("Error: %v", *getResp.EntraIDConnectionResponse.Msg))
 		return
 	}
-	if getResp!=nil && *getResp.EntraIDConnectionResponse.Errorcode !=0{
+	if getResp != nil && *getResp.EntraIDConnectionResponse.Errorcode != 0 {
 		log.Printf("[ERROR]: Error in reading EntraId connection after updation. Errorcode: %v, Message: %v", *getResp.EntraIDConnectionResponse.Errorcode, *getResp.EntraIDConnectionResponse.Msg)
 		resp.Diagnostics.AddError("Read EntraId connection after updatio failed", *getResp.EntraIDConnectionResponse.Msg)
 		return

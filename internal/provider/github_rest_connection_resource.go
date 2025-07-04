@@ -195,7 +195,7 @@ func (r *githubRestConnectionResource) Create(ctx context.Context, req resource.
 		resp.Diagnostics.AddError("API Create Failed", fmt.Sprintf("Error: %v", err))
 		return
 	}
-	if apiResp!=nil && *apiResp.ErrorCode !="0"{
+	if apiResp != nil && *apiResp.ErrorCode != "0" {
 		log.Printf("[ERROR]: Error in creating Github Rest connection resource. Errorcode: %v, Message: %v", *apiResp.ErrorCode, *apiResp.Msg)
 		resp.Diagnostics.AddError("Creation of Github Rest connection failed", *apiResp.Msg)
 		return
@@ -242,7 +242,7 @@ func (r *githubRestConnectionResource) Read(ctx context.Context, req resource.Re
 		resp.Diagnostics.AddError("API Read Failed", fmt.Sprintf("Error: %v", err))
 		return
 	}
-	if apiResp!=nil && *apiResp.GithubRESTConnectionResponse.Errorcode !=0{
+	if apiResp != nil && *apiResp.GithubRESTConnectionResponse.Errorcode != 0 {
 		log.Printf("[ERROR]: Error in reading Github Rest connection resource. Errorcode: %v, Message: %v", *apiResp.GithubRESTConnectionResponse.Errorcode, *apiResp.GithubRESTConnectionResponse.Msg)
 		resp.Diagnostics.AddError("Read Github Rest connection resource failed", *apiResp.GithubRESTConnectionResponse.Msg)
 		return
@@ -349,7 +349,7 @@ func (r *githubRestConnectionResource) Update(ctx context.Context, req resource.
 		resp.Diagnostics.AddError("API Update Failed", fmt.Sprintf("Error: %v", err))
 		return
 	}
-	if apiResp!=nil && *apiResp.ErrorCode !="0"{
+	if apiResp != nil && *apiResp.ErrorCode != "0" {
 		log.Printf("[ERROR]: Error in updation Github Rest connection. Errorcode: %v, Message: %v", *apiResp.ErrorCode, *apiResp.Msg)
 		resp.Diagnostics.AddError("Updation of Github Rest connection failed", *apiResp.Msg)
 		return
@@ -364,7 +364,7 @@ func (r *githubRestConnectionResource) Update(ctx context.Context, req resource.
 		resp.Diagnostics.AddError("API Read Failed", fmt.Sprintf("Error: %v", err))
 		return
 	}
-	if getResp!=nil && *getResp.GithubRESTConnectionResponse.Errorcode !=0{
+	if getResp != nil && *getResp.GithubRESTConnectionResponse.Errorcode != 0 {
 		log.Printf("[ERROR]: Error in reading Github Rest connection after updation. Errorcode: %v, Message: %v", *getResp.GithubRESTConnectionResponse.Errorcode, *getResp.GithubRESTConnectionResponse.Msg)
 		resp.Diagnostics.AddError("Reading Github Rest connection after updation failed", *getResp.GithubRESTConnectionResponse.Msg)
 		return

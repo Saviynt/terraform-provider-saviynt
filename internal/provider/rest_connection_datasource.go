@@ -19,6 +19,7 @@ package provider
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"log"
 	"net/http"
@@ -49,8 +50,8 @@ type RESTConnectionDataSourceModel struct {
 }
 
 type RESTConnectionAttributes struct {
-	UpdateUserJSON        types.String `tfsdk:"update_user_json"`
-	ChangePassJSON        types.String `tfsdk:"change_pass_json"`
+	UpdateUserJSON types.String `tfsdk:"update_user_json"`
+	// ChangePassJSON        types.String `tfsdk:"change_pass_json"`
 	RemoveAccountJSON     types.String `tfsdk:"remove_account_json"`
 	TicketStatusJSON      types.String `tfsdk:"ticket_status_json"`
 	CreateTicketJSON      types.String `tfsdk:"create_ticket_json"`
@@ -76,7 +77,7 @@ type RESTConnectionAttributes struct {
 	IsTimeoutSupported       types.Bool   `tfsdk:"is_timeout_supported"`
 	ImportAccountEntJSON     types.String `tfsdk:"import_account_ent_json"`
 	IsTimeoutConfigValidated types.Bool   `tfsdk:"is_timeout_config_validated"`
-	ConnectionJSON           types.String `tfsdk:"connection_json"`
+	// ConnectionJSON           types.String `tfsdk:"connection_json"`
 }
 
 func NewRESTConnectionDatasource() datasource.DataSource {
@@ -96,8 +97,8 @@ func RESTConnectorsDataSourceSchema() map[string]schema.Attribute {
 		"connection_attributes": schema.SingleNestedAttribute{
 			Computed: true,
 			Attributes: map[string]schema.Attribute{
-				"update_user_json":            schema.StringAttribute{Computed: true},
-				"change_pass_json":            schema.StringAttribute{Computed: true},
+				"update_user_json": schema.StringAttribute{Computed: true},
+				// "change_pass_json":            schema.StringAttribute{Computed: true},
 				"remove_account_json":         schema.StringAttribute{Computed: true},
 				"ticket_status_json":          schema.StringAttribute{Computed: true},
 				"create_ticket_json":          schema.StringAttribute{Computed: true},
@@ -122,7 +123,7 @@ func RESTConnectorsDataSourceSchema() map[string]schema.Attribute {
 				"is_timeout_supported":        schema.BoolAttribute{Computed: true},
 				"import_account_ent_json":     schema.StringAttribute{Computed: true},
 				"is_timeout_config_validated": schema.BoolAttribute{Computed: true},
-				"connection_json":             schema.StringAttribute{Computed: true},
+				// "connection_json":             schema.StringAttribute{Computed: true},
 				// "connection_timeout_config": schema.SingleNestedAttribute{
 				// 	Computed:   true,
 				// 	Attributes: ConnectionTimeoutConfigeSchema(),
@@ -192,13 +193,34 @@ func (d *restConnectionDatasource) Read(ctx context.Context, req datasource.Read
 	// Execute API request
 	apiResp, httpResp, err := apiReq.Execute()
 	if err != nil {
-		log.Printf("[ERROR] API Call Failed: %v", err)
-		resp.Diagnostics.AddError("API Call Failed", fmt.Sprintf("Error: %v", err))
+		if httpResp != nil && httpResp.StatusCode != 200 {
+			log.Printf("[ERROR] HTTP error while creating Rest Connector: %s", httpResp.Status)
+			var fetchResp map[string]interface{}
+			if err := json.NewDecoder(httpResp.Body).Decode(&fetchResp); err != nil {
+				resp.Diagnostics.AddError("Failed to decode error response", err.Error())
+				return
+			}
+			resp.Diagnostics.AddError(
+				"HTTP Error",
+				fmt.Sprintf("HTTP error while creating Rest Connector for the reasons: %s", fetchResp["msg"]),
+			)
+
+		} else {
+			log.Printf("[ERROR] API Call Failed: %v", err)
+			resp.Diagnostics.AddError("API Call Failed", fmt.Sprintf("Error: %v", err))
+		}
 		return
 	}
-	if apiResp!=nil && *apiResp.RESTConnectionResponse.Errorcode !=0{
-		log.Printf("[ERROR]: Error in reading REST connection. Errorcode: %v, Message: %v", *apiResp.RESTConnectionResponse.Errorcode, *apiResp.RESTConnectionResponse.Msg)
-		resp.Diagnostics.AddError("Reading REST connection failed", *apiResp.RESTConnectionResponse.Msg)
+
+	// if apiResp != nil && *apiResp.RESTConnectionResponse.Errorcode != 0 {
+	// 	log.Printf("[ERROR]: Error in reading REST connection. Errorcode: %v, Message: %v", *apiResp.RESTConnectionResponse.Errorcode, *apiResp.RESTConnectionResponse.Msg)
+	// 	resp.Diagnostics.AddError("Reading REST connection failed", *apiResp.RESTConnectionResponse.Msg)
+	// 	return
+	// }
+	if apiResp != nil && apiResp.RESTConnectionResponse == nil {
+		error := "Verify the connection type"
+		log.Printf("[ERROR]: Verify the connection type given")
+		resp.Diagnostics.AddError("Read of REST connection failed", error)
 		return
 	}
 
@@ -218,8 +240,8 @@ func (d *restConnectionDatasource) Read(ctx context.Context, req datasource.Read
 
 	if apiResp.RESTConnectionResponse.Connectionattributes != nil {
 		state.ConnectionAttributes = &RESTConnectionAttributes{
-			UpdateUserJSON:           util.SafeStringDatasource(apiResp.RESTConnectionResponse.Connectionattributes.UpdateUserJSON),
-			ChangePassJSON:           util.SafeStringDatasource(apiResp.RESTConnectionResponse.Connectionattributes.ChangePassJSON),
+			UpdateUserJSON: util.SafeStringDatasource(apiResp.RESTConnectionResponse.Connectionattributes.UpdateUserJSON),
+			// ChangePassJSON:           util.SafeStringDatasource(apiResp.RESTConnectionResponse.Connectionattributes.ChangePassJSON),
 			RemoveAccountJSON:        util.SafeStringDatasource(apiResp.RESTConnectionResponse.Connectionattributes.RemoveAccountJSON),
 			TicketStatusJSON:         util.SafeStringDatasource(apiResp.RESTConnectionResponse.Connectionattributes.TicketStatusJSON),
 			CreateTicketJSON:         util.SafeStringDatasource(apiResp.RESTConnectionResponse.Connectionattributes.CreateTicketJSON),
@@ -244,7 +266,7 @@ func (d *restConnectionDatasource) Read(ctx context.Context, req datasource.Read
 			IsTimeoutSupported:       util.SafeBoolDatasource(apiResp.RESTConnectionResponse.Connectionattributes.IsTimeoutSupported),
 			ImportAccountEntJSON:     util.SafeStringDatasource(apiResp.RESTConnectionResponse.Connectionattributes.ImportAccountEntJSON),
 			IsTimeoutConfigValidated: util.SafeBoolDatasource(apiResp.RESTConnectionResponse.Connectionattributes.IsTimeoutConfigValidated),
-			ConnectionJSON:           util.SafeStringDatasource(apiResp.RESTConnectionResponse.Connectionattributes.ConnectionJSON),
+			// ConnectionJSON:           util.SafeStringDatasource(apiResp.RESTConnectionResponse.Connectionattributes.ConnectionJSON),
 			// ConnectionTimeoutConfig: ConnectionTimeoutConfig{
 			// 	RetryWait:               util.SafeInt64(apiResp.RESTConnectionResponse.Connectionattributes.ConnectionTimeoutConfig.RetryWait),
 			// 	TokenRefreshMaxTryCount: util.SafeInt64(apiResp.RESTConnectionResponse.Connectionattributes.ConnectionTimeoutConfig.TokenRefreshMaxTryCount),
@@ -257,9 +279,25 @@ func (d *restConnectionDatasource) Read(ctx context.Context, req datasource.Read
 			// },
 		}
 	}
+
 	if apiResp.RESTConnectionResponse.Connectionattributes == nil {
 		state.ConnectionAttributes = nil
 	}
+	if !state.Authenticate.IsNull() && !state.Authenticate.IsUnknown() {
+		if state.Authenticate.ValueBool() {
+			resp.Diagnostics.AddWarning(
+				"Authentication Enabled",
+				"`authenticate` is true; all connection_attributes will be returned in state.",
+			)
+		} else {
+			resp.Diagnostics.AddWarning(
+				"Authentication Disabled",
+				"`authenticate` is false; connection_attributes will be removed from state.",
+			)
+			state.ConnectionAttributes = nil
+		}
+	}
+
 	stateDiagnostics := resp.State.Set(ctx, &state)
 	resp.Diagnostics.Append(stateDiagnostics...)
 }
