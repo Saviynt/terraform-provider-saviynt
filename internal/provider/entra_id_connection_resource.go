@@ -60,32 +60,32 @@ type EntraIdConnectorResourceModel struct {
 	CreateUsers             types.String `tfsdk:"create_users"`
 	WindowsConnectorJson    types.String `tfsdk:"windows_connector_json"`
 	CreateNewEndpoints      types.String `tfsdk:"create_new_endpoints"`
-	AccountAttributes types.String `tfsdk:"account_attributes"`
-	DeltaTokensJson     types.String `tfsdk:"delta_tokens_json"`
-	AccountImportFields types.String `tfsdk:"account_import_fields"`
-	EntitlementAttribute types.String `tfsdk:"entitlement_attribute"`
-	CreateAccountJson    types.String `tfsdk:"create_account_json"`
-	UpdateAccountJson    types.String `tfsdk:"update_account_json"`
-	EnableAccountJson    types.String `tfsdk:"enable_account_json"`
-	DisableAccountJson   types.String `tfsdk:"disable_account_json"`
-	AddAccessJson        types.String `tfsdk:"add_access_json"`
-	RemoveAccessJson     types.String `tfsdk:"remove_access_json"`
-	UpdateUserJson       types.String `tfsdk:"update_user_json"`
-	ChangePassJson       types.String `tfsdk:"change_pass_json"`
-	RemoveAccountJson    types.String `tfsdk:"remove_account_json"`
-	ConnectionJson       types.String `tfsdk:"connection_json"`
-	CreateGroupJson      types.String `tfsdk:"create_group_json"`
-	UpdateGroupJson      types.String `tfsdk:"update_group_json"`
-	DeleteGroupJson types.String `tfsdk:"delete_group_json"`
-	EntitlementFilterJson types.String `tfsdk:"entitlement_filter_json"`
-	CreateTeamJson        types.String `tfsdk:"create_team_json"`
-	CreateChannelJson     types.String `tfsdk:"create_channel_json"`
-	StatusThresholdConfig types.String `tfsdk:"status_threshold_config"`
-	AccountsFilter        types.String `tfsdk:"accounts_filter"`
-	PamConfig             types.String `tfsdk:"pam_config"`
-	EndpointsFilter       types.String `tfsdk:"endpoints_filter"`
-	ConfigJson            types.String `tfsdk:"config_json"`
-	ModifyUserdataJson    types.String `tfsdk:"modify_user_data_json"`
+	AccountAttributes       types.String `tfsdk:"account_attributes"`
+	DeltaTokensJson         types.String `tfsdk:"delta_tokens_json"`
+	AccountImportFields     types.String `tfsdk:"account_import_fields"`
+	EntitlementAttribute    types.String `tfsdk:"entitlement_attribute"`
+	CreateAccountJson       types.String `tfsdk:"create_account_json"`
+	UpdateAccountJson       types.String `tfsdk:"update_account_json"`
+	EnableAccountJson       types.String `tfsdk:"enable_account_json"`
+	DisableAccountJson      types.String `tfsdk:"disable_account_json"`
+	AddAccessJson           types.String `tfsdk:"add_access_json"`
+	RemoveAccessJson        types.String `tfsdk:"remove_access_json"`
+	UpdateUserJson          types.String `tfsdk:"update_user_json"`
+	ChangePassJson          types.String `tfsdk:"change_pass_json"`
+	RemoveAccountJson       types.String `tfsdk:"remove_account_json"`
+	ConnectionJson          types.String `tfsdk:"connection_json"`
+	CreateGroupJson         types.String `tfsdk:"create_group_json"`
+	UpdateGroupJson         types.String `tfsdk:"update_group_json"`
+	DeleteGroupJson         types.String `tfsdk:"delete_group_json"`
+	EntitlementFilterJson   types.String `tfsdk:"entitlement_filter_json"`
+	CreateTeamJson          types.String `tfsdk:"create_team_json"`
+	CreateChannelJson       types.String `tfsdk:"create_channel_json"`
+	StatusThresholdConfig   types.String `tfsdk:"status_threshold_config"`
+	AccountsFilter          types.String `tfsdk:"accounts_filter"`
+	PamConfig               types.String `tfsdk:"pam_config"`
+	EndpointsFilter         types.String `tfsdk:"endpoints_filter"`
+	ConfigJson              types.String `tfsdk:"config_json"`
+	ModifyUserdataJson      types.String `tfsdk:"modify_user_data_json"`
 
 	// Removed due to lack of compatibility with ECM 24.4
 	// ManagedAccountType              types.String `tfsdk:"managed_account_type"`

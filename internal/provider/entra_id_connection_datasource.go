@@ -57,13 +57,13 @@ type EntraIdConnectionAttributes struct {
 	EnableAccountJSON      types.String `tfsdk:"enable_account_json"`
 	// ConnectionJSON         types.String `tfsdk:"connection_json"`
 	// ClientID               types.String `tfsdk:"client_id"`
-	DeleteGroupJSON        types.String `tfsdk:"delete_group_json"`
-	ConfigJSON             types.String `tfsdk:"config_json"`
+	DeleteGroupJSON types.String `tfsdk:"delete_group_json"`
+	ConfigJSON      types.String `tfsdk:"config_json"`
 	// AccessToken            types.String `tfsdk:"access_token"`
-	AddAccessJSON          types.String `tfsdk:"add_access_json"`
-	CreateChannelJSON      types.String `tfsdk:"create_channel_json"`
-	UpdateAccountJSON      types.String `tfsdk:"update_account_json"`
-	IsTimeoutSupported     types.Bool   `tfsdk:"is_timeout_supported"`
+	AddAccessJSON      types.String `tfsdk:"add_access_json"`
+	CreateChannelJSON  types.String `tfsdk:"create_channel_json"`
+	UpdateAccountJSON  types.String `tfsdk:"update_account_json"`
+	IsTimeoutSupported types.Bool   `tfsdk:"is_timeout_supported"`
 	// RemoveServicePrincipalJSON      types.String `tfsdk:"remove_service_principal_json"`
 	// ImportDepth                     types.String `tfsdk:"import_depth"`
 	CreateAccountJSON types.String `tfsdk:"create_account_json"`
@@ -73,9 +73,9 @@ type EntraIdConnectionAttributes struct {
 	EntitlementAttribute    types.String `tfsdk:"entitlement_attribute"`
 	AccountsFilter          types.String `tfsdk:"accounts_filter"`
 	// WindowsConnectorJSON    types.String `tfsdk:"windows_connector_json"`
-	DeltaTokensJSON         types.String `tfsdk:"deltatokens_json"`
+	DeltaTokensJSON types.String `tfsdk:"deltatokens_json"`
 	// AzureMgmtAccessToken    types.String `tfsdk:"azure_mgmt_access_token"`
-	CreateTeamJSON          types.String `tfsdk:"create_team_json"`
+	CreateTeamJSON types.String `tfsdk:"create_team_json"`
 	// EnhancedDirectoryRoles          types.String `tfsdk:"enhanceddirectoryroles"`
 	StatusThresholdConfig types.String `tfsdk:"status_threshold_config"`
 	AccountImportFields   types.String `tfsdk:"account_import_fields"`
@@ -129,13 +129,13 @@ func EntraIDConnectorsDataSourceSchema() map[string]schema.Attribute {
 				"enable_account_json":      schema.StringAttribute{Computed: true},
 				// "connection_json":          schema.StringAttribute{Computed: true},
 				// "client_id":                schema.StringAttribute{Computed: true},
-				"delete_group_json":        schema.StringAttribute{Computed: true},
-				"config_json":              schema.StringAttribute{Computed: true},
+				"delete_group_json": schema.StringAttribute{Computed: true},
+				"config_json":       schema.StringAttribute{Computed: true},
 				// "access_token":             schema.StringAttribute{Computed: true},
-				"add_access_json":          schema.StringAttribute{Computed: true},
-				"create_channel_json":      schema.StringAttribute{Computed: true},
-				"update_account_json":      schema.StringAttribute{Computed: true},
-				"is_timeout_supported":     schema.BoolAttribute{Computed: true},
+				"add_access_json":      schema.StringAttribute{Computed: true},
+				"create_channel_json":  schema.StringAttribute{Computed: true},
+				"update_account_json":  schema.StringAttribute{Computed: true},
+				"is_timeout_supported": schema.BoolAttribute{Computed: true},
 				// "remove_service_principal_json":       schema.StringAttribute{Computed: true},
 				// "import_depth":                        schema.StringAttribute{Computed: true},
 				"create_account_json": schema.StringAttribute{Computed: true},
@@ -145,9 +145,9 @@ func EntraIDConnectorsDataSourceSchema() map[string]schema.Attribute {
 				"entitlement_attribute":     schema.StringAttribute{Computed: true},
 				"accounts_filter":           schema.StringAttribute{Computed: true},
 				// "windows_connector_json":    schema.StringAttribute{Computed: true},
-				"deltatokens_json":          schema.StringAttribute{Computed: true},
+				"deltatokens_json": schema.StringAttribute{Computed: true},
 				// "azure_mgmt_access_token":   schema.StringAttribute{Computed: true},
-				"create_team_json":          schema.StringAttribute{Computed: true},
+				"create_team_json": schema.StringAttribute{Computed: true},
 				// "enhanceddirectoryroles":              schema.StringAttribute{Computed: true},
 				"status_threshold_config": schema.StringAttribute{Computed: true},
 				"account_import_fields":   schema.StringAttribute{Computed: true},
@@ -296,13 +296,13 @@ func (d *entraIdConnectionDataSource) Read(ctx context.Context, req datasource.R
 			EnableAccountJSON:      util.SafeStringDatasource(apiResp.EntraIDConnectionResponse.Connectionattributes.EnableAccountJSON),
 			// ConnectionJSON:         util.SafeStringDatasource(apiResp.EntraIDConnectionResponse.Connectionattributes.ConnectionJSON),
 			// ClientID:               util.SafeStringDatasource(apiResp.EntraIDConnectionResponse.Connectionattributes.CLIENT_ID),
-			DeleteGroupJSON:        util.SafeStringDatasource(apiResp.EntraIDConnectionResponse.Connectionattributes.DeleteGroupJSON),
-			ConfigJSON:             util.SafeStringDatasource(apiResp.EntraIDConnectionResponse.Connectionattributes.ConfigJSON),
+			DeleteGroupJSON: util.SafeStringDatasource(apiResp.EntraIDConnectionResponse.Connectionattributes.DeleteGroupJSON),
+			ConfigJSON:      util.SafeStringDatasource(apiResp.EntraIDConnectionResponse.Connectionattributes.ConfigJSON),
 			// AccessToken:            util.SafeStringDatasource(apiResp.EntraIDConnectionResponse.Connectionattributes.ACCESS_TOKEN),
-			AddAccessJSON:          util.SafeStringDatasource(apiResp.EntraIDConnectionResponse.Connectionattributes.AddAccessJSON),
-			CreateChannelJSON:      util.SafeStringDatasource(apiResp.EntraIDConnectionResponse.Connectionattributes.CreateChannelJSON),
-			UpdateAccountJSON:      util.SafeStringDatasource(apiResp.EntraIDConnectionResponse.Connectionattributes.UpdateAccountJSON),
-			IsTimeoutSupported:     util.SafeBoolDatasource(apiResp.EntraIDConnectionResponse.Connectionattributes.IsTimeoutSupported),
+			AddAccessJSON:      util.SafeStringDatasource(apiResp.EntraIDConnectionResponse.Connectionattributes.AddAccessJSON),
+			CreateChannelJSON:  util.SafeStringDatasource(apiResp.EntraIDConnectionResponse.Connectionattributes.CreateChannelJSON),
+			UpdateAccountJSON:  util.SafeStringDatasource(apiResp.EntraIDConnectionResponse.Connectionattributes.UpdateAccountJSON),
+			IsTimeoutSupported: util.SafeBoolDatasource(apiResp.EntraIDConnectionResponse.Connectionattributes.IsTimeoutSupported),
 			// RemoveServicePrincipalJSON:      util.SafeStringDatasource(apiResp.EntraIDConnectionResponse.Connectionattributes.RemoveServicePrincipalJSON),
 			// ImportDepth:                     util.SafeStringDatasource(apiResp.EntraIDConnectionResponse.Connectionattributes.IMPORT_DEPTH),
 			CreateAccountJSON: util.SafeStringDatasource(apiResp.EntraIDConnectionResponse.Connectionattributes.CreateAccountJSON),
@@ -312,9 +312,9 @@ func (d *entraIdConnectionDataSource) Read(ctx context.Context, req datasource.R
 			EntitlementAttribute:    util.SafeStringDatasource(apiResp.EntraIDConnectionResponse.Connectionattributes.ENTITLEMENT_ATTRIBUTE),
 			AccountsFilter:          util.SafeStringDatasource(apiResp.EntraIDConnectionResponse.Connectionattributes.ACCOUNTS_FILTER),
 			// WindowsConnectorJSON:    util.SafeStringDatasource(apiResp.EntraIDConnectionResponse.Connectionattributes.WINDOWS_CONNECTOR_JSON),
-			DeltaTokensJSON:         util.SafeStringDatasource(apiResp.EntraIDConnectionResponse.Connectionattributes.DELTATOKENSJSON),
+			DeltaTokensJSON: util.SafeStringDatasource(apiResp.EntraIDConnectionResponse.Connectionattributes.DELTATOKENSJSON),
 			// AzureMgmtAccessToken:    util.SafeStringDatasource(apiResp.EntraIDConnectionResponse.Connectionattributes.AZURE_MGMT_ACCESS_TOKEN),
-			CreateTeamJSON:          util.SafeStringDatasource(apiResp.EntraIDConnectionResponse.Connectionattributes.CreateTeamJSON),
+			CreateTeamJSON: util.SafeStringDatasource(apiResp.EntraIDConnectionResponse.Connectionattributes.CreateTeamJSON),
 			// EnhancedDirectoryRoles:          util.SafeStringDatasource(apiResp.EntraIDConnectionResponse.Connectionattributes.ENHANCEDDIRECTORYROLES),
 			StatusThresholdConfig: util.SafeStringDatasource(apiResp.EntraIDConnectionResponse.Connectionattributes.STATUS_THRESHOLD_CONFIG),
 			AccountImportFields:   util.SafeStringDatasource(apiResp.EntraIDConnectionResponse.Connectionattributes.ACCOUNT_IMPORT_FIELDS),
