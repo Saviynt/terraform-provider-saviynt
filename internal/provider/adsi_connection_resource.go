@@ -1,17 +1,5 @@
-/*
- * Copyright (c) 2025 Saviynt Inc.
- * All Rights Reserved.
- *
- * This software is the confidential and proprietary information of
- * Saviynt Inc. ("Confidential Information"). You shall not disclose,
- * use, or distribute such Confidential Information except in accordance
- * with the terms of the license agreement you entered into with Saviynt.
- *
- * SAVIYNT MAKES NO REPRESENTATIONS OR WARRANTIES ABOUT THE SUITABILITY OF
- * THE SOFTWARE, EITHER EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO
- * THE IMPLIED WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR
- * PURPOSE, OR NON-INFRINGEMENT.
- */
+// Copyright (c) Saviynt Inc.
+// SPDX-License-Identifier: MPL-2.0
 
 // saviynt_adsi_connection_resource manages ADSI connectors in the Saviynt Security Manager.
 // The resource implements the full Terraform lifecycle:
@@ -381,7 +369,7 @@ func (r *adsiConnectionResource) Create(ctx context.Context, req resource.Create
 			Connectiontype: "ADSI",
 			ConnectionName: plan.ConnectionName.ValueString(),
 			//optional values
-			// Description:     util.StringPointerOrEmpty(plan.Description),
+			Description:     util.StringPointerOrEmpty(plan.Description),
 			Defaultsavroles: util.StringPointerOrEmpty(plan.DefaultSavRoles),
 			EmailTemplate:   util.StringPointerOrEmpty(plan.EmailTemplate),
 		},
@@ -440,21 +428,15 @@ func (r *adsiConnectionResource) Create(ctx context.Context, req resource.Create
 
 	// Initialize API client
 	apiResp, _, err := apiClient.ConnectionsAPI.CreateOrUpdate(ctx).CreateOrUpdateRequest(adsiConnRequest).Execute()
-	if err != nil {
-		log.Printf("[ERROR] Failed to create API resource. Error: %v", err)
+	if err != nil || *apiResp.ErrorCode != "0" {
+		log.Printf("[ERROR] Failed to create API resource. Error: %v", *apiResp.Msg)
 		resp.Diagnostics.AddError("API Create Failed", fmt.Sprintf("Error: %v", err))
 		return
 	}
-	if apiResp!=nil && *apiResp.ErrorCode !="0"{
-		log.Printf("[ERROR]: Error in creating ADSI connection resource. Errorcode: %v, Message: %v", *apiResp.ErrorCode, *apiResp.Msg)
-		resp.Diagnostics.AddError("Creation of ADSI connection failed", *apiResp.Msg)
-		return
-	}
-
 	plan.ID = types.StringValue(fmt.Sprintf("%d", *apiResp.ConnectionKey))
 	plan.ConnectionType = types.StringValue("ADSI")
 	plan.ConnectionKey = types.Int64Value(int64(*apiResp.ConnectionKey))
-	// plan.Description = util.SafeStringDatasource(plan.Description.ValueStringPointer())
+	plan.Description = util.SafeStringDatasource(plan.Description.ValueStringPointer())
 	plan.DefaultSavRoles = util.SafeStringDatasource(plan.DefaultSavRoles.ValueStringPointer())
 	plan.EmailTemplate = util.SafeStringDatasource(plan.EmailTemplate.ValueStringPointer())
 	plan.ProvisioningUrl = util.SafeStringDatasource(plan.ProvisioningUrl.ValueStringPointer())
@@ -523,16 +505,10 @@ func (r *adsiConnectionResource) Read(ctx context.Context, req resource.ReadRequ
 		resp.Diagnostics.AddError("API Read Failed In Read Block", fmt.Sprintf("Error: %v", err))
 		return
 	}
-	if apiResp!=nil && *apiResp.ADSIConnectionResponse.Errorcode !=0{
-		log.Printf("[ERROR]: Error in reading ADSI connection resource. Errorcode: %v, Message: %v", *apiResp.ADSIConnectionResponse.Errorcode, *apiResp.ADSIConnectionResponse.Msg)
-		resp.Diagnostics.AddError("Reading of ADSI connection resource failed", *apiResp.ADSIConnectionResponse.Msg)
-		return
-	}
-
 	state.ConnectionKey = types.Int64Value(int64(*apiResp.ADSIConnectionResponse.Connectionkey))
 	state.ID = types.StringValue(fmt.Sprintf("%d", *apiResp.ADSIConnectionResponse.Connectionkey))
 	state.ConnectionName = util.SafeStringDatasource(apiResp.ADSIConnectionResponse.Connectionname)
-	// state.Description = util.SafeStringDatasource(apiResp.ADSIConnectionResponse.Description)
+	state.Description = util.SafeStringDatasource(apiResp.ADSIConnectionResponse.Description)
 	state.DefaultSavRoles = util.SafeStringDatasource(apiResp.ADSIConnectionResponse.Defaultsavroles)
 	state.ConnectionType = util.SafeStringDatasource(apiResp.ADSIConnectionResponse.Connectiontype)
 	state.EmailTemplate = util.SafeStringDatasource(apiResp.ADSIConnectionResponse.Emailtemplate)
@@ -633,7 +609,7 @@ func (r *adsiConnectionResource) Update(ctx context.Context, req resource.Update
 			Connectiontype: "ADSI",
 			ConnectionName: plan.ConnectionName.ValueString(),
 			//optional values
-			// Description:     util.StringPointerOrEmpty(plan.Description),
+			Description:     util.StringPointerOrEmpty(plan.Description),
 			Defaultsavroles: util.StringPointerOrEmpty(plan.DefaultSavRoles),
 			EmailTemplate:   util.StringPointerOrEmpty(plan.EmailTemplate),
 		},
@@ -698,17 +674,11 @@ func (r *adsiConnectionResource) Update(ctx context.Context, req resource.Update
 	// Initialize API client
 	apiClient := openapi.NewAPIClient(cfg)
 	apiResp, _, err := apiClient.ConnectionsAPI.CreateOrUpdate(ctx).CreateOrUpdateRequest(adsiConnRequest).Execute()
-	if err != nil {
+	if err != nil || *apiResp.ErrorCode != "0" {
 		log.Printf("Problem with the update function")
 		resp.Diagnostics.AddError("API Update Failed", fmt.Sprintf("Error: %v", err))
 		return
 	}
-	if apiResp!=nil && *apiResp.ErrorCode !="0"{
-		log.Printf("[ERROR]: Error in updating ADSI connection. Errorcode: %v, Message: %v", *apiResp.ErrorCode, *apiResp.Msg)
-		resp.Diagnostics.AddError("Updating of ADSI connection failed", *apiResp.Msg)
-		return
-	}
-
 	reqParams := openapi.GetConnectionDetailsRequest{}
 
 	reqParams.SetConnectionname(plan.ConnectionName.ValueString())
@@ -718,16 +688,10 @@ func (r *adsiConnectionResource) Update(ctx context.Context, req resource.Update
 		resp.Diagnostics.AddError("API Read Failed In Update Block", fmt.Sprintf("Error: %v", err))
 		return
 	}
-	if getResp!=nil && *getResp.ADSIConnectionResponse.Errorcode !=0{
-		log.Printf("[ERROR]: Error in reading ADSI connection after updation. Errorcode: %v, Message: %v", *getResp.ADSIConnectionResponse.Errorcode, *getResp.ADSIConnectionResponse.Msg)
-		resp.Diagnostics.AddError("Reading after updation of ADSI connection failed", *getResp.ADSIConnectionResponse.Msg)
-		return
-	}
-
 	plan.ConnectionKey = types.Int64Value(int64(*getResp.ADSIConnectionResponse.Connectionkey))
 	plan.ID = types.StringValue(fmt.Sprintf("%d", *getResp.ADSIConnectionResponse.Connectionkey))
 	plan.ConnectionName = util.SafeStringDatasource(getResp.ADSIConnectionResponse.Connectionname)
-	// plan.Description = util.SafeStringDatasource(getResp.ADSIConnectionResponse.Description)
+	plan.Description = util.SafeStringDatasource(getResp.ADSIConnectionResponse.Description)
 	plan.DefaultSavRoles = util.SafeStringDatasource(getResp.ADSIConnectionResponse.Defaultsavroles)
 	plan.ConnectionType = util.SafeStringDatasource(getResp.ADSIConnectionResponse.Connectiontype)
 	plan.EmailTemplate = util.SafeStringDatasource(getResp.ADSIConnectionResponse.Emailtemplate)

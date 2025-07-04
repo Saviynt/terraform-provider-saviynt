@@ -13,20 +13,8 @@ Create and manage Unix connector in Saviynt
 ## Example Usage
 
 ```terraform
-/*
- * Copyright (c) 2025 Saviynt Inc.
- * All Rights Reserved.
- *
- * This software is the confidential and proprietary information of
- * Saviynt Inc. ("Confidential Information"). You shall not disclose,
- * use, or distribute such Confidential Information except in accordance
- * with the terms of the license agreement you entered into with Saviynt.
- *
- * SAVIYNT MAKES NO REPRESENTATIONS OR WARRANTIES ABOUT THE SUITABILITY OF
- * THE SOFTWARE, EITHER EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO
- * THE IMPLIED WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR
- * PURPOSE, OR NON-INFRINGEMENT.
- */
+// Copyright (c) Saviynt Inc.
+// SPDX-License-Identifier: MPL-2.0
 
 variable "HOST_NAME" {
   type        = string
@@ -171,6 +159,7 @@ resource "saviynt_unix_connection_resource" "example" {
 - `defaultsavroles` (String) Default SAV roles for managing the connection. Example: "ROLE_ORG"
 - `delete_group_command` (String) Property for DELETE_GROUP_COMMAND
 - `deprovision_account_command` (String) Property for DEPROVISION_ACCOUNT_COMMAND
+- `description` (String) Description for the connection. Example: "ORG_AD"
 - `disable_account_command` (String) Property for DISABLE_ACCOUNT_COMMAND
 - `email_template` (String) Email template for notifications. Example: "New Account Task Creation"
 - `enable_account_command` (String) Property for ENABLE_ACCOUNT_COMMAND

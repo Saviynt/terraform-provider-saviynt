@@ -1,17 +1,5 @@
-/*
- * Copyright (c) 2025 Saviynt Inc.
- * All Rights Reserved.
- *
- * This software is the confidential and proprietary information of
- * Saviynt Inc. ("Confidential Information"). You shall not disclose,
- * use, or distribute such Confidential Information except in accordance
- * with the terms of the license agreement you entered into with Saviynt.
- *
- * SAVIYNT MAKES NO REPRESENTATIONS OR WARRANTIES ABOUT THE SUITABILITY OF
- * THE SOFTWARE, EITHER EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO
- * THE IMPLIED WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR
- * PURPOSE, OR NON-INFRINGEMENT.
- */
+// Copyright (c) Saviynt Inc.
+// SPDX-License-Identifier: MPL-2.0
 
 // saviynt_entraid_connection_resource manages EntraId connectors in the Saviynt Security Manager.
 // The resource implements the full Terraform lifecycle:
@@ -415,7 +403,7 @@ func (r *entraIdConnectionResource) Create(ctx context.Context, req resource.Cre
 			Connectiontype: "AzureAD",
 			ConnectionName: plan.ConnectionName.ValueString(),
 			//optional fields
-			// Description:        util.StringPointerOrEmpty(plan.Description),
+			Description:        util.StringPointerOrEmpty(plan.Description),
 			Defaultsavroles:    util.StringPointerOrEmpty(plan.DefaultSavRoles),
 			EmailTemplate:      util.StringPointerOrEmpty(plan.EmailTemplate),
 			VaultConnection:    util.SafeStringConnector(plan.VaultConnection.ValueString()),
@@ -479,21 +467,15 @@ func (r *entraIdConnectionResource) Create(ctx context.Context, req resource.Cre
 
 	// Initialize API client
 	apiResp, _, err := apiClient.ConnectionsAPI.CreateOrUpdate(ctx).CreateOrUpdateRequest(entraidConnRequest).Execute()
-	if err != nil {
+	if err != nil || *apiResp.ErrorCode != "0" {
 		log.Printf("[ERROR] Failed to create API resource. Error: %v", err)
 		resp.Diagnostics.AddError("API Create Failed", fmt.Sprintf("Error: %v", err))
 		return
 	}
-	if apiResp!=nil && *apiResp.ErrorCode !="0"{
-		log.Printf("[ERROR]: Error in creating EntraId connection resource. Errorcode: %v, Message: %v", *apiResp.ErrorCode, *apiResp.Msg)
-		resp.Diagnostics.AddError("Creation of EntraId connection failed", *apiResp.Msg)
-		return
-	}
-
 	plan.ID = types.StringValue(fmt.Sprintf("%d", *apiResp.ConnectionKey))
 	plan.ConnectionType = types.StringValue("AzureAD")
 	plan.ConnectionKey = types.Int64Value(int64(*apiResp.ConnectionKey))
-	// plan.Description = util.SafeStringDatasource(plan.Description.ValueStringPointer())
+	plan.Description = util.SafeStringDatasource(plan.Description.ValueStringPointer())
 	plan.DefaultSavRoles = util.SafeStringDatasource(plan.DefaultSavRoles.ValueStringPointer())
 	plan.EmailTemplate = util.SafeStringDatasource(plan.EmailTemplate.ValueStringPointer())
 	plan.AuthenticationEndpoint = util.SafeStringDatasource(plan.AuthenticationEndpoint.ValueStringPointer())
@@ -567,17 +549,11 @@ func (r *entraIdConnectionResource) Read(ctx context.Context, req resource.ReadR
 		resp.Diagnostics.AddError("API Read Failed In Read Block", fmt.Sprintf("Error: %v", err))
 		return
 	}
-	if apiResp!=nil && *apiResp.EntraIDConnectionResponse.Errorcode !=0{
-		log.Printf("[ERROR]: Error in reading EntraId connection. Errorcode: %v, Message: %v", *apiResp.EntraIDConnectionResponse.Errorcode, *apiResp.EntraIDConnectionResponse.Msg)
-		resp.Diagnostics.AddError("Read EntraId connection failed", *apiResp.EntraIDConnectionResponse.Msg)
-		return
-	}
-
 	state.ConnectionKey = types.Int64Value(int64(*apiResp.EntraIDConnectionResponse.Connectionkey))
 	state.ID = types.StringValue(fmt.Sprintf("%d", *apiResp.EntraIDConnectionResponse.Connectionkey))
 	state.ConnectionName = util.SafeStringDatasource(apiResp.EntraIDConnectionResponse.Connectionname)
 	state.ConnectionKey = util.SafeInt64(apiResp.EntraIDConnectionResponse.Connectionkey)
-	// state.Description = util.SafeStringDatasource(apiResp.EntraIDConnectionResponse.Description)
+	state.Description = util.SafeStringDatasource(apiResp.EntraIDConnectionResponse.Description)
 	state.DefaultSavRoles = util.SafeStringDatasource(apiResp.EntraIDConnectionResponse.Defaultsavroles)
 	state.ConnectionType = util.SafeStringDatasource(apiResp.EntraIDConnectionResponse.Connectiontype)
 	state.EmailTemplate = util.SafeStringDatasource(apiResp.EntraIDConnectionResponse.Emailtemplate)
@@ -678,7 +654,7 @@ func (r *entraIdConnectionResource) Update(ctx context.Context, req resource.Upd
 			Connectiontype: "AzureAD",
 			ConnectionName: plan.ConnectionName.ValueString(),
 			//optional fields
-			// Description:        util.StringPointerOrEmpty(plan.Description),
+			Description:        util.StringPointerOrEmpty(plan.Description),
 			Defaultsavroles:    util.StringPointerOrEmpty(plan.DefaultSavRoles),
 			EmailTemplate:      util.StringPointerOrEmpty(plan.EmailTemplate),
 			VaultConnection:    util.SafeStringConnector(plan.VaultConnection.ValueString()),
@@ -749,12 +725,6 @@ func (r *entraIdConnectionResource) Update(ctx context.Context, req resource.Upd
 		resp.Diagnostics.AddError("API Update Failed", fmt.Sprintf("Error: %v", err))
 		return
 	}
-	if apiResp!=nil && *apiResp.ErrorCode !="0"{
-		log.Printf("[ERROR]: Error in updation EntraId connection. Errorcode: %v, Message: %v", *apiResp.ErrorCode, *apiResp.Msg)
-		resp.Diagnostics.AddError("Updation of EntraId connection failed", *apiResp.Msg)
-		return
-	}
-
 	reqParams := openapi.GetConnectionDetailsRequest{}
 
 	reqParams.SetConnectionname(plan.ConnectionName.ValueString())
@@ -764,17 +734,11 @@ func (r *entraIdConnectionResource) Update(ctx context.Context, req resource.Upd
 		resp.Diagnostics.AddError("API Read Failed In Update Block", fmt.Sprintf("Error: %v", *getResp.EntraIDConnectionResponse.Msg))
 		return
 	}
-	if getResp!=nil && *getResp.EntraIDConnectionResponse.Errorcode !=0{
-		log.Printf("[ERROR]: Error in reading EntraId connection after updation. Errorcode: %v, Message: %v", *getResp.EntraIDConnectionResponse.Errorcode, *getResp.EntraIDConnectionResponse.Msg)
-		resp.Diagnostics.AddError("Read EntraId connection after updatio failed", *getResp.EntraIDConnectionResponse.Msg)
-		return
-	}
-
 	plan.ConnectionKey = types.Int64Value(int64(*getResp.EntraIDConnectionResponse.Connectionkey))
 	plan.ID = types.StringValue(fmt.Sprintf("%d", *getResp.EntraIDConnectionResponse.Connectionkey))
 	plan.ConnectionName = util.SafeStringDatasource(getResp.EntraIDConnectionResponse.Connectionname)
 	plan.ConnectionKey = util.SafeInt64(getResp.EntraIDConnectionResponse.Connectionkey)
-	// plan.Description = util.SafeStringDatasource(getResp.EntraIDConnectionResponse.Description)
+	plan.Description = util.SafeStringDatasource(getResp.EntraIDConnectionResponse.Description)
 	plan.DefaultSavRoles = util.SafeStringDatasource(getResp.EntraIDConnectionResponse.Defaultsavroles)
 	plan.ConnectionType = util.SafeStringDatasource(getResp.EntraIDConnectionResponse.Connectiontype)
 	plan.EmailTemplate = util.SafeStringDatasource(getResp.EntraIDConnectionResponse.Emailtemplate)
