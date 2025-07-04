@@ -13,8 +13,20 @@ Create and manage Workday connector in Saviynt
 ## Example Usage
 
 ```terraform
-// Copyright (c) Saviynt Inc.
-// SPDX-License-Identifier: MPL-2.0
+/*
+ * Copyright (c) 2025 Saviynt Inc.
+ * All Rights Reserved.
+ *
+ * This software is the confidential and proprietary information of
+ * Saviynt Inc. ("Confidential Information"). You shall not disclose,
+ * use, or distribute such Confidential Information except in accordance
+ * with the terms of the license agreement you entered into with Saviynt.
+ *
+ * SAVIYNT MAKES NO REPRESENTATIONS OR WARRANTIES ABOUT THE SUITABILITY OF
+ * THE SOFTWARE, EITHER EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO
+ * THE IMPLIED WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR
+ * PURPOSE, OR NON-INFRINGEMENT.
+ */
 
 variable "BASE_URL" {
   type        = string
@@ -152,12 +164,6 @@ resource "saviynt_workday_connection_resource" "soap" {
           <bsvc:Exclude_Gift_Hierarchies>true</bsvc:Exclude_Gift_Hierarchies>
       </bsvc:Response_Group>
   </bsvc:Get_Workers_Request>
-  EOF
-  )
-
-  orgrole_import_payload = trimspace(
-    <<EOF
-  <bsvc:Get_Organizations_Request bsvc:version="$${API_VERSION}"><bsvc:Request_Criteria><bsvc:Include_Inactive>1</bsvc:Include_Inactive>$${INCREMENTAL_IMPORT_CRITERIA}</bsvc:Request_Criteria><bsvc:Response_Filter><bsvc:Page>$${PAGE_NUMBER}</bsvc:Page><bsvc:Count>$${PAGE_SIZE}</bsvc:Count></bsvc:Response_Filter><bsvc:Response_Group><bsvc:Include_Roles_Data>1</bsvc:Include_Roles_Data><bsvc:Include_Hierarchy_Data>0</bsvc:Include_Hierarchy_Data><bsvc:Include_Supervisory_Data>0</bsvc:Include_Supervisory_Data><bsvc:Include_Staffing_Restrictions_Data>0</bsvc:Include_Staffing_Restrictions_Data></bsvc:Response_Group></bsvc:Get_Organizations_Request>
   EOF
   )
 
@@ -419,13 +425,11 @@ resource "saviynt_workday_connection_resource" "soap" {
 - `create_account_payload` (String) Payload for creating an account.
 - `custom_config` (String) Custom configuration for Workday connector.
 - `defaultsavroles` (String) Default SAV roles for managing the connection. Example: "ROLE_ORG"
-- `description` (String) Description for the connection. Example: "ORG_AD"
 - `email_template` (String) Email template for notifications. Example: "New Account Task Creation"
 - `error_code` (String) An error code where '0' signifies success and '1' signifies an unsuccessful operation.
 - `include_reference_descriptors` (String) Include descriptor attribute in response if set to TRUE.
 - `modify_user_data_json` (String) Payload for modifying user data.
 - `msg` (String) A message indicating the outcome of the operation.
-- `orgrole_import_payload` (String) Custom SOAP body for organization role import.
 - `page_size` (String) Number of objects to return per page during import.
 - `pam_config` (String) Privileged Access Management configuration.
 - `password` (String) Password for SOAP authentication.

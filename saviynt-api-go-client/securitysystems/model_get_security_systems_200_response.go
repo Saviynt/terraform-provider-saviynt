@@ -1,7 +1,7 @@
 /*
 Account Management API
 
-API for managing security systems in EIC.
+API for managing security systems in EIC. 
 
 API version: 1.0.0
 */
@@ -20,7 +20,7 @@ var _ MappedNullable = &GetSecuritySystems200Response{}
 // GetSecuritySystems200Response struct for GetSecuritySystems200Response
 type GetSecuritySystems200Response struct {
 	// A message indicating the outcome of the operation.
-	Msg                   *string                                                   `json:"msg,omitempty"`
+	Msg *string `json:"msg,omitempty"`
 	SecuritySystemDetails []GetSecuritySystems200ResponseSecuritySystemDetailsInner `json:"securitySystemDetails,omitempty"`
 	// The number of items currently displayed (e.g., on the current page or view).
 	DisplayCount *int32 `json:"displayCount,omitempty"`
@@ -208,7 +208,7 @@ func (o *GetSecuritySystems200Response) SetTotalCount(v int32) {
 }
 
 func (o GetSecuritySystems200Response) MarshalJSON() ([]byte, error) {
-	toSerialize, err := o.ToMap()
+	toSerialize,err := o.ToMap()
 	if err != nil {
 		return []byte{}, err
 	}
@@ -270,3 +270,5 @@ func (v *NullableGetSecuritySystems200Response) UnmarshalJSON(src []byte) error 
 	v.isSet = true
 	return json.Unmarshal(src, &v.value)
 }
+
+

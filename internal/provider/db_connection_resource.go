@@ -1,5 +1,17 @@
-// Copyright (c) Saviynt Inc.
-// SPDX-License-Identifier: MPL-2.0
+/*
+ * Copyright (c) 2025 Saviynt Inc.
+ * All Rights Reserved.
+ *
+ * This software is the confidential and proprietary information of
+ * Saviynt Inc. ("Confidential Information"). You shall not disclose,
+ * use, or distribute such Confidential Information except in accordance
+ * with the terms of the license agreement you entered into with Saviynt.
+ *
+ * SAVIYNT MAKES NO REPRESENTATIONS OR WARRANTIES ABOUT THE SUITABILITY OF
+ * THE SOFTWARE, EITHER EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO
+ * THE IMPLIED WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR
+ * PURPOSE, OR NON-INFRINGEMENT.
+ */
 
 // saviynt_db_connection_resource manages DB connectors in the Saviynt Security Manager.
 // The resource implements the full Terraform lifecycle:
@@ -297,7 +309,7 @@ func (r *dbConnectionResource) Create(ctx context.Context, req resource.CreateRe
 			Connectiontype: "DB",
 			ConnectionName: plan.ConnectionName.ValueString(),
 			//optional field
-			Description:     util.StringPointerOrEmpty(plan.Description),
+			// Description:     util.StringPointerOrEmpty(plan.Description),
 			Defaultsavroles: util.StringPointerOrEmpty(plan.DefaultSavRoles),
 			EmailTemplate:   util.StringPointerOrEmpty(plan.EmailTemplate),
 		},
@@ -345,15 +357,21 @@ func (r *dbConnectionResource) Create(ctx context.Context, req resource.CreateRe
 
 	// Initialize API client
 	apiResp, _, err := apiClient.ConnectionsAPI.CreateOrUpdate(ctx).CreateOrUpdateRequest(dbConnRequest).Execute()
-	if err != nil || *apiResp.ErrorCode != "0" {
+	if err != nil {
 		log.Printf("[ERROR] Failed to create API resource. Error: %v", err)
 		resp.Diagnostics.AddError("API Create Failed", fmt.Sprintf("Error: %v", err))
 		return
 	}
+	if apiResp!=nil && *apiResp.ErrorCode !="0"{
+		log.Printf("[ERROR]: Error in creating DB connection resource. Errorcode: %v, Message: %v", *apiResp.ErrorCode, *apiResp.Msg)
+		resp.Diagnostics.AddError("Creation of DB connection failed", *apiResp.Msg)
+		return
+	}
+
 	plan.ID = types.StringValue(fmt.Sprintf("%d", *apiResp.ConnectionKey))
 	plan.ConnectionType = types.StringValue("DB")
 	plan.ConnectionKey = types.Int64Value(int64(*apiResp.ConnectionKey))
-	plan.Description = util.SafeStringDatasource(plan.Description.ValueStringPointer())
+	// plan.Description = util.SafeStringDatasource(plan.Description.ValueStringPointer())
 	plan.DefaultSavRoles = util.SafeStringDatasource(plan.DefaultSavRoles.ValueStringPointer())
 	plan.EmailTemplate = util.SafeStringDatasource(plan.EmailTemplate.ValueStringPointer())
 	plan.ConnectionProperties = util.SafeStringDatasource(plan.ConnectionProperties.ValueStringPointer())
@@ -411,11 +429,17 @@ func (r *dbConnectionResource) Read(ctx context.Context, req resource.ReadReques
 		resp.Diagnostics.AddError("API Read Failed In Read Block", fmt.Sprintf("Error: %v", err))
 		return
 	}
+	if apiResp!=nil && *apiResp.DBConnectionResponse.Errorcode !=0{
+		log.Printf("[ERROR]: Error in reading DB connection resource. Errorcode: %v, Message: %v", *apiResp.DBConnectionResponse.Errorcode, *apiResp.DBConnectionResponse.Msg)
+		resp.Diagnostics.AddError("Read DB connection resource failed", *apiResp.DBConnectionResponse.Msg)
+		return
+	}
+
 	state.ConnectionKey = types.Int64Value(int64(*apiResp.DBConnectionResponse.Connectionkey))
 	state.ID = types.StringValue(fmt.Sprintf("%d", *apiResp.DBConnectionResponse.Connectionkey))
 	state.ConnectionName = util.SafeStringDatasource(apiResp.DBConnectionResponse.Connectionname)
 	state.ConnectionKey = util.SafeInt64(apiResp.DBConnectionResponse.Connectionkey)
-	state.Description = util.SafeStringDatasource(apiResp.DBConnectionResponse.Description)
+	// state.Description = util.SafeStringDatasource(apiResp.DBConnectionResponse.Description)
 	state.DefaultSavRoles = util.SafeStringDatasource(apiResp.DBConnectionResponse.Defaultsavroles)
 	state.ConnectionType = util.SafeStringDatasource(apiResp.DBConnectionResponse.Connectiontype)
 	state.EmailTemplate = util.SafeStringDatasource(apiResp.DBConnectionResponse.Emailtemplate)
@@ -503,7 +527,7 @@ func (r *dbConnectionResource) Update(ctx context.Context, req resource.UpdateRe
 			Connectiontype: "DB",
 			ConnectionName: plan.ConnectionName.ValueString(),
 			//optional field
-			Description:     util.StringPointerOrEmpty(plan.Description),
+			// Description:     util.StringPointerOrEmpty(plan.Description),
 			Defaultsavroles: util.StringPointerOrEmpty(plan.DefaultSavRoles),
 			EmailTemplate:   util.StringPointerOrEmpty(plan.EmailTemplate),
 		},
@@ -559,9 +583,15 @@ func (r *dbConnectionResource) Update(ctx context.Context, req resource.UpdateRe
 	apiResp, _, err := apiClient.ConnectionsAPI.CreateOrUpdate(ctx).CreateOrUpdateRequest(dbConnRequest).Execute()
 	if err != nil || *apiResp.ErrorCode != "0" {
 		log.Printf("Problem with the update function")
-		resp.Diagnostics.AddError("API Update Failed", fmt.Sprintf("Error: %v", *apiResp.Msg))
+		resp.Diagnostics.AddError("API Update Failed", fmt.Sprintf("Error: %v", err))
 		return
 	}
+	if apiResp!=nil && *apiResp.ErrorCode !="0"{
+		log.Printf("[ERROR]: Error in updating DB connection. Errorcode: %v, Message: %v", *apiResp.ErrorCode, *apiResp.Msg)
+		resp.Diagnostics.AddError("Updation of DB connection failed", *apiResp.Msg)
+		return
+	}
+
 	reqParams := openapi.GetConnectionDetailsRequest{}
 
 	reqParams.SetConnectionname(plan.ConnectionName.ValueString())
@@ -571,11 +601,17 @@ func (r *dbConnectionResource) Update(ctx context.Context, req resource.UpdateRe
 		resp.Diagnostics.AddError("API Read Failed In Update Block", fmt.Sprintf("Error: %v", err))
 		return
 	}
+	if getResp!=nil && *getResp.DBConnectionResponse.Errorcode !=0{
+		log.Printf("[ERROR]: Error in reading DB connection after updation. Errorcode: %v, Message: %v", *getResp.DBConnectionResponse.Errorcode, *getResp.DBConnectionResponse.Msg)
+		resp.Diagnostics.AddError("Read DB connection after updation failed", *getResp.DBConnectionResponse.Msg)
+		return
+	}
+
 	plan.ConnectionKey = types.Int64Value(int64(*getResp.DBConnectionResponse.Connectionkey))
 	plan.ID = types.StringValue(fmt.Sprintf("%d", *getResp.DBConnectionResponse.Connectionkey))
 	plan.ConnectionName = util.SafeStringDatasource(getResp.DBConnectionResponse.Connectionname)
 	plan.ConnectionKey = util.SafeInt64(getResp.DBConnectionResponse.Connectionkey)
-	plan.Description = util.SafeStringDatasource(getResp.DBConnectionResponse.Description)
+	// plan.Description = util.SafeStringDatasource(getResp.DBConnectionResponse.Description)
 	plan.DefaultSavRoles = util.SafeStringDatasource(getResp.DBConnectionResponse.Defaultsavroles)
 	plan.ConnectionType = util.SafeStringDatasource(getResp.DBConnectionResponse.Connectiontype)
 	plan.EmailTemplate = util.SafeStringDatasource(getResp.DBConnectionResponse.Emailtemplate)

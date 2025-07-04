@@ -1,5 +1,17 @@
-// Copyright (c) Saviynt Inc.
-// SPDX-License-Identifier: MPL-2.0
+/*
+ * Copyright (c) 2025 Saviynt Inc.
+ * All Rights Reserved.
+ *
+ * This software is the confidential and proprietary information of
+ * Saviynt Inc. ("Confidential Information"). You shall not disclose,
+ * use, or distribute such Confidential Information except in accordance
+ * with the terms of the license agreement you entered into with Saviynt.
+ *
+ * SAVIYNT MAKES NO REPRESENTATIONS OR WARRANTIES ABOUT THE SUITABILITY OF
+ * THE SOFTWARE, EITHER EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO
+ * THE IMPLIED WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR
+ * PURPOSE, OR NON-INFRINGEMENT.
+ */
 
 // provider.go defines the Saviynt Terraform provider using the Terraform Plugin Framework.
 // It handles authentication, schema configuration, and registration of both standard
@@ -150,7 +162,7 @@ func (p *saviyntProvider) DataSources(ctx context.Context) []func() datasource.D
 		NewWorkdayConnectionsDataSource,
 		NewSalesforceConnectionsDataSource,
 		NewEntraIDConnectionsDataSource,
-		NewSAPConnectionsDataSource,
+		// NewSAPConnectionsDataSource,
 		NewUnixConnectionsDataSource,
 		NewGithubRestConnectionsDataSource,
 	}
@@ -167,11 +179,11 @@ func (p *saviyntProvider) Resources(ctx context.Context) []func() resource.Resou
 		NewWorkdayTestConnectionResource,
 		NewEntraIdTestConnectionResource,
 		NewSalesfoceTestConnectionResource,
-		NewSapTestConnectionResource,
+		// NewSapTestConnectionResource,
 		NewUnixTestConnectionResource,
 		NewGithubRestTestConnectionResource,
 		NewEndpointResource,
-		NewRolesResource,
+		NewDynamicAttributeResource,
 	}
 }
 func (p *saviyntProvider) EphemeralResources(ctx context.Context) []func() ephemeral.EphemeralResource {
