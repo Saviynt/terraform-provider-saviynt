@@ -1,5 +1,17 @@
-// Copyright (c) HashiCorp, Inc.
-// SPDX-License-Identifier: MPL-2.0
+/*
+ * Copyright (c) 2025 Saviynt Inc.
+ * All Rights Reserved.
+ *
+ * This software is the confidential and proprietary information of
+ * Saviynt Inc. ("Confidential Information"). You shall not disclose,
+ * use, or distribute such Confidential Information except in accordance
+ * with the terms of the license agreement you entered into with Saviynt.
+ *
+ * SAVIYNT MAKES NO REPRESENTATIONS OR WARRANTIES ABOUT THE SUITABILITY OF
+ * THE SOFTWARE, EITHER EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO
+ * THE IMPLIED WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR
+ * PURPOSE, OR NON-INFRINGEMENT.
+ */
 
 /*
 Account Management API
@@ -14,10 +26,11 @@ package endpoints
 
 import (
 	"context"
+	"testing"
+
+	openapiclient "github.com/saviynt/saviynt-api-go-client/endpoints"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	"testing"
-	openapiclient "github.com/saviynt/saviynt-api-go-client/endpoints"
 )
 
 func Test_endpoints_EndpointsAPIService(t *testing.T) {
@@ -27,7 +40,7 @@ func Test_endpoints_EndpointsAPIService(t *testing.T) {
 
 	t.Run("Test EndpointsAPIService CreateEndpoint", func(t *testing.T) {
 
-		t.Skip("skip test")  // remove to run test
+		t.Skip("skip test") // remove to run test
 
 		resp, httpRes, err := apiClient.EndpointsAPI.CreateEndpoint(context.Background()).Execute()
 
@@ -39,7 +52,7 @@ func Test_endpoints_EndpointsAPIService(t *testing.T) {
 
 	t.Run("Test EndpointsAPIService GetEndpoints", func(t *testing.T) {
 
-		t.Skip("skip test")  // remove to run test
+		t.Skip("skip test") // remove to run test
 
 		resp, httpRes, err := apiClient.EndpointsAPI.GetEndpoints(context.Background()).Execute()
 
@@ -51,7 +64,7 @@ func Test_endpoints_EndpointsAPIService(t *testing.T) {
 
 	t.Run("Test EndpointsAPIService UpdateEndpoint", func(t *testing.T) {
 
-		t.Skip("skip test")  // remove to run test
+		t.Skip("skip test") // remove to run test
 
 		resp, httpRes, err := apiClient.EndpointsAPI.UpdateEndpoint(context.Background()).Execute()
 
