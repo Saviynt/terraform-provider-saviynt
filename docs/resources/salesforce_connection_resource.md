@@ -13,8 +13,20 @@ Create and manage Salesforce connector in Saviynt
 ## Example Usage
 
 ```terraform
-// Copyright (c) Saviynt Inc.
-// SPDX-License-Identifier: MPL-2.0
+/*
+ * Copyright (c) 2025 Saviynt Inc.
+ * All Rights Reserved.
+ *
+ * This software is the confidential and proprietary information of
+ * Saviynt Inc. ("Confidential Information"). You shall not disclose,
+ * use, or distribute such Confidential Information except in accordance
+ * with the terms of the license agreement you entered into with Saviynt.
+ *
+ * SAVIYNT MAKES NO REPRESENTATIONS OR WARRANTIES ABOUT THE SUITABILITY OF
+ * THE SOFTWARE, EITHER EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO
+ * THE IMPLIED WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR
+ * PURPOSE, OR NON-INFRINGEMENT.
+ */
 
 variable "CLIENT_ID" {
   type        = string
@@ -117,7 +129,6 @@ resource "saviynt_salesforce_connection_resource" "ss" {
 - `custom_createaccount_url` (String) Custom URL used when creating a Salesforce account.
 - `customconfigjson` (String) Custom configuration options for Salesforce connector.
 - `defaultsavroles` (String) Default SAV roles for managing the connection. Example: "ROLE_ORG"
-- `description` (String) Description for the connection. Example: "ORG_AD"
 - `email_template` (String) Email template for notifications. Example: "New Account Task Creation"
 - `error_code` (String) An error code where '0' signifies success and '1' signifies an unsuccessful operation.
 - `feature_license_json` (String) JSON mapping of feature licenses to permission fields in Salesforce.

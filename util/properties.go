@@ -1,5 +1,17 @@
-// Copyright (c) Saviynt Inc.
-// SPDX-License-Identifier: MPL-2.0
+/*
+ * Copyright (c) 2025 Saviynt Inc.
+ * All Rights Reserved.
+ *
+ * This software is the confidential and proprietary information of
+ * Saviynt Inc. ("Confidential Information"). You shall not disclose,
+ * use, or distribute such Confidential Information except in accordance
+ * with the terms of the license agreement you entered into with Saviynt.
+ *
+ * SAVIYNT MAKES NO REPRESENTATIONS OR WARRANTIES ABOUT THE SUITABILITY OF
+ * THE SOFTWARE, EITHER EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO
+ * THE IMPLIED WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR
+ * PURPOSE, OR NON-INFRINGEMENT.
+ */
 
 package util
 
@@ -25,6 +37,7 @@ var SAPConnDescription = "Create and manage SAP connector in Saviynt"
 var SalesforceConnDescription = "Create and manage Salesforce connector in Saviynt"
 var UnixConnDescription = "Create and manage Unix connector in Saviynt"
 var WorkdayConnDescription = "Create and manage Workday connector in Saviynt"
+var DynamicAttrDescription="Create and manage dynamic attributes in Saviynt"
 
 var ADConnDataSourceDescription = "Retrieve the details for a given AD connector by its name or key"
 var ADSIConnDataSourceDescription = "Retrieve the details for a given ADSI connector by its name or key"

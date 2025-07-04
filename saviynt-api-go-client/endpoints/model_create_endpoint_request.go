@@ -60,7 +60,7 @@ type CreateEndpointRequest struct {
 	// Use this configuration for processing the add access tasks and remove access tasks for AD and LDAP Connectors.
 	Connectionconfig *string `json:"connectionconfig,omitempty"`
 	// Is this endpoint requestable
-	Requestable *string `json:"requestable,omitempty"`
+	Requestable *bool `json:"requestable,omitempty"`
 	// Specify the parent and child relationship for the Active Directory endpoint. The specified value is used to filter the parent and child objects in the Request Access tile.
 	ParentAccountPattern *string `json:"parentAccountPattern,omitempty"`
 	// Rule to generate a name for this endpoint while creating a new service account
@@ -293,7 +293,7 @@ type CreateEndpointRequest struct {
 	// Label for the custom property 60 of accounts of this endpoint
 	Customproperty60Label *string `json:"customproperty60Label,omitempty"`
 	// Whether to display 'Remove All Roles' option in the Request page
-	AllowRemoveAllRoleOnRequest *string `json:"allowRemoveAllRoleOnRequest,omitempty"`
+	AllowRemoveAllRoleOnRequest *bool `json:"allowRemoveAllRoleOnRequest,omitempty"`
 }
 
 type _CreateEndpointRequest CreateEndpointRequest
@@ -935,9 +935,9 @@ func (o *CreateEndpointRequest) SetConnectionconfig(v string) {
 }
 
 // GetRequestable returns the Requestable field value if set, zero value otherwise.
-func (o *CreateEndpointRequest) GetRequestable() string {
+func (o *CreateEndpointRequest) GetRequestable() bool {
 	if o == nil || IsNil(o.Requestable) {
-		var ret string
+		var ret bool
 		return ret
 	}
 	return *o.Requestable
@@ -945,7 +945,7 @@ func (o *CreateEndpointRequest) GetRequestable() string {
 
 // GetRequestableOk returns a tuple with the Requestable field value if set, nil otherwise
 // and a boolean to check if the value has been set.
-func (o *CreateEndpointRequest) GetRequestableOk() (*string, bool) {
+func (o *CreateEndpointRequest) GetRequestableOk() (*bool, bool) {
 	if o == nil || IsNil(o.Requestable) {
 		return nil, false
 	}
@@ -961,8 +961,8 @@ func (o *CreateEndpointRequest) HasRequestable() bool {
 	return false
 }
 
-// SetRequestable gets a reference to the given string and assigns it to the Requestable field.
-func (o *CreateEndpointRequest) SetRequestable(v string) {
+// SetRequestable gets a reference to the given bool and assigns it to the Requestable field.
+func (o *CreateEndpointRequest) SetRequestable(v bool) {
 	o.Requestable = &v
 }
 
@@ -4679,9 +4679,9 @@ func (o *CreateEndpointRequest) SetCustomproperty60Label(v string) {
 }
 
 // GetAllowRemoveAllRoleOnRequest returns the AllowRemoveAllRoleOnRequest field value if set, zero value otherwise.
-func (o *CreateEndpointRequest) GetAllowRemoveAllRoleOnRequest() string {
+func (o *CreateEndpointRequest) GetAllowRemoveAllRoleOnRequest() bool {
 	if o == nil || IsNil(o.AllowRemoveAllRoleOnRequest) {
-		var ret string
+		var ret bool
 		return ret
 	}
 	return *o.AllowRemoveAllRoleOnRequest
@@ -4689,7 +4689,7 @@ func (o *CreateEndpointRequest) GetAllowRemoveAllRoleOnRequest() string {
 
 // GetAllowRemoveAllRoleOnRequestOk returns a tuple with the AllowRemoveAllRoleOnRequest field value if set, nil otherwise
 // and a boolean to check if the value has been set.
-func (o *CreateEndpointRequest) GetAllowRemoveAllRoleOnRequestOk() (*string, bool) {
+func (o *CreateEndpointRequest) GetAllowRemoveAllRoleOnRequestOk() (*bool, bool) {
 	if o == nil || IsNil(o.AllowRemoveAllRoleOnRequest) {
 		return nil, false
 	}
@@ -4705,8 +4705,8 @@ func (o *CreateEndpointRequest) HasAllowRemoveAllRoleOnRequest() bool {
 	return false
 }
 
-// SetAllowRemoveAllRoleOnRequest gets a reference to the given string and assigns it to the AllowRemoveAllRoleOnRequest field.
-func (o *CreateEndpointRequest) SetAllowRemoveAllRoleOnRequest(v string) {
+// SetAllowRemoveAllRoleOnRequest gets a reference to the given bool and assigns it to the AllowRemoveAllRoleOnRequest field.
+func (o *CreateEndpointRequest) SetAllowRemoveAllRoleOnRequest(v bool) {
 	o.AllowRemoveAllRoleOnRequest = &v
 }
 

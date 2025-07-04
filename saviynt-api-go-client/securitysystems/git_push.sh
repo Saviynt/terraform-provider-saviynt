@@ -1,7 +1,6 @@
 #!/bin/sh
-# Copyright (c) Saviynt Inc.
+# Copyright (c) HashiCorp, Inc.
 # SPDX-License-Identifier: MPL-2.0
-
 
 # ref: https://help.github.com/articles/adding-an-existing-project-to-github-using-the-command-line/
 #

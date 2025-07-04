@@ -1,5 +1,17 @@
-// Copyright (c) Saviynt Inc.
-// SPDX-License-Identifier: MPL-2.0
+/*
+ * Copyright (c) 2025 Saviynt Inc.
+ * All Rights Reserved.
+ *
+ * This software is the confidential and proprietary information of
+ * Saviynt Inc. ("Confidential Information"). You shall not disclose,
+ * use, or distribute such Confidential Information except in accordance
+ * with the terms of the license agreement you entered into with Saviynt.
+ *
+ * SAVIYNT MAKES NO REPRESENTATIONS OR WARRANTIES ABOUT THE SUITABILITY OF
+ * THE SOFTWARE, EITHER EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO
+ * THE IMPLIED WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR
+ * PURPOSE, OR NON-INFRINGEMENT.
+ */
 
 // saviynt_db_connection_datasource retrieves db connections details from the Saviynt Security Manager.
 // The data source supports a single Read operation to look up an existing db connections by name.
@@ -40,40 +52,40 @@ type DBConnectionDataSourceModel struct {
 }
 
 type DBConnectionAttributes struct {
-	PasswordMinLength        types.String             `tfsdk:"password_min_length"`
-	ChangePassJSON           types.String             `tfsdk:"changepass_json"`
-	AccountExistsJSON        types.String             `tfsdk:"accountexists_json"`
-	RolesImport              types.String             `tfsdk:"roles_import"`
-	RoleOwnerImport          types.String             `tfsdk:"roleowner_import"`
-	CreateAccountJSON        types.String             `tfsdk:"createaccount_json"`
-	UserImport               types.String             `tfsdk:"user_import"`
-	DisableAccountJSON       types.String             `tfsdk:"disableaccount_json"`
-	EntitlementValueImport   types.String             `tfsdk:"entitlementvalue_import"`
-	ConnectionType           types.String             `tfsdk:"connection_type"`
-	UpdateUserJSON           types.String             `tfsdk:"updateuser_json"`
-	PasswordNoOfSplChars     types.String             `tfsdk:"password_noofsplchars"`
-	RevokeAccessJSON         types.String             `tfsdk:"revokeaccess_json"`
-	URL                      types.String             `tfsdk:"url"`
-	SystemImport             types.String             `tfsdk:"system_import"`
-	DriverName               types.String             `tfsdk:"drivername"`
-	DeleteAccountJSON        types.String             `tfsdk:"deleteaccount_json"`
-	StatusThresholdConfig    types.String             `tfsdk:"status_threshold_config"`
-	Username                 types.String             `tfsdk:"username"`
-	IsTimeoutSupported       types.Bool               `tfsdk:"is_timeout_supported"`
-	PasswordNoOfCapsAlpha    types.String             `tfsdk:"password_noofcapsalpha"`
-	PasswordNoOfDigits       types.String             `tfsdk:"password_noofdigits"`
-	ConnectionProperties     types.String             `tfsdk:"connectionproperties"`
-	ModifyUserDataJSON       types.String             `tfsdk:"modifyuserdata_json"`
-	IsTimeoutConfigValidated types.Bool               `tfsdk:"is_timeout_config_validated"`
-	AccountsImport           types.String             `tfsdk:"accounts_import"`
-	Password                 types.String             `tfsdk:"password"`
-	EnableAccountJSON        types.String             `tfsdk:"enableaccount_json"`
-	PasswordMaxLength        types.String             `tfsdk:"password_max_length"`
-	MaxPaginationSize        types.String             `tfsdk:"max_pagination_size"`
-	UpdateAccountJSON        types.String             `tfsdk:"updateaccount_json"`
-	GrantAccessJSON          types.String             `tfsdk:"grantaccess_json"`
-	CliCommandJSON           types.String             `tfsdk:"cli_command_json"`
-	ConnectionTimeoutConfig  *ConnectionTimeoutConfig `tfsdk:"connection_timeout_config"`
+	PasswordMinLength        types.String `tfsdk:"password_min_length"`
+	ChangePassJSON           types.String `tfsdk:"changepass_json"`
+	AccountExistsJSON        types.String `tfsdk:"accountexists_json"`
+	RolesImport              types.String `tfsdk:"roles_import"`
+	RoleOwnerImport          types.String `tfsdk:"roleowner_import"`
+	CreateAccountJSON        types.String `tfsdk:"createaccount_json"`
+	UserImport               types.String `tfsdk:"user_import"`
+	DisableAccountJSON       types.String `tfsdk:"disableaccount_json"`
+	EntitlementValueImport   types.String `tfsdk:"entitlementvalue_import"`
+	ConnectionType           types.String `tfsdk:"connection_type"`
+	UpdateUserJSON           types.String `tfsdk:"updateuser_json"`
+	PasswordNoOfSplChars     types.String `tfsdk:"password_noofsplchars"`
+	RevokeAccessJSON         types.String `tfsdk:"revokeaccess_json"`
+	URL                      types.String `tfsdk:"url"`
+	SystemImport             types.String `tfsdk:"system_import"`
+	DriverName               types.String `tfsdk:"drivername"`
+	DeleteAccountJSON        types.String `tfsdk:"deleteaccount_json"`
+	StatusThresholdConfig    types.String `tfsdk:"status_threshold_config"`
+	Username                 types.String `tfsdk:"username"`
+	IsTimeoutSupported       types.Bool   `tfsdk:"is_timeout_supported"`
+	PasswordNoOfCapsAlpha    types.String `tfsdk:"password_noofcapsalpha"`
+	PasswordNoOfDigits       types.String `tfsdk:"password_noofdigits"`
+	ConnectionProperties     types.String `tfsdk:"connectionproperties"`
+	ModifyUserDataJSON       types.String `tfsdk:"modifyuserdata_json"`
+	IsTimeoutConfigValidated types.Bool   `tfsdk:"is_timeout_config_validated"`
+	AccountsImport           types.String `tfsdk:"accounts_import"`
+	Password                 types.String `tfsdk:"password"`
+	EnableAccountJSON        types.String `tfsdk:"enableaccount_json"`
+	PasswordMaxLength        types.String `tfsdk:"password_max_length"`
+	MaxPaginationSize        types.String `tfsdk:"max_pagination_size"`
+	UpdateAccountJSON        types.String `tfsdk:"updateaccount_json"`
+	GrantAccessJSON          types.String `tfsdk:"grantaccess_json"`
+	CliCommandJSON           types.String `tfsdk:"cli_command_json"`
+	// ConnectionTimeoutConfig  *ConnectionTimeoutConfig `tfsdk:"connection_timeout_config"`
 }
 
 var _ datasource.DataSource = &dbConnectionsDataSource{}
@@ -128,10 +140,10 @@ func DBConnectorsDataSourceSchema() map[string]schema.Attribute {
 				"updateaccount_json":          schema.StringAttribute{Computed: true},
 				"grantaccess_json":            schema.StringAttribute{Computed: true},
 				"cli_command_json":            schema.StringAttribute{Computed: true},
-				"connection_timeout_config": schema.SingleNestedAttribute{
-					Computed:   true,
-					Attributes: ConnectionTimeoutConfigeSchema(),
-				},
+				// "connection_timeout_config": schema.SingleNestedAttribute{
+				// 	Computed:   true,
+				// 	Attributes: ConnectionTimeoutConfigeSchema(),
+				// },
 			},
 		},
 	}
@@ -201,6 +213,13 @@ func (d *dbConnectionsDataSource) Read(ctx context.Context, req datasource.ReadR
 		resp.Diagnostics.AddError("API Call Failed", fmt.Sprintf("Error: %v", err))
 		return
 	}
+	if apiResp!=nil && *apiResp.DBConnectionResponse.Errorcode !=0{
+		log.Printf("[ERROR]: Error in reading DB connection. Errorcode: %v, Message: %v", *apiResp.DBConnectionResponse.Errorcode, *apiResp.DBConnectionResponse.Msg)
+		resp.Diagnostics.AddError("Read DB connection failed", *apiResp.DBConnectionResponse.Msg)
+		return
+	}
+
+
 	log.Printf("[DEBUG] HTTP Status Code: %d", httpResp.StatusCode)
 
 	state.Msg = util.SafeStringDatasource(apiResp.DBConnectionResponse.Msg)
@@ -252,17 +271,17 @@ func (d *dbConnectionsDataSource) Read(ctx context.Context, req datasource.ReadR
 			GrantAccessJSON:          util.SafeStringDatasource(apiResp.DBConnectionResponse.Connectionattributes.GRANTACCESSJSON),
 			CliCommandJSON:           util.SafeStringDatasource(apiResp.DBConnectionResponse.Connectionattributes.CLI_COMMAND_JSON),
 		}
-		if apiResp.DBConnectionResponse.Connectionattributes.ConnectionTimeoutConfig != nil {
-			state.ConnectionAttributes.ConnectionTimeoutConfig = &ConnectionTimeoutConfig{
-				RetryWait:               util.SafeInt64(apiResp.DBConnectionResponse.Connectionattributes.ConnectionTimeoutConfig.RetryWait),
-				TokenRefreshMaxTryCount: util.SafeInt64(apiResp.DBConnectionResponse.Connectionattributes.ConnectionTimeoutConfig.TokenRefreshMaxTryCount),
-				RetryFailureStatusCode:  util.SafeInt64(apiResp.DBConnectionResponse.Connectionattributes.ConnectionTimeoutConfig.RetryFailureStatusCode),
-				RetryWaitMaxValue:       util.SafeInt64(apiResp.DBConnectionResponse.Connectionattributes.ConnectionTimeoutConfig.RetryWaitMaxValue),
-				RetryCount:              util.SafeInt64(apiResp.DBConnectionResponse.Connectionattributes.ConnectionTimeoutConfig.RetryCount),
-				ReadTimeout:             util.SafeInt64(apiResp.DBConnectionResponse.Connectionattributes.ConnectionTimeoutConfig.ReadTimeout),
-				ConnectionTimeout:       util.SafeInt64(apiResp.DBConnectionResponse.Connectionattributes.ConnectionTimeoutConfig.ConnectionTimeout),
-			}
-		}
+		// if apiResp.DBConnectionResponse.Connectionattributes.ConnectionTimeoutConfig != nil {
+		// 	state.ConnectionAttributes.ConnectionTimeoutConfig = &ConnectionTimeoutConfig{
+		// 		RetryWait:               util.SafeInt64(apiResp.DBConnectionResponse.Connectionattributes.ConnectionTimeoutConfig.RetryWait),
+		// 		TokenRefreshMaxTryCount: util.SafeInt64(apiResp.DBConnectionResponse.Connectionattributes.ConnectionTimeoutConfig.TokenRefreshMaxTryCount),
+		// 		RetryFailureStatusCode:  util.SafeInt64(apiResp.DBConnectionResponse.Connectionattributes.ConnectionTimeoutConfig.RetryFailureStatusCode),
+		// 		RetryWaitMaxValue:       util.SafeInt64(apiResp.DBConnectionResponse.Connectionattributes.ConnectionTimeoutConfig.RetryWaitMaxValue),
+		// 		RetryCount:              util.SafeInt64(apiResp.DBConnectionResponse.Connectionattributes.ConnectionTimeoutConfig.RetryCount),
+		// 		ReadTimeout:             util.SafeInt64(apiResp.DBConnectionResponse.Connectionattributes.ConnectionTimeoutConfig.ReadTimeout),
+		// 		ConnectionTimeout:       util.SafeInt64(apiResp.DBConnectionResponse.Connectionattributes.ConnectionTimeoutConfig.ConnectionTimeout),
+		// 	}
+		// }
 	}
 
 	if apiResp.DBConnectionResponse.Connectionattributes == nil {

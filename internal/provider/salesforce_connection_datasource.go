@@ -1,5 +1,17 @@
-// Copyright (c) Saviynt Inc.
-// SPDX-License-Identifier: MPL-2.0
+/*
+ * Copyright (c) 2025 Saviynt Inc.
+ * All Rights Reserved.
+ *
+ * This software is the confidential and proprietary information of
+ * Saviynt Inc. ("Confidential Information"). You shall not disclose,
+ * use, or distribute such Confidential Information except in accordance
+ * with the terms of the license agreement you entered into with Saviynt.
+ *
+ * SAVIYNT MAKES NO REPRESENTATIONS OR WARRANTIES ABOUT THE SUITABILITY OF
+ * THE SOFTWARE, EITHER EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO
+ * THE IMPLIED WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR
+ * PURPOSE, OR NON-INFRINGEMENT.
+ */
 
 // saviynt_salesforce_connection_datasource retrieves salesforce connections details from the Saviynt Security Manager.
 // The data source supports a single Read operation to look up an existing salesforce connections by name.
@@ -38,26 +50,26 @@ type SalesforceConnectionDataSourceModel struct {
 }
 
 type SalesforceConnectionAttributes struct {
-	IsTimeoutSupported       types.Bool               `tfsdk:"is_timeout_supported"`
-	ClientSecret             types.String             `tfsdk:"client_secret"`
-	ObjectToBeImported       types.String             `tfsdk:"object_to_be_imported"`
-	FeatureLicenseJson       types.String             `tfsdk:"feature_license_json"`
-	CreateAccountJson        types.String             `tfsdk:"createaccountjson"`
-	RedirectUri              types.String             `tfsdk:"redirect_uri"`
-	RefreshToken             types.String             `tfsdk:"refresh_token"`
-	ConnectionTimeoutConfig  *ConnectionTimeoutConfig `tfsdk:"connection_timeout_config"`
-	ModifyAccountJson        types.String             `tfsdk:"modifyaccountjson"`
-	ConnectionType           types.String             `tfsdk:"connection_type"`
-	IsTimeoutConfigValidated types.Bool               `tfsdk:"is_timeout_config_validated"`
-	ClientId                 types.String             `tfsdk:"client_id"`
-	PamConfig                types.String             `tfsdk:"pam_config"`
-	CustomConfigJson         types.String             `tfsdk:"customconfigjson"`
-	FieldMappingJson         types.String             `tfsdk:"field_mapping_json"`
-	StatusThresholdConfig    types.String             `tfsdk:"status_threshold_config"`
-	AccountFieldQuery        types.String             `tfsdk:"account_field_query"`
-	CustomCreateAccountUrl   types.String             `tfsdk:"custom_createaccount_url"`
-	AccountFilterQuery       types.String             `tfsdk:"account_filter_query"`
-	InstanceUrl              types.String             `tfsdk:"instance_url"`
+	IsTimeoutSupported types.Bool   `tfsdk:"is_timeout_supported"`
+	ClientSecret       types.String `tfsdk:"client_secret"`
+	ObjectToBeImported types.String `tfsdk:"object_to_be_imported"`
+	FeatureLicenseJson types.String `tfsdk:"feature_license_json"`
+	CreateAccountJson  types.String `tfsdk:"createaccountjson"`
+	RedirectUri        types.String `tfsdk:"redirect_uri"`
+	RefreshToken       types.String `tfsdk:"refresh_token"`
+	// ConnectionTimeoutConfig  *ConnectionTimeoutConfig `tfsdk:"connection_timeout_config"`
+	ModifyAccountJson        types.String `tfsdk:"modifyaccountjson"`
+	ConnectionType           types.String `tfsdk:"connection_type"`
+	IsTimeoutConfigValidated types.Bool   `tfsdk:"is_timeout_config_validated"`
+	ClientId                 types.String `tfsdk:"client_id"`
+	PamConfig                types.String `tfsdk:"pam_config"`
+	CustomConfigJson         types.String `tfsdk:"customconfigjson"`
+	FieldMappingJson         types.String `tfsdk:"field_mapping_json"`
+	StatusThresholdConfig    types.String `tfsdk:"status_threshold_config"`
+	AccountFieldQuery        types.String `tfsdk:"account_field_query"`
+	CustomCreateAccountUrl   types.String `tfsdk:"custom_createaccount_url"`
+	AccountFilterQuery       types.String `tfsdk:"account_filter_query"`
+	InstanceUrl              types.String `tfsdk:"instance_url"`
 }
 
 func NewSalesforceConnectionsDataSource() datasource.DataSource {
@@ -96,10 +108,10 @@ func SalesforceConnectorsDataSourceSchema() map[string]schema.Attribute {
 				"custom_createaccount_url":    schema.StringAttribute{Computed: true},
 				"account_filter_query":        schema.StringAttribute{Computed: true},
 				"instance_url":                schema.StringAttribute{Computed: true},
-				"connection_timeout_config": schema.SingleNestedAttribute{
-					Computed:   true,
-					Attributes: ConnectionTimeoutConfigeSchema(),
-				},
+				// "connection_timeout_config": schema.SingleNestedAttribute{
+				// 	Computed:   true,
+				// 	Attributes: ConnectionTimeoutConfigeSchema(),
+				// },
 			},
 		},
 	}
@@ -169,6 +181,12 @@ func (d *salesforceConnectionDataSource) Read(ctx context.Context, req datasourc
 		resp.Diagnostics.AddError("API Call Failed", fmt.Sprintf("Error: %v", err))
 		return
 	}
+	if apiResp!=nil && *apiResp.SalesforceConnectionResponse.Errorcode !=0{
+		log.Printf("[ERROR]: Error in reading Salesforce connection. Errorcode: %v, Message: %v", *apiResp.SalesforceConnectionResponse.Errorcode, *apiResp.SalesforceConnectionResponse.Msg)
+		resp.Diagnostics.AddError("Reading Salesforce connection failed", *apiResp.SalesforceConnectionResponse.Msg)
+		return
+	}
+
 	log.Printf("[DEBUG] HTTP Status Code: %d", httpResp.StatusCode)
 
 	state.Msg = util.SafeStringDatasource(apiResp.SalesforceConnectionResponse.Msg)
@@ -206,18 +224,18 @@ func (d *salesforceConnectionDataSource) Read(ctx context.Context, req datasourc
 			InstanceUrl:              util.SafeStringDatasource(apiResp.SalesforceConnectionResponse.Connectionattributes.INSTANCE_URL),
 		}
 
-		if apiResp.SalesforceConnectionResponse.Connectionattributes.ConnectionTimeoutConfig != nil {
-			state.ConnectionAttributes.ConnectionTimeoutConfig = &ConnectionTimeoutConfig{
-				RetryWait:               util.SafeInt64(apiResp.SalesforceConnectionResponse.Connectionattributes.ConnectionTimeoutConfig.RetryWait),
-				TokenRefreshMaxTryCount: util.SafeInt64(apiResp.SalesforceConnectionResponse.Connectionattributes.ConnectionTimeoutConfig.TokenRefreshMaxTryCount),
-				RetryFailureStatusCode:  util.SafeInt64(apiResp.SalesforceConnectionResponse.Connectionattributes.ConnectionTimeoutConfig.RetryFailureStatusCode),
-				// RetryFailureStatusCode: SafeInt64FromStringPointer(apiResp.SalesforceConnectionResponse.Connectionattributes.ConnectionTimeoutConfig.RetryFailureStatusCode),
-				RetryWaitMaxValue: util.SafeInt64(apiResp.SalesforceConnectionResponse.Connectionattributes.ConnectionTimeoutConfig.RetryWaitMaxValue),
-				RetryCount:        util.SafeInt64(apiResp.SalesforceConnectionResponse.Connectionattributes.ConnectionTimeoutConfig.RetryCount),
-				ReadTimeout:       util.SafeInt64(apiResp.SalesforceConnectionResponse.Connectionattributes.ConnectionTimeoutConfig.ReadTimeout),
-				ConnectionTimeout: util.SafeInt64(apiResp.SalesforceConnectionResponse.Connectionattributes.ConnectionTimeoutConfig.ConnectionTimeout),
-			}
-		}
+		// if apiResp.SalesforceConnectionResponse.Connectionattributes.ConnectionTimeoutConfig != nil {
+		// 	state.ConnectionAttributes.ConnectionTimeoutConfig = &ConnectionTimeoutConfig{
+		// 		RetryWait:               util.SafeInt64(apiResp.SalesforceConnectionResponse.Connectionattributes.ConnectionTimeoutConfig.RetryWait),
+		// 		TokenRefreshMaxTryCount: util.SafeInt64(apiResp.SalesforceConnectionResponse.Connectionattributes.ConnectionTimeoutConfig.TokenRefreshMaxTryCount),
+		// 		RetryFailureStatusCode:  util.SafeInt64(apiResp.SalesforceConnectionResponse.Connectionattributes.ConnectionTimeoutConfig.RetryFailureStatusCode),
+		// 		// RetryFailureStatusCode: SafeInt64FromStringPointer(apiResp.SalesforceConnectionResponse.Connectionattributes.ConnectionTimeoutConfig.RetryFailureStatusCode),
+		// 		RetryWaitMaxValue: util.SafeInt64(apiResp.SalesforceConnectionResponse.Connectionattributes.ConnectionTimeoutConfig.RetryWaitMaxValue),
+		// 		RetryCount:        util.SafeInt64(apiResp.SalesforceConnectionResponse.Connectionattributes.ConnectionTimeoutConfig.RetryCount),
+		// 		ReadTimeout:       util.SafeInt64(apiResp.SalesforceConnectionResponse.Connectionattributes.ConnectionTimeoutConfig.ReadTimeout),
+		// 		ConnectionTimeout: util.SafeInt64(apiResp.SalesforceConnectionResponse.Connectionattributes.ConnectionTimeoutConfig.ConnectionTimeout),
+		// 	}
+		// }
 	}
 
 	if apiResp.SalesforceConnectionResponse.Connectionattributes == nil {

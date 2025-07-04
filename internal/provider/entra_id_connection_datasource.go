@@ -1,5 +1,17 @@
-// Copyright (c) Saviynt Inc.
-// SPDX-License-Identifier: MPL-2.0
+/*
+ * Copyright (c) 2025 Saviynt Inc.
+ * All Rights Reserved.
+ *
+ * This software is the confidential and proprietary information of
+ * Saviynt Inc. ("Confidential Information"). You shall not disclose,
+ * use, or distribute such Confidential Information except in accordance
+ * with the terms of the license agreement you entered into with Saviynt.
+ *
+ * SAVIYNT MAKES NO REPRESENTATIONS OR WARRANTIES ABOUT THE SUITABILITY OF
+ * THE SOFTWARE, EITHER EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO
+ * THE IMPLIED WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR
+ * PURPOSE, OR NON-INFRINGEMENT.
+ */
 
 // saviynt_entraid_connection_datasource retrieves entra id connections details from the Saviynt Security Manager.
 // The data source supports a single Read operation to look up an existing entra id connections by name.
@@ -36,57 +48,57 @@ type EntraIdConnectionDataSourceModel struct {
 }
 
 type EntraIdConnectionAttributes struct {
-	UpdateUserJSON                  types.String             `tfsdk:"update_user_json"`
-	MicrosoftGraphEndpoint          types.String             `tfsdk:"microsoft_graph_endpoint"`
-	EndpointsFilter                 types.String             `tfsdk:"endpoints_filter"`
-	ImportUserJSON                  types.String             `tfsdk:"import_user_json"`
-	ConnectionType                  types.String             `tfsdk:"connection_type"`
-	EnableAccountJSON               types.String             `tfsdk:"enable_account_json"`
-	ConnectionJSON                  types.String             `tfsdk:"connection_json"`
-	ClientID                        types.String             `tfsdk:"client_id"`
-	DeleteGroupJSON                 types.String             `tfsdk:"delete_group_json"`
-	ConfigJSON                      types.String             `tfsdk:"config_json"`
-	AccessToken                     types.String             `tfsdk:"access_token"`
-	AddAccessJSON                   types.String             `tfsdk:"add_access_json"`
-	CreateChannelJSON               types.String             `tfsdk:"create_channel_json"`
-	UpdateAccountJSON               types.String             `tfsdk:"update_account_json"`
-	IsTimeoutSupported              types.Bool               `tfsdk:"is_timeout_supported"`
-	RemoveServicePrincipalJSON      types.String             `tfsdk:"remove_service_principal_json"`
-	ImportDepth                     types.String             `tfsdk:"import_depth"`
-	CreateAccountJSON               types.String             `tfsdk:"create_account_json"`
-	PamConfig                       types.String             `tfsdk:"pam_config"`
-	UpdateServicePrincipalJSON      types.String             `tfsdk:"update_service_principal_json"`
-	AzureManagementEndpoint         types.String             `tfsdk:"azure_management_endpoint"`
-	EntitlementAttribute            types.String             `tfsdk:"entitlement_attribute"`
-	AccountsFilter                  types.String             `tfsdk:"accounts_filter"`
-	WindowsConnectorJSON            types.String             `tfsdk:"windows_connector_json"`
-	DeltaTokensJSON                 types.String             `tfsdk:"deltatokens_json"`
-	AzureMgmtAccessToken            types.String             `tfsdk:"azure_mgmt_access_token"`
-	CreateTeamJSON                  types.String             `tfsdk:"create_team_json"`
-	EnhancedDirectoryRoles          types.String             `tfsdk:"enhanceddirectoryroles"`
-	StatusThresholdConfig           types.String             `tfsdk:"status_threshold_config"`
-	AccountImportFields             types.String             `tfsdk:"account_import_fields"`
-	RemoveAccountJSON               types.String             `tfsdk:"remove_account_json"`
-	ChangePassJSON                  types.String             `tfsdk:"change_pass_json"`
-	ClientSecret                    types.String             `tfsdk:"client_secret"`
-	EntitlementFilterJSON           types.String             `tfsdk:"entitlement_filter_json"`
-	ServiceAccountAttributes        types.String             `tfsdk:"service_account_attributes"`
-	AddAccessToEntitlementJSON      types.String             `tfsdk:"add_access_to_entitlement_json"`
-	AuthenticationEndpoint          types.String             `tfsdk:"authentication_endpoint"`
-	CreateServicePrincipalJSON      types.String             `tfsdk:"create_service_principal_json"`
-	ModifyUserDataJSON              types.String             `tfsdk:"modifyuserdatajson"`
-	IsTimeoutConfigValidated        types.Bool               `tfsdk:"is_timeout_config_validated"`
-	RemoveAccessJSON                types.String             `tfsdk:"remove_access_json"`
-	CreateUsers                     types.String             `tfsdk:"createusers"`
-	RemoveAccessFromEntitlementJSON types.String             `tfsdk:"remove_access_from_entitlement_json"`
-	DisableAccountJSON              types.String             `tfsdk:"disable_account_json"`
-	CreateNewEndpoints              types.String             `tfsdk:"create_new_endpoints"`
-	ManagedAccountType              types.String             `tfsdk:"managed_account_type"`
-	AccountAttributes               types.String             `tfsdk:"account_attributes"`
-	AadTenantID                     types.String             `tfsdk:"aad_tenant_id"`
-	UpdateGroupJSON                 types.String             `tfsdk:"update_group_json"`
-	CreateGroupJSON                 types.String             `tfsdk:"create_group_json"`
-	ConnectionTimeoutConfig         *ConnectionTimeoutConfig `tfsdk:"connection_timeout_config"`
+	UpdateUserJSON                  types.String `tfsdk:"update_user_json"`
+	MicrosoftGraphEndpoint          types.String `tfsdk:"microsoft_graph_endpoint"`
+	EndpointsFilter                 types.String `tfsdk:"endpoints_filter"`
+	ImportUserJSON                  types.String `tfsdk:"import_user_json"`
+	ConnectionType                  types.String `tfsdk:"connection_type"`
+	EnableAccountJSON               types.String `tfsdk:"enable_account_json"`
+	ConnectionJSON                  types.String `tfsdk:"connection_json"`
+	ClientID                        types.String `tfsdk:"client_id"`
+	DeleteGroupJSON                 types.String `tfsdk:"delete_group_json"`
+	ConfigJSON                      types.String `tfsdk:"config_json"`
+	AccessToken                     types.String `tfsdk:"access_token"`
+	AddAccessJSON                   types.String `tfsdk:"add_access_json"`
+	CreateChannelJSON               types.String `tfsdk:"create_channel_json"`
+	UpdateAccountJSON               types.String `tfsdk:"update_account_json"`
+	IsTimeoutSupported              types.Bool   `tfsdk:"is_timeout_supported"`
+	RemoveServicePrincipalJSON      types.String `tfsdk:"remove_service_principal_json"`
+	ImportDepth                     types.String `tfsdk:"import_depth"`
+	CreateAccountJSON               types.String `tfsdk:"create_account_json"`
+	PamConfig                       types.String `tfsdk:"pam_config"`
+	UpdateServicePrincipalJSON      types.String `tfsdk:"update_service_principal_json"`
+	AzureManagementEndpoint         types.String `tfsdk:"azure_management_endpoint"`
+	EntitlementAttribute            types.String `tfsdk:"entitlement_attribute"`
+	AccountsFilter                  types.String `tfsdk:"accounts_filter"`
+	WindowsConnectorJSON            types.String `tfsdk:"windows_connector_json"`
+	DeltaTokensJSON                 types.String `tfsdk:"deltatokens_json"`
+	AzureMgmtAccessToken            types.String `tfsdk:"azure_mgmt_access_token"`
+	CreateTeamJSON                  types.String `tfsdk:"create_team_json"`
+	EnhancedDirectoryRoles          types.String `tfsdk:"enhanceddirectoryroles"`
+	StatusThresholdConfig           types.String `tfsdk:"status_threshold_config"`
+	AccountImportFields             types.String `tfsdk:"account_import_fields"`
+	RemoveAccountJSON               types.String `tfsdk:"remove_account_json"`
+	ChangePassJSON                  types.String `tfsdk:"change_pass_json"`
+	ClientSecret                    types.String `tfsdk:"client_secret"`
+	EntitlementFilterJSON           types.String `tfsdk:"entitlement_filter_json"`
+	ServiceAccountAttributes        types.String `tfsdk:"service_account_attributes"`
+	AddAccessToEntitlementJSON      types.String `tfsdk:"add_access_to_entitlement_json"`
+	AuthenticationEndpoint          types.String `tfsdk:"authentication_endpoint"`
+	CreateServicePrincipalJSON      types.String `tfsdk:"create_service_principal_json"`
+	ModifyUserDataJSON              types.String `tfsdk:"modifyuserdatajson"`
+	IsTimeoutConfigValidated        types.Bool   `tfsdk:"is_timeout_config_validated"`
+	RemoveAccessJSON                types.String `tfsdk:"remove_access_json"`
+	CreateUsers                     types.String `tfsdk:"createusers"`
+	RemoveAccessFromEntitlementJSON types.String `tfsdk:"remove_access_from_entitlement_json"`
+	DisableAccountJSON              types.String `tfsdk:"disable_account_json"`
+	CreateNewEndpoints              types.String `tfsdk:"create_new_endpoints"`
+	ManagedAccountType              types.String `tfsdk:"managed_account_type"`
+	AccountAttributes               types.String `tfsdk:"account_attributes"`
+	AadTenantID                     types.String `tfsdk:"aad_tenant_id"`
+	UpdateGroupJSON                 types.String `tfsdk:"update_group_json"`
+	CreateGroupJSON                 types.String `tfsdk:"create_group_json"`
+	// ConnectionTimeoutConfig         *ConnectionTimeoutConfig `tfsdk:"connection_timeout_config"`
 }
 
 var _ datasource.DataSource = &entraIdConnectionDataSource{}
@@ -158,10 +170,10 @@ func EntraIDConnectorsDataSourceSchema() map[string]schema.Attribute {
 				"aad_tenant_id":                       schema.StringAttribute{Computed: true},
 				"update_group_json":                   schema.StringAttribute{Computed: true},
 				"create_group_json":                   schema.StringAttribute{Computed: true},
-				"connection_timeout_config": schema.SingleNestedAttribute{
-					Computed:   true,
-					Attributes: ConnectionTimeoutConfigeSchema(),
-				},
+				// "connection_timeout_config": schema.SingleNestedAttribute{
+				// 	Computed:   true,
+				// 	Attributes: ConnectionTimeoutConfigeSchema(),
+				// },
 			},
 		},
 	}
@@ -231,6 +243,12 @@ func (d *entraIdConnectionDataSource) Read(ctx context.Context, req datasource.R
 		resp.Diagnostics.AddError("API Call Failed", fmt.Sprintf("Error: %v", err))
 		return
 	}
+	if apiResp!=nil && *apiResp.EntraIDConnectionResponse.Errorcode !=0{
+		log.Printf("[ERROR]: Error in reading EntraId connection. Errorcode: %v, Message: %v", *apiResp.EntraIDConnectionResponse.Errorcode, *apiResp.EntraIDConnectionResponse.Msg)
+		resp.Diagnostics.AddError("Read DB connection failed", *apiResp.EntraIDConnectionResponse.Msg)
+		return
+	}
+
 	log.Printf("[DEBUG] HTTP Status Code: %d", httpResp.StatusCode)
 
 	state.Msg = util.SafeStringDatasource(apiResp.EntraIDConnectionResponse.Msg)
@@ -298,17 +316,17 @@ func (d *entraIdConnectionDataSource) Read(ctx context.Context, req datasource.R
 			UpdateGroupJSON:                 util.SafeStringDatasource(apiResp.EntraIDConnectionResponse.Connectionattributes.UpdateGroupJSON),
 			CreateGroupJSON:                 util.SafeStringDatasource(apiResp.EntraIDConnectionResponse.Connectionattributes.CreateGroupJSON),
 		}
-		if apiResp.EntraIDConnectionResponse.Connectionattributes.ConnectionTimeoutConfig != nil {
-			state.ConnectionAttributes.ConnectionTimeoutConfig = &ConnectionTimeoutConfig{
-				RetryWait:               util.SafeInt64(apiResp.EntraIDConnectionResponse.Connectionattributes.ConnectionTimeoutConfig.RetryWait),
-				TokenRefreshMaxTryCount: util.SafeInt64(apiResp.EntraIDConnectionResponse.Connectionattributes.ConnectionTimeoutConfig.TokenRefreshMaxTryCount),
-				RetryFailureStatusCode:  util.SafeInt64(apiResp.EntraIDConnectionResponse.Connectionattributes.ConnectionTimeoutConfig.RetryFailureStatusCode),
-				RetryWaitMaxValue:       util.SafeInt64(apiResp.EntraIDConnectionResponse.Connectionattributes.ConnectionTimeoutConfig.RetryWaitMaxValue),
-				RetryCount:              util.SafeInt64(apiResp.EntraIDConnectionResponse.Connectionattributes.ConnectionTimeoutConfig.RetryCount),
-				ReadTimeout:             util.SafeInt64(apiResp.EntraIDConnectionResponse.Connectionattributes.ConnectionTimeoutConfig.ReadTimeout),
-				ConnectionTimeout:       util.SafeInt64(apiResp.EntraIDConnectionResponse.Connectionattributes.ConnectionTimeoutConfig.ConnectionTimeout),
-			}
-		}
+		// if apiResp.EntraIDConnectionResponse.Connectionattributes.ConnectionTimeoutConfig != nil {
+		// 	state.ConnectionAttributes.ConnectionTimeoutConfig = &ConnectionTimeoutConfig{
+		// 		RetryWait:               util.SafeInt64(apiResp.EntraIDConnectionResponse.Connectionattributes.ConnectionTimeoutConfig.RetryWait),
+		// 		TokenRefreshMaxTryCount: util.SafeInt64(apiResp.EntraIDConnectionResponse.Connectionattributes.ConnectionTimeoutConfig.TokenRefreshMaxTryCount),
+		// 		RetryFailureStatusCode:  util.SafeInt64(apiResp.EntraIDConnectionResponse.Connectionattributes.ConnectionTimeoutConfig.RetryFailureStatusCode),
+		// 		RetryWaitMaxValue:       util.SafeInt64(apiResp.EntraIDConnectionResponse.Connectionattributes.ConnectionTimeoutConfig.RetryWaitMaxValue),
+		// 		RetryCount:              util.SafeInt64(apiResp.EntraIDConnectionResponse.Connectionattributes.ConnectionTimeoutConfig.RetryCount),
+		// 		ReadTimeout:             util.SafeInt64(apiResp.EntraIDConnectionResponse.Connectionattributes.ConnectionTimeoutConfig.ReadTimeout),
+		// 		ConnectionTimeout:       util.SafeInt64(apiResp.EntraIDConnectionResponse.Connectionattributes.ConnectionTimeoutConfig.ConnectionTimeout),
+		// 	}
+		// }
 	}
 
 	if apiResp.EntraIDConnectionResponse.Connectionattributes == nil {
