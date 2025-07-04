@@ -13,7 +13,7 @@ Retrieve the details for a given EntraID (AzureAD) connector by its name or key
 ## Example Usage
 
 ```terraform
-// Copyright (c) Saviynt Inc.
+// Copyright (c) 2025 Saviynt Inc.
 // SPDX-License-Identifier: MPL-2.0
 
 data "saviynt_entraid_connection_datasource" "example" {
@@ -27,6 +27,7 @@ data "saviynt_entraid_connection_datasource" "example" {
 
 ### Optional
 
+- `authenticate` (Boolean) If false, do not store connection_attributes in state
 - `connection_key` (Number) The key of the connection.
 - `connection_name` (String) The name of the connection.
 
@@ -51,26 +52,18 @@ data "saviynt_entraid_connection_datasource" "example" {
 Read-Only:
 
 - `aad_tenant_id` (String)
-- `access_token` (String)
 - `account_attributes` (String)
 - `account_import_fields` (String)
 - `accounts_filter` (String)
 - `add_access_json` (String)
-- `add_access_to_entitlement_json` (String)
 - `authentication_endpoint` (String)
 - `azure_management_endpoint` (String)
-- `azure_mgmt_access_token` (String)
-- `change_pass_json` (String)
-- `client_id` (String)
-- `client_secret` (String)
 - `config_json` (String)
-- `connection_json` (String)
 - `connection_type` (String)
 - `create_account_json` (String)
 - `create_channel_json` (String)
 - `create_group_json` (String)
 - `create_new_endpoints` (String)
-- `create_service_principal_json` (String)
 - `create_team_json` (String)
 - `createusers` (String)
 - `delete_group_json` (String)
@@ -78,25 +71,17 @@ Read-Only:
 - `disable_account_json` (String)
 - `enable_account_json` (String)
 - `endpoints_filter` (String)
-- `enhanceddirectoryroles` (String)
 - `entitlement_attribute` (String)
 - `entitlement_filter_json` (String)
-- `import_depth` (String)
 - `import_user_json` (String)
 - `is_timeout_config_validated` (Boolean)
 - `is_timeout_supported` (Boolean)
-- `managed_account_type` (String)
 - `microsoft_graph_endpoint` (String)
 - `modifyuserdatajson` (String)
 - `pam_config` (String)
-- `remove_access_from_entitlement_json` (String)
 - `remove_access_json` (String)
 - `remove_account_json` (String)
-- `remove_service_principal_json` (String)
-- `service_account_attributes` (String)
 - `status_threshold_config` (String)
 - `update_account_json` (String)
 - `update_group_json` (String)
-- `update_service_principal_json` (String)
 - `update_user_json` (String)
-- `windows_connector_json` (String)

@@ -1,4 +1,5 @@
-// Copyright (c) Saviynt Inc.
+// Copyright (c) 2025 Saviynt Inc.
+// SPDX-License-Identifier: MPL-2.0
 
 resource "saviynt_dynamic_attribute_resource" "example" {
   security_system = "shaleenhuddle"

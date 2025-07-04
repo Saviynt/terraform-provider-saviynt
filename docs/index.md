@@ -10,12 +10,10 @@ description: |-
 
 The Saviynt Terraform provider empowers you to leverage Terraform's declarative Infrastructure-as-Code (IaC) capabilities to provision, configure, and manage resources within the Saviynt Identity Cloud.<br/><br/>The provider needs to be configured with the correct credentials in the provider block to be used. For the resources and datasources supported, refer to the navigation menu on the left.
 
-### Note: This provider is for Saviynt ECM v24.4 only.
-
 ## Example Usage
 
 ```terraform
-// Copyright (c) Saviynt Inc.
+// Copyright (c) 2025 Saviynt Inc.
 // SPDX-License-Identifier: MPL-2.0
 
 terraform {
@@ -44,45 +42,58 @@ provider "saviynt" {
 - `username` (String) Username for authentication.
 
 ---
-
 ## Credential Management Best Practices
 To ensure secure handling of sensitive credentials, follow these best practices:
 1. **Use Vault-backed Secrets**   : Externalize sensitive values using a secure secrets manager such as HashiCorp Vault. This avoids hardcoding secrets in .tf files or storing them in Terraform state.
 2. **Prefer Environment Variables**   : If Vault integration is not available, use environment variables (e.g., TF_VAR_password) to pass secrets instead of storing them in source files.
-3. **Use Ephemeral Resources for Sensitive Data**  
+3. **Use Ephemeral Resources for Sensitive Data**
    Handle all sensitive data using **ephemeral resources** — those created only when needed and destroyed immediately afterward. Avoid long-term storage of secrets in:
-
    - Terraform state files (`terraform.tfstate`)
    - Version control systems (e.g., Git)
    - Local plaintext configuration files
-
 ---
+## Feature: `authenticate` Toggle for All Connection Data Source
 
+The Saviynt connection datasources now have a required boolean flag `authenticate` to control the visibility of sensitive connection data.
+
+### 🔹 Purpose
+
+This feature is designed to help prevent potential sensitive data from appearing in Terraform state files or CLI output during `plan` and `apply` when a datasource is called.
+
+### 🔹 Behavior
+
+- When `authenticate = false`*(default)*:
+  - The provider will **omit** the entire `connection_attributes` block from state file.
+- When `authenticate = true`:
+  - All attributes will be returned as usual with sensitive still not visible.
+
+### 🔹 Example Usage
+
+```hcl
+data "saviynt_rest_connection_datasource" "example" {
+  connection_name = "Terraform_REST_Connector"
+  authenticate    = false
+}
+```
+---
 ## Known Limitations
-
 The following limitations are present in the latest version of the provider. These are being prioritized for resolution in the upcoming release alongside new feature additions:
-
 ### 1. All Resource objects
  - `terraform destroy` is not supported for all resources except for dynamic attributes.
-
 ### 2. Endpoints
-
 - **State management is not supported** for the following attributes:
   - `Owner`
   - `ResourceOwner`
-
 - For`saviynt_endpoint_resource.requestable_role_types.request_option`, the supported values for proper state tracking are:
   - `DropdownSingle`
   - `Table`
   - `TableOnlyAdd`
-
 - The following settings are **not currently configurable via Terraform**:
   - `mapped_endpoints`
   - `show_on` attribute in 'requestable_role_types`
   - `Disable Remove Service Account`
   - `Disable Modify Service Account`
   - `Disable New Account Request if Account Exists`
-
 ### 3. Connections
 - `description` field can't be set from Terraform currently.
 - **State management** is not supported for the following attributes due to their sensitive nature:
@@ -98,7 +109,6 @@ The following limitations are present in the latest version of the provider. The
 - The following fields are **not currently configurable via Terraform**:
   - **Github REST**: `Status_Threshold_Config`, `Pam_Config`
   - **Workday**: `orgrole_import_payload`
-
 ### 4. Dynamic Attributes
 - For `saviynt_dynamic_attribute_resource.dynamic_attributes.attribute_type`, the supported values for proper state tracking are:
   - `NUMBER`

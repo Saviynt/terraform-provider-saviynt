@@ -13,7 +13,7 @@ Retrieve the details for a given Workday connector by its name or key
 ## Example Usage
 
 ```terraform
-// Copyright (c) Saviynt Inc.
+// Copyright (c) 2025 Saviynt Inc.
 // SPDX-License-Identifier: MPL-2.0
 
 data "saviynt_workday_connection_datasource" "example" {
@@ -27,6 +27,7 @@ data "saviynt_workday_connection_datasource" "example" {
 
 ### Optional
 
+- `authenticate` (Boolean) If false, do not store connection_attributes in state
 - `connection_key` (Number) The key of the connection.
 - `connection_name` (String) The name of the connection.
 
@@ -59,8 +60,6 @@ Read-Only:
 - `api_version` (String)
 - `assign_orgrole_payload` (String)
 - `base_url` (String)
-- `client_id` (String)
-- `client_secret` (String)
 - `connection_type` (String)
 - `create_account_payload` (String)
 - `custom_config` (String)
@@ -68,12 +67,9 @@ Read-Only:
 - `is_timeout_config_validated` (Boolean)
 - `is_timeout_supported` (Boolean)
 - `modifyuserdatajson` (String)
-- `orgrole_import_payload` (String)
 - `page_size` (String)
 - `pam_config` (String)
-- `password` (String)
 - `raas_mapping_json` (String)
-- `refresh_token` (String)
 - `remove_orgrole_payload` (String)
 - `report_owner` (String)
 - `status_key_json` (String)
@@ -87,7 +83,6 @@ Read-Only:
 - `user_import_mapping` (String)
 - `user_import_payload` (String)
 - `userattributejson` (String)
-- `username` (String)
 - `users_last_import_time` (String)
 - `x509_cert` (String)
 - `x509_key` (String)

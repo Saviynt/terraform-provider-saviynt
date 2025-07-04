@@ -13,7 +13,7 @@ Retrieve the details for a given AD connector by its name or key
 ## Example Usage
 
 ```terraform
-// Copyright (c) Saviynt Inc.
+// Copyright (c) 2025 Saviynt Inc.
 // SPDX-License-Identifier: MPL-2.0
 
 data "saviynt_ad_connection_datasource" "ad" {
@@ -27,6 +27,7 @@ data "saviynt_ad_connection_datasource" "ad" {
 
 ### Optional
 
+- `authenticate` (Boolean) If false, do not store connection_attributes in state
 - `connection_key` (Number) The key of the connection.
 - `connection_name` (String) The name of the connection.
 
@@ -86,7 +87,6 @@ Read-Only:
 - `organization_attribute` (String)
 - `page_size` (String)
 - `pam_config` (String)
-- `password` (String)
 - `password_max_length` (String)
 - `password_min_length` (String)
 - `password_no_of_caps_alpha` (String)
@@ -112,4 +112,3 @@ Read-Only:
 - `update_user_json` (String)
 - `url` (String)
 - `user_attribute` (String)
-- `username` (String)

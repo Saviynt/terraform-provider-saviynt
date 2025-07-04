@@ -14,7 +14,7 @@ resource "saviynt_endpoint_resource" "endpoint" {
   user_account_correlation_rule                 = "MATCH_ON_USERNAME"
   create_ent_task_for_remove_acc                = "true"
   out_of_band_action                            = "2"
-  requestable                                   = "true"
+  requestable                                   = true
   service_account_access_query                  = "SELECT * FROM ACCESS WHERE account_type='SERVICE'"
   block_inflight_request                        = "false"
   account_name_rule                             = "acct-$${user.email}"
@@ -43,7 +43,7 @@ resource "saviynt_endpoint_resource" "endpoint" {
 
   custom_property60_label = "Custom Label 60"
 
-  allow_remove_all_role_on_request = "false"
+  allow_remove_all_role_on_request = true
   change_password_access_query     = "SELECT * FROM USERS WHERE changepassword = 1"
 
 }

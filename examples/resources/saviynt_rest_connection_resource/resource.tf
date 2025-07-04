@@ -1,4 +1,5 @@
-// Copyright (c) Saviynt Inc.
+// Copyright (c) 2025 Saviynt Inc.
+// SPDX-License-Identifier: MPL-2.0
 
 resource "saviynt_rest_connection_resource" "example" {
   connection_type = "REST"

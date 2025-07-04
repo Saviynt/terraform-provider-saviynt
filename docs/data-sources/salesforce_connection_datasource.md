@@ -13,7 +13,7 @@ Retrieve the details for a given Salesforce connector by its name or key
 ## Example Usage
 
 ```terraform
-// Copyright (c) Saviynt Inc.
+// Copyright (c) 2025 Saviynt Inc.
 // SPDX-License-Identifier: MPL-2.0
 
 data "saviynt_salesforce_connection_datasource" "example" {
@@ -27,6 +27,7 @@ data "saviynt_salesforce_connection_datasource" "example" {
 
 ### Optional
 
+- `authenticate` (Boolean) If false, do not store connection_attributes in state
 - `connection_key` (Number) The key of the connection.
 - `connection_name` (String) The name of the connection.
 
@@ -52,8 +53,6 @@ Read-Only:
 
 - `account_field_query` (String)
 - `account_filter_query` (String)
-- `client_id` (String)
-- `client_secret` (String)
 - `connection_type` (String)
 - `createaccountjson` (String)
 - `custom_createaccount_url` (String)
@@ -67,5 +66,4 @@ Read-Only:
 - `object_to_be_imported` (String)
 - `pam_config` (String)
 - `redirect_uri` (String)
-- `refresh_token` (String)
 - `status_threshold_config` (String)

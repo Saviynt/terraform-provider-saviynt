@@ -13,20 +13,8 @@ Create and manage EntraID (AzureAD) connector in Saviynt
 ## Example Usage
 
 ```terraform
-/*
- * Copyright (c) 2025 Saviynt Inc.
- * All Rights Reserved.
- *
- * This software is the confidential and proprietary information of
- * Saviynt Inc. ("Confidential Information"). You shall not disclose,
- * use, or distribute such Confidential Information except in accordance
- * with the terms of the license agreement you entered into with Saviynt.
- *
- * SAVIYNT MAKES NO REPRESENTATIONS OR WARRANTIES ABOUT THE SUITABILITY OF
- * THE SOFTWARE, EITHER EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO
- * THE IMPLIED WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR
- * PURPOSE, OR NON-INFRINGEMENT.
- */
+// Copyright (c) 2025 Saviynt Inc.
+// SPDX-License-Identifier: MPL-2.0
 
 variable "CLIENT_ID" {
   type        = string
@@ -444,7 +432,6 @@ resource "saviynt_entraid_connection_resource" "example" {
 - `account_import_fields` (String) Fields to import for accounts.
 - `accounts_filter` (String) Filter for accounts.
 - `add_access_json` (String) JSON template to add access.
-- `add_access_to_entitlement_json` (String) JSON to add access to entitlement.
 - `authentication_endpoint` (String) Authentication endpoint URL.
 - `azure_management_endpoint` (String) Azure management endpoint URL.
 - `azure_mgmt_access_token` (String) Access token for Azure management APIs.
@@ -456,7 +443,6 @@ resource "saviynt_entraid_connection_resource" "example" {
 - `create_channel_json` (String) JSON to create channel.
 - `create_group_json` (String) JSON to create group.
 - `create_new_endpoints` (String) Configuration to create new endpoints.
-- `create_service_principal_json` (String) JSON to create service principal.
 - `create_team_json` (String) JSON to create team.
 - `create_users` (String) Flag or configuration for creating users.
 - `defaultsavroles` (String) Default SAV roles for managing the connection. Example: "ROLE_ORG"
@@ -466,27 +452,20 @@ resource "saviynt_entraid_connection_resource" "example" {
 - `email_template` (String) Email template for notifications. Example: "New Account Task Creation"
 - `enable_account_json` (String) JSON template to enable an account.
 - `endpoints_filter` (String) Endpoints filter configuration.
-- `enhanced_directory_roles` (String) Configuration for enhanced directory roles.
 - `entitlement_attribute` (String) Attribute used for entitlement.
 - `entitlement_filter_json` (String) Filter JSON for entitlements.
 - `error_code` (String) An error code where '0' signifies success and '1' signifies an unsuccessful operation.
-- `import_depth` (String) Depth level for import.
 - `import_user_json` (String) JSON configuration for importing users.
-- `managed_account_type` (String) Type of managed accounts.
 - `microsoft_graph_endpoint` (String) Microsoft Graph API endpoint.
 - `modify_user_data_json` (String) JSON to modify user data.
 - `msg` (String) A message indicating the outcome of the operation.
 - `pam_config` (String) PAM configuration.
-- `remove_access_from_entitlement_json` (String) JSON to remove access from entitlement.
 - `remove_access_json` (String) JSON template to remove access.
 - `remove_account_json` (String) JSON template to remove account.
-- `remove_service_principal_json` (String) JSON to remove service principal.
 - `save_in_vault` (String) Flag indicating whether the encrypted attribute should be saved in the configured vault. Example: "false"
-- `service_account_attributes` (String) Attributes for service account configuration.
 - `status_threshold_config` (String) Configuration for status thresholds.
 - `update_account_json` (String) JSON template to update an account.
 - `update_group_json` (String) JSON to update group.
-- `update_service_principal_json` (String) JSON to update service principal.
 - `update_user_json` (String) JSON template to update user.
 - `vault_configuration` (String) JSON string specifying vault configuration. Example: '{"path":"/secrets/data/kv-dev-intgn1/-AD_Credential","keyMapping":{"PASSWORD":"AD_PASSWORD~#~None"}}'
 - `vault_connection` (String) Specifies the type of vault connection being used (e.g., 'Hashicorp'). Example: "Hashicorp"

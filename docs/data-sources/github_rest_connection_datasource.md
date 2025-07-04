@@ -13,7 +13,7 @@ Retrieve the details for a given Github REST connector by its name or key
 ## Example Usage
 
 ```terraform
-// Copyright (c) Saviynt Inc.
+// Copyright (c) 2025 Saviynt Inc.
 // SPDX-License-Identifier: MPL-2.0
 
 data "saviynt_github_rest_connection_datasource" "g" {
@@ -27,6 +27,7 @@ data "saviynt_github_rest_connection_datasource" "g" {
 
 ### Optional
 
+- `authenticate` (Boolean) If false, do not store connection_attributes in state
 - `connection_key` (Number) The key of the connection.
 - `connection_name` (String) The name of the connection.
 
@@ -50,8 +51,6 @@ data "saviynt_github_rest_connection_datasource" "g" {
 
 Read-Only:
 
-- `access_tokens` (String)
-- `connection_json` (String)
 - `connection_type` (String)
 - `import_account_ent_json` (String)
 - `is_timeout_config_validated` (Boolean)

@@ -13,7 +13,7 @@ Retrieve the details for a given REST connector by its name or key
 ## Example Usage
 
 ```terraform
-// Copyright (c) Saviynt Inc.
+// Copyright (c) 2025 Saviynt Inc.
 // SPDX-License-Identifier: MPL-2.0
 
 data "saviynt_rest_connection_datasource" "rest" {
@@ -27,6 +27,7 @@ data "saviynt_rest_connection_datasource" "rest" {
 
 ### Optional
 
+- `authenticate` (Boolean) If false, do not store connection_attributes in state
 - `connection_key` (Number) The key of the connection.
 - `connection_name` (String) The name of the connection.
 
@@ -52,9 +53,7 @@ Read-Only:
 
 - `add_access_json` (String)
 - `add_ffid_access_json` (String)
-- `change_pass_json` (String)
 - `config_json` (String)
-- `connection_json` (String)
 - `connection_type` (String)
 - `create_account_json` (String)
 - `create_ticket_json` (String)
