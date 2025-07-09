@@ -1,0 +1,8 @@
+Request: Remove from Registry. 
+We had to remove our existing terraform github repository as there was a checkin with some private information. After putting in additional guardrails around this, we have recreated the repository.
+However, after this I am unable to push any builds into the terraform registry. After a lot of trial and error, I believe that the reason for this may be that terraform uses the repository's id for the integration and since it got changed (but the name didn't) during the recreation, it is not able to sync. Also, since the name did not change, it is not listing the new repository to be published. Attaching the error observed during resync.
+Pls help me with correcting the issue. I believe, if we can unassociate the github repository and unpublish the previous providers, it would resolve the issue. Pls let me know if additional details or a discussion is needed.
+Here are the links for reference
+Registry link: - https://registry.terraform.io/providers/saviynt/saviynt/latest
+Github URL - https://github.com/Saviynt/terraform-provider-saviynt
+Request by: rajiv.kumar@saviynt.com
