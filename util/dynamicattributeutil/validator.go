@@ -60,7 +60,7 @@ func (v attributeValueDisallowedForAttributeTypesValidator) ValidateString(ctx c
 	}
 
 	switch strings.ToUpper(attrType) {
-	case "NUMBER", "BOOLEAN", "LARGE TEXT", "DATE":
+	case "NUMBER", "PASSWORD", "STRING", "BOOLEAN", "LARGE TEXT", "DATE":
 		resp.Diagnostics.AddAttributeError(
 			req.Path,
 			"Invalid attribute_value",
@@ -68,7 +68,6 @@ func (v attributeValueDisallowedForAttributeTypesValidator) ValidateString(ctx c
 		)
 	}
 }
-
 // Factory function with built-in disallowed types
 func AttributeValueDisallowedForCertainAttributeTypes() validator.String {
 	return &attributeValueDisallowedForAttributeTypesValidator{}
