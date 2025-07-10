@@ -1,6 +1,3 @@
-# Copyright (c) HashiCorp, Inc.
-# SPDX-License-Identifier: MPL-2.0
-
 openapi: 3.1.0
 info:
   description: |-
@@ -283,12 +280,12 @@ components:
           attributelable: '##SavBoldStart##Attribute_Name##SavBoldEnd##'
           required: "false"
           descriptionascsv: descriptionascsv
-          Parentattribute: Parentattribute
           requesttype: SERVICE ACCOUNT
           hideonupdate: "false"
           regex: regex
           showonchild: "false"
           actiontoperformwhenparentattributechanges: actiontoperformwhenparentattributechanges
+          parentattribute: parentattribute
           attributetype: BOOLEAN
           actionstring: actionstring
         - accountscolumn: accountscolumn
@@ -302,12 +299,12 @@ components:
           attributelable: '##SavBoldStart##Attribute_Name##SavBoldEnd##'
           required: "false"
           descriptionascsv: descriptionascsv
-          Parentattribute: Parentattribute
           requesttype: SERVICE ACCOUNT
           hideonupdate: "false"
           regex: regex
           showonchild: "false"
           actiontoperformwhenparentattributechanges: actiontoperformwhenparentattributechanges
+          parentattribute: parentattribute
           attributetype: BOOLEAN
           actionstring: actionstring
         securitysystem: sample-system
@@ -348,12 +345,12 @@ components:
           attributelable: '##SavBoldStart##Attribute_Name##SavBoldEnd##'
           required: "false"
           descriptionascsv: descriptionascsv
-          Parentattribute: Parentattribute
           requesttype: SERVICE ACCOUNT
           hideonupdate: "false"
           regex: regex
           showonchild: "false"
           actiontoperformwhenparentattributechanges: actiontoperformwhenparentattributechanges
+          parentattribute: parentattribute
           attributetype: BOOLEAN
           actionstring: actionstring
         - accountscolumn: accountscolumn
@@ -367,12 +364,12 @@ components:
           attributelable: '##SavBoldStart##Attribute_Name##SavBoldEnd##'
           required: "false"
           descriptionascsv: descriptionascsv
-          Parentattribute: Parentattribute
           requesttype: SERVICE ACCOUNT
           hideonupdate: "false"
           regex: regex
           showonchild: "false"
           actiontoperformwhenparentattributechanges: actiontoperformwhenparentattributechanges
+          parentattribute: parentattribute
           attributetype: BOOLEAN
           actionstring: actionstring
         securitysystem: sample-system
@@ -549,12 +546,12 @@ components:
         attributelable: '##SavBoldStart##Attribute_Name##SavBoldEnd##'
         required: "false"
         descriptionascsv: descriptionascsv
-        Parentattribute: Parentattribute
         requesttype: SERVICE ACCOUNT
         hideonupdate: "false"
         regex: regex
         showonchild: "false"
         actiontoperformwhenparentattributechanges: actiontoperformwhenparentattributechanges
+        parentattribute: parentattribute
         attributetype: BOOLEAN
         actionstring: actionstring
       properties:
@@ -612,7 +609,7 @@ components:
         showonchild:
           example: "false"
           type: string
-        Parentattribute:
+        parentattribute:
           type: string
         descriptionascsv:
           type: string
@@ -632,12 +629,12 @@ components:
         attributelable: '##SavBoldStart##Attribute_Name##SavBoldEnd##'
         required: "false"
         descriptionascsv: descriptionascsv
-        Parentattribute: Parentattribute
         requesttype: SERVICE ACCOUNT
         hideonupdate: "false"
         regex: regex
         showonchild: "false"
         actiontoperformwhenparentattributechanges: actiontoperformwhenparentattributechanges
+        parentattribute: parentattribute
         attributetype: BOOLEAN
         actionstring: actionstring
       properties:
@@ -695,7 +692,7 @@ components:
         showonchild:
           example: "false"
           type: string
-        Parentattribute:
+        parentattribute:
           type: string
         descriptionascsv:
           type: string

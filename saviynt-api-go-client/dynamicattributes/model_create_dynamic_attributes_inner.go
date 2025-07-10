@@ -44,7 +44,7 @@ type CreateDynamicAttributesInner struct {
 	Regex *string `json:"regex,omitempty"`
 	Attributevalue *string `json:"attributevalue,omitempty"`
 	Showonchild *string `json:"showonchild,omitempty"`
-	Parentattribute *string `json:"Parentattribute,omitempty"`
+	Parentattribute *string `json:"parentattribute,omitempty"`
 	Descriptionascsv *string `json:"descriptionascsv,omitempty"`
 }
 
@@ -719,7 +719,7 @@ func (o CreateDynamicAttributesInner) ToMap() (map[string]interface{}, error) {
 		toSerialize["showonchild"] = o.Showonchild
 	}
 	if !IsNil(o.Parentattribute) {
-		toSerialize["Parentattribute"] = o.Parentattribute
+		toSerialize["parentattribute"] = o.Parentattribute
 	}
 	if !IsNil(o.Descriptionascsv) {
 		toSerialize["descriptionascsv"] = o.Descriptionascsv
