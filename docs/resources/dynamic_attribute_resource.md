@@ -93,6 +93,7 @@ Optional:
 - `attribute_lable` (String) Name to be shown in the Access Requests form.
 - `attribute_type` (String) Attribute type used for filtering and display.
 - `attribute_value` (String) Value options or query for the attribute.
+- `default_value` (String) Default value for the attribute(Currently not configurable for BOOLEAN attribute type from Terraform).
 - `description_as_csv` (String) Description of values as CSV.
 - `editable` (String) Whether the attribute is editable.
 - `hide_on_create` (String) Whether to hide this attribute on create.
