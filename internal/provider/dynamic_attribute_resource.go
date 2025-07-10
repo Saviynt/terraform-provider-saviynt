@@ -70,15 +70,15 @@ type Dynamicattribute struct {
 	Editable                                        types.String `tfsdk:"editable"`
 	Hideonupdate                                    types.String `tfsdk:"hide_on_update"`
 	Action_to_perform_when_parent_attribute_changes types.String `tfsdk:"action_to_perform_when_parent_attribute_changes"`
-	Defaultvalue                                    types.String `tfsdk:"default_value"`
 	Required                                        types.String `tfsdk:"required"`
 	Attributevalue                                  types.String `tfsdk:"attribute_value"`
 	Showonchild                                     types.String `tfsdk:"showonchild"`
 	Descriptionascsv                                types.String `tfsdk:"description_as_csv"`
+	Parentattribute                                 types.String `tfsdk:"parent_attribute"`
 
 	// Removed due to lack support in v24.4
 	// Regex                                           types.String `tfsdk:"regex"`
-	Parentattribute                                 types.String `tfsdk:"parent_attribute"`
+	// Defaultvalue                                    types.String `tfsdk:"default_value"`
 }
 
 type dynamicAttributeResource struct {
@@ -186,14 +186,14 @@ func (r *dynamicAttributeResource) Schema(ctx context.Context, req resource.Sche
 							Computed:    true,
 							Description: "Action to perform when the parent attribute changes.",
 						},
-						"default_value": schema.StringAttribute{
-							Optional:    true,
-							Computed:    true,
-							Description: "Default value for the attribute.",
-							Validators: []validator.String{
-								dynamicattributeutil.DefaultValueDisallowedForCertainAttributeTypes(),
-							},
-						},
+						// "default_value": schema.StringAttribute{
+						// 	Optional:    true,
+						// 	Computed:    true,
+						// 	Description: "Default value for the attribute.",
+						// 	Validators: []validator.String{
+						// 		dynamicattributeutil.DefaultValueDisallowedForCertainAttributeTypes(),
+						// 	},
+						// },
 						"required": schema.StringAttribute{
 							Optional:    true,
 							Computed:    true,
@@ -307,7 +307,7 @@ func (r *dynamicAttributeResource) Create(ctx context.Context, req resource.Crea
 		dynamicAttr.Editable = util.StringPointerOrEmpty(attr.Editable)
 		dynamicAttr.Hideonupdate = util.StringPointerOrEmpty(attr.Hideonupdate)
 		dynamicAttr.Actiontoperformwhenparentattributechanges = util.StringPointerOrEmpty(attr.Action_to_perform_when_parent_attribute_changes)
-		dynamicAttr.Defaultvalue = util.StringPointerOrEmpty(attr.Defaultvalue)
+		// dynamicAttr.Defaultvalue = util.StringPointerOrEmpty(attr.Defaultvalue)
 		dynamicAttr.Required = util.StringPointerOrEmpty(attr.Required)
 		// dynamicAttr.Regex = util.StringPointerOrEmpty(attr.Regex)
 		dynamicAttr.Attributevalue = util.StringPointerOrEmpty(attr.Attributevalue)
@@ -420,7 +420,7 @@ func (r *dynamicAttributeResource) Create(ctx context.Context, req resource.Crea
 			Editable:       util.SafeStringAlt(attr.Editable.ValueStringPointer(), "false"),
 			Hideonupdate:   util.SafeStringAlt(attr.Hideoncreate.ValueStringPointer(), "false"),
 			Action_to_perform_when_parent_attribute_changes: util.SafeString(attr.Action_to_perform_when_parent_attribute_changes.ValueStringPointer()),
-			Defaultvalue: util.SafeString(attr.Defaultvalue.ValueStringPointer()),
+			// Defaultvalue: util.SafeString(attr.Defaultvalue.ValueStringPointer()),
 			Required:     util.SafeStringAlt(attr.Required.ValueStringPointer(), "false"),
 			// Regex:            util.SafeStringDatasource(attr.Regex.ValueStringPointer()),
 			Showonchild: util.SafeStringAlt(attr.Showonchild.ValueStringPointer(), "false"),
@@ -451,11 +451,11 @@ func (r *dynamicAttributeResource) Create(ctx context.Context, req resource.Crea
 			"editable":        types.StringType,
 			"hide_on_update":  types.StringType,
 			"action_to_perform_when_parent_attribute_changes": types.StringType,
-			"default_value": types.StringType,
+			// "default_value": types.StringType,
 			"required":      types.StringType,
 			// "regex":              types.StringType,
-			"attribute_value": types.StringType,
-			"showonchild":     types.StringType,
+			"attribute_value":    types.StringType,
+			"showonchild":        types.StringType,
 			"parent_attribute":   types.StringType,
 			"description_as_csv": types.StringType,
 		},
@@ -486,7 +486,6 @@ func (r *dynamicAttributeResource) Read(ctx context.Context, req resource.ReadRe
 	if resp.Diagnostics.HasError() {
 		return
 	}
-
 	cfg := openapi.NewConfiguration()
 	apiBaseURL := strings.TrimPrefix(strings.TrimPrefix(r.client.APIBaseURL(), "https://"), "http://")
 	cfg.Host = apiBaseURL
@@ -626,7 +625,7 @@ func (r *dynamicAttributeResource) Read(ctx context.Context, req resource.ReadRe
 				Accountscolumn: util.SafeStringDatasource(apiAttr.Accountscolumn),
 				Actionstring:   util.SafeStringDatasource(apiAttr.Actionstring),
 				Action_to_perform_when_parent_attribute_changes: util.SafeStringDatasource(apiAttr.Actiontoperformwhenparentattributechanges),
-				Defaultvalue: util.SafeStringDatasource(apiAttr.Defaultvalue),
+				// Defaultvalue: util.SafeStringDatasource(apiAttr.Defaultvalue),
 				// Regex:            util.PreserveString(apiAttr.Regex, currentAttrs[attrName].Regex),
 				// Attributevalue:   util.SafeStringDatasource(apiAttr.Attributevalue),
 				Attributevalue: util.SafeStringPreserveNull(apiAttr.Attributevalue),
@@ -658,11 +657,11 @@ func (r *dynamicAttributeResource) Read(ctx context.Context, req resource.ReadRe
 					Accountscolumn: util.SafeStringDatasource(apiAttr.Accountscolumn),
 					Actionstring:   util.SafeStringDatasource(apiAttr.Actionstring),
 					Action_to_perform_when_parent_attribute_changes: util.SafeStringDatasource(apiAttr.Actiontoperformwhenparentattributechanges),
-					Defaultvalue: util.SafeStringDatasource(apiAttr.Defaultvalue),
+					// Defaultvalue: util.SafeStringDatasource(apiAttr.Defaultvalue),
 					// Regex:            util.PreserveString(apiAttr.Regex, currentAttrs[attrName].Regex),
 					// Attributevalue:   util.SafeStringDatasource(apiAttr.Attributevalue),
-					Attributevalue: util.SafeStringPreserveNull(apiAttr.Attributevalue),
-					Showonchild:    util.SafeStringDatasource(apiAttr.Showonchild),
+					Attributevalue:   util.SafeStringPreserveNull(apiAttr.Attributevalue),
+					Showonchild:      util.SafeStringDatasource(apiAttr.Showonchild),
 					Parentattribute:  util.SafeStringDatasource(apiAttr.Parentattribute),
 					Descriptionascsv: util.SafeStringDatasource(apiAttr.Descriptionascsv),
 				}
@@ -693,11 +692,11 @@ func (r *dynamicAttributeResource) Read(ctx context.Context, req resource.ReadRe
 			"editable":        types.StringType,
 			"hide_on_update":  types.StringType,
 			"action_to_perform_when_parent_attribute_changes": types.StringType,
-			"default_value": types.StringType,
+			// "default_value": types.StringType,
 			"required":      types.StringType,
 			// "regex":              types.StringType,
-			"attribute_value": types.StringType,
-			"showonchild":     types.StringType,
+			"attribute_value":    types.StringType,
+			"showonchild":        types.StringType,
 			"parent_attribute":   types.StringType,
 			"description_as_csv": types.StringType,
 		},
@@ -744,6 +743,7 @@ func (r *dynamicAttributeResource) Update(ctx context.Context, req resource.Upda
 	if resp.Diagnostics.HasError() {
 		return
 	}
+	log.Printf("Planned attributes before fetch: %v", len(planAttrs))
 
 	// Get current state from server
 	fetchReq := apiClient.DynamicAttributesAPI.
@@ -756,6 +756,7 @@ func (r *dynamicAttributeResource) Update(ctx context.Context, req resource.Upda
 		resp.Diagnostics.AddError("Failed to fetch current dynamic attributes", err.Error())
 		return
 	}
+	log.Printf("Fetching existing attributes from api complete")
 
 	// Build map of existing attributes
 	existingAttrs := make(map[string]bool)
@@ -766,6 +767,7 @@ func (r *dynamicAttributeResource) Update(ctx context.Context, req resource.Upda
 			}
 		}
 	}
+	log.Printf("Existing attributes from api: %v", len(existingAttrs))
 
 	// Separate new attributes (need to be created) from existing ones (need to be updated)
 	var newAttrs []openapi.CreateDynamicAttributesInner
@@ -791,7 +793,7 @@ func (r *dynamicAttributeResource) Update(ctx context.Context, req resource.Upda
 			newAttr.Editable = util.StringPointerOrEmpty(attr.Editable)
 			newAttr.Hideonupdate = util.StringPointerOrEmpty(attr.Hideonupdate)
 			newAttr.Actiontoperformwhenparentattributechanges = util.StringPointerOrEmpty(attr.Action_to_perform_when_parent_attribute_changes)
-			newAttr.Defaultvalue = util.StringPointerOrEmpty(attr.Defaultvalue)
+			// newAttr.Defaultvalue = util.StringPointerOrEmpty(attr.Defaultvalue)
 			newAttr.Required = util.StringPointerOrEmpty(attr.Required)
 			// newAttr.Regex = util.StringPointerOrEmpty(attr.Regex)
 			newAttr.Attributevalue = util.StringPointerOrEmpty(attr.Attributevalue)
@@ -815,7 +817,7 @@ func (r *dynamicAttributeResource) Update(ctx context.Context, req resource.Upda
 			updateAttr.Editable = util.StringPointerOrEmpty(attr.Editable)
 			updateAttr.Hideonupdate = util.StringPointerOrEmpty(attr.Hideonupdate)
 			updateAttr.Actiontoperformwhenparentattributechanges = util.StringPointerOrEmpty(attr.Action_to_perform_when_parent_attribute_changes)
-			updateAttr.Defaultvalue = util.StringPointerOrEmpty(attr.Defaultvalue)
+			// updateAttr.Defaultvalue = util.StringPointerOrEmpty(attr.Defaultvalue)
 			updateAttr.Required = util.StringPointerOrEmpty(attr.Required)
 			// updateAttr.Regex = util.StringPointerOrEmpty(attr.Regex)
 			updateAttr.Attributevalue = util.StringPointerOrEmpty(attr.Attributevalue)
@@ -825,6 +827,8 @@ func (r *dynamicAttributeResource) Update(ctx context.Context, req resource.Upda
 			updateAttrs = append(updateAttrs, *updateAttr)
 		}
 	}
+	log.Printf("Attributes to create &+%v", len(newAttrs))
+	log.Printf("Attributes to update: %v", len(updateAttrs))
 
 	// First, create new attributes if any
 	if len(newAttrs) > 0 {
@@ -908,156 +912,157 @@ func (r *dynamicAttributeResource) Update(ctx context.Context, req resource.Upda
 			resp.Diagnostics.AddError("Dynamic Attribute Update Operation Failed", fullError)
 			return
 		}
-
-		postUpdateFetchReq := apiClient.DynamicAttributesAPI.
-			FetchDynamicAttribute(ctx).
-			Securitysystem([]string{plan.Securitysystem.ValueString()}).
-			Endpoint([]string{plan.Endpoint.ValueString()})
-
-		postUpdateFetchResp, httpResp, err := postUpdateFetchReq.Execute()
-		if err != nil {
-			resp.Diagnostics.AddError("Failed to fetch updated dynamic attributes", err.Error())
-			return
-		}
-
-		if httpResp != nil && httpResp.StatusCode == 412 {
-			var fetchResp map[string]interface{}
-			if err := json.NewDecoder(httpResp.Body).Decode(&fetchResp); err != nil {
-				resp.Diagnostics.AddError("Failed to decode error response", err.Error())
-				return
-			}
-
-			var errorMessages []string
-			if secSystems, ok := fetchResp["securitysystems"].([]interface{}); ok {
-				for _, item := range secSystems {
-					if secMap, ok := item.(map[string]interface{}); ok {
-						for key, val := range secMap {
-							errorMessages = append(errorMessages, fmt.Sprintf("securitysystem: %s - %v", key, val))
-						}
-					}
-				}
-			}
-			if endpoints, ok := fetchResp["endpoints"].([]interface{}); ok {
-				for _, item := range endpoints {
-					if epMap, ok := item.(map[string]interface{}); ok {
-						for key, val := range epMap {
-							errorMessages = append(errorMessages, fmt.Sprintf("endpoint: %s - %v", key, val))
-						}
-					}
-				}
-			}
-			if requestTypes, ok := fetchResp["requesttype"].([]interface{}); ok {
-				for _, item := range requestTypes {
-					if epMap, ok := item.(map[string]interface{}); ok {
-						for key, val := range epMap {
-							errorMessages = append(errorMessages, fmt.Sprintf("request type: %s - %v", key, val))
-						}
-					}
-				}
-			}
-			if msg, ok := fetchResp["msg"].(string); ok {
-				errorMessages = append(errorMessages, fmt.Sprintf("message: %s", msg))
-			}
-			if ec, ok := fetchResp["errorcode"].(string); ok {
-				errorMessages = append(errorMessages, fmt.Sprintf("errorcode: %s", ec))
-			}
-
-			fullError := strings.Join(errorMessages, "\n")
-			plan.DynamicAttributesError = types.StringValue(fullError)
-			resp.Diagnostics.Append(resp.State.Set(ctx, &plan)...)
-			resp.Diagnostics.AddError("Dynamic Attributes Fetch after update Failed", fullError)
-			return
-		}
-		updatedAttrs := make(map[string]Dynamicattribute)
-		if postUpdateFetchResp.Dynamicattributes.ArrayOfFetchDynamicAttributeResponseInner != nil {
-			for _, item := range *postUpdateFetchResp.Dynamicattributes.ArrayOfFetchDynamicAttributeResponseInner {
-				if item.Attributename == nil {
-					continue
-				}
-
-				attrName := *item.Attributename
-
-				// Only include attributes that were in our plan or were previously existing
-				if _, isPlanned := planAttrs[attrName]; isPlanned || existingAttrs[attrName] {
-					updatedAttr := Dynamicattribute{
-						Attributename: types.StringValue(attrName),
-						Requesttype:   util.SafeStringDatasource(item.Requesttype),
-						// Attributetype:  util.SafeStringDatasource(item.Attributetype),
-						Attributetype:  types.StringValue(dynamicattributeutil.TranslateValue(*item.Attributetype, dynamicattributeutil.AttributeTypeMap)),
-						Attributegroup: util.SafeStringDatasource(item.Attributegroup),
-						Orderindex:     util.SafeStringDatasource(item.Orderindex),
-						Attributelable: util.SafeStringDatasource(item.Attributelable),
-						Accountscolumn: util.SafeStringDatasource(item.Accountscolumn),
-						Hideoncreate:   util.SafeStringDatasource(item.Hideoncreate),
-						Actionstring:   util.SafeStringDatasource(item.Actionstring),
-						Editable:       util.SafeStringDatasource(item.Editable),
-						Hideonupdate:   util.SafeStringDatasource(item.Hideonupdate),
-						Action_to_perform_when_parent_attribute_changes: util.SafeStringDatasource(item.Actiontoperformwhenparentattributechanges),
-						Defaultvalue: util.SafeStringDatasource(item.Defaultvalue),
-						Required:     util.SafeStringDatasource(item.Required),
-						// Regex:          util.SafeStringDatasource(item.Regex),
-						Attributevalue: util.SafeStringDatasource(item.Attributevalue),
-						Showonchild:    util.SafeStringDatasource(item.Showonchild),
-						Parentattribute: util.SafeStringDatasource(item.Parentattribute),
-						Descriptionascsv: util.SafeStringDatasource(item.Descriptionascsv),
-					}
-					if item.Attributevalue != nil && *item.Attributevalue != "" {
-						updatedAttr.Attributevalue = types.StringValue(*item.Attributevalue)
-					} else {
-						updatedAttr.Attributevalue = types.StringNull()
-					}
-
-					updatedAttrs[attrName] = updatedAttr
-				}
-			}
-		}
-		log.Printf("[INFO] Processed %d dynamic attributes in state refresh", len(updatedAttrs))
-
-		// Convert to types.Map
-		// Convert the updated attributes map to a Terraform Map type
-		dynamicAttributesMap, diags := types.MapValueFrom(ctx, types.ObjectType{
-			AttrTypes: map[string]attr.Type{
-				"attribute_name":  types.StringType,
-				"request_type":    types.StringType,
-				"attribute_type":  types.StringType,
-				"attribute_group": types.StringType,
-				"order_index":     types.StringType,
-				"attribute_lable": types.StringType,
-				"accounts_column": types.StringType,
-				"hide_on_create":  types.StringType,
-				"action_string":   types.StringType,
-				"editable":        types.StringType,
-				"hide_on_update":  types.StringType,
-				"action_to_perform_when_parent_attribute_changes": types.StringType,
-				"default_value": types.StringType,
-				"required":      types.StringType,
-				// "regex":           types.StringType,
-				"attribute_value": types.StringType,
-				"showonchild":     types.StringType,
-				"parent_attribute": types.StringType,
-				"description_as_csv": types.StringType,
-			},
-		}, updatedAttrs)
-
-		// Log succe
-
-		if diags.HasError() {
-			resp.Diagnostics.Append(diags...)
-			return
-		}
-
-		plan.DynamicAttributes = dynamicAttributesMap
-		plan.ID = types.StringValue("dynamic-attr-" + plan.Endpoint.ValueString())
-		plan.DynamicAttributesError = types.StringNull()
-		plan.Endpoint = util.SafeString(plan.Endpoint.ValueStringPointer())
-		plan.Securitysystem = util.SafeString(plan.Securitysystem.ValueStringPointer())
-		plan.Updateuser = util.SafeString(plan.Updateuser.ValueStringPointer())
-		plan.Msg = types.StringValue(util.SafeDeref(fetchResp.Msg))
-		plan.ErrorCode = types.StringValue(util.SafeDeref(fetchResp.Errorcode))
-
-		// Set final state
-		resp.Diagnostics.Append(resp.State.Set(ctx, &plan)...)
 	}
+
+	postUpdateFetchReq := apiClient.DynamicAttributesAPI.
+		FetchDynamicAttribute(ctx).
+		Securitysystem([]string{plan.Securitysystem.ValueString()}).
+		Endpoint([]string{plan.Endpoint.ValueString()})
+
+	postUpdateFetchResp, httpResp, err := postUpdateFetchReq.Execute()
+	if err != nil {
+		resp.Diagnostics.AddError("Failed to fetch updated dynamic attributes", err.Error())
+		return
+	}
+
+	if httpResp != nil && httpResp.StatusCode == 412 {
+		var fetchResp map[string]interface{}
+		if err := json.NewDecoder(httpResp.Body).Decode(&fetchResp); err != nil {
+			resp.Diagnostics.AddError("Failed to decode error response", err.Error())
+			return
+		}
+
+		var errorMessages []string
+		if secSystems, ok := fetchResp["securitysystems"].([]interface{}); ok {
+			for _, item := range secSystems {
+				if secMap, ok := item.(map[string]interface{}); ok {
+					for key, val := range secMap {
+						errorMessages = append(errorMessages, fmt.Sprintf("securitysystem: %s - %v", key, val))
+					}
+				}
+			}
+		}
+		if endpoints, ok := fetchResp["endpoints"].([]interface{}); ok {
+			for _, item := range endpoints {
+				if epMap, ok := item.(map[string]interface{}); ok {
+					for key, val := range epMap {
+						errorMessages = append(errorMessages, fmt.Sprintf("endpoint: %s - %v", key, val))
+					}
+				}
+			}
+		}
+		if requestTypes, ok := fetchResp["requesttype"].([]interface{}); ok {
+			for _, item := range requestTypes {
+				if epMap, ok := item.(map[string]interface{}); ok {
+					for key, val := range epMap {
+						errorMessages = append(errorMessages, fmt.Sprintf("request type: %s - %v", key, val))
+					}
+				}
+			}
+		}
+		if msg, ok := fetchResp["msg"].(string); ok {
+			errorMessages = append(errorMessages, fmt.Sprintf("message: %s", msg))
+		}
+		if ec, ok := fetchResp["errorcode"].(string); ok {
+			errorMessages = append(errorMessages, fmt.Sprintf("errorcode: %s", ec))
+		}
+
+		fullError := strings.Join(errorMessages, "\n")
+		plan.DynamicAttributesError = types.StringValue(fullError)
+		resp.Diagnostics.Append(resp.State.Set(ctx, &plan)...)
+		resp.Diagnostics.AddError("Dynamic Attributes Fetch after update Failed", fullError)
+		return
+	}
+	log.Printf("Post updation read successful")
+
+	postUpdateApiAttrs := make(map[string]openapi.FetchDynamicAttributeResponseInner)
+	if postUpdateFetchResp != nil && postUpdateFetchResp.Dynamicattributes != nil && postUpdateFetchResp.Dynamicattributes.ArrayOfFetchDynamicAttributeResponseInner != nil {
+		for _, item := range *postUpdateFetchResp.Dynamicattributes.ArrayOfFetchDynamicAttributeResponseInner {
+			attrName := util.SafeDeref(item.Attributename)
+			if attrName != "" {
+				postUpdateApiAttrs[attrName] = item
+			}
+		}
+	}
+	log.Printf("Api attributes postupdate: %v", postUpdateApiAttrs)
+	updatedAttrs := make(map[string]Dynamicattribute)
+	log.Printf("Planned attributes: %v", len(planAttrs))
+	// removedAttributes := make([]string, 0)
+
+	for attrName := range planAttrs {
+		if apiAttr, exists := postUpdateApiAttrs[attrName]; exists {
+			// Attribute exists in API response - update with API values
+			updatedAttr := Dynamicattribute{
+				Attributename: types.StringValue(attrName),
+				Requesttype:   util.SafeStringDatasource(apiAttr.Requesttype),
+				// Attributetype:  util.SafeStringDatasource(apiAttr.Attributetype),
+				Attributetype:  types.StringValue(dynamicattributeutil.TranslateValue(*apiAttr.Attributetype, dynamicattributeutil.AttributeTypeMap)),
+				Orderindex:     util.SafeStringDatasource(apiAttr.Orderindex),
+				Required:       util.SafeStringDatasource(apiAttr.Required),
+				Editable:       util.SafeStringDatasource(apiAttr.Editable),
+				Hideoncreate:   util.SafeStringDatasource(apiAttr.Hideoncreate),
+				Hideonupdate:   util.SafeStringDatasource(apiAttr.Hideonupdate),
+				Attributegroup: util.SafeStringDatasource(apiAttr.Attributegroup),
+				Attributelable: util.SafeStringDatasource(apiAttr.Attributelable),
+				Accountscolumn: util.SafeStringDatasource(apiAttr.Accountscolumn),
+				Actionstring:   util.SafeStringDatasource(apiAttr.Actionstring),
+				Action_to_perform_when_parent_attribute_changes: util.SafeStringDatasource(apiAttr.Actiontoperformwhenparentattributechanges),
+				// Defaultvalue: util.SafeStringDatasource(apiAttr.Defaultvalue),
+				// Regex:            util.PreserveString(apiAttr.Regex, currentAttrs[attrName].Regex),
+				Attributevalue:   util.SafeStringPreserveNull(apiAttr.Attributevalue),
+				Showonchild:      util.SafeStringDatasource(apiAttr.Showonchild),
+				Parentattribute:  util.SafeStringDatasource(apiAttr.Parentattribute),
+				Descriptionascsv: util.SafeStringDatasource(apiAttr.Descriptionascsv),
+			}
+			updatedAttrs[attrName] = updatedAttr
+		}
+	}
+
+	log.Printf("[INFO] Processed %d dynamic attributes in state refresh", len(updatedAttrs))
+
+	// Convert to types.Map
+	// Convert the updated attributes map to a Terraform Map type
+	dynamicAttributesMap, diags := types.MapValueFrom(ctx, types.ObjectType{
+		AttrTypes: map[string]attr.Type{
+			"attribute_name":  types.StringType,
+			"request_type":    types.StringType,
+			"attribute_type":  types.StringType,
+			"attribute_group": types.StringType,
+			"order_index":     types.StringType,
+			"attribute_lable": types.StringType,
+			"accounts_column": types.StringType,
+			"hide_on_create":  types.StringType,
+			"action_string":   types.StringType,
+			"editable":        types.StringType,
+			"hide_on_update":  types.StringType,
+			"action_to_perform_when_parent_attribute_changes": types.StringType,
+			// "default_value": types.StringType,
+			"required":      types.StringType,
+			// "regex":           types.StringType,
+			"attribute_value":    types.StringType,
+			"showonchild":        types.StringType,
+			"parent_attribute":   types.StringType,
+			"description_as_csv": types.StringType,
+		},
+	}, updatedAttrs)
+
+	if diags.HasError() {
+		resp.Diagnostics.Append(diags...)
+		return
+	}
+
+	plan.DynamicAttributes = dynamicAttributesMap
+	plan.ID = types.StringValue("dynamic-attr-" + plan.Endpoint.ValueString())
+	plan.DynamicAttributesError = types.StringNull()
+	plan.Endpoint = util.SafeString(plan.Endpoint.ValueStringPointer())
+	plan.Securitysystem = util.SafeString(plan.Securitysystem.ValueStringPointer())
+	plan.Updateuser = util.SafeString(plan.Updateuser.ValueStringPointer())
+	plan.Msg = types.StringValue(util.SafeDeref(fetchResp.Msg))
+	plan.ErrorCode = types.StringValue(util.SafeDeref(fetchResp.Errorcode))
+
+	// Set final state
+	resp.Diagnostics.Append(resp.State.Set(ctx, &plan)...)
+
 }
 
 func (r *dynamicAttributeResource) Delete(ctx context.Context, req resource.DeleteRequest, resp *resource.DeleteResponse) {
