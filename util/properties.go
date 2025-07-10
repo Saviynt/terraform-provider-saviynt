@@ -51,3 +51,4 @@ var UnixConnDataSourceDescription = "Retrieve the details for a given Unix conne
 var WorkdayConnDataSourceDescription = "Retrieve the details for a given Workday connector by its name or key"
 
 var FileEphemeralResourceDescription = "Provides ephemeral credentials by reading them from a local json file for use by Connector resources."
+var EnvEphemeralResourceDescription = "Provides ephemeral credentials by reading them from a environment for use by Connector resources."
