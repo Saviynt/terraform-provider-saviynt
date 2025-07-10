@@ -78,7 +78,7 @@ type Dynamicattribute struct {
 
 	// Removed due to lack support in v24.4
 	// Regex                                           types.String `tfsdk:"regex"`
-	// Parentattribute                                 types.String `tfsdk:"parent_attribute"`
+	Parentattribute                                 types.String `tfsdk:"parent_attribute"`
 }
 
 type dynamicAttributeResource struct {
@@ -227,11 +227,11 @@ func (r *dynamicAttributeResource) Schema(ctx context.Context, req resource.Sche
 						// 		dynamicattributeutil.RegexDisallowedForCertainAttributeTypes(),
 						// 	},
 						// },
-						// "parent_attribute": schema.StringAttribute{
-						// 	Optional:    true,
-						// 	Computed:    true,
-						// 	Description: "Parent attribute this one depends on.",
-						// },
+						"parent_attribute": schema.StringAttribute{
+							Optional:    true,
+							Computed:    true,
+							Description: "Parent attribute this one depends on.",
+						},
 					},
 				},
 			},
@@ -312,7 +312,7 @@ func (r *dynamicAttributeResource) Create(ctx context.Context, req resource.Crea
 		// dynamicAttr.Regex = util.StringPointerOrEmpty(attr.Regex)
 		dynamicAttr.Attributevalue = util.StringPointerOrEmpty(attr.Attributevalue)
 		dynamicAttr.Showonchild = util.StringPointerOrEmpty(attr.Showonchild)
-		// dynamicAttr.Parentattribute = util.StringPointerOrEmpty(attr.Parentattribute)
+		dynamicAttr.Parentattribute = util.StringPointerOrEmpty(attr.Parentattribute)
 		dynamicAttr.Descriptionascsv = util.StringPointerOrEmpty(attr.Descriptionascsv)
 		dynamicAttrs = append(dynamicAttrs, *dynamicAttr)
 	}
@@ -424,7 +424,7 @@ func (r *dynamicAttributeResource) Create(ctx context.Context, req resource.Crea
 			Required:     util.SafeStringAlt(attr.Required.ValueStringPointer(), "false"),
 			// Regex:            util.SafeStringDatasource(attr.Regex.ValueStringPointer()),
 			Showonchild: util.SafeStringAlt(attr.Showonchild.ValueStringPointer(), "false"),
-			// Parentattribute:  util.SafeString(attr.Parentattribute.ValueStringPointer()),
+			Parentattribute:  util.SafeString(attr.Parentattribute.ValueStringPointer()),
 			Descriptionascsv: util.SafeString(attr.Descriptionascsv.ValueStringPointer()),
 		}
 		if attr.Attributevalue.IsNull() || attr.Attributevalue.IsUnknown() {
@@ -456,7 +456,7 @@ func (r *dynamicAttributeResource) Create(ctx context.Context, req resource.Crea
 			// "regex":              types.StringType,
 			"attribute_value": types.StringType,
 			"showonchild":     types.StringType,
-			// "parent_attribute":   types.StringType,
+			"parent_attribute":   types.StringType,
 			"description_as_csv": types.StringType,
 		},
 	}, updatedAttrs)
@@ -631,7 +631,7 @@ func (r *dynamicAttributeResource) Read(ctx context.Context, req resource.ReadRe
 				// Attributevalue:   util.SafeStringDatasource(apiAttr.Attributevalue),
 				Attributevalue: util.SafeStringPreserveNull(apiAttr.Attributevalue),
 				Showonchild:    util.SafeStringDatasource(apiAttr.Showonchild),
-				// Parentattribute:  util.SafeStringDatasource(apiAttr.Parentattribute),
+				Parentattribute:  util.SafeStringDatasource(apiAttr.Parentattribute),
 				Descriptionascsv: util.SafeStringDatasource(apiAttr.Descriptionascsv),
 			}
 			updatedAttrs[attrName] = updatedAttr
@@ -663,7 +663,7 @@ func (r *dynamicAttributeResource) Read(ctx context.Context, req resource.ReadRe
 					// Attributevalue:   util.SafeStringDatasource(apiAttr.Attributevalue),
 					Attributevalue: util.SafeStringPreserveNull(apiAttr.Attributevalue),
 					Showonchild:    util.SafeStringDatasource(apiAttr.Showonchild),
-					// Parentattribute:  util.SafeStringDatasource(apiAttr.Parentattribute),
+					Parentattribute:  util.SafeStringDatasource(apiAttr.Parentattribute),
 					Descriptionascsv: util.SafeStringDatasource(apiAttr.Descriptionascsv),
 				}
 				updatedAttrs[attrName] = updatedAttr
@@ -698,7 +698,7 @@ func (r *dynamicAttributeResource) Read(ctx context.Context, req resource.ReadRe
 			// "regex":              types.StringType,
 			"attribute_value": types.StringType,
 			"showonchild":     types.StringType,
-			// "parent_attribute":   types.StringType,
+			"parent_attribute":   types.StringType,
 			"description_as_csv": types.StringType,
 		},
 	}, updatedAttrs)
@@ -796,7 +796,7 @@ func (r *dynamicAttributeResource) Update(ctx context.Context, req resource.Upda
 			// newAttr.Regex = util.StringPointerOrEmpty(attr.Regex)
 			newAttr.Attributevalue = util.StringPointerOrEmpty(attr.Attributevalue)
 			newAttr.Showonchild = util.StringPointerOrEmpty(attr.Showonchild)
-			// newAttr.Parentattribute = util.StringPointerOrEmpty(attr.Parentattribute)
+			newAttr.Parentattribute = util.StringPointerOrEmpty(attr.Parentattribute)
 			newAttr.Descriptionascsv = util.StringPointerOrEmpty(attr.Descriptionascsv)
 			newAttrs = append(newAttrs, *newAttr)
 		} else {
@@ -820,7 +820,7 @@ func (r *dynamicAttributeResource) Update(ctx context.Context, req resource.Upda
 			// updateAttr.Regex = util.StringPointerOrEmpty(attr.Regex)
 			updateAttr.Attributevalue = util.StringPointerOrEmpty(attr.Attributevalue)
 			updateAttr.Showonchild = util.StringPointerOrEmpty(attr.Showonchild)
-			// updateAttr.Parentattribute = util.StringPointerOrEmpty(attr.Parentattribute)
+			updateAttr.Parentattribute = util.StringPointerOrEmpty(attr.Parentattribute)
 			updateAttr.Descriptionascsv = util.StringPointerOrEmpty(attr.Descriptionascsv)
 			updateAttrs = append(updateAttrs, *updateAttr)
 		}
@@ -998,7 +998,7 @@ func (r *dynamicAttributeResource) Update(ctx context.Context, req resource.Upda
 						// Regex:          util.SafeStringDatasource(item.Regex),
 						Attributevalue: util.SafeStringDatasource(item.Attributevalue),
 						Showonchild:    util.SafeStringDatasource(item.Showonchild),
-						// Parentattribute: util.SafeStringDatasource(item.Parentattribute),
+						Parentattribute: util.SafeStringDatasource(item.Parentattribute),
 						Descriptionascsv: util.SafeStringDatasource(item.Descriptionascsv),
 					}
 					if item.Attributevalue != nil && *item.Attributevalue != "" {
@@ -1034,7 +1034,7 @@ func (r *dynamicAttributeResource) Update(ctx context.Context, req resource.Upda
 				// "regex":           types.StringType,
 				"attribute_value": types.StringType,
 				"showonchild":     types.StringType,
-				// "parent_attribute": types.StringType,
+				"parent_attribute": types.StringType,
 				"description_as_csv": types.StringType,
 			},
 		}, updatedAttrs)
