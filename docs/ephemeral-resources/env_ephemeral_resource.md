@@ -3,12 +3,12 @@
 page_title: "saviynt_env_ephemeral_resource Ephemeral Resource - saviynt"
 subcategory: ""
 description: |-
-  Read username/password from a local file
+  Provides ephemeral credentials by reading them from a environment for use by Connector resources.
 ---
 
 # saviynt_env_ephemeral_resource (Ephemeral Resource)
 
-Read username/password from a local file
+Provides ephemeral credentials by reading them from a environment for use by Connector resources.
 
 ## Example Usage
 

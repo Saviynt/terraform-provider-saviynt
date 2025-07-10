@@ -22,6 +22,7 @@ package provider
 import (
 	"context"
 	"os"
+	"terraform-provider-Saviynt/util"
 
 	// "fmt"
 	// "os"
@@ -40,6 +41,7 @@ func NewEnvCredentialsResource() ephemeral.EphemeralResource {
 type EnvCredentialsModel struct {
 	Svnt_Username                 types.String `tfsdk:"svnt_username"`
 	Svnt_Password                 types.String `tfsdk:"svnt_password"`
+	Svnt_Connection_Json          types.String `tfsdk:"svnt_connection_json"`
 	Svnt_Azure_Mgmt_Access_Token  types.String `tfsdk:"svnt_azure_mgmt_access_token"`
 	Svnt_Client_Id                types.String `tfsdk:"svnt_client_id"`
 	Svnt_Client_Secret            types.String `tfsdk:"svnt_client_secret"`
@@ -61,7 +63,7 @@ func (r *EnvCredentialsResource) Metadata(_ context.Context, req ephemeral.Metad
 
 func (r *EnvCredentialsResource) Schema(ctx context.Context, _ ephemeral.SchemaRequest, resp *ephemeral.SchemaResponse) {
 	resp.Schema = schema.Schema{
-		MarkdownDescription: "Read username/password from a local file",
+		MarkdownDescription: util.EnvEphemeralResourceDescription,
 		Attributes: map[string]schema.Attribute{
 			"svnt_username": schema.StringAttribute{
 				Computed:            true,
@@ -145,6 +147,7 @@ func (r *EnvCredentialsResource) Open(ctx context.Context, req ephemeral.OpenReq
 	}
 	data.Svnt_Username = types.StringValue(os.Getenv("svnt_username"))
 	data.Svnt_Password = types.StringValue(os.Getenv("svnt_password"))
+	data.Svnt_Connection_Json = types.StringValue(os.Getenv("svnt_connection_json"))
 	data.Svnt_Azure_Mgmt_Access_Token = types.StringValue(os.Getenv("svnt_azure_mgmt_access_token"))
 	data.Svnt_Client_Id = types.StringValue(os.Getenv("svnt_client_id"))
 	data.Svnt_Client_Secret = types.StringValue(os.Getenv("svnt_client_secret"))
