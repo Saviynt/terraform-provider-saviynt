@@ -760,7 +760,7 @@ func (r *dynamicAttributeResource) Update(ctx context.Context, req resource.Upda
 
 	// Build map of existing attributes
 	existingAttrs := make(map[string]bool)
-	if fetchResp.Dynamicattributes.ArrayOfFetchDynamicAttributeResponseInner != nil {
+	if fetchResp!=nil && fetchResp.Dynamicattributes!=nil && fetchResp.Dynamicattributes.ArrayOfFetchDynamicAttributeResponseInner != nil {
 		for _, item := range *fetchResp.Dynamicattributes.ArrayOfFetchDynamicAttributeResponseInner {
 			if item.Attributename != nil {
 				existingAttrs[*item.Attributename] = true
