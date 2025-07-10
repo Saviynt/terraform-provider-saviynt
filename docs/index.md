@@ -41,12 +41,11 @@ provider "saviynt" {
 - `server_url` (String) URL of Saviynt server.
 - `username` (String) Username for authentication.
 
-### Supported Operating Systems
-- MacOS 
-
 ### Compatible Saviynt EIC Versions
 - 24.4
+
 ---
+
 ## Credential Management Best Practices
 To ensure secure handling of sensitive credentials, follow these best practices:
 1. **Use Vault-backed Secrets**   : Externalize sensitive values using a secure secrets manager such as HashiCorp Vault. This avoids hardcoding secrets in .tf files or storing them in Terraform state.
@@ -56,23 +55,25 @@ To ensure secure handling of sensitive credentials, follow these best practices:
    - Terraform state files (`terraform.tfstate`)
    - Version control systems (e.g., Git)
    - Local plaintext configuration files
+
 ---
+
 ## Feature: `authenticate` Toggle for All Connection Data Source
 
 The Saviynt connection datasources now have a required boolean flag `authenticate` to control the visibility of sensitive connection data.
 
-### 🔹 Purpose
+### Purpose
 
 This feature is designed to help prevent potential sensitive data from appearing in Terraform state files or CLI output during `plan` and `apply` when a datasource is called.
 
-### 🔹 Behavior
+### Behavior
 
 - When `authenticate = false`:
   - The provider will **omit** the entire `connection_attributes` block from state file.
 - When `authenticate = true`:
   - All attributes will be returned as usual with sensitive still not visible.
 
-### 🔹 Example Usage
+### Example Usage
 
 ```hcl
 data "saviynt_rest_connection_datasource" "example" {
@@ -80,7 +81,9 @@ data "saviynt_rest_connection_datasource" "example" {
   authenticate    = false
 }
 ```
+
 ---
+
 ## Known Limitations
 The following limitations are present in the latest version of the provider. These are being prioritized for resolution in the upcoming release alongside new feature additions:
 ### 1. All Resource objects
