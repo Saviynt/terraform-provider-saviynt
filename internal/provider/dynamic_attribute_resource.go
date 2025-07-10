@@ -75,10 +75,10 @@ type Dynamicattribute struct {
 	Showonchild                                     types.String `tfsdk:"showonchild"`
 	Descriptionascsv                                types.String `tfsdk:"description_as_csv"`
 	Parentattribute                                 types.String `tfsdk:"parent_attribute"`
+	Defaultvalue                                    types.String `tfsdk:"default_value"`
 
 	// Removed due to lack support in v24.4
 	// Regex                                           types.String `tfsdk:"regex"`
-	// Defaultvalue                                    types.String `tfsdk:"default_value"`
 }
 
 type dynamicAttributeResource struct {
@@ -186,14 +186,14 @@ func (r *dynamicAttributeResource) Schema(ctx context.Context, req resource.Sche
 							Computed:    true,
 							Description: "Action to perform when the parent attribute changes.",
 						},
-						// "default_value": schema.StringAttribute{
-						// 	Optional:    true,
-						// 	Computed:    true,
-						// 	Description: "Default value for the attribute.",
-						// 	Validators: []validator.String{
-						// 		dynamicattributeutil.DefaultValueDisallowedForCertainAttributeTypes(),
-						// 	},
-						// },
+						"default_value": schema.StringAttribute{
+							Optional:    true,
+							Computed:    true,
+							Description: "Default value for the attribute(Currently not configurable for BOOLEAN attribute type from Terraform).",
+							Validators: []validator.String{
+								dynamicattributeutil.DefaultValueDisallowedForCertainAttributeTypes(),
+							},
+						},
 						"required": schema.StringAttribute{
 							Optional:    true,
 							Computed:    true,
@@ -307,7 +307,7 @@ func (r *dynamicAttributeResource) Create(ctx context.Context, req resource.Crea
 		dynamicAttr.Editable = util.StringPointerOrEmpty(attr.Editable)
 		dynamicAttr.Hideonupdate = util.StringPointerOrEmpty(attr.Hideonupdate)
 		dynamicAttr.Actiontoperformwhenparentattributechanges = util.StringPointerOrEmpty(attr.Action_to_perform_when_parent_attribute_changes)
-		// dynamicAttr.Defaultvalue = util.StringPointerOrEmpty(attr.Defaultvalue)
+		dynamicAttr.Defaultvalue = util.StringPointerOrEmpty(attr.Defaultvalue)
 		dynamicAttr.Required = util.StringPointerOrEmpty(attr.Required)
 		// dynamicAttr.Regex = util.StringPointerOrEmpty(attr.Regex)
 		dynamicAttr.Attributevalue = util.StringPointerOrEmpty(attr.Attributevalue)
@@ -420,10 +420,10 @@ func (r *dynamicAttributeResource) Create(ctx context.Context, req resource.Crea
 			Editable:       util.SafeStringAlt(attr.Editable.ValueStringPointer(), "false"),
 			Hideonupdate:   util.SafeStringAlt(attr.Hideoncreate.ValueStringPointer(), "false"),
 			Action_to_perform_when_parent_attribute_changes: util.SafeString(attr.Action_to_perform_when_parent_attribute_changes.ValueStringPointer()),
-			// Defaultvalue: util.SafeString(attr.Defaultvalue.ValueStringPointer()),
+			Defaultvalue: util.SafeString(attr.Defaultvalue.ValueStringPointer()),
 			Required:     util.SafeStringAlt(attr.Required.ValueStringPointer(), "false"),
 			// Regex:            util.SafeStringDatasource(attr.Regex.ValueStringPointer()),
-			Showonchild: util.SafeStringAlt(attr.Showonchild.ValueStringPointer(), "false"),
+			Showonchild:      util.SafeStringAlt(attr.Showonchild.ValueStringPointer(), "false"),
 			Parentattribute:  util.SafeString(attr.Parentattribute.ValueStringPointer()),
 			Descriptionascsv: util.SafeString(attr.Descriptionascsv.ValueStringPointer()),
 		}
@@ -451,7 +451,7 @@ func (r *dynamicAttributeResource) Create(ctx context.Context, req resource.Crea
 			"editable":        types.StringType,
 			"hide_on_update":  types.StringType,
 			"action_to_perform_when_parent_attribute_changes": types.StringType,
-			// "default_value": types.StringType,
+			"default_value": types.StringType,
 			"required":      types.StringType,
 			// "regex":              types.StringType,
 			"attribute_value":    types.StringType,
@@ -625,11 +625,11 @@ func (r *dynamicAttributeResource) Read(ctx context.Context, req resource.ReadRe
 				Accountscolumn: util.SafeStringDatasource(apiAttr.Accountscolumn),
 				Actionstring:   util.SafeStringDatasource(apiAttr.Actionstring),
 				Action_to_perform_when_parent_attribute_changes: util.SafeStringDatasource(apiAttr.Actiontoperformwhenparentattributechanges),
-				// Defaultvalue: util.SafeStringDatasource(apiAttr.Defaultvalue),
+				Defaultvalue: util.SafeStringDatasource(apiAttr.Defaultvalue),
 				// Regex:            util.PreserveString(apiAttr.Regex, currentAttrs[attrName].Regex),
 				// Attributevalue:   util.SafeStringDatasource(apiAttr.Attributevalue),
-				Attributevalue: util.SafeStringPreserveNull(apiAttr.Attributevalue),
-				Showonchild:    util.SafeStringDatasource(apiAttr.Showonchild),
+				Attributevalue:   util.SafeStringPreserveNull(apiAttr.Attributevalue),
+				Showonchild:      util.SafeStringDatasource(apiAttr.Showonchild),
 				Parentattribute:  util.SafeStringDatasource(apiAttr.Parentattribute),
 				Descriptionascsv: util.SafeStringDatasource(apiAttr.Descriptionascsv),
 			}
@@ -657,7 +657,7 @@ func (r *dynamicAttributeResource) Read(ctx context.Context, req resource.ReadRe
 					Accountscolumn: util.SafeStringDatasource(apiAttr.Accountscolumn),
 					Actionstring:   util.SafeStringDatasource(apiAttr.Actionstring),
 					Action_to_perform_when_parent_attribute_changes: util.SafeStringDatasource(apiAttr.Actiontoperformwhenparentattributechanges),
-					// Defaultvalue: util.SafeStringDatasource(apiAttr.Defaultvalue),
+					Defaultvalue: util.SafeStringDatasource(apiAttr.Defaultvalue),
 					// Regex:            util.PreserveString(apiAttr.Regex, currentAttrs[attrName].Regex),
 					// Attributevalue:   util.SafeStringDatasource(apiAttr.Attributevalue),
 					Attributevalue:   util.SafeStringPreserveNull(apiAttr.Attributevalue),
@@ -692,7 +692,7 @@ func (r *dynamicAttributeResource) Read(ctx context.Context, req resource.ReadRe
 			"editable":        types.StringType,
 			"hide_on_update":  types.StringType,
 			"action_to_perform_when_parent_attribute_changes": types.StringType,
-			// "default_value": types.StringType,
+			"default_value": types.StringType,
 			"required":      types.StringType,
 			// "regex":              types.StringType,
 			"attribute_value":    types.StringType,
@@ -793,7 +793,7 @@ func (r *dynamicAttributeResource) Update(ctx context.Context, req resource.Upda
 			newAttr.Editable = util.StringPointerOrEmpty(attr.Editable)
 			newAttr.Hideonupdate = util.StringPointerOrEmpty(attr.Hideonupdate)
 			newAttr.Actiontoperformwhenparentattributechanges = util.StringPointerOrEmpty(attr.Action_to_perform_when_parent_attribute_changes)
-			// newAttr.Defaultvalue = util.StringPointerOrEmpty(attr.Defaultvalue)
+			newAttr.Defaultvalue = util.StringPointerOrEmpty(attr.Defaultvalue)
 			newAttr.Required = util.StringPointerOrEmpty(attr.Required)
 			// newAttr.Regex = util.StringPointerOrEmpty(attr.Regex)
 			newAttr.Attributevalue = util.StringPointerOrEmpty(attr.Attributevalue)
@@ -817,7 +817,7 @@ func (r *dynamicAttributeResource) Update(ctx context.Context, req resource.Upda
 			updateAttr.Editable = util.StringPointerOrEmpty(attr.Editable)
 			updateAttr.Hideonupdate = util.StringPointerOrEmpty(attr.Hideonupdate)
 			updateAttr.Actiontoperformwhenparentattributechanges = util.StringPointerOrEmpty(attr.Action_to_perform_when_parent_attribute_changes)
-			// updateAttr.Defaultvalue = util.StringPointerOrEmpty(attr.Defaultvalue)
+			updateAttr.Defaultvalue = util.StringPointerOrEmpty(attr.Defaultvalue)
 			updateAttr.Required = util.StringPointerOrEmpty(attr.Required)
 			// updateAttr.Regex = util.StringPointerOrEmpty(attr.Regex)
 			updateAttr.Attributevalue = util.StringPointerOrEmpty(attr.Attributevalue)
@@ -1007,7 +1007,7 @@ func (r *dynamicAttributeResource) Update(ctx context.Context, req resource.Upda
 				Accountscolumn: util.SafeStringDatasource(apiAttr.Accountscolumn),
 				Actionstring:   util.SafeStringDatasource(apiAttr.Actionstring),
 				Action_to_perform_when_parent_attribute_changes: util.SafeStringDatasource(apiAttr.Actiontoperformwhenparentattributechanges),
-				// Defaultvalue: util.SafeStringDatasource(apiAttr.Defaultvalue),
+				Defaultvalue: util.SafeStringDatasource(apiAttr.Defaultvalue),
 				// Regex:            util.PreserveString(apiAttr.Regex, currentAttrs[attrName].Regex),
 				Attributevalue:   util.SafeStringPreserveNull(apiAttr.Attributevalue),
 				Showonchild:      util.SafeStringDatasource(apiAttr.Showonchild),
@@ -1036,7 +1036,7 @@ func (r *dynamicAttributeResource) Update(ctx context.Context, req resource.Upda
 			"editable":        types.StringType,
 			"hide_on_update":  types.StringType,
 			"action_to_perform_when_parent_attribute_changes": types.StringType,
-			// "default_value": types.StringType,
+			"default_value": types.StringType,
 			"required":      types.StringType,
 			// "regex":           types.StringType,
 			"attribute_value":    types.StringType,

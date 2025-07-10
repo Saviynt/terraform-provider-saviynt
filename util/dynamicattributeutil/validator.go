@@ -158,6 +158,13 @@ func (v defaultValueDisallowedForAttributeTypesValidator) ValidateString(ctx con
 	if diags.HasError() {
 		return
 	}
+	if strings.ToUpper(attrType) == "BOOLEAN" {
+		resp.Diagnostics.AddAttributeError(
+			req.Path,
+			"Default value setting not allowed",
+			fmt.Sprintf("default value is currently not configurable from Terraform when attribute_type is '%s'", attrType),
+		)
+	}
 
 	if strings.ToUpper(attrType) == "PASSWORD" {
 		resp.Diagnostics.AddAttributeError(
