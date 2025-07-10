@@ -3,12 +3,12 @@
 page_title: "saviynt_rest_connection_resource Resource - saviynt"
 subcategory: ""
 description: |-
-  Create and manage AD connector in Saviynt
+  Create and manage REST connector in Saviynt
 ---
 
 # saviynt_rest_connection_resource (Resource)
 
-Create and manage AD connector in Saviynt
+Create and manage REST connector in Saviynt
 
 ## Example Usage
 

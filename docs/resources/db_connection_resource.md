@@ -3,12 +3,12 @@
 page_title: "saviynt_db_connection_resource Resource - saviynt"
 subcategory: ""
 description: |-
-  Create and manage AD connector in Saviynt
+  Create and manage DB connector in Saviynt
 ---
 
 # saviynt_db_connection_resource (Resource)
 
-Create and manage AD connector in Saviynt
+Create and manage DB connector in Saviynt
 
 ## Example Usage
 

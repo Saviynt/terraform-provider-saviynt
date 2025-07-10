@@ -93,11 +93,11 @@ Optional:
 - `attribute_lable` (String) Name to be shown in the Access Requests form.
 - `attribute_type` (String) Attribute type used for filtering and display.
 - `attribute_value` (String) Value options or query for the attribute.
-- `default_value` (String) Default value for the attribute.
 - `description_as_csv` (String) Description of values as CSV.
 - `editable` (String) Whether the attribute is editable.
 - `hide_on_create` (String) Whether to hide this attribute on create.
 - `hide_on_update` (String) Whether to hide this attribute on update.
 - `order_index` (String) Sequence for display of the dynamic attribute.
+- `parent_attribute` (String) Parent attribute this one depends on.
 - `required` (String) Whether this attribute is required.
 - `showonchild` (String) Whether to show this on child requests.
