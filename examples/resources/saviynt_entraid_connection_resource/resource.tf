@@ -20,13 +20,13 @@ variable "TENANT_ID" {
 }
 
 locals {
-  import_user_json         = file("${path.module}/json/import_user.json")
-  account_attributes       = file("${path.module}/json/account_attributes.json")
-  entitlement_attribute    = file("${path.module}/json/entitlement_attribute.json")
-  create_account_json      = file("${path.module}/json/create_account.json")
-  add_access_json          = file("${path.module}/json/add_access.json")
-  connection_json          = file("${path.module}/json/connection.json")
-  status_threshold_config  = file("${path.module}/json/status_threshold_config.json")
+  import_user_json        = file("${path.module}/json/import_user.json")
+  account_attributes      = file("${path.module}/json/account_attributes.json")
+  entitlement_attribute   = file("${path.module}/json/entitlement_attribute.json")
+  create_account_json     = file("${path.module}/json/create_account.json")
+  add_access_json         = file("${path.module}/json/add_access.json")
+  connection_json         = file("${path.module}/json/connection.json")
+  status_threshold_config = file("${path.module}/json/status_threshold_config.json")
 }
 
 resource "saviynt_entraid_connection_resource" "example" {
@@ -42,17 +42,17 @@ resource "saviynt_entraid_connection_resource" "example" {
   create_new_endpoints      = "YES"
   managed_account_type      = "ACCOUNTS"
   import_depth              = "FINE GRAINED"
-  
-  import_user_json          = local.import_user_json
-  account_attributes        = local.account_attributes
-  entitlement_attribute     = local.entitlement_attribute
-  create_account_json       = local.create_account_json
-  add_access_json           = local.add_access_json
-  connection_json           = local.connection_json
-  status_threshold_config   = local.status_threshold_config
-  
+
+  import_user_json        = local.import_user_json
+  account_attributes      = local.account_attributes
+  entitlement_attribute   = local.entitlement_attribute
+  create_account_json     = local.create_account_json
+  add_access_json         = local.add_access_json
+  connection_json         = local.connection_json
+  status_threshold_config = local.status_threshold_config
+
   account_import_fields = "accountEnabled,mail,businessPhone,surname,givenName,displayName,userPrincipalName,id"
-  
+
   update_account_json = jsonencode({
     call = [
       {
@@ -343,9 +343,9 @@ resource "saviynt_entraid_connection_resource" "example" {
       }
     ]
   })
-  
+
   accounts_filter = "(userType%20eq%20%27Member%27%20and%20(employeeType%20eq%20%27Employee%27%20or%20employeeType%20eq%20%27External%27%20or%20employeeType%20eq%20%27AdminAccount%27%20or%20employeeType%20eq%20%27Frontline%27)"
-  
+
   config_json = jsonencode({
     connectionTimeoutConfig = {
       connectionTimeout = 10,
@@ -355,7 +355,7 @@ resource "saviynt_entraid_connection_resource" "example" {
       retryCount        = 3
     }
   })
-  
+
   windows_connector_json = jsonencode({
     http = {
       url = "http://<domain-name>/FIMAzure/PS/ExecutePSCommand",
@@ -378,7 +378,7 @@ resource "saviynt_entraid_connection_resource" "example" {
       customproperty16 = "MFADateTime~#~char"
     }
   })
-  
+
   service_account_attributes = jsonencode({
     colsToPropsMap = {
       accountID        = "id~#~char",
