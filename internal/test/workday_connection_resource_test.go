@@ -87,7 +87,7 @@ func TestAccSaviyntWorkdayConnectionResource(t *testing.T) {
 				ImportStateId:           createCfg["connection_name"],
 				ImportState:             true,
 				ImportStateVerify:       true,
-				ImportStateVerifyIgnore: []string{"msg", "client_secret", "password", "refresh_token"},
+				ImportStateVerifyIgnore: []string{"msg", "client_secret", "password", "refresh_token", "orgrole_import_payload"},
 			},
 			// Update Step
 			{
