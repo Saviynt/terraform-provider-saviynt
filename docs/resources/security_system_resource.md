@@ -3,12 +3,12 @@
 page_title: "saviynt_security_system_resource Resource - saviynt"
 subcategory: ""
 description: |-
-  Create and manage Security Systems in Saviynt
+  Create and manage security systems in Saviynt
 ---
 
 # saviynt_security_system_resource (Resource)
 
-Create and manage Security Systems in Saviynt
+Create and manage security systems in Saviynt
 
 ## Example Usage
 

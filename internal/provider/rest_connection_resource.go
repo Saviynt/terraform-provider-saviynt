@@ -12,6 +12,7 @@ package provider
 import (
 	"context"
 	"os"
+
 	// "encoding/json"
 	"fmt"
 	"log"
@@ -207,7 +208,7 @@ func RestConnectorResourceSchema() map[string]schema.Attribute {
 
 func (r *restConnectionResource) Schema(ctx context.Context, req resource.SchemaRequest, resp *resource.SchemaResponse) {
 	resp.Schema = schema.Schema{
-		Description: util.ADConnDescription,
+		Description: util.RestConnDescription,
 		Attributes:  connectionsutil.MergeResourceAttributes(BaseConnectorResourceSchema(), RestConnectorResourceSchema()),
 	}
 }
