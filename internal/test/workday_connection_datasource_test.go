@@ -56,8 +56,6 @@ func TestAccSaviyntWorkdayConnectionDataSource(t *testing.T) {
 					resource.TestCheckResourceAttr(datasource, "connection_attributes.base_url", createCfg["base_url"]),
 					resource.TestCheckResourceAttr(datasource, "connection_attributes.api_version", createCfg["api_version"]),
 					resource.TestCheckResourceAttr(datasource, "connection_attributes.use_oauth", createCfg["use_oauth"]),
-					resource.TestCheckResourceAttr(datasource, "connection_attributes.username", createCfg["username"]),
-					resource.TestCheckResourceAttr(datasource, "connection_attributes.client_id", createCfg["client_id"]),
 					resource.TestCheckResourceAttr(datasource, "connection_attributes.access_import_list", createCfg["access_import_list"]),
 					resource.TestCheckResourceAttr(datasource, "connection_attributes.status_key_json", createCfg["status_key_json"]),
 					resource.TestCheckResourceAttr(datasource, "connection_attributes.user_import_payload", createCfg["user_import_payload"]),
@@ -96,6 +94,7 @@ resource "saviynt_workday_connection_resource" "workday" {
   
 data "saviynt_workday_connection_datasource" "test" {
 	connection_name     = local.cfg.connection_name
+	authenticate 		= true
 	depends_on = [saviynt_workday_connection_resource.workday]
 }
 `, os.Getenv("SAVIYNT_URL"),

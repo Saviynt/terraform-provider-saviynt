@@ -1,5 +1,17 @@
-// Copyright (c) Saviynt Inc.
-// SPDX-License-Identifier: MPL-2.0
+/*
+ * Copyright (c) 2025 Saviynt Inc.
+ * All Rights Reserved.
+ *
+ * This software is the confidential and proprietary information of
+ * Saviynt Inc. ("Confidential Information"). You shall not disclose,
+ * use, or distribute such Confidential Information except in accordance
+ * with the terms of the license agreement you entered into with Saviynt.
+ *
+ * SAVIYNT MAKES NO REPRESENTATIONS OR WARRANTIES ABOUT THE SUITABILITY OF
+ * THE SOFTWARE, EITHER EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO
+ * THE IMPLIED WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR
+ * PURPOSE, OR NON-INFRINGEMENT.
+ */
 
 // saviynt_db_connection_datasource retrieves db connections details from the Saviynt Security Manager.
 // The data source supports a single Read operation to look up an existing db connections by name.
@@ -7,6 +19,7 @@ package provider
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"log"
 	"net/http"
@@ -41,7 +54,6 @@ type DBConnectionDataSourceModel struct {
 
 type DBConnectionAttributes struct {
 	PasswordMinLength        types.String             `tfsdk:"password_min_length"`
-	ChangePassJSON           types.String             `tfsdk:"changepass_json"`
 	AccountExistsJSON        types.String             `tfsdk:"accountexists_json"`
 	RolesImport              types.String             `tfsdk:"roles_import"`
 	RoleOwnerImport          types.String             `tfsdk:"roleowner_import"`
@@ -58,7 +70,6 @@ type DBConnectionAttributes struct {
 	DriverName               types.String             `tfsdk:"drivername"`
 	DeleteAccountJSON        types.String             `tfsdk:"deleteaccount_json"`
 	StatusThresholdConfig    types.String             `tfsdk:"status_threshold_config"`
-	Username                 types.String             `tfsdk:"username"`
 	IsTimeoutSupported       types.Bool               `tfsdk:"is_timeout_supported"`
 	PasswordNoOfCapsAlpha    types.String             `tfsdk:"password_noofcapsalpha"`
 	PasswordNoOfDigits       types.String             `tfsdk:"password_noofdigits"`
@@ -66,7 +77,6 @@ type DBConnectionAttributes struct {
 	ModifyUserDataJSON       types.String             `tfsdk:"modifyuserdata_json"`
 	IsTimeoutConfigValidated types.Bool               `tfsdk:"is_timeout_config_validated"`
 	AccountsImport           types.String             `tfsdk:"accounts_import"`
-	Password                 types.String             `tfsdk:"password"`
 	EnableAccountJSON        types.String             `tfsdk:"enableaccount_json"`
 	PasswordMaxLength        types.String             `tfsdk:"password_max_length"`
 	MaxPaginationSize        types.String             `tfsdk:"max_pagination_size"`
@@ -96,7 +106,6 @@ func DBConnectorsDataSourceSchema() map[string]schema.Attribute {
 			Computed: true,
 			Attributes: map[string]schema.Attribute{
 				"password_min_length":         schema.StringAttribute{Computed: true},
-				"changepass_json":             schema.StringAttribute{Computed: true},
 				"accountexists_json":          schema.StringAttribute{Computed: true},
 				"roles_import":                schema.StringAttribute{Computed: true},
 				"roleowner_import":            schema.StringAttribute{Computed: true},
@@ -113,7 +122,6 @@ func DBConnectorsDataSourceSchema() map[string]schema.Attribute {
 				"drivername":                  schema.StringAttribute{Computed: true},
 				"deleteaccount_json":          schema.StringAttribute{Computed: true},
 				"status_threshold_config":     schema.StringAttribute{Computed: true},
-				"username":                    schema.StringAttribute{Computed: true},
 				"is_timeout_supported":        schema.BoolAttribute{Computed: true},
 				"password_noofcapsalpha":      schema.StringAttribute{Computed: true},
 				"password_noofdigits":         schema.StringAttribute{Computed: true},
@@ -121,7 +129,6 @@ func DBConnectorsDataSourceSchema() map[string]schema.Attribute {
 				"modifyuserdata_json":         schema.StringAttribute{Computed: true},
 				"is_timeout_config_validated": schema.BoolAttribute{Computed: true},
 				"accounts_import":             schema.StringAttribute{Computed: true},
-				"password":                    schema.StringAttribute{Computed: true},
 				"enableaccount_json":          schema.StringAttribute{Computed: true},
 				"password_max_length":         schema.StringAttribute{Computed: true},
 				"max_pagination_size":         schema.StringAttribute{Computed: true},
@@ -197,8 +204,28 @@ func (d *dbConnectionsDataSource) Read(ctx context.Context, req datasource.ReadR
 	// Execute API request
 	apiResp, httpResp, err := apiReq.Execute()
 	if err != nil {
-		log.Printf("[ERROR] API Call Failed: %v", err)
-		resp.Diagnostics.AddError("API Call Failed", fmt.Sprintf("Error: %v", err))
+		if httpResp != nil && httpResp.StatusCode != 200 {
+			log.Printf("[ERROR] HTTP error while creating DB Connector: %s", httpResp.Status)
+			var fetchResp map[string]interface{}
+			if err := json.NewDecoder(httpResp.Body).Decode(&fetchResp); err != nil {
+				resp.Diagnostics.AddError("Failed to decode error response", err.Error())
+				return
+			}
+			resp.Diagnostics.AddError(
+				"HTTP Error",
+				fmt.Sprintf("HTTP error while creating DB Connector for the reasons: %s", fetchResp["msg"]),
+			)
+
+		} else {
+			log.Printf("[ERROR] API Call Failed: %v", err)
+			resp.Diagnostics.AddError("API Call Failed", fmt.Sprintf("Error: %v", err))
+		}
+		return
+	}
+	if apiResp != nil && apiResp.DBConnectionResponse == nil {
+		error := "Verify the connection type"
+		log.Printf("[ERROR]: Verify the connection type given")
+		resp.Diagnostics.AddError("Read of DB connection failed", error)
 		return
 	}
 	log.Printf("[DEBUG] HTTP Status Code: %d", httpResp.StatusCode)
@@ -219,7 +246,6 @@ func (d *dbConnectionsDataSource) Read(ctx context.Context, req datasource.ReadR
 	if apiResp.DBConnectionResponse.Connectionattributes != nil {
 		state.ConnectionAttributes = &DBConnectionAttributes{
 			PasswordMinLength:        util.SafeStringDatasource(apiResp.DBConnectionResponse.Connectionattributes.PASSWORD_MIN_LENGTH),
-			ChangePassJSON:           util.SafeStringDatasource(apiResp.DBConnectionResponse.Connectionattributes.CHANGEPASSJSON),
 			AccountExistsJSON:        util.SafeStringDatasource(apiResp.DBConnectionResponse.Connectionattributes.ACCOUNTEXISTSJSON),
 			RolesImport:              util.SafeStringDatasource(apiResp.DBConnectionResponse.Connectionattributes.ROLESIMPORT),
 			RoleOwnerImport:          util.SafeStringDatasource(apiResp.DBConnectionResponse.Connectionattributes.ROLEOWNERIMPORT),
@@ -236,7 +262,6 @@ func (d *dbConnectionsDataSource) Read(ctx context.Context, req datasource.ReadR
 			DriverName:               util.SafeStringDatasource(apiResp.DBConnectionResponse.Connectionattributes.DRIVERNAME),
 			DeleteAccountJSON:        util.SafeStringDatasource(apiResp.DBConnectionResponse.Connectionattributes.DELETEACCOUNTJSON),
 			StatusThresholdConfig:    util.SafeStringDatasource(apiResp.DBConnectionResponse.Connectionattributes.STATUS_THRESHOLD_CONFIG),
-			Username:                 util.SafeStringDatasource(apiResp.DBConnectionResponse.Connectionattributes.USERNAME),
 			IsTimeoutSupported:       util.SafeBoolDatasource(apiResp.DBConnectionResponse.Connectionattributes.IsTimeoutSupported),
 			PasswordNoOfCapsAlpha:    util.SafeStringDatasource(apiResp.DBConnectionResponse.Connectionattributes.PASSWORD_NOOFCAPSALPHA),
 			PasswordNoOfDigits:       util.SafeStringDatasource(apiResp.DBConnectionResponse.Connectionattributes.PASSWORD_NOOFDIGITS),
@@ -244,7 +269,6 @@ func (d *dbConnectionsDataSource) Read(ctx context.Context, req datasource.ReadR
 			ModifyUserDataJSON:       util.SafeStringDatasource(apiResp.DBConnectionResponse.Connectionattributes.MODIFYUSERDATAJSON),
 			IsTimeoutConfigValidated: util.SafeBoolDatasource(apiResp.DBConnectionResponse.Connectionattributes.IsTimeoutConfigValidated),
 			AccountsImport:           util.SafeStringDatasource(apiResp.DBConnectionResponse.Connectionattributes.ACCOUNTSIMPORT),
-			Password:                 util.SafeStringDatasource(apiResp.DBConnectionResponse.Connectionattributes.PASSWORD),
 			EnableAccountJSON:        util.SafeStringDatasource(apiResp.DBConnectionResponse.Connectionattributes.ENABLEACCOUNTJSON),
 			PasswordMaxLength:        util.SafeStringDatasource(apiResp.DBConnectionResponse.Connectionattributes.PASSWORD_MAX_LENGTH),
 			MaxPaginationSize:        util.SafeStringDatasource(apiResp.DBConnectionResponse.Connectionattributes.MAX_PAGINATION_SIZE),
@@ -267,6 +291,20 @@ func (d *dbConnectionsDataSource) Read(ctx context.Context, req datasource.ReadR
 
 	if apiResp.DBConnectionResponse.Connectionattributes == nil {
 		state.ConnectionAttributes = nil
+	}
+	if !state.Authenticate.IsNull() && !state.Authenticate.IsUnknown() {
+		if state.Authenticate.ValueBool() {
+			resp.Diagnostics.AddWarning(
+				"Authentication Enabled",
+				"`authenticate` is true; all connection_attributes will be returned in state.",
+			)
+		} else {
+			resp.Diagnostics.AddWarning(
+				"Authentication Disabled",
+				"`authenticate` is false; connection_attributes will be removed from state.",
+			)
+			state.ConnectionAttributes = nil
+		}
 	}
 	stateDiagnostics := resp.State.Set(ctx, &state)
 	resp.Diagnostics.Append(stateDiagnostics...)

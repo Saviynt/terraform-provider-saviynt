@@ -2,7 +2,7 @@
     "create":{
         "endpoint_name": "Terraform_Endpoint_acc_{{PIPELINE_ID}}",
         "display_name": "Terraform_Endpoint_acc_{{PIPELINE_ID}}",
-        "security_system": "shaleenhuddle",
+        "security_system": "Terraform_Security_System_40:55Z",
         "owner_type": "User",
         "custom_property1": "This is custom property 1",
         "account_custom_property_1_label": "This is account custom property 1",
@@ -24,7 +24,7 @@
     "update":{
         "endpoint_name": "Terraform_Endpoint_acc_{{PIPELINE_ID}}",
         "display_name": "Terraform_Endpoint_acc_{{PIPELINE_ID}}",
-        "security_system": "shaleenhuddle",
+        "security_system": "Terraform_Security_System_40:55Z",
         "owner_type": "Usergroup",
         "custom_property1": "This is custom property 1",
         "account_custom_property_1_label": "This is account custom property 1",
@@ -46,7 +46,7 @@
     "update_endpoint_name":{
         "endpoint_name": "Terraform_Endpoint_acc_{{PIPELINE_ID}}_change",
         "display_name": "Terraform_Endpoint_acc_{{PIPELINE_ID}}",
-        "security_system": "shaleenhuddle",
+        "security_system": "Terraform_Security_System_40:55Z",
         "owner_type": "Usergroup",
         "custom_property1": "This is custom property 1",
         "account_custom_property_1_label": "This is account custom property 1",
@@ -68,7 +68,7 @@
     "create_duplicate_endpoint":{
         "endpoint_name": "Terraform_Endpoint_acc_{{PIPELINE_ID}}",
         "display_name": "Terraform_Endpoint_acc_{{PIPELINE_ID}}",
-        "security_system": "shaleenhuddle",
+        "security_system": "Terraform_Security_System_40:55Z",
         "owner_type": "Usergroup",
         "custom_property1": "This is custom property 1",
         "account_custom_property_1_label": "This is account custom property 1",
@@ -90,7 +90,7 @@
     "ds":{
         "endpoint_name": "Terraform_Endpoint_acc_{{PIPELINE_ID}}_ds",
         "display_name": "Terraform_Endpoint_acc_{{PIPELINE_ID}}_ds",
-        "security_system": "shaleenhuddle",
+        "security_system": "Terraform_Security_System_40:55Z",
         "owner_type": "User",
         "custom_property1": "This is custom property 1",
         "account_custom_property_1_label": "This is account custom property 1",

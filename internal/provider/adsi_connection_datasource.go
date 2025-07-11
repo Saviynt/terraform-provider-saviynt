@@ -1,5 +1,17 @@
-// Copyright (c) Saviynt Inc.
-// SPDX-License-Identifier: MPL-2.0
+/*
+ * Copyright (c) 2025 Saviynt Inc.
+ * All Rights Reserved.
+ *
+ * This software is the confidential and proprietary information of
+ * Saviynt Inc. ("Confidential Information"). You shall not disclose,
+ * use, or distribute such Confidential Information except in accordance
+ * with the terms of the license agreement you entered into with Saviynt.
+ *
+ * SAVIYNT MAKES NO REPRESENTATIONS OR WARRANTIES ABOUT THE SUITABILITY OF
+ * THE SOFTWARE, EITHER EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO
+ * THE IMPLIED WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR
+ * PURPOSE, OR NON-INFRINGEMENT.
+ */
 
 // saviynt_adsi_connection_datasource retrieves adsi connections details from the Saviynt Security Manager.
 // The data source supports a single Read operation to look up an existing adsi connections by name.
@@ -7,6 +19,7 @@ package provider
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"log"
 	"net/http"
@@ -49,7 +62,6 @@ type ADSIConnectionAttributes struct {
 	STATUSKEYJSON               types.String            `tfsdk:"status_key_json"`
 	DEFAULT_USER_ROLE           types.String            `tfsdk:"default_user_role"`
 	FOREST_DETAILS              types.String            `tfsdk:"forest_details"`
-	USERNAME                    types.String            `tfsdk:"username"`
 	UPDATESERVICEACCOUNTJSON    types.String            `tfsdk:"update_service_account_json"`
 	ADDACCESSJSON               types.String            `tfsdk:"add_access_json"`
 	CREATESERVICEACCOUNTJSON    types.String            `tfsdk:"create_service_account_json"`
@@ -58,7 +70,6 @@ type ADSIConnectionAttributes struct {
 	IsTimeoutSupported          types.Bool              `tfsdk:"is_timeout_supported"`
 	CreateUpdateMappings        types.String            `tfsdk:"create_update_mappings"`
 	ACCOUNT_ATTRIBUTE           types.String            `tfsdk:"account_attribute"`
-	PASSWORD                    types.String            `tfsdk:"password"`
 	PAM_CONFIG                  types.String            `tfsdk:"pam_config"`
 	PAGE_SIZE                   types.String            `tfsdk:"page_size"`
 	SEARCHFILTER                types.String            `tfsdk:"search_filter"`
@@ -121,7 +132,6 @@ func ADSIConnectorsDataSourceSchema() map[string]schema.Attribute {
 				"status_key_json":                schema.StringAttribute{Computed: true},
 				"default_user_role":              schema.StringAttribute{Computed: true},
 				"forest_details":                 schema.StringAttribute{Computed: true},
-				"username":                       schema.StringAttribute{Computed: true},
 				"update_service_account_json":    schema.StringAttribute{Computed: true},
 				"add_access_json":                schema.StringAttribute{Computed: true},
 				"create_service_account_json":    schema.StringAttribute{Computed: true},
@@ -130,7 +140,6 @@ func ADSIConnectorsDataSourceSchema() map[string]schema.Attribute {
 				"is_timeout_supported":           schema.BoolAttribute{Computed: true},
 				"create_update_mappings":         schema.StringAttribute{Computed: true},
 				"account_attribute":              schema.StringAttribute{Computed: true},
-				"password":                       schema.StringAttribute{Computed: true},
 				"pam_config":                     schema.StringAttribute{Computed: true},
 				"page_size":                      schema.StringAttribute{Computed: true},
 				"search_filter":                  schema.StringAttribute{Computed: true},
@@ -229,10 +238,31 @@ func (d *adsiConnectionsDataSource) Read(ctx context.Context, req datasource.Rea
 	// Execute API request
 	apiResp, httpResp, err := apiReq.Execute()
 	if err != nil {
-		log.Printf("[ERROR] API Call Failed: %v", err)
-		resp.Diagnostics.AddError("API Call Failed", fmt.Sprintf("Error: %v", err))
+		if httpResp != nil && httpResp.StatusCode != 200 {
+			log.Printf("[ERROR] HTTP error while creating ADSI Connector: %s", httpResp.Status)
+			var fetchResp map[string]interface{}
+			if err := json.NewDecoder(httpResp.Body).Decode(&fetchResp); err != nil {
+				resp.Diagnostics.AddError("Failed to decode error response", err.Error())
+				return
+			}
+			resp.Diagnostics.AddError(
+				"HTTP Error",
+				fmt.Sprintf("HTTP error while creating ADSI Connector for the reasons: %s", fetchResp["msg"]),
+			)
+
+		} else {
+			log.Printf("[ERROR] API Call Failed: %v", err)
+			resp.Diagnostics.AddError("API Call Failed", fmt.Sprintf("Error: %v", err))
+		}
 		return
 	}
+	if apiResp != nil && apiResp.ADSIConnectionResponse == nil {
+		error := "Verify the connection type"
+		log.Printf("[ERROR]: Verify the connection type given")
+		resp.Diagnostics.AddError("Read of ADSI connection failed", error)
+		return
+	}
+
 	log.Printf("[DEBUG] HTTP Status Code: %d", httpResp.StatusCode)
 
 	state.Msg = util.SafeStringDatasource(apiResp.ADSIConnectionResponse.Msg)
@@ -261,7 +291,6 @@ func (d *adsiConnectionsDataSource) Read(ctx context.Context, req datasource.Rea
 			STATUSKEYJSON:               util.SafeStringDatasource(apiResp.ADSIConnectionResponse.Connectionattributes.STATUSKEYJSON),
 			DEFAULT_USER_ROLE:           util.SafeStringDatasource(apiResp.ADSIConnectionResponse.Connectionattributes.DEFAULT_USER_ROLE),
 			FOREST_DETAILS:              util.SafeStringDatasource(apiResp.ADSIConnectionResponse.Connectionattributes.FOREST_DETAILS),
-			USERNAME:                    util.SafeStringDatasource(apiResp.ADSIConnectionResponse.Connectionattributes.USERNAME),
 			UPDATESERVICEACCOUNTJSON:    util.SafeStringDatasource(apiResp.ADSIConnectionResponse.Connectionattributes.UPDATESERVICEACCOUNTJSON),
 			ADDACCESSJSON:               util.SafeStringDatasource(apiResp.ADSIConnectionResponse.Connectionattributes.ADDACCESSJSON),
 			CREATESERVICEACCOUNTJSON:    util.SafeStringDatasource(apiResp.ADSIConnectionResponse.Connectionattributes.CREATESERVICEACCOUNTJSON),
@@ -270,7 +299,6 @@ func (d *adsiConnectionsDataSource) Read(ctx context.Context, req datasource.Rea
 			IsTimeoutSupported:          util.SafeBoolDatasource(apiResp.ADSIConnectionResponse.Connectionattributes.IsTimeoutSupported),
 			CreateUpdateMappings:        util.SafeStringDatasource(apiResp.ADSIConnectionResponse.Connectionattributes.CreateUpdateMappings),
 			ACCOUNT_ATTRIBUTE:           util.SafeStringDatasource(apiResp.ADSIConnectionResponse.Connectionattributes.ACCOUNT_ATTRIBUTE),
-			PASSWORD:                    util.SafeStringDatasource(apiResp.ADSIConnectionResponse.Connectionattributes.PASSWORD),
 			PAM_CONFIG:                  util.SafeStringDatasource(apiResp.ADSIConnectionResponse.Connectionattributes.PAM_CONFIG),
 			PAGE_SIZE:                   util.SafeStringDatasource(apiResp.ADSIConnectionResponse.Connectionattributes.PAGE_SIZE),
 			SEARCHFILTER:                util.SafeStringDatasource(apiResp.ADSIConnectionResponse.Connectionattributes.SEARCHFILTER),
@@ -314,6 +342,20 @@ func (d *adsiConnectionsDataSource) Read(ctx context.Context, req datasource.Rea
 	}
 	if apiResp.ADSIConnectionResponse.Connectionattributes == nil {
 		state.ConnectionAttributes = nil
+	}
+	if !state.Authenticate.IsNull() && !state.Authenticate.IsUnknown() {
+		if state.Authenticate.ValueBool() {
+			resp.Diagnostics.AddWarning(
+				"Authentication Enabled",
+				"`authenticate` is true; all connection_attributes will be returned in state.",
+			)
+		} else {
+			resp.Diagnostics.AddWarning(
+				"Authentication Disabled",
+				"`authenticate` is false; connection_attributes will be removed from state.",
+			)
+			state.ConnectionAttributes = nil
+		}
 	}
 	stateDiagnostics := resp.State.Set(ctx, &state)
 	resp.Diagnostics.Append(stateDiagnostics...)
