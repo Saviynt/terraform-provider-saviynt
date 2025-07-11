@@ -6,7 +6,7 @@ description: |-
   The Saviynt Terraform provider empowers you to leverage Terraform's declarative Infrastructure-as-Code (IaC) capabilities to provision, configure, and manage resources within the Saviynt Identity Cloud.The provider needs to be configured with the correct credentials in the provider block to be used. For the resources and datasources supported, refer to the navigation menu on the left.
 ---
 
-# Saviynt Provider
+# saviynt Provider
 
 The Saviynt Terraform provider empowers you to leverage Terraform's declarative Infrastructure-as-Code (IaC) capabilities to provision, configure, and manage resources within the Saviynt Identity Cloud.<br/><br/>The provider needs to be configured with the correct credentials in the provider block to be used. For the resources and datasources supported, refer to the navigation menu on the left.
 

@@ -1,4 +1,7 @@
 #!/bin/bash
+# Copyright (c) HashiCorp, Inc.
+# SPDX-License-Identifier: MPL-2.0
+
 
 # Set required environment variables for Saviynt provider
 # Replace these placeholder values with your actual Saviynt credentials
