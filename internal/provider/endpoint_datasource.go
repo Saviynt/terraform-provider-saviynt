@@ -7,6 +7,7 @@ package provider
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"log"
 	"net/http"
@@ -41,7 +42,7 @@ type EndpointsDataSourceModel struct {
 	TotalCount     types.Int64  `tfsdk:"total_count"`
 	Message        types.String `tfsdk:"message"`
 	EndpointName   types.String `tfsdk:"endpointname"`
-	EndpointKey   types.List `tfsdk:"endpointkey"`
+	EndpointKey    types.List   `tfsdk:"endpointkey"`
 	ConnectionType types.String `tfsdk:"connection_type"`
 	Displayname    types.String `tfsdk:"displayname"`
 	Owner          types.String `tfsdk:"owner"`
@@ -325,7 +326,7 @@ func (d *endpointsDataSource) Schema(ctx context.Context, req datasource.SchemaR
 				Description: "Filter by endpoint name",
 			},
 			"endpointkey": schema.ListAttribute{
-				Optional: true,
+				Optional:    true,
 				ElementType: types.StringType,
 				Description: "List of endpoint keys to filter",
 			},
@@ -416,14 +417,13 @@ func (d *endpointsDataSource) Read(ctx context.Context, req datasource.ReadReque
 
 	areq := openapi.GetEndpointsRequest{}
 
-
 	if !state.EndpointName.IsNull() && state.EndpointName.ValueString() != "" {
 		endpointName := state.EndpointName.ValueString()
 		areq.SetEndpointname(endpointName)
 	}
 
-	if !state.EndpointKey.IsNull() && len(state.EndpointKey.Elements())>0 {
-		endpointkeys:=util.ConvertTFStringsToGoStrings(state.EndpointKey)
+	if !state.EndpointKey.IsNull() && len(state.EndpointKey.Elements()) > 0 {
+		endpointkeys := util.ConvertTFStringsToGoStrings(state.EndpointKey)
 		areq.SetEndpointkey(endpointkeys)
 	}
 
@@ -468,10 +468,29 @@ func (d *endpointsDataSource) Read(ctx context.Context, req datasource.ReadReque
 
 	endpointsResponse, httpResp, err := apiReq.Execute()
 	if err != nil {
-		log.Printf("[ERROR] API Call Failed: %v", err)
-		resp.Diagnostics.AddError("API Call Failed", fmt.Sprintf("Error: %v", err))
+		if httpResp != nil && httpResp.StatusCode != 200 {
+			log.Printf("[ERROR] HTTP error while creating endpoint: %s", httpResp.Status)
+			var fetchResp map[string]interface{}
+			if err := json.NewDecoder(httpResp.Body).Decode(&fetchResp); err != nil {
+				resp.Diagnostics.AddError("Failed to decode error response", err.Error())
+				return
+			}
+			resp.Diagnostics.AddError(
+				"HTTP Error",
+				fmt.Sprintf("HTTP error while creating endpoint for the reasons: %s", fetchResp),
+			)
+
+		} else {
+			log.Printf("[ERROR] API Call Failed: %v", err)
+			resp.Diagnostics.AddError("API Call Failed", fmt.Sprintf("Error: %v", err))
+		}
 		return
 	}
+	if endpointsResponse != nil && *endpointsResponse.ErrorCode != "0" {
+		log.Printf("[ERROR]: Error in reading endpoint. Errorcode: %v, Message: %v", *endpointsResponse.ErrorCode, *endpointsResponse.Message)
+		resp.Diagnostics.AddError("Read endpoint failed", *endpointsResponse.Message)
+	}
+
 	log.Printf("[DEBUG] HTTP Status Code: %d", httpResp.StatusCode)
 
 	state.Message = types.StringValue(*endpointsResponse.Message)

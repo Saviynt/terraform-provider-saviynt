@@ -80,6 +80,7 @@ resource "saviynt_github_rest_connection_resource" "github_rest" {
   
 data "saviynt_github_rest_connection_datasource" "test" {
 	connection_name     = local.cfg.connection_name
+	authenticate 		= true
 	depends_on = [saviynt_github_rest_connection_resource.github_rest]
 }
 `, os.Getenv("SAVIYNT_URL"),
