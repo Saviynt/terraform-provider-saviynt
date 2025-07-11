@@ -1,5 +1,17 @@
-// Copyright (c) Saviynt Inc.
-// SPDX-License-Identifier: MPL-2.0
+/*
+ * Copyright (c) 2025 Saviynt Inc.
+ * All Rights Reserved.
+ *
+ * This software is the confidential and proprietary information of
+ * Saviynt Inc. ("Confidential Information"). You shall not disclose,
+ * use, or distribute such Confidential Information except in accordance
+ * with the terms of the license agreement you entered into with Saviynt.
+ *
+ * SAVIYNT MAKES NO REPRESENTATIONS OR WARRANTIES ABOUT THE SUITABILITY OF
+ * THE SOFTWARE, EITHER EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO
+ * THE IMPLIED WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR
+ * PURPOSE, OR NON-INFRINGEMENT.
+ */
 
 // saviynt_workday_connection_datasource retrieves workday connections details from the Saviynt Security Manager.
 // The data source supports a single Read operation to look up an existing workday connections by name.
@@ -7,6 +19,7 @@ package provider
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"log"
 	"net/http"
@@ -47,20 +60,15 @@ type WorkdayConnectionAttributes struct {
 	RaasMappingJson             types.String             `tfsdk:"raas_mapping_json"`
 	AccountImportPayload        types.String             `tfsdk:"account_import_payload"`
 	UpdateAccountPayload        types.String             `tfsdk:"update_account_payload"`
-	ClientId                    types.String             `tfsdk:"client_id"`
 	StatusThresholdConfig       types.String             `tfsdk:"status_threshold_config"`
-	Username                    types.String             `tfsdk:"username"`
 	AccessImportList            types.String             `tfsdk:"access_import_list"`
 	IsTimeoutSupported          types.Bool               `tfsdk:"is_timeout_supported"`
 	AccountImportMapping        types.String             `tfsdk:"account_import_mapping"`
-	ClientSecret                types.String             `tfsdk:"client_secret"`
-	OrgroleImportPayload        types.String             `tfsdk:"orgrole_import_payload"`
 	AssignOrgrolePayload        types.String             `tfsdk:"assign_orgrole_payload"`
 	AccessImportMapping         types.String             `tfsdk:"access_import_mapping"`
 	ApiVersion                  types.String             `tfsdk:"api_version"`
 	RemoveOrgrolePayload        types.String             `tfsdk:"remove_orgrole_payload"`
 	IncludeReferenceDescriptors types.String             `tfsdk:"include_reference_descriptors"`
-	RefreshToken                types.String             `tfsdk:"refresh_token"`
 	ModifyUserDataJson          types.String             `tfsdk:"modifyuserdatajson"`
 	IsTimeoutConfigValidated    types.Bool               `tfsdk:"is_timeout_config_validated"`
 	UseX509AuthForSoap          types.String             `tfsdk:"use_x509auth_for_soap"`
@@ -69,7 +77,6 @@ type WorkdayConnectionAttributes struct {
 	CustomConfig                types.String             `tfsdk:"custom_config"`
 	UserAttributeJson           types.String             `tfsdk:"userattributejson"`
 	X509Cert                    types.String             `tfsdk:"x509_cert"`
-	Password                    types.String             `tfsdk:"password"`
 	UserImportPayload           types.String             `tfsdk:"user_import_payload"`
 	PamConfig                   types.String             `tfsdk:"pam_config"`
 	AccessLastImportTime        types.String             `tfsdk:"access_last_import_time"`
@@ -107,20 +114,15 @@ func WorkdayConnectorsDataSourceSchema() map[string]schema.Attribute {
 				"raas_mapping_json":             schema.StringAttribute{Computed: true},
 				"account_import_payload":        schema.StringAttribute{Computed: true},
 				"update_account_payload":        schema.StringAttribute{Computed: true},
-				"client_id":                     schema.StringAttribute{Computed: true},
 				"status_threshold_config":       schema.StringAttribute{Computed: true},
-				"username":                      schema.StringAttribute{Computed: true},
 				"access_import_list":            schema.StringAttribute{Computed: true},
 				"is_timeout_supported":          schema.BoolAttribute{Computed: true},
 				"account_import_mapping":        schema.StringAttribute{Computed: true},
-				"client_secret":                 schema.StringAttribute{Computed: true},
-				"orgrole_import_payload":        schema.StringAttribute{Computed: true},
 				"assign_orgrole_payload":        schema.StringAttribute{Computed: true},
 				"access_import_mapping":         schema.StringAttribute{Computed: true},
 				"api_version":                   schema.StringAttribute{Computed: true},
 				"remove_orgrole_payload":        schema.StringAttribute{Computed: true},
 				"include_reference_descriptors": schema.StringAttribute{Computed: true},
-				"refresh_token":                 schema.StringAttribute{Computed: true},
 				"modifyuserdatajson":            schema.StringAttribute{Computed: true},
 				"is_timeout_config_validated":   schema.BoolAttribute{Computed: true},
 				"use_x509auth_for_soap":         schema.StringAttribute{Computed: true},
@@ -129,7 +131,6 @@ func WorkdayConnectorsDataSourceSchema() map[string]schema.Attribute {
 				"custom_config":                 schema.StringAttribute{Computed: true},
 				"userattributejson":             schema.StringAttribute{Computed: true},
 				"x509_cert":                     schema.StringAttribute{Computed: true},
-				"password":                      schema.StringAttribute{Computed: true},
 				"user_import_payload":           schema.StringAttribute{Computed: true},
 				"pam_config":                    schema.StringAttribute{Computed: true},
 				"access_last_import_time":       schema.StringAttribute{Computed: true},
@@ -209,8 +210,29 @@ func (d *workdayConnectionDataSource) Read(ctx context.Context, req datasource.R
 	// Execute API request
 	apiResp, httpResp, err := apiReq.Execute()
 	if err != nil {
-		log.Printf("[ERROR] API Call Failed: %v", err)
-		resp.Diagnostics.AddError("API Call Failed", fmt.Sprintf("Error: %v", err))
+		if httpResp != nil && httpResp.StatusCode != 200 {
+			log.Printf("[ERROR] HTTP error while creating Workday Connector: %s", httpResp.Status)
+			var fetchResp map[string]interface{}
+			if err := json.NewDecoder(httpResp.Body).Decode(&fetchResp); err != nil {
+				resp.Diagnostics.AddError("Failed to decode error response", err.Error())
+				return
+			}
+			resp.Diagnostics.AddError(
+				"HTTP Error",
+				fmt.Sprintf("HTTP error while creating Workday Connector for the reasons: %s", fetchResp["msg"]),
+			)
+
+		} else {
+			log.Printf("[ERROR] API Call Failed: %v", err)
+			resp.Diagnostics.AddError("API Call Failed", fmt.Sprintf("Error: %v", err))
+		}
+		return
+	}
+
+	if apiResp != nil && apiResp.WorkdayConnectionResponse == nil {
+		error := "Verify the connection type"
+		log.Printf("[ERROR]: Verify the connection type given")
+		resp.Diagnostics.AddError("Read of Workday connection failed", error)
 		return
 	}
 	log.Printf("[DEBUG] HTTP Status Code: %d", httpResp.StatusCode)
@@ -237,20 +259,15 @@ func (d *workdayConnectionDataSource) Read(ctx context.Context, req datasource.R
 			RaasMappingJson:             util.SafeStringDatasource(apiResp.WorkdayConnectionResponse.Connectionattributes.RAAS_MAPPING_JSON),
 			AccountImportPayload:        util.SafeStringDatasource(apiResp.WorkdayConnectionResponse.Connectionattributes.ACCOUNT_IMPORT_PAYLOAD),
 			UpdateAccountPayload:        util.SafeStringDatasource(apiResp.WorkdayConnectionResponse.Connectionattributes.UPDATE_ACCOUNT_PAYLOAD),
-			ClientId:                    util.SafeStringDatasource(apiResp.WorkdayConnectionResponse.Connectionattributes.CLIENT_ID),
 			StatusThresholdConfig:       util.SafeStringDatasource(apiResp.WorkdayConnectionResponse.Connectionattributes.STATUS_THRESHOLD_CONFIG),
-			Username:                    util.SafeStringDatasource(apiResp.WorkdayConnectionResponse.Connectionattributes.USERNAME),
 			AccessImportList:            util.SafeStringDatasource(apiResp.WorkdayConnectionResponse.Connectionattributes.ACCESS_IMPORT_LIST),
 			IsTimeoutSupported:          util.SafeBoolDatasource(apiResp.WorkdayConnectionResponse.Connectionattributes.IsTimeoutSupported),
 			AccountImportMapping:        util.SafeStringDatasource(apiResp.WorkdayConnectionResponse.Connectionattributes.ACCOUNT_IMPORT_MAPPING),
-			ClientSecret:                util.SafeStringDatasource(apiResp.WorkdayConnectionResponse.Connectionattributes.CLIENT_SECRET),
-			OrgroleImportPayload:        util.SafeStringDatasource(apiResp.WorkdayConnectionResponse.Connectionattributes.ORGROLE_IMPORT_PAYLOAD),
 			AssignOrgrolePayload:        util.SafeStringDatasource(apiResp.WorkdayConnectionResponse.Connectionattributes.ASSIGN_ORGROLE_PAYLOAD),
 			AccessImportMapping:         util.SafeStringDatasource(apiResp.WorkdayConnectionResponse.Connectionattributes.ACCESS_IMPORT_MAPPING),
 			ApiVersion:                  util.SafeStringDatasource(apiResp.WorkdayConnectionResponse.Connectionattributes.API_VERSION),
 			RemoveOrgrolePayload:        util.SafeStringDatasource(apiResp.WorkdayConnectionResponse.Connectionattributes.REMOVE_ORGROLE_PAYLOAD),
 			IncludeReferenceDescriptors: util.SafeStringDatasource(apiResp.WorkdayConnectionResponse.Connectionattributes.INCLUDE_REFERENCE_DESCRIPTORS),
-			RefreshToken:                util.SafeStringDatasource(apiResp.WorkdayConnectionResponse.Connectionattributes.REFRESH_TOKEN),
 			ModifyUserDataJson:          util.SafeStringDatasource(apiResp.WorkdayConnectionResponse.Connectionattributes.MODIFYUSERDATAJSON),
 			IsTimeoutConfigValidated:    util.SafeBoolDatasource(apiResp.WorkdayConnectionResponse.Connectionattributes.IsTimeoutConfigValidated),
 			UseX509AuthForSoap:          util.SafeStringDatasource(apiResp.WorkdayConnectionResponse.Connectionattributes.USEX509AUTHFORSOAP),
@@ -259,7 +276,6 @@ func (d *workdayConnectionDataSource) Read(ctx context.Context, req datasource.R
 			CustomConfig:                util.SafeStringDatasource(apiResp.WorkdayConnectionResponse.Connectionattributes.CUSTOM_CONFIG),
 			UserAttributeJson:           util.SafeStringDatasource(apiResp.WorkdayConnectionResponse.Connectionattributes.USERATTRIBUTEJSON),
 			X509Cert:                    util.SafeStringDatasource(apiResp.WorkdayConnectionResponse.Connectionattributes.X509CERT),
-			Password:                    util.SafeStringDatasource(apiResp.WorkdayConnectionResponse.Connectionattributes.PASSWORD),
 			UserImportPayload:           util.SafeStringDatasource(apiResp.WorkdayConnectionResponse.Connectionattributes.USER_IMPORT_PAYLOAD),
 			PamConfig:                   util.SafeStringDatasource(apiResp.WorkdayConnectionResponse.Connectionattributes.PAM_CONFIG),
 			AccessLastImportTime:        util.SafeStringDatasource(apiResp.WorkdayConnectionResponse.Connectionattributes.ACCESS_LAST_IMPORT_TIME),
@@ -276,17 +292,30 @@ func (d *workdayConnectionDataSource) Read(ctx context.Context, req datasource.R
 				RetryWait:               util.SafeInt64(apiResp.WorkdayConnectionResponse.Connectionattributes.ConnectionTimeoutConfig.RetryWait),
 				TokenRefreshMaxTryCount: util.SafeInt64(apiResp.WorkdayConnectionResponse.Connectionattributes.ConnectionTimeoutConfig.TokenRefreshMaxTryCount),
 				RetryFailureStatusCode:  util.SafeInt64(apiResp.WorkdayConnectionResponse.Connectionattributes.ConnectionTimeoutConfig.RetryFailureStatusCode),
-				// RetryFailureStatusCode: SafeInt64FromStringPointer(apiResp.WorkdayConnectionResponse.Connectionattributes.ConnectionTimeoutConfig.RetryFailureStatusCode),
-				RetryWaitMaxValue: util.SafeInt64(apiResp.WorkdayConnectionResponse.Connectionattributes.ConnectionTimeoutConfig.RetryWaitMaxValue),
-				RetryCount:        util.SafeInt64(apiResp.WorkdayConnectionResponse.Connectionattributes.ConnectionTimeoutConfig.RetryCount),
-				ReadTimeout:       util.SafeInt64(apiResp.WorkdayConnectionResponse.Connectionattributes.ConnectionTimeoutConfig.ReadTimeout),
-				ConnectionTimeout: util.SafeInt64(apiResp.WorkdayConnectionResponse.Connectionattributes.ConnectionTimeoutConfig.ConnectionTimeout),
+				RetryWaitMaxValue:       util.SafeInt64(apiResp.WorkdayConnectionResponse.Connectionattributes.ConnectionTimeoutConfig.RetryWaitMaxValue),
+				RetryCount:              util.SafeInt64(apiResp.WorkdayConnectionResponse.Connectionattributes.ConnectionTimeoutConfig.RetryCount),
+				ReadTimeout:             util.SafeInt64(apiResp.WorkdayConnectionResponse.Connectionattributes.ConnectionTimeoutConfig.ReadTimeout),
+				ConnectionTimeout:       util.SafeInt64(apiResp.WorkdayConnectionResponse.Connectionattributes.ConnectionTimeoutConfig.ConnectionTimeout),
 			}
 		}
 	}
 
 	if apiResp.WorkdayConnectionResponse.Connectionattributes == nil {
 		state.ConnectionAttributes = nil
+	}
+	if !state.Authenticate.IsNull() && !state.Authenticate.IsUnknown() {
+		if state.Authenticate.ValueBool() {
+			resp.Diagnostics.AddWarning(
+				"Authentication Enabled",
+				"`authenticate` is true; all connection_attributes will be returned in state.",
+			)
+		} else {
+			resp.Diagnostics.AddWarning(
+				"Authentication Disabled",
+				"`authenticate` is false; connection_attributes will be removed from state.",
+			)
+			state.ConnectionAttributes = nil
+		}
 	}
 	stateDiagnostics := resp.State.Set(ctx, &state)
 	resp.Diagnostics.Append(stateDiagnostics...)

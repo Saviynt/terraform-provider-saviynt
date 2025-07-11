@@ -60,7 +60,6 @@ func TestAccSaviyntRESTConnectionDataSource(t *testing.T) {
 					resource.TestCheckResourceAttr(datasource, "connection_attributes.remove_access_json", createCfg["remove_access_json"]),
 					resource.TestCheckResourceAttr(datasource, "connection_attributes.remove_account_json", createCfg["remove_account_json"]),
 					resource.TestCheckResourceAttr(datasource, "connection_attributes.import_account_ent_json", createCfg["import_account_ent_json"]),
-					resource.TestCheckResourceAttr(datasource, "connection_attributes.change_pass_json", createCfg["change_pass_json"]),
 					resource.TestCheckResourceAttr(datasource, "connection_attributes.disable_account_json", createCfg["disable_account_json"]),
 					resource.TestCheckResourceAttr(datasource, "connection_attributes.enable_account_json", createCfg["enable_account_json"]),
 				),
@@ -99,6 +98,7 @@ resource "saviynt_rest_connection_resource" "rest" {
   
 data "saviynt_rest_connection_datasource" "test" {
 	connection_name     = local.cfg.connection_name
+	authenticate 		= true
 	depends_on = [saviynt_rest_connection_resource.rest]
 }
 `, os.Getenv("SAVIYNT_URL"),

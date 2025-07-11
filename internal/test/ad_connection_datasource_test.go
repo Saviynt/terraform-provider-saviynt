@@ -31,7 +31,6 @@ func TestAccSaviyntADConnectionDataSource(t *testing.T) {
 	filePath := testutil.GetTestDataPath(t, "./test_data/ad_connection_test_data.json")
 	filePath = testutil.PrepareTestDataWithEnv(t, filePath)
 	createCfg := testutil.LoadConnectorData(t, filePath, "ds")
-	// createCfg[ds][connection_name]=createCfg[ds][conne]
 	datasource := "data.saviynt_ad_connection_datasource.test"
 
 	resource.Test(t, resource.TestCase{
@@ -55,7 +54,6 @@ func TestAccSaviyntADConnectionDataSource(t *testing.T) {
 					resource.TestCheckResourceAttr(datasource, "connection_name", createCfg["connection_name"]),
 					resource.TestCheckResourceAttr(datasource, "connection_type", createCfg["connection_type"]),
 					resource.TestCheckResourceAttr(datasource, "connection_attributes.url", createCfg["url"]),
-					resource.TestCheckResourceAttr(datasource, "connection_attributes.username", createCfg["username"]),
 					resource.TestCheckResourceAttr(datasource, "connection_attributes.search_filter", createCfg["searchfilter"]),
 					resource.TestCheckResourceAttr(datasource, "connection_attributes.base", createCfg["base"]),
 					resource.TestCheckResourceAttr(datasource, "connection_attributes.group_search_base_dn", createCfg["group_search_base_dn"]),
@@ -111,6 +109,7 @@ resource "saviynt_ad_connection_resource" "ad" {
   
 data "saviynt_ad_connection_datasource" "test" {
 	connection_name     = local.cfg.connection_name
+	authenticate 		= true
 	depends_on = [saviynt_ad_connection_resource.ad]
 }
 `, os.Getenv("SAVIYNT_URL"),

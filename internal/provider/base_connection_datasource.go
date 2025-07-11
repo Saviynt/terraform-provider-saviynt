@@ -12,6 +12,7 @@ import (
 type BaseConnectionDataSourceModel struct {
 	ConnectionName  types.String `tfsdk:"connection_name"`
 	ConnectionKey   types.Int64  `tfsdk:"connection_key"`
+	Authenticate    types.Bool   `tfsdk:"authenticate"`
 	Description     types.String `tfsdk:"description"`
 	DefaultSavRoles types.String `tfsdk:"default_sav_roles"`
 	EmailTemplate   types.String `tfsdk:"email_template"`
@@ -35,6 +36,10 @@ func BaseConnectorDataSourceSchema() map[string]schema.Attribute {
 			Optional:    true,
 			Computed:    true,
 			Description: "The key of the connection.",
+		},
+		"authenticate": schema.BoolAttribute{
+			Required:    true,
+			Description: "If false, do not store connection_attributes in state",
 		},
 		"description": schema.StringAttribute{
 			Computed: true,

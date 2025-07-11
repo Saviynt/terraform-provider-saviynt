@@ -54,7 +54,6 @@ func TestAccSaviyntDBConnectionDataSource(t *testing.T) {
 					resource.TestCheckResourceAttr(datasource, "connection_name", createCfg["connection_name"]),
 					resource.TestCheckResourceAttr(datasource, "connection_type", createCfg["connection_type"]),
 					resource.TestCheckResourceAttr(datasource, "connection_attributes.url", createCfg["url"]),
-					resource.TestCheckResourceAttr(datasource, "connection_attributes.username", createCfg["username"]),
 					resource.TestCheckResourceAttr(datasource, "connection_attributes.drivername", createCfg["driver_name"]),
 					resource.TestCheckResourceAttr(datasource, "connection_attributes.createaccount_json", createCfg["create_account_json"]),
 					resource.TestCheckResourceAttr(datasource, "connection_attributes.updateaccount_json", createCfg["update_account_json"]),
@@ -112,6 +111,7 @@ resource "saviynt_db_connection_resource" "db" {
   
 data "saviynt_db_connection_datasource" "test" {
 	connection_name     = local.cfg.connection_name
+	authenticate 		= true
 	depends_on = [saviynt_db_connection_resource.db]
 }
 `, os.Getenv("SAVIYNT_URL"),
