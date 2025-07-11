@@ -55,7 +55,6 @@ func TestAccSaviyntUnixConnectionDataSource(t *testing.T) {
 					resource.TestCheckResourceAttr(datasource, "connection_type", createCfg["connection_type"]),
 					resource.TestCheckResourceAttr(datasource, "connection_attributes.host_name", createCfg["host_name"]),
 					resource.TestCheckResourceAttr(datasource, "connection_attributes.port_number", createCfg["port_number"]),
-					resource.TestCheckResourceAttr(datasource, "connection_attributes.username", createCfg["username"]),
 					resource.TestCheckResourceAttr(datasource, "connection_attributes.groups_file", createCfg["groups_file"]),
 					resource.TestCheckResourceAttr(datasource, "connection_attributes.status_threshold_config", createCfg["status_threshold_config"]),
 				),
@@ -90,6 +89,7 @@ resource "saviynt_unix_connection_resource" "unix" {
   
 data "saviynt_unix_connection_datasource" "test" {
 	connection_name     = local.cfg.connection_name
+	authenticate 		= true
 	depends_on = [saviynt_unix_connection_resource.unix]
 }
 `, os.Getenv("SAVIYNT_URL"),
