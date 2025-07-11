@@ -1,5 +1,17 @@
-// Copyright (c) Saviynt Inc.
-// SPDX-License-Identifier: MPL-2.0
+/*
+ * Copyright (c) 2025 Saviynt Inc.
+ * All Rights Reserved.
+ *
+ * This software is the confidential and proprietary information of
+ * Saviynt Inc. ("Confidential Information"). You shall not disclose,
+ * use, or distribute such Confidential Information except in accordance
+ * with the terms of the license agreement you entered into with Saviynt.
+ *
+ * SAVIYNT MAKES NO REPRESENTATIONS OR WARRANTIES ABOUT THE SUITABILITY OF
+ * THE SOFTWARE, EITHER EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO
+ * THE IMPLIED WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR
+ * PURPOSE, OR NON-INFRINGEMENT.
+ */
 
 // saviynt_ad_connection_datasource retrieves ad connections details from the Saviynt Security Manager.
 // The data source supports a single Read operation to look up an existing ad connections by name.
@@ -7,6 +19,7 @@ package provider
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"log"
 	"net/http"
@@ -39,70 +52,68 @@ type ADConnectionDataSourceModel struct {
 }
 
 type ADConnectionAttributes struct {
-	URL                        types.String            `tfsdk:"url"`
-	ConnectionType             types.String            `tfsdk:"connection_type"`
-	LastImportTime             types.String            `tfsdk:"last_import_time"`
-	CreateAccountJSON          types.String            `tfsdk:"create_account_json"`
-	DisableAccountJSON         types.String            `tfsdk:"disable_account_json"`
-	GroupSearchBaseDN          types.String            `tfsdk:"group_search_base_dn"`
-	PasswordNoOfSplChars       types.String            `tfsdk:"password_no_of_spl_chars"`
-	PasswordNoOfDigits         types.String            `tfsdk:"password_no_of_digits"`
-	StatusKeyJSON              types.String            `tfsdk:"status_key_json"`
-	SearchFilter               types.String            `tfsdk:"search_filter"`
-	ConfigJSON                 types.String            `tfsdk:"config_json"`
-	RemoveAccountAction        types.String            `tfsdk:"remove_account_action"`
-	AccountAttribute           types.String            `tfsdk:"account_attribute"`
-	AccountNameRule            types.String            `tfsdk:"account_name_rule"`
-	AdvSearch                  types.String            `tfsdk:"adv_search"`
-	Username                   types.String            `tfsdk:"username"`
-	Password                   types.String            `tfsdk:"password"`
-	LDAPOrAD                   types.String            `tfsdk:"ldap_or_ad"`
-	EntitlementAttribute       types.String            `tfsdk:"entitlement_attribute"`
-	SetRandomPassword          types.String            `tfsdk:"set_random_password"`
-	PasswordMinLength          types.String            `tfsdk:"password_min_length"`
-	PasswordMaxLength          types.String            `tfsdk:"password_max_length"`
-	PasswordNoOfCapsAlpha      types.String            `tfsdk:"password_no_of_caps_alpha"`
-	SetDefaultPageSize         types.String            `tfsdk:"set_default_page_size"`
-	IsTimeoutSupported         types.Bool              `tfsdk:"is_timeout_supported"`
-	ReuseInactiveAccount       types.String            `tfsdk:"reuse_inactive_account"`
-	ImportJSON                 types.String            `tfsdk:"import_json"`
-	CreateUpdateMappings       types.String            `tfsdk:"create_update_mappings"`
-	AdvanceFilterJSON          types.String            `tfsdk:"advance_filter_json"`
-	OrgImportJSON              types.String            `tfsdk:"org_import_json"`
-	PAMConfig                  types.String            `tfsdk:"pam_config"`
-	PageSize                   types.String            `tfsdk:"page_size"`
-	Base                       types.String            `tfsdk:"base"`
-	DCLocator                  types.String            `tfsdk:"dc_locator"`
-	StatusThresholdConfig      types.String            `tfsdk:"status_threshold_config"`
-	ResetAndChangePasswordJSON types.String            `tfsdk:"reset_and_change_password_json"`
-	SupportEmptyString         types.String            `tfsdk:"support_empty_string"`
-	ReadOperationalAttributes  types.String            `tfsdk:"read_operational_attributes"`
-	EnableAccountJSON          types.String            `tfsdk:"enable_account_json"`
-	UserAttribute              types.String            `tfsdk:"user_attribute"`
-	DefaultUserRole            types.String            `tfsdk:"default_user_role"`
-	EndpointsFilter            types.String            `tfsdk:"endpoints_filter"`
-	UpdateAccountJSON          types.String            `tfsdk:"update_account_json"`
-	ReuseAccountJSON           types.String            `tfsdk:"reuse_account_json"`
-	EnforceTreeDeletion        types.String            `tfsdk:"enforce_tree_deletion"`
-	Filter                     types.String            `tfsdk:"filter"`
-	ObjectFilter               types.String            `tfsdk:"object_filter"`
-	UpdateUserJSON             types.String            `tfsdk:"update_user_json"`
-	SaveConnection             types.String            `tfsdk:"save_connection"`
-	SystemName                 types.String            `tfsdk:"system_name"`
-	GroupImportMapping         types.String            `tfsdk:"group_import_mapping"`
-	UnlockAccountJSON          types.String            `tfsdk:"unlock_account_json"`
-	EnableGroupManagement      types.String            `tfsdk:"enable_group_management"`
-	ModifyUserDataJSON         types.String            `tfsdk:"modify_user_data_json"`
-	OrgBase                    types.String            `tfsdk:"org_base"`
-	OrganizationAttribute      types.String            `tfsdk:"organization_attribute"`
-	CreateOrgJSON              types.String            `tfsdk:"create_org_json"`
-	UpdateOrgJSON              types.String            `tfsdk:"update_org_json"`
-	MaxChangeNumber            types.String            `tfsdk:"max_change_number"`
-	IncrementalConfig          types.String            `tfsdk:"incremental_config"`
-	CheckForUnique             types.String            `tfsdk:"check_for_unique"`
-	ConnectionTimeoutConfig    ConnectionTimeoutConfig `tfsdk:"connection_timeout_config"`
-	IsTimeoutConfigValidated   types.Bool              `tfsdk:"is_timeout_config_validated"`
-	ResetAndChangePasswdJSON   types.String            `tfsdk:"reset_and_change_passwd_json"`
+	URL                        types.String             `tfsdk:"url"`
+	ConnectionType             types.String             `tfsdk:"connection_type"`
+	LastImportTime             types.String             `tfsdk:"last_import_time"`
+	CreateAccountJSON          types.String             `tfsdk:"create_account_json"`
+	DisableAccountJSON         types.String             `tfsdk:"disable_account_json"`
+	GroupSearchBaseDN          types.String             `tfsdk:"group_search_base_dn"`
+	PasswordNoOfSplChars       types.String             `tfsdk:"password_no_of_spl_chars"`
+	PasswordNoOfDigits         types.String             `tfsdk:"password_no_of_digits"`
+	StatusKeyJSON              types.String             `tfsdk:"status_key_json"`
+	SearchFilter               types.String             `tfsdk:"search_filter"`
+	ConfigJSON                 types.String             `tfsdk:"config_json"`
+	RemoveAccountAction        types.String             `tfsdk:"remove_account_action"`
+	AccountAttribute           types.String             `tfsdk:"account_attribute"`
+	AccountNameRule            types.String             `tfsdk:"account_name_rule"`
+	AdvSearch                  types.String             `tfsdk:"adv_search"`
+	LDAPOrAD                   types.String             `tfsdk:"ldap_or_ad"`
+	EntitlementAttribute       types.String             `tfsdk:"entitlement_attribute"`
+	SetRandomPassword          types.String             `tfsdk:"set_random_password"`
+	PasswordMinLength          types.String             `tfsdk:"password_min_length"`
+	PasswordMaxLength          types.String             `tfsdk:"password_max_length"`
+	PasswordNoOfCapsAlpha      types.String             `tfsdk:"password_no_of_caps_alpha"`
+	SetDefaultPageSize         types.String             `tfsdk:"set_default_page_size"`
+	IsTimeoutSupported         types.Bool               `tfsdk:"is_timeout_supported"`
+	ReuseInactiveAccount       types.String             `tfsdk:"reuse_inactive_account"`
+	ImportJSON                 types.String             `tfsdk:"import_json"`
+	CreateUpdateMappings       types.String             `tfsdk:"create_update_mappings"`
+	AdvanceFilterJSON          types.String             `tfsdk:"advance_filter_json"`
+	OrgImportJSON              types.String             `tfsdk:"org_import_json"`
+	PAMConfig                  types.String             `tfsdk:"pam_config"`
+	PageSize                   types.String             `tfsdk:"page_size"`
+	Base                       types.String             `tfsdk:"base"`
+	DCLocator                  types.String             `tfsdk:"dc_locator"`
+	StatusThresholdConfig      types.String             `tfsdk:"status_threshold_config"`
+	ResetAndChangePasswordJSON types.String             `tfsdk:"reset_and_change_password_json"`
+	SupportEmptyString         types.String             `tfsdk:"support_empty_string"`
+	ReadOperationalAttributes  types.String             `tfsdk:"read_operational_attributes"`
+	EnableAccountJSON          types.String             `tfsdk:"enable_account_json"`
+	UserAttribute              types.String             `tfsdk:"user_attribute"`
+	DefaultUserRole            types.String             `tfsdk:"default_user_role"`
+	EndpointsFilter            types.String             `tfsdk:"endpoints_filter"`
+	UpdateAccountJSON          types.String             `tfsdk:"update_account_json"`
+	ReuseAccountJSON           types.String             `tfsdk:"reuse_account_json"`
+	EnforceTreeDeletion        types.String             `tfsdk:"enforce_tree_deletion"`
+	Filter                     types.String             `tfsdk:"filter"`
+	ObjectFilter               types.String             `tfsdk:"object_filter"`
+	UpdateUserJSON             types.String             `tfsdk:"update_user_json"`
+	SaveConnection             types.String             `tfsdk:"save_connection"`
+	SystemName                 types.String             `tfsdk:"system_name"`
+	GroupImportMapping         types.String             `tfsdk:"group_import_mapping"`
+	UnlockAccountJSON          types.String             `tfsdk:"unlock_account_json"`
+	EnableGroupManagement      types.String             `tfsdk:"enable_group_management"`
+	ModifyUserDataJSON         types.String             `tfsdk:"modify_user_data_json"`
+	OrgBase                    types.String             `tfsdk:"org_base"`
+	OrganizationAttribute      types.String             `tfsdk:"organization_attribute"`
+	CreateOrgJSON              types.String             `tfsdk:"create_org_json"`
+	UpdateOrgJSON              types.String             `tfsdk:"update_org_json"`
+	MaxChangeNumber            types.String             `tfsdk:"max_change_number"`
+	IncrementalConfig          types.String             `tfsdk:"incremental_config"`
+	CheckForUnique             types.String             `tfsdk:"check_for_unique"`
+	ConnectionTimeoutConfig    *ConnectionTimeoutConfig `tfsdk:"connection_timeout_config"`
+	IsTimeoutConfigValidated   types.Bool               `tfsdk:"is_timeout_config_validated"`
+	ResetAndChangePasswdJSON   types.String             `tfsdk:"reset_and_change_passwd_json"`
 }
 
 func NewADConnectionsDataSource() datasource.DataSource {
@@ -137,8 +148,6 @@ func ADConnectorsDataSourceSchema() map[string]schema.Attribute {
 				"account_attribute":              schema.StringAttribute{Computed: true},
 				"account_name_rule":              schema.StringAttribute{Computed: true},
 				"adv_search":                     schema.StringAttribute{Computed: true},
-				"username":                       schema.StringAttribute{Computed: true},
-				"password":                       schema.StringAttribute{Computed: true},
 				"ldap_or_ad":                     schema.StringAttribute{Computed: true},
 				"entitlement_attribute":          schema.StringAttribute{Computed: true},
 				"set_random_password":            schema.StringAttribute{Computed: true},
@@ -251,10 +260,32 @@ func (d *adConnectionsDataSource) Read(ctx context.Context, req datasource.ReadR
 	// Execute API request
 	apiResp, httpResp, err := apiReq.Execute()
 	if err != nil {
-		log.Printf("[ERROR] API Call Failed: %v", err)
-		resp.Diagnostics.AddError("API Call Failed", fmt.Sprintf("Error: %v", err))
+		if httpResp != nil && httpResp.StatusCode != 200 {
+			log.Printf("[ERROR] HTTP error while creating AD Connector: %s", httpResp.Status)
+			var fetchResp map[string]interface{}
+			if err := json.NewDecoder(httpResp.Body).Decode(&fetchResp); err != nil {
+				resp.Diagnostics.AddError("Failed to decode error response", err.Error())
+				return
+			}
+			resp.Diagnostics.AddError(
+				"HTTP Error",
+				fmt.Sprintf("HTTP error while creating AD Connector for the reasons: %s", fetchResp["msg"]),
+			)
+
+		} else {
+			log.Printf("[ERROR] API Call Failed: %v", err)
+			resp.Diagnostics.AddError("API Call Failed", fmt.Sprintf("Error: %v", err))
+		}
 		return
 	}
+
+	if apiResp != nil && apiResp.ADConnectionResponse == nil {
+		error := "Verify the connection type"
+		log.Printf("[ERROR]: Verify the connection type given")
+		resp.Diagnostics.AddError("Read of AD connection failed", error)
+		return
+	}
+
 	log.Printf("[DEBUG] HTTP Status Code: %d", httpResp.StatusCode)
 
 	state.Msg = util.SafeStringDatasource(apiResp.ADConnectionResponse.Msg)
@@ -287,8 +318,6 @@ func (d *adConnectionsDataSource) Read(ctx context.Context, req datasource.ReadR
 			RemoveAccountAction:       util.SafeStringDatasource(apiResp.ADConnectionResponse.Connectionattributes.REMOVEACCOUNTACTION),
 			AccountAttribute:          util.SafeStringDatasource(apiResp.ADConnectionResponse.Connectionattributes.ACCOUNT_ATTRIBUTE),
 			AccountNameRule:           util.SafeStringDatasource(apiResp.ADConnectionResponse.Connectionattributes.ACCOUNTNAMERULE),
-			Username:                  util.SafeStringDatasource(apiResp.ADConnectionResponse.Connectionattributes.USERNAME),
-			Password:                  util.SafeStringDatasource(apiResp.ADConnectionResponse.Connectionattributes.PASSWORD),
 			LDAPOrAD:                  util.SafeStringDatasource(apiResp.ADConnectionResponse.Connectionattributes.LDAP_OR_AD),
 			EntitlementAttribute:      util.SafeStringDatasource(apiResp.ADConnectionResponse.Connectionattributes.ENTITLEMENT_ATTRIBUTE),
 			SetRandomPassword:         util.SafeStringDatasource(apiResp.ADConnectionResponse.Connectionattributes.SETRANDOMPASSWORD),
@@ -334,7 +363,9 @@ func (d *adConnectionsDataSource) Read(ctx context.Context, req datasource.ReadR
 			IncrementalConfig:         util.SafeStringDatasource(apiResp.ADConnectionResponse.Connectionattributes.INCREMENTAL_CONFIG),
 			CheckForUnique:            util.SafeStringDatasource(apiResp.ADConnectionResponse.Connectionattributes.CHECKFORUNIQUE),
 			IsTimeoutConfigValidated:  util.SafeBoolDatasource(apiResp.ADConnectionResponse.Connectionattributes.IsTimeoutConfigValidated),
-			ConnectionTimeoutConfig: ConnectionTimeoutConfig{
+		}
+		if apiResp.ADConnectionResponse.Connectionattributes.ConnectionTimeoutConfig != nil {
+			state.ConnectionAttributes.ConnectionTimeoutConfig = &ConnectionTimeoutConfig{
 				RetryWait:               util.SafeInt64(apiResp.ADConnectionResponse.Connectionattributes.ConnectionTimeoutConfig.RetryWait),
 				TokenRefreshMaxTryCount: util.SafeInt64(apiResp.ADConnectionResponse.Connectionattributes.ConnectionTimeoutConfig.TokenRefreshMaxTryCount),
 				RetryWaitMaxValue:       util.SafeInt64(apiResp.ADConnectionResponse.Connectionattributes.ConnectionTimeoutConfig.RetryWaitMaxValue),
@@ -342,11 +373,26 @@ func (d *adConnectionsDataSource) Read(ctx context.Context, req datasource.ReadR
 				ReadTimeout:             util.SafeInt64(apiResp.ADConnectionResponse.Connectionattributes.ConnectionTimeoutConfig.ReadTimeout),
 				ConnectionTimeout:       util.SafeInt64(apiResp.ADConnectionResponse.Connectionattributes.ConnectionTimeoutConfig.ConnectionTimeout),
 				RetryFailureStatusCode:  util.SafeInt64(apiResp.ADConnectionResponse.Connectionattributes.ConnectionTimeoutConfig.RetryFailureStatusCode),
-			},
+			}
 		}
 	}
 	if apiResp.ADConnectionResponse.Connectionattributes == nil {
 		state.ConnectionAttributes = nil
+	}
+
+	if !state.Authenticate.IsNull() && !state.Authenticate.IsUnknown() {
+		if state.Authenticate.ValueBool() {
+			resp.Diagnostics.AddWarning(
+				"Authentication Enabled",
+				"`authenticate` is true; all connection_attributes will be returned in state.",
+			)
+		} else {
+			resp.Diagnostics.AddWarning(
+				"Authentication Disabled",
+				"`authenticate` is false; connection_attributes will be removed from state.",
+			)
+			state.ConnectionAttributes = nil
+		}
 	}
 	stateDiagnostics := resp.State.Set(ctx, &state)
 	resp.Diagnostics.Append(stateDiagnostics...)

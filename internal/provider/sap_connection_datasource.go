@@ -7,6 +7,7 @@ package provider
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"log"
 	"net/http"
@@ -49,7 +50,6 @@ type SapConnectionAttributes struct {
 	FirefighterIdRevokeAccessJson  types.String             `tfsdk:"firefighterid_revoke_access_json"`
 	ConfigJson                     types.String             `tfsdk:"config_json"`
 	FirefighterIdGrantAccessJson   types.String             `tfsdk:"firefighterid_grant_access_json"`
-	ProvPassword                   types.String             `tfsdk:"prov_password"`
 	JcoSncLibrary                  types.String             `tfsdk:"jco_snc_library"`
 	IsTimeoutSupported             types.Bool               `tfsdk:"is_timeout_supported"`
 	JcoR3Name                      types.String             `tfsdk:"jco_r3name"`
@@ -57,7 +57,6 @@ type SapConnectionAttributes struct {
 	JcoAshost                      types.String             `tfsdk:"jco_ashost"`
 	PasswordNoOfDigits             types.String             `tfsdk:"password_noof_digits"`
 	ProvJcoMsHost                  types.String             `tfsdk:"prov_jco_mshost"`
-	Password                       types.String             `tfsdk:"password"`
 	PamConfig                      types.String             `tfsdk:"pam_config"`
 	JcoSncMyName                   types.String             `tfsdk:"jco_snc_myname"`
 	EnforcePasswordChange          types.String             `tfsdk:"enforce_password_change"`
@@ -132,7 +131,6 @@ func SapConnectorsDataSourceSchema() map[string]schema.Attribute {
 				"firefighterid_revoke_access_json":   schema.StringAttribute{Computed: true},
 				"config_json":                        schema.StringAttribute{Computed: true},
 				"firefighterid_grant_access_json":    schema.StringAttribute{Computed: true},
-				"prov_password":                      schema.StringAttribute{Computed: true},
 				"jco_snc_library":                    schema.StringAttribute{Computed: true},
 				"is_timeout_supported":               schema.BoolAttribute{Computed: true},
 				"jco_r3name":                         schema.StringAttribute{Computed: true},
@@ -140,7 +138,6 @@ func SapConnectorsDataSourceSchema() map[string]schema.Attribute {
 				"jco_ashost":                         schema.StringAttribute{Computed: true},
 				"password_noof_digits":               schema.StringAttribute{Computed: true},
 				"prov_jco_mshost":                    schema.StringAttribute{Computed: true},
-				"password":                           schema.StringAttribute{Computed: true},
 				"pam_config":                         schema.StringAttribute{Computed: true},
 				"jco_snc_myname":                     schema.StringAttribute{Computed: true},
 				"enforce_password_change":            schema.StringAttribute{Computed: true},
@@ -253,8 +250,28 @@ func (d *sapConnectionDataSource) Read(ctx context.Context, req datasource.ReadR
 	// Execute API request
 	apiResp, httpResp, err := apiReq.Execute()
 	if err != nil {
-		log.Printf("[ERROR] API Call Failed: %v", err)
-		resp.Diagnostics.AddError("API Call Failed", fmt.Sprintf("Error: %v", err))
+		if httpResp != nil && httpResp.StatusCode != 200 {
+			log.Printf("[ERROR] HTTP error while creating Sap Connection: %s", httpResp.Status)
+			var fetchResp map[string]interface{}
+			if err := json.NewDecoder(httpResp.Body).Decode(&fetchResp); err != nil {
+				resp.Diagnostics.AddError("Failed to decode error response", err.Error())
+				return
+			}
+			resp.Diagnostics.AddError(
+				"HTTP Error",
+				fmt.Sprintf("HTTP error while creating Sap Connection for the reasons: %s", fetchResp["msg"]),
+			)
+
+		} else {
+			log.Printf("[ERROR] API Call Failed: %v", err)
+			resp.Diagnostics.AddError("API Call Failed", fmt.Sprintf("Error: %v", err))
+		}
+		return
+	}
+	if apiResp != nil && apiResp.SAPConnectionResponse == nil {
+		error := "Verify the connection type"
+		log.Printf("[ERROR]: Verify the connection type given")
+		resp.Diagnostics.AddError("Read of Sap connection failed", error)
 		return
 	}
 	log.Printf("[DEBUG] HTTP Status Code: %d", httpResp.StatusCode)
@@ -284,7 +301,6 @@ func (d *sapConnectionDataSource) Read(ctx context.Context, req datasource.ReadR
 			FirefighterIdRevokeAccessJson:  util.SafeStringDatasource(apiResp.SAPConnectionResponse.Connectionattributes.FIREFIGHTERID_REVOKE_ACCESS_JSON),
 			ConfigJson:                     util.SafeStringDatasource(apiResp.SAPConnectionResponse.Connectionattributes.ConfigJSON),
 			FirefighterIdGrantAccessJson:   util.SafeStringDatasource(apiResp.SAPConnectionResponse.Connectionattributes.FIREFIGHTERID_GRANT_ACCESS_JSON),
-			ProvPassword:                   util.SafeStringDatasource(apiResp.SAPConnectionResponse.Connectionattributes.PROV_PASSWORD),
 			JcoSncLibrary:                  util.SafeStringDatasource(apiResp.SAPConnectionResponse.Connectionattributes.JCO_SNC_LIBRARY),
 			IsTimeoutSupported:             util.SafeBoolDatasource(apiResp.SAPConnectionResponse.Connectionattributes.IsTimeoutSupported),
 			JcoR3Name:                      util.SafeStringDatasource(apiResp.SAPConnectionResponse.Connectionattributes.JCOR3NAME),
@@ -292,7 +308,6 @@ func (d *sapConnectionDataSource) Read(ctx context.Context, req datasource.ReadR
 			JcoAshost:                      util.SafeStringDatasource(apiResp.SAPConnectionResponse.Connectionattributes.JCO_ASHOST),
 			PasswordNoOfDigits:             util.SafeStringDatasource(apiResp.SAPConnectionResponse.Connectionattributes.PASSWORD_NOOFDIGITS),
 			ProvJcoMsHost:                  util.SafeStringDatasource(apiResp.SAPConnectionResponse.Connectionattributes.PROV_JCO_MSHOST),
-			Password:                       util.SafeStringDatasource(apiResp.SAPConnectionResponse.Connectionattributes.PASSWORD),
 			PamConfig:                      util.SafeStringDatasource(apiResp.SAPConnectionResponse.Connectionattributes.PAM_CONFIG),
 			JcoSncMyName:                   util.SafeStringDatasource(apiResp.SAPConnectionResponse.Connectionattributes.JCO_SNC_MYNAME),
 			EnforcePasswordChange:          util.SafeStringDatasource(apiResp.SAPConnectionResponse.Connectionattributes.ENFORCEPASSWORDCHANGE),
@@ -342,17 +357,30 @@ func (d *sapConnectionDataSource) Read(ctx context.Context, req datasource.ReadR
 				RetryWait:               util.SafeInt64(apiResp.SAPConnectionResponse.Connectionattributes.ConnectionTimeoutConfig.RetryWait),
 				TokenRefreshMaxTryCount: util.SafeInt64(apiResp.SAPConnectionResponse.Connectionattributes.ConnectionTimeoutConfig.TokenRefreshMaxTryCount),
 				RetryFailureStatusCode:  util.SafeInt64(apiResp.SAPConnectionResponse.Connectionattributes.ConnectionTimeoutConfig.RetryFailureStatusCode),
-				// RetryFailureStatusCode: SafeInt64FromStringPointer(apiResp.SAPConnectionResponse.Connectionattributes.ConnectionTimeoutConfig.RetryFailureStatusCode),
-				RetryWaitMaxValue: util.SafeInt64(apiResp.SAPConnectionResponse.Connectionattributes.ConnectionTimeoutConfig.RetryWaitMaxValue),
-				RetryCount:        util.SafeInt64(apiResp.SAPConnectionResponse.Connectionattributes.ConnectionTimeoutConfig.RetryCount),
-				ReadTimeout:       util.SafeInt64(apiResp.SAPConnectionResponse.Connectionattributes.ConnectionTimeoutConfig.ReadTimeout),
-				ConnectionTimeout: util.SafeInt64(apiResp.SAPConnectionResponse.Connectionattributes.ConnectionTimeoutConfig.ConnectionTimeout),
+				RetryWaitMaxValue:       util.SafeInt64(apiResp.SAPConnectionResponse.Connectionattributes.ConnectionTimeoutConfig.RetryWaitMaxValue),
+				RetryCount:              util.SafeInt64(apiResp.SAPConnectionResponse.Connectionattributes.ConnectionTimeoutConfig.RetryCount),
+				ReadTimeout:             util.SafeInt64(apiResp.SAPConnectionResponse.Connectionattributes.ConnectionTimeoutConfig.ReadTimeout),
+				ConnectionTimeout:       util.SafeInt64(apiResp.SAPConnectionResponse.Connectionattributes.ConnectionTimeoutConfig.ConnectionTimeout),
 			}
 		}
 	}
 
 	if apiResp.SAPConnectionResponse.Connectionattributes == nil {
 		state.ConnectionAttributes = nil
+	}
+	if !state.Authenticate.IsNull() && !state.Authenticate.IsUnknown() {
+		if state.Authenticate.ValueBool() {
+			resp.Diagnostics.AddWarning(
+				"Authentication Enabled",
+				"`authenticate` is true; all connection_attributes will be returned in state.",
+			)
+		} else {
+			resp.Diagnostics.AddWarning(
+				"Authentication Disabled",
+				"`authenticate` is false; connection_attributes will be removed from state.",
+			)
+			state.ConnectionAttributes = nil
+		}
 	}
 	stateDiagnostics := resp.State.Set(ctx, &state)
 	resp.Diagnostics.Append(stateDiagnostics...)
