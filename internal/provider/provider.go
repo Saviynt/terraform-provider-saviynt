@@ -177,5 +177,6 @@ func (p *saviyntProvider) Resources(ctx context.Context) []func() resource.Resou
 func (p *saviyntProvider) EphemeralResources(ctx context.Context) []func() ephemeral.EphemeralResource {
 	return []func() ephemeral.EphemeralResource{
 		NewFileCredentialsResource,
+		NewEnvCredentialsResource,
 	}
 }

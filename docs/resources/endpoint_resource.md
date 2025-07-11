@@ -32,7 +32,7 @@ resource "saviynt_endpoint_resource" "endpoint" {
   out_of_band_action                            = "2"
   requestable                                   = "true"
   service_account_access_query                  = "SELECT * FROM ACCESS WHERE account_type='SERVICE'"
-  block_inflight_request                        = "true"
+  block_inflight_request                        = "false"
   account_name_rule                             = "acct-$${user.email}"
   allow_change_password_sql_query               = "SELECT 1 FROM dual"
   account_name_validator_regex                  = "^[a-zA-Z0-9_.-]{5,15}$"

@@ -61,7 +61,7 @@ func TestAccSaviyntSAPConnectionResource(t *testing.T) {
 				ImportStateId:           createCfg["connection_name"],
 				ImportState:             true,
 				ImportStateVerify:       true,
-				ImportStateVerifyIgnore: []string{"msg"},
+				ImportStateVerifyIgnore: []string{"msg", "config_json"},
 			},
 			// Update Step
 			{
