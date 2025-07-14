@@ -14,7 +14,7 @@ Name | Type | Description | Notes
 **RemoveServiceAccountWorkflow** | Pointer to **string** | Workflow for removing a service account. | [optional] 
 **Connectionparameters** | Pointer to **string** | Query to filter the access and display of the endpoint to specific users. If you do not define a query, the endpoint is displayed for all users | [optional] 
 **AutomatedProvisioning** | Pointer to **string** | Specify true to enable automated provisioning. | [optional] 
-**Useopenconnector** | Pointer to **string** | Specify true to enable the connectivity with any system over the open-source connectors such as REST. | [optional] 
+**Useopenconnector** | Pointer to **bool** | Specify true to enable the connectivity with any system over the open-source connectors such as REST. | [optional] 
 **ReconApplication** | Pointer to **string** | Specify true to importing data from respective endpoint associated to security system. | [optional] 
 **ProvisioningTries** | Pointer to **string** | Number of provisioning tries. | [optional] 
 **Instantprovision** | Pointer to **string** | Specify true to prevent users from raising duplicate requests for the same applications. | [optional] 
@@ -281,20 +281,20 @@ HasAutomatedProvisioning returns a boolean if a field has been set.
 
 ### GetUseopenconnector
 
-`func (o *CreateSecuritySystemRequest) GetUseopenconnector() string`
+`func (o *CreateSecuritySystemRequest) GetUseopenconnector() bool`
 
 GetUseopenconnector returns the Useopenconnector field if non-nil, zero value otherwise.
 
 ### GetUseopenconnectorOk
 
-`func (o *CreateSecuritySystemRequest) GetUseopenconnectorOk() (*string, bool)`
+`func (o *CreateSecuritySystemRequest) GetUseopenconnectorOk() (*bool, bool)`
 
 GetUseopenconnectorOk returns a tuple with the Useopenconnector field if it's non-nil, zero value otherwise
 and a boolean to check if the value has been set.
 
 ### SetUseopenconnector
 
-`func (o *CreateSecuritySystemRequest) SetUseopenconnector(v string)`
+`func (o *CreateSecuritySystemRequest) SetUseopenconnector(v bool)`
 
 SetUseopenconnector sets Useopenconnector field to given value.
 

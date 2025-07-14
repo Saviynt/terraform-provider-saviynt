@@ -1,7 +1,7 @@
 /*
 Account Management API
 
-API for managing security systems in EIC.
+API for managing security systems in EIC. 
 
 API version: 1.0.0
 */
@@ -107,7 +107,7 @@ func (o *CreateSecuritySystem200Response) SetErrorCode(v string) {
 }
 
 func (o CreateSecuritySystem200Response) MarshalJSON() ([]byte, error) {
-	toSerialize, err := o.ToMap()
+	toSerialize,err := o.ToMap()
 	if err != nil {
 		return []byte{}, err
 	}
@@ -160,3 +160,5 @@ func (v *NullableCreateSecuritySystem200Response) UnmarshalJSON(src []byte) erro
 	v.isSet = true
 	return json.Unmarshal(src, &v.value)
 }
+
+

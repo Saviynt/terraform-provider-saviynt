@@ -66,8 +66,8 @@ func SafeList(items []string) (types.List, diag.Diagnostics) {
 	return types.ListValue(types.StringType, values)
 }
 
-// ToTypesStringSlice converts a slice of Go strings to a slice of types.String.
-func ToTypesStringSlice(items []string) []types.String {
+// StringsToTypeStrings converts a slice of Go strings to a slice of types.String.
+func StringsToTypeStrings(items []string) []types.String {
 	var result []types.String
 	for _, s := range items {
 		result = append(result, types.StringValue(s))
@@ -75,17 +75,17 @@ func ToTypesStringSlice(items []string) []types.String {
 	return result
 }
 
-func ConvertStringsToTFListString(items []string) types.List {
+func StringsToSet(items []string) types.Set {
 	var elements []attr.Value
 	for _, item := range items {
 		elements = append(elements, types.StringValue(item))
 	}
 
 	if len(elements) == 0 {
-		return types.ListNull(types.StringType)
+		return types.SetNull(types.StringType)
 	}
 
-	return types.ListValueMust(types.StringType, elements)
+	return types.SetValueMust(types.StringType, elements)
 }
 
 // ConvertStringsToTypesString converts a slice of Go strings to a slice of types.String.
@@ -123,6 +123,15 @@ func MarshalDeterministic(m map[string]string) (string, error) {
 	}
 	return string(b), nil
 }
+
+func BoolPointerOrEmtpy(tfBool types.Bool) *bool {
+	if tfBool.IsNull() || tfBool.IsUnknown() {
+		return nil
+	}
+	val := tfBool.ValueBool()
+	return &val
+}
+
 func StringPtr(v string) *string {
 	return &v
 }
@@ -163,12 +172,12 @@ func SanitizeTypesStringList(input []types.String) []types.String {
 		}
 	}
 	if len(result) == 0 {
-		return nil // or you can return []types.String{} if you prefer an empty list
+		return nil
 	}
 	return result
 }
 
-func ConvertTFStringsToGoStrings(input types.List) []string {
+func StringsFromSet(input types.Set) []string {
 	if input.IsNull() || input.IsUnknown() {
 		return nil
 	}
@@ -190,9 +199,31 @@ func ConvertTFStringsToGoStrings(input types.List) []string {
 	return result
 }
 
-func NormalizeTFListString(list types.List) types.List {
+func StringsFromList(input types.List) []string {
+	if input.IsNull() || input.IsUnknown() {
+		return nil
+	}
+
+	var result []string
+
+	for _, val := range input.Elements() {
+		strVal, ok := val.(types.String)
+		if !ok || strVal.IsNull() || strVal.IsUnknown() {
+			continue
+		}
+		result = append(result, strVal.ValueString())
+	}
+
+	if len(result) == 0 {
+		return nil
+	}
+
+	return result
+}
+
+func NormalizeTFSetString(list types.Set) types.Set {
 	if list.IsNull() || list.IsUnknown() || len(list.Elements()) == 0 {
-		return types.ListNull(types.StringType)
+		return types.SetNull(types.StringType)
 	}
 	return list
 }
