@@ -327,7 +327,7 @@ func (d *securitySystemsDataSource) Read(ctx context.Context, req datasource.Rea
 				CreatedFrom:                        util.SafeString(item.CreatedFrom),
 				PolicyRule:                         util.SafeString(item.PolicyRule),
 				Port:                               util.SafeString(item.Port),
-				InherentSodReportFields:            util.ToTypesStringSlice(item.InherentSODReportFields),
+				InherentSodReportFields:            util.StringsToTypeStrings(item.InherentSODReportFields),
 			}
 			state.Results = append(state.Results, securitySystemState)
 		}

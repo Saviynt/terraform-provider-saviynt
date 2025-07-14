@@ -34,6 +34,7 @@ func TestAccSaviyntSecuritySystemResource(t *testing.T) {
 	createCfg := testutil.LoadConnectorData(t, filePath, "create")
 	updateCfg := testutil.LoadConnectorData(t, filePath, "update")
 	resourceName := "saviynt_security_system_resource.ss"
+	securitySystemName := createCfg["systemname"]
 	resource.Test(t, resource.TestCase{
 		PreCheck:                 func() { TestAccPreCheck(t) },
 		ProtoV6ProviderFactories: TestAccProtoV6ProviderFactories,
@@ -78,8 +79,10 @@ func TestAccSaviyntSecuritySystemResource(t *testing.T) {
 			},
 			// Create a new resource with the same Systemname
 			{
-				Config:      testAccSecuritySecuritySystemWithSameNameConfig(filePath, "create_duplicate_security_system"),
-				ExpectError: regexp.MustCompile(`Security System Already Exists`),
+				Config: testAccSecuritySecuritySystemWithSameNameConfig(filePath, "create_duplicate_security_system"),
+				ExpectError: regexp.MustCompile(
+					fmt.Sprintf(`systemname %s already exists`, securitySystemName),
+				),
 			},
 		},
 	})
