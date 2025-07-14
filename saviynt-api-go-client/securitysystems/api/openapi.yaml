@@ -1,0 +1,847 @@
+openapi: 3.0.0
+info:
+  description: |
+    API for managing security systems in EIC.
+  title: Account Management API
+  version: 1.0.0
+servers:
+- url: http://localhost:3000
+paths:
+  /ECM/api/v5/createSecuritySystem:
+    post:
+      description: |-
+        Use this API to create a Security System in EIC.
+
+        The Authorization header must have Bearer followed by Token.
+
+        **Mandatory Parameters:**
+        - `systemname`: Name of the security system.
+        - `displayName`: Specify a user-friendly display name that is shown on the the user interface.
+
+
+        **Optional Parameters:**
+          - `hostname`: (string) The hostname or endpoint URL of the security system.
+          - `port`: (string) Description for the endpoint.
+          - `accessAddWorkflow`: (string) Specify the workflow to be used for approvals for an access request, which can be for an account, entitlements, role, and so on
+          - `accessRemoveWorkflow`: (string) The workflow used for revoking access.
+          - `addServiceAccountWorkflow`: (string) The workflow used for adding a service account.
+          - `removeServiceAccountWorkflow`: (string) The workflow used for removing a service account.
+          - `connectionparameters`: (string) JSON-formatted connection parameters to filter user access and display settings.
+          - `automatedProvisioning`: (string) Indicates whether automated provisioning is enabled (`true`/`false`).
+          - `useopenconnector`: (boolean) Enables integration with open-source connectors such as REST (`true`/`false`).
+          - `reconApplication`: (string) If `true`, prevents users from requesting additional accounts on applications where they already have active accounts.
+          - `provisioningTries`: (string) Number of provisioning attempts allowed before failure.
+          - `instantprovision`: (string) If `true`, prevents users from submitting duplicate provisioning requests.
+          - `provisioningcomments`: (string) Additional comments related to provisioning actions.
+      operationId: createSecuritySystem
+      parameters: []
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/createSecuritySystem_request'
+        description: Request payload for creating a Security System.
+        required: true
+      responses:
+        "200":
+          content:
+            application/json:
+              examples:
+                CreateSecuritySystem:
+                  summary: Successful creation
+                  value:
+                    msg: Success
+                    errorCode: "0"
+              schema:
+                $ref: '#/components/schemas/createSecuritySystem_200_response'
+          description: Create Security System - Success Response
+          headers:
+            Server:
+              explode: false
+              schema:
+                example: Apache-Coyote/1.1
+                type: string
+              style: simple
+            X-Frame-Options:
+              explode: false
+              schema:
+                example: SAMEORIGIN
+                type: string
+              style: simple
+            Set-Cookie:
+              explode: false
+              schema:
+                type: string
+              style: simple
+            X-Content-Type-Options:
+              explode: false
+              schema:
+                example: nosniff
+                type: string
+              style: simple
+            Content-Type:
+              explode: false
+              schema:
+                example: text/json;charset=utf-8
+                type: string
+              style: simple
+            Transfer-Encoding:
+              explode: false
+              schema:
+                example: chunked
+                type: string
+              style: simple
+            Date:
+              explode: false
+              schema:
+                example: "Fri, 19 Oct 2018 18:46:26 GMT"
+                type: string
+              style: simple
+      summary: Create Security System
+      tags:
+      - securitySystems
+  /ECM/api/v5/updateSecuritySystem:
+    put:
+      description: |-
+        Use this API to Update a Security System in EIC.
+
+        The Authorization header must have Bearer followed by Token.
+
+        **Mandatory Parameters:**
+        - `systemname`: Name of the security system.
+        - `displayName`: Specify a user-friendly display name that is shown on the the user interface.
+
+
+        **Optional Parameters:**
+          - `hostname`: (string) The hostname or endpoint URL of the security system.
+          - `port`: (string) Description for the endpoint.
+          - `accessAddWorkflow`: (string) Specify the workflow to be used for approvals for an access request, which can be for an account, entitlements, role, and so on.
+          - `accessRemoveWorkflow`: (string) Specify the workflow to be used when access has to be revoked, which can be for an account, entitlement, or any other de-provisioning task.
+          - `addServiceAccountWorkflow`: (string) The workflow used for adding a service account.
+          - `removeServiceAccountWorkflow`: (string) The workflow used for removing a service account.
+          - `connectionparameters`: (string) JSON-formatted connection parameters to filter user access and display settings.
+          - `automatedProvisioning`: (string) Indicates whether automated provisioning is enabled (`true`/`false`).
+          - `useopenconnector`: (boolean) Enables integration with open-source connectors such as REST (`true`/`false`).
+          - `defaultSystem`: (string) Specify true to set the security system as the Default System. Following which accounts search will only be searched and displayed for this security system.
+          - `reconApplication`: (string) Specify true to importing data from respective endpoint associated to security system.
+          - `provisioningTries`: (string) Number of provisioning attempts allowed before failure.
+          - `instantprovision`: (string) If `true`, prevents users from submitting duplicate provisioning requests.
+          - `provisioningcomments`: (string) Additional comments related to provisioning actions.
+          - `proposedAccountOwnersworkflow`: (string) Defines the workflow for assigning proposed account owners.
+          - `firefighteridWorkflow`: (string) Specifies the workflow for handling firefighter ID requests.
+          - `firefighteridRequestAccessWorkflow`: (string) Defines the workflow for requesting access to firefighter IDs.
+          - `policyRule`: (string) Specifies the password policy assigned to the security system.
+          - `policyRuleServiceAccount`: (string) Defines the password policy for service account passwords.
+          - `connectionname`: (string) Specifies the connection name for identity reconciliation.
+          - `provisioningConnection`: (string) You can use a separate connection to an endpoint where you are performing provisioning or deprovisioning. Based on your requirement, you can specify a separate connection where you want to perform provisioning and de-provisioning.
+          - `serviceDeskConnection`: (string) Specifies the Service Desk connection for ticketing system integration.
+          - `externalRiskConnectionJson`: (string) Contains JSON configuration for external risk connections and is applicable only for few connections like SAP.
+          - `InherentSODReportFields`: (string)  You can use this option used to filter out columns in SOD.
+      operationId: updateSecuritySystem
+      parameters: []
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/updateSecuritySystem_request'
+        description: Request payload for updating a Security System.
+        required: true
+      responses:
+        "200":
+          content:
+            application/json:
+              examples:
+                UpdateSecuritySystem:
+                  summary: Successful update
+                  value:
+                    msg: Success
+                    errorCode: "0"
+              schema:
+                $ref: '#/components/schemas/createSecuritySystem_200_response'
+          description: Successful update of Security System.
+          headers:
+            Server:
+              explode: false
+              schema:
+                example: Apache-Coyote/1.1
+                type: string
+              style: simple
+            X-Frame-Options:
+              explode: false
+              schema:
+                example: SAMEORIGIN
+                type: string
+              style: simple
+            Set-Cookie:
+              explode: false
+              schema:
+                type: string
+              style: simple
+            X-Content-Type-Options:
+              explode: false
+              schema:
+                example: nosniff
+                type: string
+              style: simple
+            Content-Type:
+              explode: false
+              schema:
+                example: text/json;charset=utf-8
+                type: string
+              style: simple
+            Transfer-Encoding:
+              explode: false
+              schema:
+                example: chunked
+                type: string
+              style: simple
+            Date:
+              explode: false
+              schema:
+                example: "Fri, 19 Oct 2018 21:44:25 GMT"
+                type: string
+              style: simple
+      summary: Update Security System
+      tags:
+      - securitySystems
+  /ECM/api/v5/getSecuritySystems:
+    get:
+      description: |-
+        Use this API to retrieve the list of Security Systems in EIC.
+
+        The Authorization header must have "Bearer {token}".
+
+        **Optional Parameters:**
+        - systemname
+        - max
+        - offset
+        - connectionname
+        - connectionType
+      operationId: getSecuritySystems
+      parameters:
+      - description: Filter by security system name.
+        example: System1
+        explode: true
+        in: query
+        name: systemname
+        required: false
+        schema:
+          type: string
+        style: form
+      - description: Maximum number of records to return.
+        example: 4
+        explode: true
+        in: query
+        name: max
+        required: false
+        schema:
+          type: integer
+        style: form
+      - description: Pagination offset.
+        example: 0
+        explode: true
+        in: query
+        name: offset
+        required: false
+        schema:
+          type: integer
+        style: form
+      - description: Connection name used for reconciliation.
+        example: CN_SERP_ECC_A53
+        explode: true
+        in: query
+        name: connectionname
+        required: false
+        schema:
+          type: string
+        style: form
+      - description: "Type of the connection, e.g., SAP."
+        example: SAP
+        explode: true
+        in: query
+        name: connectionType
+        required: false
+        schema:
+          type: string
+        style: form
+      responses:
+        "200":
+          content:
+            application/json:
+              examples:
+                GetSecuritySystemsExample:
+                  summary: Sample response for Get List of Security Systems
+                  value:
+                    msg: Success
+                    securitySystemDetails:
+                    - accessAddWorkflow: UserGrpWF
+                      defaultSystem: "false"
+                      endpoints: "[System1, Access]"
+                      updatedBy: "1"
+                      automatedProvisioning: "true"
+                      displayName: System1-DisplayName
+                      systemname: System1
+                      instantprovision: "false"
+                      accessRemoveWorkflow: SampleManagerApproval
+                      policyRule: BBB
+                      createdBy: "1"
+                      inherentSODReportFields:
+                      - Role
+                      - Risk
+                      - Description
+                      useopenconnector: false
+                      reconApplication: "true"
+                      status: enabled
+                    displayCount: 1
+                    errorCode: "0"
+                    totalCount: 1
+              schema:
+                $ref: '#/components/schemas/getSecuritySystems_200_response'
+          description: Successful response for Get List of Security Systems.
+      summary: Get Security Systems
+      tags:
+      - securitySystems
+components:
+  schemas:
+    createSecuritySystem_request:
+      properties:
+        systemname:
+          description: Name of the security system.
+          example: sys3
+          type: string
+        displayName:
+          description: Specify a user-friendly display name that is shown on the the
+            user interface.
+          example: sys3Disp
+          type: string
+        hostname:
+          description: Security system for which you want to create an endpoint.
+          example: https://test_test.test
+          type: string
+        port:
+          description: Description for the endpoint.
+          example: "1001"
+          type: string
+        accessAddWorkflow:
+          description: "Specify the workflow to be used for approvals for an access\
+            \ request, which can be for an account, entitlements, role, and so on"
+          example: One_Level_Manager_Approval
+          type: string
+        accessRemoveWorkflow:
+          description: "Specify the workflow to be used when access has to be revoked,\
+            \ which can be for an account, entitlement, or any other de-provisioning\
+            \ task."
+          example: One_Level_Manager_Approval
+          type: string
+        addServiceAccountWorkflow:
+          description: Workflow for adding a service account.
+          example: One_Level_Manager_Approval
+          type: string
+        removeServiceAccountWorkflow:
+          description: Workflow for removing a service account.
+          example: One_Level_Manager_Approval
+          type: string
+        connectionparameters:
+          description: "Query to filter the access and display of the endpoint to\
+            \ specific users. If you do not define a query, the endpoint is displayed\
+            \ for all users"
+          example: "{\"conn params\":\"test1\"}"
+          type: string
+        automatedProvisioning:
+          description: Specify true to enable automated provisioning.
+          example: "true"
+          type: string
+        useopenconnector:
+          description: Specify true to enable the connectivity with any system over
+            the open-source connectors such as REST.
+          example: true
+          type: boolean
+        reconApplication:
+          description: Specify true to importing data from respective endpoint associated
+            to security system.
+          example: "true"
+          type: string
+        provisioningTries:
+          description: Number of provisioning tries.
+          example: "3"
+          type: string
+        instantprovision:
+          description: Specify true to prevent users from raising duplicate requests
+            for the same applications.
+          example: "true"
+          type: string
+        provisioningcomments:
+          description: Specify relevant comments for performing provisioning.
+          example: "true"
+          type: string
+      required:
+      - displayName
+      - systemname
+      type: object
+    getSecuritySystems_200_response:
+      example:
+        msg: Success
+        securitySystemDetails:
+        - accessAddWorkflow: UserGrpWF
+          defaultSystem: "false"
+          provisioningConnection: AzureAD_EPTest4
+          updateDate: 2025-03-10 09:15:38.0
+          firefighteridWorkflow: FirefighterIDApproval
+          serviceDeskConnection: h11
+          displayName: System1-DisplayName
+          removeServiceAccountWorkflow: One_Level_Manager_Approval
+          connectionType: AD
+          instantprovision: "false"
+          hostname: EntitlementsOnly
+          provisioningcomments: testt
+          connection: delete_conn3
+          useopenconnector: "false"
+          firefighteridRequestAccessWorkflow: FirefighterRequestAccess
+          proposedAccountOwnersworkflow: ManagerApprovalWorkflow
+          reconApplication: "true"
+          createDate: 2024-01-18 05:33:52.0
+          policyRuleServiceAccount: ServiceAccountPolicy
+          connectionparameters: "{\"conn params\":\"test1\"}"
+          endpoints: "[System1, Access]"
+          updatedBy: "1"
+          automatedProvisioning: "true"
+          systemname: System1
+          connectionname: h11
+          provisioningTries: "3"
+          accessRemoveWorkflow: SampleManagerApproval
+          policyRule: BBB
+          createdFrom: Created Manually
+          createdBy: "1"
+          port: 23r
+          inherentSODReportFields:
+          - Role
+          - Risk
+          - Description
+          addServiceAccountWorkflow: One_Level_Manager_Approval
+          externalRiskConnectionJson: "{\"retrycount\":\"5\",\"SodEval\":\"8\",\"\
+            savefailed\":\"test\",\"OutlierAnalysis\":\"7\",\"RiskScoreEval\":\"6\"\
+            }"
+          status: enabled
+        - accessAddWorkflow: UserGrpWF
+          defaultSystem: "false"
+          provisioningConnection: AzureAD_EPTest4
+          updateDate: 2025-03-10 09:15:38.0
+          firefighteridWorkflow: FirefighterIDApproval
+          serviceDeskConnection: h11
+          displayName: System1-DisplayName
+          removeServiceAccountWorkflow: One_Level_Manager_Approval
+          connectionType: AD
+          instantprovision: "false"
+          hostname: EntitlementsOnly
+          provisioningcomments: testt
+          connection: delete_conn3
+          useopenconnector: "false"
+          firefighteridRequestAccessWorkflow: FirefighterRequestAccess
+          proposedAccountOwnersworkflow: ManagerApprovalWorkflow
+          reconApplication: "true"
+          createDate: 2024-01-18 05:33:52.0
+          policyRuleServiceAccount: ServiceAccountPolicy
+          connectionparameters: "{\"conn params\":\"test1\"}"
+          endpoints: "[System1, Access]"
+          updatedBy: "1"
+          automatedProvisioning: "true"
+          systemname: System1
+          connectionname: h11
+          provisioningTries: "3"
+          accessRemoveWorkflow: SampleManagerApproval
+          policyRule: BBB
+          createdFrom: Created Manually
+          createdBy: "1"
+          port: 23r
+          inherentSODReportFields:
+          - Role
+          - Risk
+          - Description
+          addServiceAccountWorkflow: One_Level_Manager_Approval
+          externalRiskConnectionJson: "{\"retrycount\":\"5\",\"SodEval\":\"8\",\"\
+            savefailed\":\"test\",\"OutlierAnalysis\":\"7\",\"RiskScoreEval\":\"6\"\
+            }"
+          status: enabled
+        displayCount: 1
+        errorCode: "0"
+        totalCount: 1
+      properties:
+        msg:
+          description: A message indicating the outcome of the operation.
+          example: Success
+          type: string
+        securitySystemDetails:
+          items:
+            $ref: '#/components/schemas/getSecuritySystems_200_response_securitySystemDetails_inner'
+          type: array
+        displayCount:
+          description: "The number of items currently displayed (e.g., on the current\
+            \ page or view)."
+          example: 1
+          type: integer
+        errorCode:
+          description: An error code where '0' signifies success and '1' signifies
+            an unsuccessful operation.
+          example: "0"
+          type: string
+        totalCount:
+          description: "The total number of items available in the dataset, irrespective\
+            \ of the current display settings."
+          example: 1
+          type: integer
+      type: object
+    updateSecuritySystem_request:
+      properties:
+        systemname:
+          description: The security system name to update.
+          example: sys1
+          type: string
+        displayName:
+          description: Specify a user-friendly display name that is shown on the the
+            user interface.
+          example: sys1Disp
+          type: string
+        hostname:
+          description: Security system for which you want to create an endpoint.
+          example: https://test_test.test
+          type: string
+        port:
+          description: Description for the endpoint.
+          example: "1001"
+          type: string
+        accessAddWorkflow:
+          description: "Specify the workflow to be used for approvals for an access\
+            \ request, which can be for an account, entitlements, role, and so on"
+          example: BobAutoApproval
+          type: string
+        accessRemoveWorkflow:
+          description: "Specify the workflow to be used when access has to be revoked,\
+            \ which can be for an account, entitlement, or any other de-provisioning\
+            \ task."
+          example: BobAutoApproval
+          type: string
+        addServiceAccountWorkflow:
+          description: Workflow for adding a service account.
+          example: BobAutoApproval
+          type: string
+        removeServiceAccountWorkflow:
+          description: Workflow for removing a service account.
+          example: BobAutoApproval
+          type: string
+        connectionparameters:
+          description: "Query to filter the access and display of the endpoint to\
+            \ specific users. If you do not define a query, the endpoint is displayed\
+            \ for all users"
+          example: "{\"conn params\":\"test1\"}"
+          type: string
+        proposedAccountOwnersworkflow:
+          description: "Query to filter the access and display of the endpoint to\
+            \ specific users. If you do not define a query, the endpoint is displayed\
+            \ for all users"
+          example: BobAutoApproval
+          type: string
+        firefighteridWorkflow:
+          description: firefighteridWorkflow
+          example: BobAutoApproval
+          type: string
+        firefighteridRequestAccessWorkflow:
+          description: firefighteridRequestAccessWorkflow
+          example: BobAutoApproval
+          type: string
+        automatedProvisioning:
+          description: Specify true to enable automated provisioning.
+          example: "true"
+          type: string
+        useopenconnector:
+          description: Specify true to enable the connectivity with any system over
+            the open-source connectors such as REST.
+          example: true
+          type: boolean
+        defaultSystem:
+          description: Specify true to set the security system as the Default System.
+            Following which accounts search will only be searched and displayed for
+            this security system.
+          example: "false"
+          type: string
+        reconApplication:
+          description: Specify true to importing data from respective endpoint associated
+            to security system.
+          example: "true"
+          type: string
+        instantprovision:
+          description: Use this flag to prevent users from raising duplicate requests
+            for the same applications.
+          example: "true"
+          type: string
+        provisioningTries:
+          description: Specify the number of tries to be used for performing provisioning
+            / de-provisioning to the third-party application. You can specify provisioningTries
+            between 1 to 20 based on your requirement.
+          example: "3"
+          type: string
+        externalRiskConnectionJson:
+          description: Contains JSON configuration for external risk connections and
+            is applicable only for few connections like SAP
+          example: "{\"retrycount\":\"5\",\"SodEval\":\"8\",\"savefailed\":\"test\"\
+            ,\"OutlierAnalysis\":\"7\",\"RiskScoreEval\":\"6\"}"
+          type: string
+        policyRule:
+          description: Use this setting to assign the password policy for the security
+            system.
+          example: TestPass123
+          type: string
+        policyRuleServiceAccount:
+          description: Use this setting to assign the password policy which will be
+            used to set the service account passwords for the security system.
+          example: TestPass123
+          type: string
+        connectionname:
+          description: Select the connection name for performing reconciliation of
+            identity objects from third-party application.
+          example: h11
+          type: string
+        provisioningConnection:
+          description: "You can use a separate connection to an endpoint where you\
+            \ are performing provisioning or deprovisioning. Based on your requirement,\
+            \ you can specify a separate connection where you want to perform provisioning\
+            \ and de-provisioning."
+          example: h11
+          type: string
+        serviceDeskConnection:
+          description: "Specify the Service Desk Connection used for integration with\
+            \ a ticketing system, which can be a disconnected system too."
+          example: h11
+          type: string
+        provisioningcomments:
+          description: Specify relevant comments for performing provisioning.
+          example: prov comm
+          type: string
+        inherentSODReportFields:
+          description: ' You can use this option used to filter out columns in SOD.'
+          example:
+          - Role
+          - Risk
+          - Description
+          items:
+            type: string
+          type: array
+      required:
+      - displayName
+      - systemname
+      type: object
+    createSecuritySystem_200_response:
+      example:
+        msg: Success
+        errorCode: "0"
+      properties:
+        msg:
+          description: A message indicating the outcome of the operation.
+          example: Success
+          type: string
+        errorCode:
+          description: An error code where '0' signifies success and '1' signifies
+            an unsuccessful operation.
+          example: "0"
+          type: string
+      type: object
+    getSecuritySystems_200_response_securitySystemDetails_inner:
+      example:
+        accessAddWorkflow: UserGrpWF
+        defaultSystem: "false"
+        provisioningConnection: AzureAD_EPTest4
+        updateDate: 2025-03-10 09:15:38.0
+        firefighteridWorkflow: FirefighterIDApproval
+        serviceDeskConnection: h11
+        displayName: System1-DisplayName
+        removeServiceAccountWorkflow: One_Level_Manager_Approval
+        connectionType: AD
+        instantprovision: "false"
+        hostname: EntitlementsOnly
+        provisioningcomments: testt
+        connection: delete_conn3
+        useopenconnector: "true"
+        firefighteridRequestAccessWorkflow: FirefighterRequestAccess
+        proposedAccountOwnersworkflow: ManagerApprovalWorkflow
+        reconApplication: "true"
+        createDate: 2024-01-18 05:33:52.0
+        policyRuleServiceAccount: ServiceAccountPolicy
+        connectionparameters: "{\"conn params\":\"test1\"}"
+        endpoints: "[System1, Access]"
+        updatedBy: "1"
+        automatedProvisioning: "true"
+        systemname: System1
+        connectionname: h11
+        provisioningTries: "3"
+        accessRemoveWorkflow: SampleManagerApproval
+        policyRule: BBB
+        createdFrom: Created Manually
+        createdBy: "1"
+        port: 23r
+        inherentSODReportFields:
+        - Role
+        - Risk
+        - Description
+        addServiceAccountWorkflow: One_Level_Manager_Approval
+        externalRiskConnectionJson: "{\"retrycount\":\"5\",\"SodEval\":\"8\",\"savefailed\"\
+          :\"test\",\"OutlierAnalysis\":\"7\",\"RiskScoreEval\":\"6\"}"
+        status: enabled
+      properties:
+        connectionparameters:
+          description: "Query to filter the access and display of the endpoint to\
+            \ specific users. If you do not define a query, the endpoint is displayed\
+            \ for all users"
+          example: "{\"conn params\":\"test1\"}"
+          type: string
+        accessAddWorkflow:
+          description: "Specify the workflow to be used for approvals for an access\
+            \ request, which can be for an account, entitlements, role, and so on"
+          example: UserGrpWF
+          type: string
+        defaultSystem:
+          description: Specify true to set the security system as the Default System.
+            Following which accounts search will only be searched and displayed for
+            this security system.
+          example: "false"
+          type: string
+        provisioningConnection:
+          description: "You can use a separate connection to an endpoint where you\
+            \ are performing provisioning or deprovisioning. Based on your requirement,\
+            \ you can specify a separate connection where you want to perform provisioning\
+            \ and de-provisioning."
+          example: AzureAD_EPTest4
+          type: string
+        updateDate:
+          description: Last updated date for the security system.
+          example: 2025-03-10 09:15:38.0
+          type: string
+        displayName:
+          description: Specify a user-friendly display name that is shown on the the
+            user interface.
+          example: System1-DisplayName
+          type: string
+        connectionType:
+          description: Specify a connection type to view all the connection in EIC
+            for the connection type.
+          example: AD
+          type: string
+        instantprovision:
+          description: "If `true`, prevents users from submitting duplicate provisioning\
+            \ requests."
+          example: "false"
+          type: string
+        connectionname:
+          description: Select the connection name for performing reconciliation of
+            identity objects from third-party application.
+          example: h11
+          type: string
+        hostname:
+          description: Security system for which you want to create an endpoint.
+          example: EntitlementsOnly
+          type: string
+        firefighteridWorkflow:
+          description: Specifies the workflow for handling firefighter ID requests.
+          example: FirefighterIDApproval
+          type: string
+        firefighteridRequestAccessWorkflow:
+          description: Defines the workflow for requesting access to firefighter IDs.
+          example: FirefighterRequestAccess
+          type: string
+        provisioningcomments:
+          description: Specify relevant comments for performing provisioning.
+          example: testt
+          type: string
+        proposedAccountOwnersworkflow:
+          description: Defines the workflow for assigning proposed account owners.
+          example: ManagerApprovalWorkflow
+          type: string
+        serviceDeskConnection:
+          description: "Specify the Service Desk Connection used for integration with\
+            \ a ticketing system, which can be a disconnected system too."
+          example: h11
+          type: string
+        connection:
+          example: delete_conn3
+          type: string
+        useopenconnector:
+          description: Specify true to enable the connectivity with any system over
+            the open-source connectors such as REST.
+          example: "false"
+          type: string
+        reconApplication:
+          description: Specify true to importing data from respective endpoint associated
+            to security system.
+          example: "true"
+          type: string
+        createDate:
+          example: 2024-01-18 05:33:52.0
+          type: string
+        endpoints:
+          example: "[System1, Access]"
+          type: string
+        updatedBy:
+          example: "1"
+          type: string
+        automatedProvisioning:
+          description: Specify true to enable automated provisioning.
+          example: "true"
+          type: string
+        systemname:
+          description: Specify the security system name.
+          example: System1
+          type: string
+        accessRemoveWorkflow:
+          description: "Specify the workflow to be used when access has to be revoked,\
+            \ which can be for an account, entitlement, or any other de-provisioning\
+            \ task."
+          example: SampleManagerApproval
+          type: string
+        addServiceAccountWorkflow:
+          description: Workflow for adding a service account.
+          example: One_Level_Manager_Approval
+          type: string
+        removeServiceAccountWorkflow:
+          description: Workflow for removing a service account.
+          example: One_Level_Manager_Approval
+          type: string
+        policyRule:
+          description: Use this setting to assign the password policy for the security
+            system.
+          example: BBB
+          type: string
+        policyRuleServiceAccount:
+          description: Defines the password policy for service account passwords.
+          example: ServiceAccountPolicy
+          type: string
+        createdFrom:
+          example: Created Manually
+          type: string
+        createdBy:
+          example: "1"
+          type: string
+        externalRiskConnectionJson:
+          description: Contains JSON configuration for external risk connections and
+            is applicable only for few connections like SAP
+          example: "{\"retrycount\":\"5\",\"SodEval\":\"8\",\"savefailed\":\"test\"\
+            ,\"OutlierAnalysis\":\"7\",\"RiskScoreEval\":\"6\"}"
+          type: string
+        provisioningTries:
+          description: Number of provisioning tries.
+          example: "3"
+          type: string
+        port:
+          description: Description for the endpoint
+          example: 23r
+          type: string
+        inherentSODReportFields:
+          description: ' You can use this option used to filter out columns in SOD.'
+          example:
+          - Role
+          - Risk
+          - Description
+          items:
+            type: string
+          type: array
+        status:
+          example: enabled
+          type: string
+      type: object
