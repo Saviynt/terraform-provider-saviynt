@@ -14,10 +14,11 @@ package securitysystems
 
 import (
 	"context"
+	"testing"
+
 	openapiclient "github.com/saviynt/saviynt-api-go-client/securitysystems"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	"testing"
 )
 
 func Test_securitysystems_SecuritySystemsAPIService(t *testing.T) {
