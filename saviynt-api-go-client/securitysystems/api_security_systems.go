@@ -1,7 +1,7 @@
 /*
 Account Management API
 
-API for managing security systems in EIC.
+API for managing security systems in EIC. 
 
 API version: 1.0.0
 */
@@ -18,12 +18,13 @@ import (
 	"net/url"
 )
 
+
 // SecuritySystemsAPIService SecuritySystemsAPI service
 type SecuritySystemsAPIService service
 
 type ApiCreateSecuritySystemRequest struct {
-	ctx                         context.Context
-	ApiService                  *SecuritySystemsAPIService
+	ctx context.Context
+	ApiService *SecuritySystemsAPIService
 	createSecuritySystemRequest *CreateSecuritySystemRequest
 }
 
@@ -48,53 +49,40 @@ The Authorization header must have Bearer followed by Token.
 - `systemname`: Name of the security system.
 - `displayName`: Specify a user-friendly display name that is shown on the the user interface.
 
+
 **Optional Parameters:**
-
   - `hostname`: (string) The hostname or endpoint URL of the security system.
-
   - `port`: (string) Description for the endpoint.
-
   - `accessAddWorkflow`: (string) Specify the workflow to be used for approvals for an access request, which can be for an account, entitlements, role, and so on
-
   - `accessRemoveWorkflow`: (string) The workflow used for revoking access.
-
   - `addServiceAccountWorkflow`: (string) The workflow used for adding a service account.
-
   - `removeServiceAccountWorkflow`: (string) The workflow used for removing a service account.
-
   - `connectionparameters`: (string) JSON-formatted connection parameters to filter user access and display settings.
-
   - `automatedProvisioning`: (string) Indicates whether automated provisioning is enabled (`true`/`false`).
-
-  - `useopenconnector`: (string) Enables integration with open-source connectors such as REST (`true`/`false`).
-
+  - `useopenconnector`: (boolean) Enables integration with open-source connectors such as REST (`true`/`false`).
   - `reconApplication`: (string) If `true`, prevents users from requesting additional accounts on applications where they already have active accounts.
-
   - `provisioningTries`: (string) Number of provisioning attempts allowed before failure.
-
   - `instantprovision`: (string) If `true`, prevents users from submitting duplicate provisioning requests.
-
   - `provisioningcomments`: (string) Additional comments related to provisioning actions.
 
-    @param ctx context.Context - for authentication, logging, cancellation, deadlines, tracing, etc. Passed from http.Request or context.Background().
-    @return ApiCreateSecuritySystemRequest
+ @param ctx context.Context - for authentication, logging, cancellation, deadlines, tracing, etc. Passed from http.Request or context.Background().
+ @return ApiCreateSecuritySystemRequest
 */
 func (a *SecuritySystemsAPIService) CreateSecuritySystem(ctx context.Context) ApiCreateSecuritySystemRequest {
 	return ApiCreateSecuritySystemRequest{
 		ApiService: a,
-		ctx:        ctx,
+		ctx: ctx,
 	}
 }
 
 // Execute executes the request
-//
-//	@return CreateSecuritySystem200Response
+//  @return CreateSecuritySystem200Response
 func (a *SecuritySystemsAPIService) CreateSecuritySystemExecute(r ApiCreateSecuritySystemRequest) (*CreateSecuritySystem200Response, *http.Response, error) {
 	var (
-		localVarHTTPMethod  = http.MethodPost
-		localVarPostBody    interface{}
-		formFiles           []formFile
-		localVarReturnValue *CreateSecuritySystem200Response
+		localVarHTTPMethod   = http.MethodPost
+		localVarPostBody     interface{}
+		formFiles            []formFile
+		localVarReturnValue  *CreateSecuritySystem200Response
 	)
 
 	localBasePath, err := a.client.cfg.ServerURLWithContext(r.ctx, "SecuritySystemsAPIService.CreateSecuritySystem")
@@ -168,11 +156,11 @@ func (a *SecuritySystemsAPIService) CreateSecuritySystemExecute(r ApiCreateSecur
 }
 
 type ApiGetSecuritySystemsRequest struct {
-	ctx            context.Context
-	ApiService     *SecuritySystemsAPIService
-	systemname     *string
-	max            *int32
-	offset         *int32
+	ctx context.Context
+	ApiService *SecuritySystemsAPIService
+	systemname *string
+	max *int32
+	offset *int32
 	connectionname *string
 	connectionType *string
 }
@@ -225,25 +213,24 @@ The Authorization header must have "Bearer {token}".
 - connectionname
 - connectionType
 
-	@param ctx context.Context - for authentication, logging, cancellation, deadlines, tracing, etc. Passed from http.Request or context.Background().
-	@return ApiGetSecuritySystemsRequest
+ @param ctx context.Context - for authentication, logging, cancellation, deadlines, tracing, etc. Passed from http.Request or context.Background().
+ @return ApiGetSecuritySystemsRequest
 */
 func (a *SecuritySystemsAPIService) GetSecuritySystems(ctx context.Context) ApiGetSecuritySystemsRequest {
 	return ApiGetSecuritySystemsRequest{
 		ApiService: a,
-		ctx:        ctx,
+		ctx: ctx,
 	}
 }
 
 // Execute executes the request
-//
-//	@return GetSecuritySystems200Response
+//  @return GetSecuritySystems200Response
 func (a *SecuritySystemsAPIService) GetSecuritySystemsExecute(r ApiGetSecuritySystemsRequest) (*GetSecuritySystems200Response, *http.Response, error) {
 	var (
-		localVarHTTPMethod  = http.MethodGet
-		localVarPostBody    interface{}
-		formFiles           []formFile
-		localVarReturnValue *GetSecuritySystems200Response
+		localVarHTTPMethod   = http.MethodGet
+		localVarPostBody     interface{}
+		formFiles            []formFile
+		localVarReturnValue  *GetSecuritySystems200Response
 	)
 
 	localBasePath, err := a.client.cfg.ServerURLWithContext(r.ctx, "SecuritySystemsAPIService.GetSecuritySystems")
@@ -327,8 +314,8 @@ func (a *SecuritySystemsAPIService) GetSecuritySystemsExecute(r ApiGetSecuritySy
 }
 
 type ApiUpdateSecuritySystemRequest struct {
-	ctx                         context.Context
-	ApiService                  *SecuritySystemsAPIService
+	ctx context.Context
+	ApiService *SecuritySystemsAPIService
 	updateSecuritySystemRequest *UpdateSecuritySystemRequest
 }
 
@@ -353,75 +340,51 @@ The Authorization header must have Bearer followed by Token.
 - `systemname`: Name of the security system.
 - `displayName`: Specify a user-friendly display name that is shown on the the user interface.
 
+
 **Optional Parameters:**
-
   - `hostname`: (string) The hostname or endpoint URL of the security system.
-
   - `port`: (string) Description for the endpoint.
-
   - `accessAddWorkflow`: (string) Specify the workflow to be used for approvals for an access request, which can be for an account, entitlements, role, and so on.
-
   - `accessRemoveWorkflow`: (string) Specify the workflow to be used when access has to be revoked, which can be for an account, entitlement, or any other de-provisioning task.
-
   - `addServiceAccountWorkflow`: (string) The workflow used for adding a service account.
-
   - `removeServiceAccountWorkflow`: (string) The workflow used for removing a service account.
-
   - `connectionparameters`: (string) JSON-formatted connection parameters to filter user access and display settings.
-
   - `automatedProvisioning`: (string) Indicates whether automated provisioning is enabled (`true`/`false`).
-
-  - `useopenconnector`: (string) Enables integration with open-source connectors such as REST (`true`/`false`).
-
+  - `useopenconnector`: (boolean) Enables integration with open-source connectors such as REST (`true`/`false`).
   - `defaultSystem`: (string) Specify true to set the security system as the Default System. Following which accounts search will only be searched and displayed for this security system.
-
   - `reconApplication`: (string) Specify true to importing data from respective endpoint associated to security system.
-
   - `provisioningTries`: (string) Number of provisioning attempts allowed before failure.
-
   - `instantprovision`: (string) If `true`, prevents users from submitting duplicate provisioning requests.
-
   - `provisioningcomments`: (string) Additional comments related to provisioning actions.
-
   - `proposedAccountOwnersworkflow`: (string) Defines the workflow for assigning proposed account owners.
-
   - `firefighteridWorkflow`: (string) Specifies the workflow for handling firefighter ID requests.
-
   - `firefighteridRequestAccessWorkflow`: (string) Defines the workflow for requesting access to firefighter IDs.
-
   - `policyRule`: (string) Specifies the password policy assigned to the security system.
-
   - `policyRuleServiceAccount`: (string) Defines the password policy for service account passwords.
-
   - `connectionname`: (string) Specifies the connection name for identity reconciliation.
-
   - `provisioningConnection`: (string) You can use a separate connection to an endpoint where you are performing provisioning or deprovisioning. Based on your requirement, you can specify a separate connection where you want to perform provisioning and de-provisioning.
-
   - `serviceDeskConnection`: (string) Specifies the Service Desk connection for ticketing system integration.
-
   - `externalRiskConnectionJson`: (string) Contains JSON configuration for external risk connections and is applicable only for few connections like SAP.
-
   - `InherentSODReportFields`: (string)  You can use this option used to filter out columns in SOD.
 
-    @param ctx context.Context - for authentication, logging, cancellation, deadlines, tracing, etc. Passed from http.Request or context.Background().
-    @return ApiUpdateSecuritySystemRequest
+ @param ctx context.Context - for authentication, logging, cancellation, deadlines, tracing, etc. Passed from http.Request or context.Background().
+ @return ApiUpdateSecuritySystemRequest
 */
 func (a *SecuritySystemsAPIService) UpdateSecuritySystem(ctx context.Context) ApiUpdateSecuritySystemRequest {
 	return ApiUpdateSecuritySystemRequest{
 		ApiService: a,
-		ctx:        ctx,
+		ctx: ctx,
 	}
 }
 
 // Execute executes the request
-//
-//	@return CreateSecuritySystem200Response
+//  @return CreateSecuritySystem200Response
 func (a *SecuritySystemsAPIService) UpdateSecuritySystemExecute(r ApiUpdateSecuritySystemRequest) (*CreateSecuritySystem200Response, *http.Response, error) {
 	var (
-		localVarHTTPMethod  = http.MethodPut
-		localVarPostBody    interface{}
-		formFiles           []formFile
-		localVarReturnValue *CreateSecuritySystem200Response
+		localVarHTTPMethod   = http.MethodPut
+		localVarPostBody     interface{}
+		formFiles            []formFile
+		localVarReturnValue  *CreateSecuritySystem200Response
 	)
 
 	localBasePath, err := a.client.cfg.ServerURLWithContext(r.ctx, "SecuritySystemsAPIService.UpdateSecuritySystem")

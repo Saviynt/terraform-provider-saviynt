@@ -4,6 +4,7 @@
 package endpointsutil
 
 import (
+	"encoding/json"
 	"strings"
 )
 
@@ -64,4 +65,17 @@ func NormalizeToStringBool(val string) string {
 	default:
 		return "false" // or handle unknowns explicitly
 	}
+}
+
+func NormalizeJSON(input string) (string, error) {
+	var jsonObj interface{}
+	if err := json.Unmarshal([]byte(input), &jsonObj); err != nil {
+		return "", err
+	}
+
+	compact, err := json.Marshal(jsonObj)
+	if err != nil {
+		return "", err
+	}
+	return string(compact), nil
 }
