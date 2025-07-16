@@ -124,7 +124,7 @@ func MarshalDeterministic(m map[string]string) (string, error) {
 	return string(b), nil
 }
 
-func BoolPointerOrEmtpy(tfBool types.Bool) *bool {
+func BoolPointerOrEmpty(tfBool types.Bool) *bool {
 	if tfBool.IsNull() || tfBool.IsUnknown() {
 		return nil
 	}
