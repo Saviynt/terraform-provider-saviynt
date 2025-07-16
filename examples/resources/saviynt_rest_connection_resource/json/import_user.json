@@ -1,0 +1,25 @@
+{
+  "connection": "acctAuth",
+  "successResponses": {
+    "statusCode": [
+      200,
+      201,
+      202,
+      203,
+      204,
+      205
+    ]
+  },
+  "url": "https://abc.zendesk.com/api//users.json",
+  "httpMethod": "GET",
+  "httpHeaders": {
+    "Authorization": "${access_token}"
+  },
+  "userResponsePath": "users",
+  "colsToPropsMap": {
+    "username": "id~#~char",
+    "systemUserName": "id~#~char",
+    "displayname": "name~#~char",
+    "email": "email~#~char"
+  }
+}
