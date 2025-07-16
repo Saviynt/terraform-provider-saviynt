@@ -55,7 +55,7 @@ resource "saviynt_security_system_resource" "example" {
 - `firefighterid_request_access_workflow` (String) Firefighter ID Request Access Workflow.
 - `firefighterid_workflow` (String) Firefighter ID Workflow.
 - `hostname` (String) Security system for which you want to create an endpoint.
-- `inherent_sod_report_fields` (List of String) You can use this option used to filter out columns in SOD.
+- `inherent_sod_report_fields` (Set of String) You can use this option used to filter out columns in SOD.
 - `instant_provision` (String) Use this flag to prevent users from raising duplicate requests for the same applications.
 - `msg` (String) A message indicating the outcome of the operation.
 - `policy_rule` (String) Use this setting to assign the password policy for the security system.
@@ -68,7 +68,7 @@ resource "saviynt_security_system_resource" "example" {
 - `recon_application` (String) Specify true to import data from the endpoint associated to the security system.
 - `remove_service_account_workflow` (String) Workflow for removing a service account.
 - `service_desk_connection` (String) Specify the Service Desk Connection used for integration with a ticketing system, which can be a disconnected system too.
-- `use_open_connector` (String) Specify true to enable the connectivity with any system over the open-source connectors such as REST.
+- `use_open_connector` (Boolean) Specify true to enable the connectivity with any system over the open-source connectors such as REST.
 
 ### Read-Only
 
