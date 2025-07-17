@@ -9,6 +9,7 @@ import (
 	"os"
 	"sort"
 	"strconv"
+	"strings"
 
 	"github.com/hashicorp/terraform-plugin-framework/attr"
 	"github.com/hashicorp/terraform-plugin-framework/diag"
@@ -285,4 +286,39 @@ func LoadConnectorDataForEphemeral(filePath string) map[string]string {
 	}
 
 	return result
+}
+
+func TypesStringOrOriginal(original types.String, apiValue *string) types.String {
+	if apiValue != nil && *apiValue != "" {
+		return types.StringValue(*apiValue)
+	}
+	return original
+}
+
+func SafeStringAlt(s *string, replace string) types.String {
+	if types.StringValue(*s) == types.StringValue("") {
+		return types.StringValue(replace)
+	}
+
+	return types.StringValue(*s)
+}
+
+func PreserveString(apiVal *string, oldVal types.String) types.String {
+	if apiVal != nil && strings.TrimSpace(*apiVal) != "" {
+		// Return the value from the API only if it's non-empty
+		return types.StringValue(*apiVal)
+	}
+	if !oldVal.IsNull() && !oldVal.IsUnknown() {
+		// Preserve value from state if it's valid
+		return oldVal
+	}
+	// Fallback to null if API and old value are empty
+	return types.StringNull()
+}
+
+func SafeStringPreserveNull(s *string) types.String {
+	if s == nil {
+		return types.StringNull()
+	}
+	return types.StringValue(*s)
 }
