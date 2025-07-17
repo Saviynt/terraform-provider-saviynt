@@ -172,6 +172,7 @@ func (p *saviyntProvider) Resources(ctx context.Context) []func() resource.Resou
 		NewGithubRestTestConnectionResource,
 		NewEndpointResource,
 		NewRolesResource,
+		NewDynamicAttributeResource,
 	}
 }
 func (p *saviyntProvider) EphemeralResources(ctx context.Context) []func() ephemeral.EphemeralResource {
