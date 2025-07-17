@@ -18,6 +18,7 @@ import (
 
 	"github.com/saviynt/saviynt-api-go-client/connections"
 	"github.com/saviynt/saviynt-api-go-client/delegatedadministration"
+	"github.com/saviynt/saviynt-api-go-client/dynamicattributes"
 	"github.com/saviynt/saviynt-api-go-client/email"
 	"github.com/saviynt/saviynt-api-go-client/endpoints"
 	"github.com/saviynt/saviynt-api-go-client/filedirectory"
@@ -50,6 +51,8 @@ type Client struct {
 	rolesClient                   *roles.APIClient
 	DelegatedAdministration       *delegatedadministration.DelegatedAdministrationAPIService
 	delegatedAdministrationClient *delegatedadministration.APIClient
+	DynamicAttributes             *dynamicattributes.DynamicAttributesAPIService
+	dynamicAttributesClient       *dynamicattributes.APIClient
 	Email                         *email.EmailAPIService
 	emailClient                   *email.APIClient
 	Endpoints                     *endpoints.EndpointsAPIService
@@ -85,6 +88,8 @@ func newClientHTTPClient(serverURL string, username *string, httpClient *http.Cl
 	c.Roles = c.rolesClient.RolesAPI
 	c.delegatedAdministrationClient = newClientDelegatedAdministration(c.APIBaseURL(), c.httpClient)
 	c.DelegatedAdministration = c.delegatedAdministrationClient.DelegatedAdministrationAPI
+	c.dynamicAttributesClient = newClientDynamicAttributes(c.APIBaseURL(), c.httpClient)
+	c.DynamicAttributes = c.dynamicAttributesClient.DynamicAttributesAPI
 	c.emailClient = newClientEmail(c.APIBaseURL(), c.httpClient)
 	c.Email = c.emailClient.EmailAPI
 	c.endpointsClient = newClientEndpoints(c.APIBaseURL(), c.httpClient)
@@ -172,6 +177,13 @@ func newClientDelegatedAdministration(apiBaseURL string, httpClient *http.Client
 	cfg.HTTPClient = httpClient
 	cfg.Servers = delegatedadministration.ServerConfigurations{{URL: apiBaseURL}}
 	return delegatedadministration.NewAPIClient(cfg)
+}
+
+func newClientDynamicAttributes(apiBaseURL string, httpClient *http.Client) *dynamicattributes.APIClient {
+	cfg := dynamicattributes.NewConfiguration()
+	cfg.HTTPClient = httpClient
+	cfg.Servers = dynamicattributes.ServerConfigurations{{URL: apiBaseURL}}
+	return dynamicattributes.NewAPIClient(cfg)
 }
 
 func newClientEmail(apiBaseURL string, httpClient *http.Client) *email.APIClient {
