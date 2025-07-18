@@ -13,7 +13,7 @@ Provides ephemeral credentials by reading them from a local json file for use by
 ## Example Usage
 
 ```terraform
-// Copyright (c) Saviynt Inc.
+// Copyright (c) 2025 Saviynt Inc.
 // SPDX-License-Identifier: MPL-2.0
 
 ephemeral "saviynt_file_connector_ephemeral_resource" "example" {

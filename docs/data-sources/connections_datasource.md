@@ -13,7 +13,7 @@ Datasource to retrieve all connections
 ## Example Usage
 
 ```terraform
-// Copyright (c) Saviynt Inc.
+// Copyright (c) 2025 Saviynt Inc.
 // SPDX-License-Identifier: MPL-2.0
 
 data "saviynt_connections_datasource" "example" {

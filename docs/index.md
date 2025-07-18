@@ -13,7 +13,7 @@ The Saviynt Terraform provider empowers you to leverage Terraform's declarative 
 ## Example Usage
 
 ```terraform
-// Copyright (c) Saviynt Inc.
+// Copyright (c) 2025 Saviynt Inc.
 // SPDX-License-Identifier: MPL-2.0
 
 terraform {

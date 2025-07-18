@@ -13,7 +13,7 @@ Retrieve the details for a given Unix connector by its name or key
 ## Example Usage
 
 ```terraform
-// Copyright (c) Saviynt Inc.
+// Copyright (c) 2025 Saviynt Inc.
 // SPDX-License-Identifier: MPL-2.0
 
 data "saviynt_unix_connection_datasource" "example" {
