@@ -1,4 +1,4 @@
-// Copyright (c) Saviynt Inc.
+// Copyright (c) 2025 Saviynt Inc.
 // SPDX-License-Identifier: MPL-2.0
 
 // db_connection_data_source_test.go contains the Terraform acceptance test suite for

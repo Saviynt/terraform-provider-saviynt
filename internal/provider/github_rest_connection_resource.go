@@ -1,4 +1,4 @@
-// Copyright (c) Saviynt Inc.
+// Copyright (c) 2025 Saviynt Inc.
 // SPDX-License-Identifier: MPL-2.0
 
 // saviynt_github_rest_connection_resource manages GithubRest connectors in the Saviynt Security Manager.

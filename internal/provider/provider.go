@@ -1,4 +1,4 @@
-// Copyright (c) Saviynt Inc.
+// Copyright (c) 2025 Saviynt Inc.
 // SPDX-License-Identifier: MPL-2.0
 
 // provider.go defines the Saviynt Terraform provider using the Terraform Plugin Framework.
@@ -153,6 +153,7 @@ func (p *saviyntProvider) DataSources(ctx context.Context) []func() datasource.D
 		NewSAPConnectionsDataSource,
 		NewUnixConnectionsDataSource,
 		NewGithubRestConnectionsDataSource,
+		NewDynamicAttributeDataSource,
 	}
 }
 
