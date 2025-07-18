@@ -1,4 +1,4 @@
-// Copyright (c) Saviynt Inc.
+// Copyright (c) 2025 Saviynt Inc.
 // SPDX-License-Identifier: MPL-2.0
 
 // endpoint_resource_test.go contains the Terraform acceptance test suite for
@@ -59,7 +59,7 @@ func TestAccSaviyntEndpointResource(t *testing.T) {
 				ImportStateId:           createCfg["endpoint_name"],
 				ImportState:             true,
 				ImportStateVerify:       true,
-				ImportStateVerifyIgnore: []string{"endpoint_config","connection_config"},
+				ImportStateVerifyIgnore: []string{"endpoint_config", "connection_config"},
 			},
 			// Update
 			{
