@@ -1,21 +1,20 @@
-# NOTE: This file is for HashiCorp specific licensing automation and can be deleted after creating a new repo with this template.
 schema_version = 1
 
 project {
-  license        = "MPL-2.0"
-  copyright_year = 2021
+  # SPDX license identifier
+  license = "MPL-2.0"
 
+  # Custom copyright holder
+  copyright_holder = "Saviynt Inc."
+
+  # Year to appear in the header
+  copyright_year = 2025
+
+  # Ignore files and folders where license headers should not be added
   header_ignore = [
-    # examples used within documentation (prose)
     "examples/**",
-
-    # GitHub issue template configuration
     ".github/ISSUE_TEMPLATE/*.yml",
-
-    # golangci-lint tooling configuration
     ".golangci.yml",
-
-    # GoReleaser tooling configuration
     ".goreleaser.yml",
   ]
 }

@@ -1,6 +1,13 @@
 // Copyright (c) 2025 Saviynt Inc.
 // SPDX-License-Identifier: MPL-2.0
 
+// saviynt_endpoint_resource manages endpoints in the Saviynt Security Manager.
+// The resource implements the full Terraform lifecycle:
+//   - Create: provisions a new endpoint using the supplied configuration.
+//   - Read: fetches the current endpoint state from Saviynt to keep Terraform’s state in sync.
+//   - Update: applies any configuration changes to an existing endpoint.
+//   - Import: brings an existing endpoint under Terraform management by its name.
+
 package provider
 
 import (
