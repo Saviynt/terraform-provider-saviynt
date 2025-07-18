@@ -13,7 +13,7 @@ Create and manage Workday connector in Saviynt
 ## Example Usage
 
 ```terraform
-// Copyright (c) Saviynt Inc.
+// Copyright (c) 2025 Saviynt Inc.
 // SPDX-License-Identifier: MPL-2.0
 
 variable "BASE_URL" {

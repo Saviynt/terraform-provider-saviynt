@@ -1,4 +1,4 @@
-// Copyright (c) Saviynt Inc.
+// Copyright (c) 2025 Saviynt Inc.
 // SPDX-License-Identifier: MPL-2.0
 
 // saviynt_entraid_connection_resource manages EntraId connectors in the Saviynt Security Manager.
