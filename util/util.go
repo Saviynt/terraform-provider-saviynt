@@ -1,9 +1,10 @@
-// Copyright (c) Saviynt Inc.
+// Copyright (c) 2025 Saviynt Inc.
 // SPDX-License-Identifier: MPL-2.0
 
 package util
 
 import (
+	"context"
 	"encoding/json"
 	"log"
 	"os"
@@ -321,4 +322,19 @@ func SafeStringPreserveNull(s *string) types.String {
 		return types.StringNull()
 	}
 	return types.StringValue(*s)
+}
+
+func ConvertListToStringSlice(ctx context.Context, tfList types.List) []string {
+	if tfList.IsNull() || tfList.IsUnknown() {
+		return nil
+	}
+
+	var result []string
+	diags := tfList.ElementsAs(ctx, &result, false)
+	if diags.HasError() {
+		log.Printf("[ERROR] ConvertListToStringSlice: failed to convert list: %v", diags)
+		return nil
+	}
+
+	return result
 }

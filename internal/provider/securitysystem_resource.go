@@ -1,4 +1,4 @@
-// Copyright (c) Saviynt Inc.
+// Copyright (c) 2025 Saviynt Inc.
 // SPDX-License-Identifier: MPL-2.0
 
 // saviynt_security_system_resource manages security systems in the Saviynt Security Manager.

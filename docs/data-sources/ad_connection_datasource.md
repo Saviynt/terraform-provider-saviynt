@@ -13,7 +13,7 @@ Retrieve the details for a given AD connector by its name or key
 ## Example Usage
 
 ```terraform
-// Copyright (c) Saviynt Inc.
+// Copyright (c) 2025 Saviynt Inc.
 // SPDX-License-Identifier: MPL-2.0
 
 data "saviynt_ad_connection_datasource" "ad" {
