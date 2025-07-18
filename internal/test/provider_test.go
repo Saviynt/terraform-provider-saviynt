@@ -1,4 +1,4 @@
-// Copyright (c) Saviynt Inc.
+// Copyright (c) 2025 Saviynt Inc.
 // SPDX-License-Identifier: MPL-2.0
 
 // acceptance_test_utils.go provides the scaffolding required for Terraform acceptance testing
@@ -9,8 +9,8 @@ package testing
 
 import (
 	"os"
-	"testing"
 	"terraform-provider-Saviynt/internal/provider"
+	"testing"
 
 	"github.com/hashicorp/terraform-plugin-framework/providerserver"
 	"github.com/hashicorp/terraform-plugin-go/tfprotov6"
