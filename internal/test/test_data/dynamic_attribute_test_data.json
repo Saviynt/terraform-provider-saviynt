@@ -188,5 +188,46 @@
                 "description_as_csv": "Terraform test attribute 2 changed"
             }
         ]
+    },
+    "ds":{
+        "security_system": "shaleenhuddle",
+        "endpoint": "sample-107",
+        "update_user": "admin",
+        "dynamic_attributes": [
+            {
+                "attribute_name": "test_attribute_1_ds_{{PIPELINE_ID}}",
+                "request_type": "SERVICE ACCOUNT",
+                "attribute_type": "NUMBER",
+                "attribute_group": "Attribute group",
+                "order_index": "4",
+                "attribute_lable":"Attribute label",
+                "accounts_column": "Accounts column",
+                "hide_on_create": "true",
+                "action_string": "Action string",
+                "editable": "true",
+                "hide_on_update": "true",
+                "action_to_perform_when_parent_attribute_changes": "Action to perform when parent attribute changes 1",
+                "default_value": "5",
+                "required": "true",
+                "showonchild": "true"
+            },
+            {
+                "attribute_name": "test_attribute_2_ds_{{PIPELINE_ID}}",
+                "request_type": "SERVICE ACCOUNT",
+                "attribute_type": "NUMBER",
+                "attribute_group": "Attribute group",
+                "order_index": "2",
+                "attribute_lable":"Attribute label",
+                "accounts_column": "Accounts column",
+                "hide_on_create": "true",
+                "action_string": "Action string",
+                "editable": "true",
+                "hide_on_update": "true",
+                "action_to_perform_when_parent_attribute_changes": "Action to perform when parent attribute changes 2",
+                "default_value": "5",
+                "required": "true",
+                "showonchild": "true"
+            }
+        ]
     }
 }
