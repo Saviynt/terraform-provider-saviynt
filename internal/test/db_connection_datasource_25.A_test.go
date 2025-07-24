@@ -27,7 +27,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-testing/terraform"
 )
 
-func TestAccSaviyntDBConnectionDataSource(t *testing.T) {
+func TestAccSaviyntDBConnectionDataSource25A(t *testing.T) {
 	filePath := testutil.GetTestDataPath(t, "./test_data/db_connection_test_data.json")
 	filePath = testutil.PrepareTestDataWithEnv(t, filePath)
 	createCfg := testutil.LoadConnectorData(t, filePath, "ds")
@@ -38,7 +38,7 @@ func TestAccSaviyntDBConnectionDataSource(t *testing.T) {
 		ProtoV6ProviderFactories: TestAccProtoV6ProviderFactories,
 		Steps: []resource.TestStep{
 			{
-				Config: testAccDBConnectionDataSourceConfig(filePath),
+				Config: testAccDBConnectionDataSourceConfig25A(filePath),
 				Check: resource.ComposeTestCheckFunc(
 					func(s *terraform.State) error {
 						_, ok := s.RootModule().Resources[datasource]
@@ -52,7 +52,6 @@ func TestAccSaviyntDBConnectionDataSource(t *testing.T) {
 					resource.TestCheckResourceAttr(datasource, "msg", "success"),
 					resource.TestCheckResourceAttr(datasource, "error_code", "0"),
 					resource.TestCheckResourceAttr(datasource, "connection_name", createCfg["connection_name"]),
-					resource.TestCheckResourceAttr(datasource, "connection_type", createCfg["connection_type"]),
 					resource.TestCheckResourceAttr(datasource, "connection_attributes.url", createCfg["url"]),
 					resource.TestCheckResourceAttr(datasource, "connection_attributes.drivername", createCfg["driver_name"]),
 					resource.TestCheckResourceAttr(datasource, "connection_attributes.createaccount_json", createCfg["create_account_json"]),
@@ -73,7 +72,7 @@ func TestAccSaviyntDBConnectionDataSource(t *testing.T) {
 	})
 }
 
-func testAccDBConnectionDataSourceConfig(jsonPath string) string {
+func testAccDBConnectionDataSourceConfig25A(jsonPath string) string {
 	return fmt.Sprintf(`
 provider "saviynt" {
   server_url = "%s"
@@ -86,7 +85,6 @@ locals {
 }
 
 resource "saviynt_db_connection_resource" "db" {
-  connection_type           = local.cfg.connection_type
   connection_name           = local.cfg.connection_name
   url                       = local.cfg.url
   username                  = local.cfg.username
@@ -103,7 +101,6 @@ resource "saviynt_db_connection_resource" "db" {
   disable_account_json      = jsonencode(local.cfg.disable_account_json)
   account_exists_json       = jsonencode(local.cfg.account_exists_json)
   update_user_json          = jsonencode(local.cfg.update_user_json)
-
   accounts_import           = local.cfg.accounts_import
   entitlement_value_import  = local.cfg.entitlement_value_import
   user_import               = local.cfg.user_import

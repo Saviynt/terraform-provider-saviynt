@@ -8,7 +8,6 @@
 //   - Create: provisions a new Workday connection and asserts each attribute via JSONPath checks.
 //   - Import: verifies the resource can be imported by its connection name.
 //   - Update: applies configuration changes and confirms the updated attribute values.
-//   - Negative Cases: ensures updates to `connection_name` and `connection_type` are rejected.
 //
 // Test data is loaded from `workday _connection_resource_test_data.json` using `testutil.LoadConnectorData`.
 // Environment variables `SAVIYNT_URL`, `SAVIYNT_USERNAME`, and `SAVIYNT_PASSWORD` must be set
@@ -70,7 +69,6 @@ func TestAccSaviyntWorkdayConnectionResource(t *testing.T) {
 				Config: testAccWorkdayConnectionResourceConfig(filePath, "create"),
 				ConfigStateChecks: []statecheck.StateCheck{
 					statecheck.ExpectKnownValue(resourceName, tfjsonpath.New("connection_name"), knownvalue.StringExact(createCfg["connection_name"])),
-					statecheck.ExpectKnownValue(resourceName, tfjsonpath.New("connection_type"), knownvalue.StringExact(createCfg["connection_type"])),
 					statecheck.ExpectKnownValue(resourceName, tfjsonpath.New("base_url"), knownvalue.StringExact(createCfg["base_url"])),
 					statecheck.ExpectKnownValue(resourceName, tfjsonpath.New("api_version"), knownvalue.StringExact(createCfg["api_version"])),
 					statecheck.ExpectKnownValue(resourceName, tfjsonpath.New("use_oauth"), knownvalue.StringExact(createCfg["use_oauth"])),
@@ -94,7 +92,6 @@ func TestAccSaviyntWorkdayConnectionResource(t *testing.T) {
 				Config: testAccWorkdayConnectionResourceConfig(filePath, "update"),
 				ConfigStateChecks: []statecheck.StateCheck{
 					statecheck.ExpectKnownValue(resourceName, tfjsonpath.New("connection_name"), knownvalue.StringExact(updateCfg["connection_name"])),
-					statecheck.ExpectKnownValue(resourceName, tfjsonpath.New("connection_type"), knownvalue.StringExact(updateCfg["connection_type"])),
 					statecheck.ExpectKnownValue(resourceName, tfjsonpath.New("base_url"), knownvalue.StringExact(updateCfg["base_url"])),
 					statecheck.ExpectKnownValue(resourceName, tfjsonpath.New("api_version"), knownvalue.StringExact(updateCfg["api_version"])),
 					statecheck.ExpectKnownValue(resourceName, tfjsonpath.New("use_oauth"), knownvalue.StringExact(updateCfg["use_oauth"])),
@@ -110,18 +107,12 @@ func TestAccSaviyntWorkdayConnectionResource(t *testing.T) {
 				Config:      testAccWorkdayConnectionResourceConfig(filePath, "update_connection_name"),
 				ExpectError: regexp.MustCompile(`Connection name cannot be updated`),
 			},
-			// Update the Connectiontype to a new value
-			{
-				Config:      testAccWorkdayConnectionResourceConfig(filePath, "update_connection_type"),
-				ExpectError: regexp.MustCompile(`Connection type cannot by updated`),
-			},
 		},
 	},
 	)
 }
 
 func testAccWorkdayConnectionResourceConfig(jsonPath, operation string) string {
-	// jsonPath := "{filepath}/workday_connection_test_data.json"
 	return fmt.Sprintf(`
 	provider "saviynt" {
   server_url = "%s"
@@ -133,7 +124,6 @@ func testAccWorkdayConnectionResourceConfig(jsonPath, operation string) string {
 }
 
   resource "saviynt_workday_connection_resource" "w" {
-  connection_type    = local.cfg.connection_type
   connection_name    = local.cfg.connection_name
   base_url           = local.cfg.base_url
   api_version        = local.cfg.api_version

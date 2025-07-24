@@ -8,7 +8,6 @@
 //   - Create: provisions a new Sap connection and asserts each attribute via JSONPath checks.
 //   - Import: verifies the resource can be imported by its connection name.
 //   - Update: applies configuration changes and confirms the updated attribute values.
-//   - Negative Cases: ensures updates to `connection_name` and `connection_type` are rejected.
 //
 // Test data is loaded from `sap_connection_resource_test_data.json` using `testutil.LoadConnectorData`.
 // Environment variables `SAVIYNT_URL`, `SAVIYNT_USERNAME`, and `SAVIYNT_PASSWORD` must be set
@@ -43,7 +42,6 @@ func TestAccSaviyntSAPConnectionResource(t *testing.T) {
 				Config: testAccSAPConnectionResourceConfig(filePath, "create"),
 				ConfigStateChecks: []statecheck.StateCheck{
 					statecheck.ExpectKnownValue(resourceName, tfjsonpath.New("connection_name"), knownvalue.StringExact(createCfg["connection_name"])),
-					statecheck.ExpectKnownValue(resourceName, tfjsonpath.New("connection_type"), knownvalue.StringExact(createCfg["connection_type"])),
 					statecheck.ExpectKnownValue(resourceName, tfjsonpath.New("message_server"), knownvalue.StringExact(createCfg["message_server"])),
 					statecheck.ExpectKnownValue(resourceName, tfjsonpath.New("jco_snc_mode"), knownvalue.StringExact(createCfg["jco_snc_mode"])),
 					statecheck.ExpectKnownValue(resourceName, tfjsonpath.New("system_name"), knownvalue.StringExact(createCfg["system_name"])),
@@ -68,7 +66,6 @@ func TestAccSaviyntSAPConnectionResource(t *testing.T) {
 				Config: testAccSAPConnectionResourceConfig(filePath, "update"),
 				ConfigStateChecks: []statecheck.StateCheck{
 					statecheck.ExpectKnownValue(resourceName, tfjsonpath.New("connection_name"), knownvalue.StringExact(updateCfg["connection_name"])),
-					statecheck.ExpectKnownValue(resourceName, tfjsonpath.New("connection_type"), knownvalue.StringExact(updateCfg["connection_type"])),
 					statecheck.ExpectKnownValue(resourceName, tfjsonpath.New("message_server"), knownvalue.StringExact(updateCfg["message_server"])),
 					statecheck.ExpectKnownValue(resourceName, tfjsonpath.New("jco_snc_mode"), knownvalue.StringExact(updateCfg["jco_snc_mode"])),
 					statecheck.ExpectKnownValue(resourceName, tfjsonpath.New("system_name"), knownvalue.StringExact(updateCfg["system_name"])),
@@ -84,11 +81,6 @@ func TestAccSaviyntSAPConnectionResource(t *testing.T) {
 			{
 				Config:      testAccSAPConnectionResourceConfig(filePath, "update_connection_name"),
 				ExpectError: regexp.MustCompile(`Connection name cannot be updated`),
-			},
-			// Update the Connectiontype to a new value
-			{
-				Config:      testAccSAPConnectionResourceConfig(filePath, "update_connection_type"),
-				ExpectError: regexp.MustCompile(`Connection type cannot by updated`),
 			},
 		},
 	})
@@ -106,7 +98,6 @@ func testAccSAPConnectionResourceConfig(jsonPath, operation string) string {
 }
 
   resource "saviynt_sap_connection_resource" "sp" {
-  connection_type                    = local.cfg.connection_type
   connection_name                    = local.cfg.connection_name
   message_server                     = local.cfg.message_server
   jco_snc_mode                       = local.cfg.jco_snc_mode

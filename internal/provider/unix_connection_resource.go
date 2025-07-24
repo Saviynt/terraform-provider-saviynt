@@ -380,7 +380,6 @@ func (r *unixConnectionResource) Create(ctx context.Context, req resource.Create
 		return
 	}
 	plan.ID = types.StringValue(fmt.Sprintf("%d", *apiResp.ConnectionKey))
-	plan.ConnectionType = types.StringValue("Unix")
 	plan.ConnectionKey = types.Int64Value(int64(*apiResp.ConnectionKey))
 	plan.Description = util.SafeStringDatasource(plan.Description.ValueStringPointer())
 	plan.DefaultSavRoles = util.SafeStringDatasource(plan.DefaultSavRoles.ValueStringPointer())
@@ -449,7 +448,6 @@ func (r *unixConnectionResource) Read(ctx context.Context, req resource.ReadRequ
 	state.ConnectionName = util.SafeStringDatasource(apiResp.UNIXConnectionResponse.Connectionname)
 	state.Description = util.SafeStringDatasource(apiResp.UNIXConnectionResponse.Description)
 	state.DefaultSavRoles = util.SafeStringDatasource(apiResp.UNIXConnectionResponse.Defaultsavroles)
-	state.ConnectionType = util.SafeStringDatasource(apiResp.UNIXConnectionResponse.Connectiontype)
 	state.EmailTemplate = util.SafeStringDatasource(apiResp.UNIXConnectionResponse.Emailtemplate)
 	state.GroupsFile = util.SafeStringDatasource(apiResp.UNIXConnectionResponse.Connectionattributes.GROUPS_FILE)
 	state.AccountEntitlementMappingCmd = util.SafeStringDatasource(apiResp.UNIXConnectionResponse.Connectionattributes.ACCOUNT_ENTITLEMENT_MAPPING_COMMAND)
@@ -520,11 +518,6 @@ func (r *unixConnectionResource) Update(ctx context.Context, req resource.Update
 	if plan.ConnectionName.ValueString() != state.ConnectionName.ValueString() {
 		resp.Diagnostics.AddError("Error", "Connection name cannot be updated")
 		log.Printf("[ERROR]: Connection name cannot be updated")
-		return
-	}
-	if plan.ConnectionType.ValueString() != state.ConnectionType.ValueString() {
-		resp.Diagnostics.AddError("Error", "Connection type cannot by updated")
-		log.Printf("[ERROR]: Connection type cannot by updated")
 		return
 	}
 
@@ -612,7 +605,6 @@ func (r *unixConnectionResource) Update(ctx context.Context, req resource.Update
 	plan.ConnectionName = util.SafeStringDatasource(getResp.UNIXConnectionResponse.Connectionname)
 	plan.Description = util.SafeStringDatasource(getResp.UNIXConnectionResponse.Description)
 	plan.DefaultSavRoles = util.SafeStringDatasource(getResp.UNIXConnectionResponse.Defaultsavroles)
-	plan.ConnectionType = util.SafeStringDatasource(getResp.UNIXConnectionResponse.Connectiontype)
 	plan.EmailTemplate = util.SafeStringDatasource(getResp.UNIXConnectionResponse.Emailtemplate)
 	plan.GroupsFile = util.SafeStringDatasource(getResp.UNIXConnectionResponse.Connectionattributes.GROUPS_FILE)
 	plan.AccountEntitlementMappingCmd = util.SafeStringDatasource(getResp.UNIXConnectionResponse.Connectionattributes.ACCOUNT_ENTITLEMENT_MAPPING_COMMAND)

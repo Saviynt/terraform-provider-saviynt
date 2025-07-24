@@ -8,7 +8,6 @@
 //   - Create: provisions a new EntraId connection and asserts each attribute via JSONPath checks.
 //   - Import: verifies the resource can be imported by its connection name.
 //   - Update: applies configuration changes and confirms the updated attribute values.
-//   - Negative Cases: ensures updates to `connection_name` and `connection_type` are rejected.
 //
 // Test data is loaded from `entra_id_connection_resource_test_data.json` using `testutil.LoadConnectorData`.
 // Environment variables `SAVIYNT_URL`, `SAVIYNT_USERNAME`, and `SAVIYNT_PASSWORD` must be set
@@ -42,10 +41,7 @@ func TestAccSaviyntEntraIdConnectionResource(t *testing.T) {
 			{
 				Config: testAccEntraIdConnectionResourceConfig(filePath, "create"),
 				ConfigStateChecks: []statecheck.StateCheck{
-					statecheck.ExpectKnownValue(resourceName, tfjsonpath.New("connection_type"), knownvalue.StringExact(createCfg["connection_type"])),
 					statecheck.ExpectKnownValue(resourceName, tfjsonpath.New("connection_name"), knownvalue.StringExact(createCfg["connection_name"])),
-					// statecheck.ExpectKnownValue(resourceName, tfjsonpath.New("client_id"), knownvalue.StringExact(createCfg["client_id"])),
-					// statecheck.ExpectKnownValue(resourceName, tfjsonpath.New("client_secret"), knownvalue.StringExact(createCfg["client_secret"])),
 					statecheck.ExpectKnownValue(resourceName, tfjsonpath.New("aad_tenant_id"), knownvalue.StringExact(createCfg["aad_tenant_id"])),
 					statecheck.ExpectKnownValue(resourceName, tfjsonpath.New("authentication_endpoint"), knownvalue.StringExact(createCfg["authentication_endpoint"])),
 					statecheck.ExpectKnownValue(resourceName, tfjsonpath.New("microsoft_graph_endpoint"), knownvalue.StringExact(createCfg["microsoft_graph_endpoint"])),
@@ -54,7 +50,6 @@ func TestAccSaviyntEntraIdConnectionResource(t *testing.T) {
 					statecheck.ExpectKnownValue(resourceName, tfjsonpath.New("account_import_fields"), knownvalue.StringExact(createCfg["account_import_fields"])),
 					statecheck.ExpectKnownValue(resourceName, tfjsonpath.New("status_threshold_config"), knownvalue.StringExact(createCfg["status_threshold_config"])),
 					statecheck.ExpectKnownValue(resourceName, tfjsonpath.New("endpoints_filter"), knownvalue.StringExact(createCfg["endpoints_filter"])),
-					// statecheck.ExpectKnownValue(resourceName, tfjsonpath.New("connection_json"), knownvalue.StringExact(createCfg["connection_json"])),
 					statecheck.ExpectKnownValue(resourceName, tfjsonpath.New("import_user_json"), knownvalue.StringExact(createCfg["import_user_json"])),
 					statecheck.ExpectKnownValue(resourceName, tfjsonpath.New("create_account_json"), knownvalue.StringExact(createCfg["create_account_json"])),
 					statecheck.ExpectKnownValue(resourceName, tfjsonpath.New("update_account_json"), knownvalue.StringExact(createCfg["update_account_json"])),
@@ -77,9 +72,7 @@ func TestAccSaviyntEntraIdConnectionResource(t *testing.T) {
 			{
 				Config: testAccEntraIdConnectionResourceConfig(filePath, "update"),
 				ConfigStateChecks: []statecheck.StateCheck{
-					statecheck.ExpectKnownValue(resourceName, tfjsonpath.New("connection_type"), knownvalue.StringExact(updateCfg["connection_type"])),
 					statecheck.ExpectKnownValue(resourceName, tfjsonpath.New("connection_name"), knownvalue.StringExact(updateCfg["connection_name"])),
-					// statecheck.ExpectKnownValue(resourceName, tfjsonpath.New("client_id"), knownvalue.StringExact(updateCfg["client_id"])),
 					statecheck.ExpectKnownValue(resourceName, tfjsonpath.New("aad_tenant_id"), knownvalue.StringExact(updateCfg["aad_tenant_id"])),
 					statecheck.ExpectKnownValue(resourceName, tfjsonpath.New("authentication_endpoint"), knownvalue.StringExact(updateCfg["authentication_endpoint"])),
 					statecheck.ExpectKnownValue(resourceName, tfjsonpath.New("microsoft_graph_endpoint"), knownvalue.StringExact(updateCfg["microsoft_graph_endpoint"])),
@@ -103,11 +96,6 @@ func TestAccSaviyntEntraIdConnectionResource(t *testing.T) {
 				Config:      testAccEntraIdConnectionResourceConfig(filePath, "update_connection_name"),
 				ExpectError: regexp.MustCompile(`Connection name cannot be updated`),
 			},
-			// Update the Connectiontype to a new value
-			{
-				Config:      testAccEntraIdConnectionResourceConfig(filePath, "update_connection_type"),
-				ExpectError: regexp.MustCompile(`Connection type cannot by updated`),
-			},
 		},
 	})
 }
@@ -125,7 +113,6 @@ locals {
 }
 
 resource "saviynt_entraid_connection_resource" "entraid" {
-  connection_type           = local.cfg.connection_type
   connection_name           = local.cfg.connection_name
   client_id                 = local.cfg.client_id
   client_secret             = local.cfg.client_secret

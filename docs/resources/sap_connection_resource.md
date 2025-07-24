@@ -17,7 +17,6 @@ Create and manage SAP connector in Saviynt
 // SPDX-License-Identifier: MPL-2.0
 
 resource "saviynt_sap_connection_resource" "ss" {
-  connection_type             = "SAP"
   connection_name             = "Terraform_Sap_Connection"
   message_server              = "FALSE"
   jco_ashost                  = "<jco_ashost>"
@@ -209,7 +208,6 @@ resource "saviynt_sap_connection_resource" "ss" {
 - `alternate_output_parameter_et_data` (String) Alternateoutputparameteretdata.
 - `audit_log_json` (String) Auditlogjson.
 - `config_json` (String) Configjson.
-- `connection_type` (String) Connection type (e.g., 'AD' for Active Directory). Example: "AD"
 - `create_account_json` (String) Createaccountjson.
 - `data_import_filter` (String) Dataimportfilter.
 - `defaultsavroles` (String) Default SAV roles for managing the connection. Example: "ROLE_ORG"
