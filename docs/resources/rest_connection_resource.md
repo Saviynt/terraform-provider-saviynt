@@ -17,7 +17,6 @@ Create and manage REST connector in Saviynt
 // SPDX-License-Identifier: MPL-2.0
 
 resource "saviynt_rest_connection_resource" "example" {
-  connection_type = "REST"
   connection_name = "Terraform_Rest_Connector"
 
   # Using file() function to read JSON content from external files
@@ -48,13 +47,15 @@ resource "saviynt_rest_connection_resource" "example" {
 
 - `add_access_json` (String) JSON to add access.
 - `add_ffid_access_json` (String) JSON to add FFID access.
+- `application_discovery_json` (String) The ApplicationDiscoveryJSON attribute is specifically implemented for ServiceNow application discovery, allowing automated discovery and import of applications from ServiceNow instances.
 - `change_pass_json` (String) JSON to change a user’s password.
 - `config_json` (String) General configuration JSON for the REST connector.
 - `connection_json` (String) Dynamic JSON configuration for the connection. Must be a valid JSON object string.
-- `connection_type` (String) Connection type (e.g., 'AD' for Active Directory). Example: "AD"
 - `create_account_json` (String) JSON to create an account.
+- `create_entitlement_json` (String) The three entitlement JSON attributes (Create, Update, Delete) are part of a comprehensive entitlement management system for REST connectors, with supporting constants and service classes.
 - `create_ticket_json` (String) JSON to create a ticket.
 - `defaultsavroles` (String) Default SAV roles for managing the connection. Example: "ROLE_ORG"
+- `delete_entitlement_json` (String) The three entitlement JSON attributes (Create, Update, Delete) are part of a comprehensive entitlement management system for REST connectors, with supporting constants and service classes.
 - `description` (String) Description for the connection. Example: "ORG_AD"
 - `disable_account_json` (String) JSON configuration to disable an account.
 - `email_template` (String) Email template for notifications. Example: "New Account Task Creation"
@@ -75,6 +76,7 @@ resource "saviynt_rest_connection_resource" "example" {
 - `status_threshold_config` (String) JSON configuration for status thresholds.
 - `ticket_status_json` (String) JSON to check ticket status.
 - `update_account_json` (String) JSON to update an account.
+- `update_entitlement_json` (String) The three entitlement JSON attributes (Create, Update, Delete) are part of a comprehensive entitlement management system for REST connectors, with supporting constants and service classes.
 - `update_user_json` (String) JSON to update a user.
 - `validate_otp_json` (String) JSON to validate OTP.
 - `vault_configuration` (String) JSON string specifying vault configuration. Example: '{"path":"/secrets/data/kv-dev-intgn1/-AD_Credential","keyMapping":{"PASSWORD":"AD_PASSWORD~#~None"}}'

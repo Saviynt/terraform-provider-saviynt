@@ -34,7 +34,6 @@ variable "PASSWORD" {
   sensitive   = true
 }
 resource "saviynt_db_connection_resource" "example" {
-  connection_type           = "DB"
   connection_name           = "Terraform_DB_Connector"
   url                       = var.URL
   username                  = var.USERNAME
@@ -254,14 +253,16 @@ EOF
 - `change_pass_json` (String) JSON to specify the queries/stored procedures used to change a password
 - `cli_command_json` (String) JSON to specify commands executable on the target server
 - `connection_properties` (String) Properties that need to be added when connecting to the database
-- `connection_type` (String) Connection type (e.g., 'AD' for Active Directory). Example: "AD"
 - `create_account_json` (String) JSON to specify the queries/stored procedures used to create a new account (e.g., randomPassword, task, user, accountName, role, endpoint, etc.)
+- `create_entitlement_json` (String) JSON to specify the Queries/stored procedures which will be used to Create the New Entitlements. Objects Exposed - (entitlementMgmtObj, task, user, endpoint and all the objects defined in Dynamic Attributes).
 - `defaultsavroles` (String) Default SAV roles for managing the connection. Example: "ROLE_ORG"
 - `delete_account_json` (String) JSON to specify the queries/stored procedures used to delete an account
+- `delete_entitlement_json` (String) JSON to specify the Queries/stored procedures which will be used to Delete the Entitlements. Objects Exposed - (entitlementMgmtObj, task, user, endpoint and all the objects defined in Dynamic Attributes).
 - `description` (String) Description for the connection. Example: "ORG_AD"
 - `disable_account_json` (String) JSON to specify the queries/stored procedures used to disable an account
 - `email_template` (String) Email template for notifications. Example: "New Account Task Creation"
 - `enable_account_json` (String) JSON to specify the queries/stored procedures used to enable an account
+- `entitlement_exist_json` (String) JSON to specify the Query which will be used to check whether an entitlement exists. Objects Exposed - (entitlementMgmtObj, task, user, endpoint and all the objects defined in Dynamic Attributes).
 - `entitlement_value_import` (String) Entitlement Value Import XML file content
 - `error_code` (String) An error code where '0' signifies success and '1' signifies an unsuccessful operation.
 - `grant_access_json` (String) JSON to specify the queries/stored procedures used to provide access
@@ -280,6 +281,7 @@ EOF
 - `status_threshold_config` (String) Configuration for status and threshold (e.g., statusColumn, activeStatus, accountThresholdValue, etc.)
 - `system_import` (String) System Import XML file content
 - `update_account_json` (String) JSON to specify the queries/stored procedures used to update an existing account
+- `update_entitlement_json` (String) JSON to specify the Queries/stored procedures which will be used to Update the Entitlements. Objects Exposed - (entitlementMgmtObj, task, user, endpoint and all the objects defined in Dynamic Attributes).
 - `update_user_json` (String) JSON to specify the queries/stored procedures used to update user information
 - `user_import` (String) User Import XML file content
 - `vault_configuration` (String) JSON string specifying vault configuration. Example: '{"path":"/secrets/data/kv-dev-intgn1/-AD_Credential","keyMapping":{"PASSWORD":"AD_PASSWORD~#~None"}}'

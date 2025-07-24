@@ -72,6 +72,11 @@ type DBConnectionAttributes struct {
 	GrantAccessJSON          types.String             `tfsdk:"grantaccess_json"`
 	CliCommandJSON           types.String             `tfsdk:"cli_command_json"`
 	ConnectionTimeoutConfig  *ConnectionTimeoutConfig `tfsdk:"connection_timeout_config"`
+	//TER-176
+	CreateEntitlementJson types.String `tfsdk:"create_entitlement_json"`
+	DeleteEntitlementJson types.String `tfsdk:"delete_entitlement_json"`
+	EntitlementExistJson  types.String `tfsdk:"entitlement_exist_json"`
+	UpdateEntitlementJson types.String `tfsdk:"update_entitlement_json"`
 }
 
 var _ datasource.DataSource = &dbConnectionsDataSource{}
@@ -127,6 +132,11 @@ func DBConnectorsDataSourceSchema() map[string]schema.Attribute {
 					Computed:   true,
 					Attributes: ConnectionTimeoutConfigeSchema(),
 				},
+				//TER-176
+				"create_entitlement_json": schema.StringAttribute{Computed: true},
+				"delete_entitlement_json": schema.StringAttribute{Computed: true},
+				"entitlement_exist_json":  schema.StringAttribute{Computed: true},
+				"update_entitlement_json": schema.StringAttribute{Computed: true},
 			},
 		},
 	}
@@ -263,6 +273,11 @@ func (d *dbConnectionsDataSource) Read(ctx context.Context, req datasource.ReadR
 			UpdateAccountJSON:        util.SafeStringDatasource(apiResp.DBConnectionResponse.Connectionattributes.UPDATEACCOUNTJSON),
 			GrantAccessJSON:          util.SafeStringDatasource(apiResp.DBConnectionResponse.Connectionattributes.GRANTACCESSJSON),
 			CliCommandJSON:           util.SafeStringDatasource(apiResp.DBConnectionResponse.Connectionattributes.CLI_COMMAND_JSON),
+			//TER-176
+			CreateEntitlementJson: util.SafeStringDatasource(apiResp.DBConnectionResponse.Connectionattributes.CREATEENTITLEMENTJSON),
+			DeleteEntitlementJson: util.SafeStringDatasource(apiResp.DBConnectionResponse.Connectionattributes.DELETEENTITLEMENTJSON),
+			EntitlementExistJson:  util.SafeStringDatasource(apiResp.DBConnectionResponse.Connectionattributes.ENTITLEMENTEXISTJSON),
+			UpdateEntitlementJson: util.SafeStringDatasource(apiResp.DBConnectionResponse.Connectionattributes.UPDATEENTITLEMENTJSON),
 		}
 		if apiResp.DBConnectionResponse.Connectionattributes.ConnectionTimeoutConfig != nil {
 			state.ConnectionAttributes.ConnectionTimeoutConfig = &ConnectionTimeoutConfig{

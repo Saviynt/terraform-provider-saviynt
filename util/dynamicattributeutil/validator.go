@@ -68,6 +68,7 @@ func (v attributeValueDisallowedForAttributeTypesValidator) ValidateString(ctx c
 		)
 	}
 }
+
 // Factory function with built-in disallowed types
 func AttributeValueDisallowedForCertainAttributeTypes() validator.String {
 	return &attributeValueDisallowedForAttributeTypesValidator{}

@@ -12,7 +12,6 @@ import (
 type BaseConnectorResourceModel struct {
 	ConnectionKey      types.Int64  `tfsdk:"connection_key"`
 	ConnectionName     types.String `tfsdk:"connection_name"`
-	ConnectionType     types.String `tfsdk:"connection_type"`
 	Description        types.String `tfsdk:"description"`
 	DefaultSavRoles    types.String `tfsdk:"defaultsavroles"`
 	EmailTemplate      types.String `tfsdk:"email_template"`
@@ -32,11 +31,6 @@ func BaseConnectorResourceSchema() map[string]schema.Attribute {
 		"connection_name": schema.StringAttribute{
 			Required:    true,
 			Description: "Name of the connection. Example: \"Active Directory_Doc\"",
-		},
-		"connection_type": schema.StringAttribute{
-			Optional:    true,
-			Computed:    true,
-			Description: "Connection type (e.g., 'AD' for Active Directory). Example: \"AD\"",
 		},
 		"description": schema.StringAttribute{
 			Optional:    true,

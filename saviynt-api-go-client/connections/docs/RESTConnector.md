@@ -28,6 +28,10 @@ Name | Type | Description | Notes
 **SendOtpJSON** | Pointer to **string** |  | [optional] 
 **ValidateOtpJSON** | Pointer to **string** |  | [optional] 
 **PAM_CONFIG** | Pointer to **string** |  | [optional] 
+**CreateEntitlementJSON** | Pointer to **string** |  | [optional] 
+**DeleteEntitlementJSON** | Pointer to **string** |  | [optional] 
+**UpdateEntitlementJSON** | Pointer to **string** |  | [optional] 
+**ApplicationDiscoveryJSON** | Pointer to **string** |  | [optional] 
 
 ## Methods
 
@@ -647,6 +651,106 @@ SetPAM_CONFIG sets PAM_CONFIG field to given value.
 `func (o *RESTConnector) HasPAM_CONFIG() bool`
 
 HasPAM_CONFIG returns a boolean if a field has been set.
+
+### GetCreateEntitlementJSON
+
+`func (o *RESTConnector) GetCreateEntitlementJSON() string`
+
+GetCreateEntitlementJSON returns the CreateEntitlementJSON field if non-nil, zero value otherwise.
+
+### GetCreateEntitlementJSONOk
+
+`func (o *RESTConnector) GetCreateEntitlementJSONOk() (*string, bool)`
+
+GetCreateEntitlementJSONOk returns a tuple with the CreateEntitlementJSON field if it's non-nil, zero value otherwise
+and a boolean to check if the value has been set.
+
+### SetCreateEntitlementJSON
+
+`func (o *RESTConnector) SetCreateEntitlementJSON(v string)`
+
+SetCreateEntitlementJSON sets CreateEntitlementJSON field to given value.
+
+### HasCreateEntitlementJSON
+
+`func (o *RESTConnector) HasCreateEntitlementJSON() bool`
+
+HasCreateEntitlementJSON returns a boolean if a field has been set.
+
+### GetDeleteEntitlementJSON
+
+`func (o *RESTConnector) GetDeleteEntitlementJSON() string`
+
+GetDeleteEntitlementJSON returns the DeleteEntitlementJSON field if non-nil, zero value otherwise.
+
+### GetDeleteEntitlementJSONOk
+
+`func (o *RESTConnector) GetDeleteEntitlementJSONOk() (*string, bool)`
+
+GetDeleteEntitlementJSONOk returns a tuple with the DeleteEntitlementJSON field if it's non-nil, zero value otherwise
+and a boolean to check if the value has been set.
+
+### SetDeleteEntitlementJSON
+
+`func (o *RESTConnector) SetDeleteEntitlementJSON(v string)`
+
+SetDeleteEntitlementJSON sets DeleteEntitlementJSON field to given value.
+
+### HasDeleteEntitlementJSON
+
+`func (o *RESTConnector) HasDeleteEntitlementJSON() bool`
+
+HasDeleteEntitlementJSON returns a boolean if a field has been set.
+
+### GetUpdateEntitlementJSON
+
+`func (o *RESTConnector) GetUpdateEntitlementJSON() string`
+
+GetUpdateEntitlementJSON returns the UpdateEntitlementJSON field if non-nil, zero value otherwise.
+
+### GetUpdateEntitlementJSONOk
+
+`func (o *RESTConnector) GetUpdateEntitlementJSONOk() (*string, bool)`
+
+GetUpdateEntitlementJSONOk returns a tuple with the UpdateEntitlementJSON field if it's non-nil, zero value otherwise
+and a boolean to check if the value has been set.
+
+### SetUpdateEntitlementJSON
+
+`func (o *RESTConnector) SetUpdateEntitlementJSON(v string)`
+
+SetUpdateEntitlementJSON sets UpdateEntitlementJSON field to given value.
+
+### HasUpdateEntitlementJSON
+
+`func (o *RESTConnector) HasUpdateEntitlementJSON() bool`
+
+HasUpdateEntitlementJSON returns a boolean if a field has been set.
+
+### GetApplicationDiscoveryJSON
+
+`func (o *RESTConnector) GetApplicationDiscoveryJSON() string`
+
+GetApplicationDiscoveryJSON returns the ApplicationDiscoveryJSON field if non-nil, zero value otherwise.
+
+### GetApplicationDiscoveryJSONOk
+
+`func (o *RESTConnector) GetApplicationDiscoveryJSONOk() (*string, bool)`
+
+GetApplicationDiscoveryJSONOk returns a tuple with the ApplicationDiscoveryJSON field if it's non-nil, zero value otherwise
+and a boolean to check if the value has been set.
+
+### SetApplicationDiscoveryJSON
+
+`func (o *RESTConnector) SetApplicationDiscoveryJSON(v string)`
+
+SetApplicationDiscoveryJSON sets ApplicationDiscoveryJSON field to given value.
+
+### HasApplicationDiscoveryJSON
+
+`func (o *RESTConnector) HasApplicationDiscoveryJSON() bool`
+
+HasApplicationDiscoveryJSON returns a boolean if a field has been set.
 
 
 [[Back to Model list]](../README.md#documentation-for-models) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to README]](../README.md)

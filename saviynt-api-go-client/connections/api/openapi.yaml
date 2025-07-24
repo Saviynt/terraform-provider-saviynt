@@ -486,6 +486,28 @@ components:
             description: Service account username
             example: adminuser@domain1.com
             type: string
+          ENABLEGROUPMANAGEMENT:
+            description: True implies group management capability limited to AD only.
+            type: string
+            example: null
+          IMPORTDATACOOKIES:
+            type: string
+          MOVEACCOUNTJSON:
+            description: "JSON to specify movement action logic explicitely. If you\
+              \ have defined 'moveObjectToOU' parameter in your update/enable/disable\
+              \ actions implicitely, then no need to define this explicitely here"
+            type: string
+            example: null
+          PasswdPolicyJSON:
+            description: "Optional Password policy JSON, in case you have no password\
+              \ policy defined/assigned in your Security System."
+            type: string
+            example: null
+          createUpdateMappings:
+            description: Mapping used during group creation to specify which attribute
+              of a group maps to which attribute on Saviynt.
+            type: string
+            example: null
           PASSWORD:
             description: Service account password
             format: password
@@ -1341,6 +1363,14 @@ components:
             type: string
           PAM_CONFIG:
             type: string
+          CreateEntitlementJSON:
+            type: string
+          DeleteEntitlementJSON:
+            type: string
+          UpdateEntitlementJSON:
+            type: string
+          ApplicationDiscoveryJSON:
+            type: string
     SalesforceConnector:
       allOf:
       - $ref: '#/components/schemas/BaseConnector'
@@ -1573,6 +1603,14 @@ components:
             description: JSON to specify the commands which can be executed in target
               server.
             example: oracle.jdbc.OracleDriver
+            type: string
+          CREATEENTITLEMENTJSON:
+            type: string
+          DELETEENTITLEMENTJSON:
+            type: string
+          ENTITLEMENTEXISTJSON:
+            type: string
+          UPDATEENTITLEMENTJSON:
             type: string
         required:
         - DRIVERNAME
