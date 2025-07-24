@@ -47,7 +47,6 @@ variable "SSH_KEY" {
 }
 
 resource "saviynt_unix_connection_resource" "example" {
-  connection_type = "Unix"
   connection_name = "Terraform_Unix_Connector"
   host_name       = var.HOST_NAME
   port_number     = var.PORT_NUMBER
@@ -153,7 +152,6 @@ resource "saviynt_unix_connection_resource" "example" {
 - `add_group_owner_command` (String) Property for ADD_GROUP_OWNER_COMMAND
 - `add_primary_group_command` (String) Property for ADD_PRIMARY_GROUP_COMMAND
 - `change_password_json` (String) Property for CHANGE_PASSWRD_JSON
-- `connection_type` (String) Connection type (e.g., 'AD' for Active Directory). Example: "AD"
 - `create_group_command` (String) Property for CREATE_GROUP_COMMAND
 - `custom_config_json` (String) Property for CUSTOM_CONFIG_JSON
 - `defaultsavroles` (String) Default SAV roles for managing the connection. Example: "ROLE_ORG"

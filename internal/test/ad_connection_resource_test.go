@@ -8,7 +8,6 @@
 //   - Create: provisions a new AD connection and asserts each attribute via JSONPath checks.
 //   - Import: verifies the resource can be imported by its connection name.
 //   - Update: applies configuration changes and confirms the updated attribute values.
-//   - Negative Cases: ensures updates to `connection_name` and `connection_type` are rejected.
 //
 // Test data is loaded from `ad_connection_resource_test_data.json` using `testutil.LoadConnectorData`.
 // Environment variables `SAVIYNT_URL`, `SAVIYNT_USERNAME`, and `SAVIYNT_PASSWORD` must be set
@@ -46,7 +45,6 @@ func TestAccSaviyntADConnectionResource(t *testing.T) {
 			{
 				Config: testAccADConnectionResourceConfig(filePath, "create"),
 				ConfigStateChecks: []statecheck.StateCheck{
-					statecheck.ExpectKnownValue(resourceName, tfjsonpath.New("connection_type"), knownvalue.StringExact(createCfg["connection_type"])),
 					statecheck.ExpectKnownValue(resourceName, tfjsonpath.New("url"), knownvalue.StringExact(createCfg["url"])),
 					statecheck.ExpectKnownValue(resourceName, tfjsonpath.New("searchfilter"), knownvalue.StringExact(createCfg["searchfilter"])),
 					statecheck.ExpectKnownValue(resourceName, tfjsonpath.New("base"), knownvalue.StringExact(createCfg["base"])),
@@ -77,7 +75,6 @@ func TestAccSaviyntADConnectionResource(t *testing.T) {
 				Config: testAccADConnectionResourceConfig(filePath, "update"),
 				ConfigStateChecks: []statecheck.StateCheck{
 					statecheck.ExpectKnownValue(resourceName, tfjsonpath.New("connection_name"), knownvalue.StringExact(updateCfg["connection_name"])),
-					statecheck.ExpectKnownValue(resourceName, tfjsonpath.New("connection_type"), knownvalue.StringExact(updateCfg["connection_type"])),
 					statecheck.ExpectKnownValue(resourceName, tfjsonpath.New("url"), knownvalue.StringExact(updateCfg["url"])),
 					statecheck.ExpectKnownValue(resourceName, tfjsonpath.New("searchfilter"), knownvalue.StringExact(updateCfg["searchfilter"])),
 					statecheck.ExpectKnownValue(resourceName, tfjsonpath.New("base"), knownvalue.StringExact(updateCfg["base"])),
@@ -100,11 +97,6 @@ func TestAccSaviyntADConnectionResource(t *testing.T) {
 				Config:      testAccADConnectionResourceConfig(filePath, "update_connection_name"),
 				ExpectError: regexp.MustCompile(`Connection name cannot be updated`),
 			},
-			// Update the Connectiontype to a new value
-			{
-				Config:      testAccADConnectionResourceConfig(filePath, "update_connection_type"),
-				ExpectError: regexp.MustCompile(`Connection type cannot by updated`),
-			},
 		},
 	})
 }
@@ -121,7 +113,6 @@ provider "saviynt" {
 }
 
 resource "saviynt_ad_connection_resource" "ad" {
-  connection_type     = local.cfg.connection_type
   connection_name     = local.cfg.connection_name
   url                 = local.cfg.url
   password            = local.cfg.password

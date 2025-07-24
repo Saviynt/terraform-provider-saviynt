@@ -57,22 +57,6 @@ func TestAccSaviyntDynamicAttributeResource(t *testing.T) {
 		t.Fatalf("failed to unmarshal dynamic_attributes for set attribute value: %v", err)
 	}
 
-	printJSON := func(label string, v interface{}) {
-		bytes, err := json.MarshalIndent(v, "", "  ")
-		if err != nil {
-			t.Logf("Failed to marshal %s: %v", label, err)
-		} else {
-			t.Logf("%s:\n%s\n", label, string(bytes))
-		}
-	}
-
-	printJSON("createReqCfg", createReqCfg)
-	printJSON("createAllCfg", createAllCfg)
-	printJSON("updateAllCfg", updateAllCfg)
-	printJSON("dynAttrsCreateWithReq", dynAttrsCreateWithReq)
-	printJSON("dynAttrsCreateWithAll", dynAttrsCreateWithAll)
-	printJSON("dynAttrsUpdateWithAll", dynAttrsUpdateWithAll)
-
 	log.Print("Attribute 1: ", dynAttrsCreateWithReq[0]["attribute_name"])
 
 	resourceNameWithReqOnly := "saviynt_dynamic_attribute_resource.da_req_attr"

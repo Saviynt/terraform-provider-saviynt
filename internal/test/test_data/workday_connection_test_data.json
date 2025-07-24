@@ -1,6 +1,5 @@
 {
   "create": {
-    "connection_type": "Workday",
     "connection_name": "Terraform_Workday_acc_{{PIPELINE_ID}}",
     "base_url": "https://XXX",
     "api_version": "v0.x.x",
@@ -48,7 +47,6 @@
     }
   },
   "update": {
-    "connection_type": "Workday",
     "connection_name": "Terraform_Workday_acc_{{PIPELINE_ID}}",
     "base_url": "https://XXX",
     "api_version": "v0.x.x",
@@ -93,7 +91,6 @@
     }
   },
   "update_connection_name": {
-    "connection_type": "Workday",
     "connection_name": "Terraform_Workday_acc_{{PIPELINE_ID}}_change",
     "base_url": "https://XXX",
     "api_version": "v0.x.x",
@@ -140,56 +137,7 @@
       }
     }
   },
-  "update_connection_type": {
-    "connection_type": "SAP",
-    "connection_name": "Terraform_Workday_acc_{{PIPELINE_ID}}",
-    "base_url": "https://XXX",
-    "api_version": "v0.x.x",
-    "client_id": "XXXXX",
-    "use_oauth": "TRUE",
-    "username": "user1",
-    "access_import_list": "Security Group, Domain Security Policy, Business Process Security Policy",
-    "status_key_json": {
-      "STATUS_ACTIVE": [
-        "1",
-        "Active"
-      ],
-      "STATUS_INACTIVE": [
-        "0",
-        "Retired",
-        "Terminated"
-      ]
-    },
-    "user_import_payload": "<bsvc:Get_Workers_Request bsvc:version=\"v34.0\"><bsvc:Response_Filter><bsvc:Page>2</bsvc:Page><bsvc:Count>100</bsvc:Count></bsvc:Response_Filter><bsvc:Response_Group><bsvc:Include_Reference>true</bsvc:Include_Reference><bsvc:Include_Personal_Information>true</bsvc:Include_Personal_Information><bsvc:Include_Additional_Jobs>false</bsvc:Include_Additional_Jobs><bsvc:Include_Employment_Information>true</bsvc:Include_Employment_Information><bsvc:Include_Compensation>false</bsvc:Include_Compensation><bsvc:Include_Organizations>true</bsvc:Include_Organizations><bsvc:Exclude_Organization_Support_Role_Data>true</bsvc:Exclude_Organization_Support_Role_Data><bsvc:Exclude_Location_Hierarchies>true</bsvc:Exclude_Location_Hierarchies><bsvc:Exclude_Cost_Centers>false</bsvc:Exclude_Cost_Centers><bsvc:Exclude_Cost_Center_Hierarchies>false</bsvc:Exclude_Cost_Center_Hierarchies><bsvc:Exclude_Companies>false</bsvc:Exclude_Companies><bsvc:Exclude_Company_Hierarchies>true</bsvc:Exclude_Company_Hierarchies><bsvc:Exclude_Matrix_Organizations>true</bsvc:Exclude_Matrix_Organizations><bsvc:Exclude_Pay_Groups>true</bsvc:Exclude_Pay_Groups><bsvc:Exclude_Regions>true</bsvc:Exclude_Regions><bsvc:Exclude_Region_Hierarchies>true</bsvc:Exclude_Region_Hierarchies><bsvc:Exclude_Supervisory_Organizations>false</bsvc:Exclude_Supervisory_Organizations><bsvc:Exclude_Teams>true</bsvc:Exclude_Teams><bsvc:Exclude_Custom_Organizations>false</bsvc:Exclude_Custom_Organizations><bsvc:Include_Roles>false</bsvc:Include_Roles><bsvc:Include_Management_Chain_Data>false</bsvc:Include_Management_Chain_Data><bsvc:Include_Multiple_Managers_in_Management_Chain_Data>true</bsvc:Include_Multiple_Managers_in_Management_Chain_Data><bsvc:Include_Benefit_Enrollments>false</bsvc:Include_Benefit_Enrollments><bsvc:Include_Benefit_Eligibility>false</bsvc:Include_Benefit_Eligibility><bsvc:Include_Related_Persons>false</bsvc:Include_Related_Persons><bsvc:Include_Qualifications>false</bsvc:Include_Qualifications><bsvc:Include_Employee_Review>false</bsvc:Include_Employee_Review><bsvc:Include_Goals>false</bsvc:Include_Goals><bsvc:Include_Development_Items>false</bsvc:Include_Development_Items><bsvc:Include_Skills>false</bsvc:Include_Skills><bsvc:Include_Photo>false</bsvc:Include_Photo><bsvc:Include_Worker_Documents>false</bsvc:Include_Worker_Documents><bsvc:Include_Transaction_Log_Data>false</bsvc:Include_Transaction_Log_Data><bsvc:Include_Subevents_for_Corrected_Transaction>false</bsvc:Include_Subevents_for_Corrected_Transaction><bsvc:Include_Subevents_for_Rescinded_Transaction>false</bsvc:Include_Subevents_for_Rescinded_Transaction><bsvc:Include_Succession_Profile>false</bsvc:Include_Succession_Profile><bsvc:Include_Talent_Assessment>false</bsvc:Include_Talent_Assessment><bsvc:Include_Employee_Contract_Data>false</bsvc:Include_Employee_Contract_Data><bsvc:Include_Collective_Agreement_Data>false</bsvc:Include_Collective_Agreement_Data><bsvc:Include_Probation_Period_Data>false</bsvc:Include_Probation_Period_Data><bsvc:Include_Feedback_Received>false</bsvc:Include_Feedback_Received><bsvc:Include_User_Account>false</bsvc:Include_User_Account></bsvc:Response_Group></bsvc:Get_Workers_Request>",
-    "user_import_mapping": {
-      "ImportType": "SOAP",
-      "ResponsePath": "Body.Get_Workers_Response.Response_Data.Worker",
-      "ImportMapping": {
-        "USERNAME": "Worker_Data.User_ID",
-        "SYSTEMUSERNAME": "Worker_Data.User_ID",
-        "FIRSTNAME": "Worker_Data.Personal_Data.Name_Data.Preferred_Name_Data.Name_Detail_Data.First_Name",
-        "MIDDLENAME": "Worker_Data.Personal_Data.Name_Data.Preferred_Name_Data.Name_Detail_Data.Middle_Name",
-        "LASTNAME": "Worker_Data.Personal_Data.Name_Data.Legal_Name_Data.Name_Detail_Data.Last_Name",
-        "DISPLAYNAME": "Worker_Data.Personal_Data.Name_Data.Legal_Name_Data.Name_Detail_Data.@Formatted_Name",
-        "LOCATION": "Worker_Data.Personal_Data.Contact_Data.Address_Data(Usage_Data->Type_Data->Type_Reference->ID=='WORK').Municipality",
-        "TITLE": "Worker_Data.Employment_Data.Worker_Job_Data.Position_Data.Business_Title",
-        "EMPLOYEEID": "Worker_Data.Worker_ID",
-        "PREFEREDFIRSTNAME": "Worker_Data.Personal_Data.Name_Data.Preferred_Name_Data.Name_Detail_Data.First_Name",
-        "PHONENUMBER": "Worker_Data.Personal_Data:Worker_Reference.Contact_Data.Phone_Data(Usage_Data->Type_Data->Type_Reference->ID=='WORK').Phone_Number",
-        "CITY": "Worker_Data.Personal_Data.Contact_Data.Address_Data(Usage_Data->Type_Data->Type_Reference->ID=='WORK').Municipality",
-        "EMAIL": "Worker_Data.Personal_Data.Contact_Data.Email_Address_Data(Usage_Data->Type_Data->Type_Reference->ID=='WORK').Email_Address",
-        "STATUSKEY": "Worker_Data.Employment_Data.Worker_Status_Data.Active",
-        "CUSTOMPROPERTY1": "Worker_Reference.ID(@type=='WID')",
-        "COUNTRY": "Worker_Data.Personal_Data.Name_Data.Legal_Name_Data.Name_Detail_Data.Country_Reference.ID(@type=='ISO_3166-1_Alpha-3_Code')",
-        "EMPLOYEETYPE": "Worker_Data.Employment_Data.Worker_Job_Data.Position_Data.Worker_Type_Reference.ID(@type=='Employee_Type_ID')",
-        "COMPANYNAME": "Worker_Data.Organization_Data.Worker_Organization_Data.Organization_Data.Organization_Name",
-        "COSTCENTER": "Worker_Data.Employment_Data.Worker_Job_Data.Position_Organizations_Data.Position_Organization_Data.Organization_Data.Organization_Code",
-        "CUSTOMPROPERTY12": "Worker_Data.Organization_Data.Worker_Organization_Data.Organization_Data(Organization_Type_Reference->ID=='ORGANIZATION_TYPE-6-44').Organization_Name~;~listAsString"
-      }
-    }
-  },
   "ds": {
-    "connection_type": "Workday",
     "connection_name": "Terraform_Workday_acc_{{PIPELINE_ID}}_ds",
     "base_url": "https://XXX",
     "api_version": "v0.x.x",

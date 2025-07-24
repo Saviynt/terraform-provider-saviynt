@@ -37,7 +37,6 @@ variable "INSTANCE_URL" {
   description = "Instance URL for Salesforce connection"
 }
 resource "saviynt_salesforce_connection_resource" "ss" {
-  connection_type       = "SalesForce"
   connection_name       = "Terraform_Salesforce_Connection"
   client_id             = var.CLIENT_ID
   client_secret         = var.CLIENT_SECRET
@@ -112,7 +111,6 @@ resource "saviynt_salesforce_connection_resource" "ss" {
 - `account_filter_query` (String) Query used to filter Salesforce accounts.
 - `client_id` (String) The OAuth client ID for Salesforce.
 - `client_secret` (String) The OAuth client secret for Salesforce.
-- `connection_type` (String) Connection type (e.g., 'AD' for Active Directory). Example: "AD"
 - `createaccountjson` (String) JSON template used for account creation in Salesforce.
 - `custom_createaccount_url` (String) Custom URL used when creating a Salesforce account.
 - `customconfigjson` (String) Custom configuration options for Salesforce connector.

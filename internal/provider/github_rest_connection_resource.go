@@ -184,7 +184,6 @@ func (r *githubRestConnectionResource) Create(ctx context.Context, req resource.
 		return
 	}
 	plan.ID = types.StringValue(fmt.Sprintf("%d", *apiResp.ConnectionKey))
-	plan.ConnectionType = types.StringValue("GithubRest")
 	plan.ConnectionKey = types.Int64Value(int64(*apiResp.ConnectionKey))
 	plan.Description = util.SafeStringDatasource(plan.Description.ValueStringPointer())
 	plan.DefaultSavRoles = util.SafeStringDatasource(plan.DefaultSavRoles.ValueStringPointer())
@@ -229,7 +228,6 @@ func (r *githubRestConnectionResource) Read(ctx context.Context, req resource.Re
 	state.ConnectionName = util.SafeStringDatasource(apiResp.GithubRESTConnectionResponse.Connectionname)
 	state.Description = util.SafeStringDatasource(apiResp.GithubRESTConnectionResponse.Description)
 	state.DefaultSavRoles = util.SafeStringDatasource(apiResp.GithubRESTConnectionResponse.Defaultsavroles)
-	state.ConnectionType = util.SafeStringDatasource(apiResp.GithubRESTConnectionResponse.Connectiontype)
 	state.EmailTemplate = util.SafeStringDatasource(apiResp.GithubRESTConnectionResponse.Emailtemplate)
 	state.ImportAccountEntJSON = util.SafeStringDatasource(apiResp.GithubRESTConnectionResponse.Connectionattributes.ImportAccountEntJSON)
 	state.Organization_List = util.SafeStringDatasource(apiResp.GithubRESTConnectionResponse.Connectionattributes.ORGANIZATION_LIST)
@@ -276,11 +274,6 @@ func (r *githubRestConnectionResource) Update(ctx context.Context, req resource.
 	if plan.ConnectionName.ValueString() != state.ConnectionName.ValueString() {
 		resp.Diagnostics.AddError("Error", "Connection name cannot be updated")
 		log.Printf("[ERROR]: Connection name cannot be updated")
-		return
-	}
-	if plan.ConnectionType.ValueString() != state.ConnectionType.ValueString() {
-		resp.Diagnostics.AddError("Error", "Connection type cannot by updated")
-		log.Printf("[ERROR]: Connection type cannot by updated")
 		return
 	}
 
@@ -339,7 +332,6 @@ func (r *githubRestConnectionResource) Update(ctx context.Context, req resource.
 	plan.ConnectionName = util.SafeStringDatasource(getResp.GithubRESTConnectionResponse.Connectionname)
 	plan.Description = util.SafeStringDatasource(getResp.GithubRESTConnectionResponse.Description)
 	plan.DefaultSavRoles = util.SafeStringDatasource(getResp.GithubRESTConnectionResponse.Defaultsavroles)
-	plan.ConnectionType = util.SafeStringDatasource(getResp.GithubRESTConnectionResponse.Connectiontype)
 	plan.EmailTemplate = util.SafeStringDatasource(getResp.GithubRESTConnectionResponse.Emailtemplate)
 	plan.ImportAccountEntJSON = util.SafeStringDatasource(getResp.GithubRESTConnectionResponse.Connectionattributes.ImportAccountEntJSON)
 	plan.Organization_List = util.SafeStringDatasource(getResp.GithubRESTConnectionResponse.Connectionattributes.ORGANIZATION_LIST)

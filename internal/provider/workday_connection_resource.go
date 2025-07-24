@@ -134,7 +134,7 @@ func WorkdayConnectorResourceSchema() map[string]schema.Attribute {
 		},
 		"use_oauth": schema.StringAttribute{
 			Required:    true,
-			Description: "Whether to use OAuth authentication.",
+			Description: "Whether to use OAuth authentication.Values can be TRUE/FALSE",
 		},
 		"include_reference_descriptors": schema.StringAttribute{
 			Optional:    true,
@@ -415,7 +415,6 @@ func (r *workdayConnectionResource) Create(ctx context.Context, req resource.Cre
 		plan.UseEnhancedOrgRole = types.StringValue("TRUE")
 	}
 	plan.ID = types.StringValue(fmt.Sprintf("%d", *apiResp.ConnectionKey))
-	plan.ConnectionType = types.StringValue("Workday")
 	plan.ConnectionKey = types.Int64Value(int64(*apiResp.ConnectionKey))
 	plan.Description = util.SafeStringDatasource(plan.Description.ValueStringPointer())
 	plan.DefaultSavRoles = util.SafeStringDatasource(plan.DefaultSavRoles.ValueStringPointer())
@@ -488,13 +487,11 @@ func (r *workdayConnectionResource) Read(ctx context.Context, req resource.ReadR
 	state.ConnectionName = util.SafeStringDatasource(apiResp.WorkdayConnectionResponse.Connectionname)
 	state.Description = util.SafeStringDatasource(apiResp.WorkdayConnectionResponse.Description)
 	state.DefaultSavRoles = util.SafeStringDatasource(apiResp.WorkdayConnectionResponse.Defaultsavroles)
-	state.ConnectionType = util.SafeStringDatasource(apiResp.WorkdayConnectionResponse.Connectiontype)
 	state.EmailTemplate = util.SafeStringDatasource(apiResp.WorkdayConnectionResponse.Emailtemplate)
 	state.UseOAuth = util.SafeStringDatasource(apiResp.WorkdayConnectionResponse.Connectionattributes.USE_OAUTH)
 	state.UserImportMapping = util.SafeStringDatasource(apiResp.WorkdayConnectionResponse.Connectionattributes.USER_IMPORT_MAPPING)
 	state.AccountsLastImportTime = util.SafeStringDatasource(apiResp.WorkdayConnectionResponse.Connectionattributes.ACCOUNTS_LAST_IMPORT_TIME)
 	state.StatusKeyJSON = util.SafeStringDatasource(apiResp.WorkdayConnectionResponse.Connectionattributes.STATUS_KEY_JSON)
-	state.ConnectionType = util.SafeStringDatasource(apiResp.WorkdayConnectionResponse.Connectiontype)
 	state.RAASMappingJSON = util.SafeStringDatasource(apiResp.WorkdayConnectionResponse.Connectionattributes.RAAS_MAPPING_JSON)
 	state.AccountImportPayload = util.SafeStringDatasource(apiResp.WorkdayConnectionResponse.Connectionattributes.ACCOUNT_IMPORT_PAYLOAD)
 	state.UpdateAccountPayload = util.SafeStringDatasource(apiResp.WorkdayConnectionResponse.Connectionattributes.UPDATE_ACCOUNT_PAYLOAD)
@@ -565,11 +562,6 @@ func (r *workdayConnectionResource) Update(ctx context.Context, req resource.Upd
 	if plan.ConnectionName.ValueString() != state.ConnectionName.ValueString() {
 		resp.Diagnostics.AddError("Error", "Connection name cannot be updated")
 		log.Printf("[ERROR]: Connection name cannot be updated")
-		return
-	}
-	if plan.ConnectionType.ValueString() != state.ConnectionType.ValueString() {
-		resp.Diagnostics.AddError("Error", "Connection type cannot by updated")
-		log.Printf("[ERROR]: Connection type cannot by updated")
 		return
 	}
 
@@ -653,13 +645,11 @@ func (r *workdayConnectionResource) Update(ctx context.Context, req resource.Upd
 	plan.ConnectionName = util.SafeStringDatasource(getResp.WorkdayConnectionResponse.Connectionname)
 	plan.Description = util.SafeStringDatasource(getResp.WorkdayConnectionResponse.Description)
 	plan.DefaultSavRoles = util.SafeStringDatasource(getResp.WorkdayConnectionResponse.Defaultsavroles)
-	plan.ConnectionType = util.SafeStringDatasource(getResp.WorkdayConnectionResponse.Connectiontype)
 	plan.EmailTemplate = util.SafeStringDatasource(getResp.WorkdayConnectionResponse.Emailtemplate)
 	plan.UseOAuth = util.SafeStringDatasource(getResp.WorkdayConnectionResponse.Connectionattributes.USE_OAUTH)
 	plan.UserImportMapping = util.SafeStringDatasource(getResp.WorkdayConnectionResponse.Connectionattributes.USER_IMPORT_MAPPING)
 	plan.AccountsLastImportTime = util.SafeStringDatasource(getResp.WorkdayConnectionResponse.Connectionattributes.ACCOUNTS_LAST_IMPORT_TIME)
 	plan.StatusKeyJSON = util.SafeStringDatasource(getResp.WorkdayConnectionResponse.Connectionattributes.STATUS_KEY_JSON)
-	plan.ConnectionType = util.SafeStringDatasource(getResp.WorkdayConnectionResponse.Connectiontype)
 	plan.RAASMappingJSON = util.SafeStringDatasource(getResp.WorkdayConnectionResponse.Connectionattributes.RAAS_MAPPING_JSON)
 	plan.AccountImportPayload = util.SafeStringDatasource(getResp.WorkdayConnectionResponse.Connectionattributes.ACCOUNT_IMPORT_PAYLOAD)
 	plan.UpdateAccountPayload = util.SafeStringDatasource(getResp.WorkdayConnectionResponse.Connectionattributes.UPDATE_ACCOUNT_PAYLOAD)

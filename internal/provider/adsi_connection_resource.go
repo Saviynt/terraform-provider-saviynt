@@ -434,7 +434,6 @@ func (r *adsiConnectionResource) Create(ctx context.Context, req resource.Create
 		return
 	}
 	plan.ID = types.StringValue(fmt.Sprintf("%d", *apiResp.ConnectionKey))
-	plan.ConnectionType = types.StringValue("ADSI")
 	plan.ConnectionKey = types.Int64Value(int64(*apiResp.ConnectionKey))
 	plan.Description = util.SafeStringDatasource(plan.Description.ValueStringPointer())
 	plan.DefaultSavRoles = util.SafeStringDatasource(plan.DefaultSavRoles.ValueStringPointer())
@@ -510,7 +509,6 @@ func (r *adsiConnectionResource) Read(ctx context.Context, req resource.ReadRequ
 	state.ConnectionName = util.SafeStringDatasource(apiResp.ADSIConnectionResponse.Connectionname)
 	state.Description = util.SafeStringDatasource(apiResp.ADSIConnectionResponse.Description)
 	state.DefaultSavRoles = util.SafeStringDatasource(apiResp.ADSIConnectionResponse.Defaultsavroles)
-	state.ConnectionType = util.SafeStringDatasource(apiResp.ADSIConnectionResponse.Connectiontype)
 	state.EmailTemplate = util.SafeStringDatasource(apiResp.ADSIConnectionResponse.Emailtemplate)
 	state.ImportNestedMembership = util.SafeStringDatasource(apiResp.ADSIConnectionResponse.Connectionattributes.ImportNestedMembership)
 	state.CreateAccountJson = util.SafeStringDatasource(apiResp.ADSIConnectionResponse.Connectionattributes.CREATEACCOUNTJSON)
@@ -586,11 +584,6 @@ func (r *adsiConnectionResource) Update(ctx context.Context, req resource.Update
 	if plan.ConnectionName.ValueString() != state.ConnectionName.ValueString() {
 		resp.Diagnostics.AddError("Error", "Connection name cannot be updated")
 		log.Printf("[ERROR]: Connection name cannot be updated")
-		return
-	}
-	if plan.ConnectionType.ValueString() != state.ConnectionType.ValueString() {
-		resp.Diagnostics.AddError("Error", "Connection type cannot by updated")
-		log.Printf("[ERROR]: Connection type cannot by updated")
 		return
 	}
 	cfg := openapi.NewConfiguration()
@@ -693,7 +686,6 @@ func (r *adsiConnectionResource) Update(ctx context.Context, req resource.Update
 	plan.ConnectionName = util.SafeStringDatasource(getResp.ADSIConnectionResponse.Connectionname)
 	plan.Description = util.SafeStringDatasource(getResp.ADSIConnectionResponse.Description)
 	plan.DefaultSavRoles = util.SafeStringDatasource(getResp.ADSIConnectionResponse.Defaultsavroles)
-	plan.ConnectionType = util.SafeStringDatasource(getResp.ADSIConnectionResponse.Connectiontype)
 	plan.EmailTemplate = util.SafeStringDatasource(getResp.ADSIConnectionResponse.Emailtemplate)
 	plan.ImportNestedMembership = util.SafeStringDatasource(getResp.ADSIConnectionResponse.Connectionattributes.ImportNestedMembership)
 	plan.CreateAccountJson = util.SafeStringDatasource(getResp.ADSIConnectionResponse.Connectionattributes.CREATEACCOUNTJSON)

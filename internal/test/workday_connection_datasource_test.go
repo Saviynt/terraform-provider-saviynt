@@ -52,7 +52,6 @@ func TestAccSaviyntWorkdayConnectionDataSource(t *testing.T) {
 					resource.TestCheckResourceAttr(datasource, "msg", "success"),
 					resource.TestCheckResourceAttr(datasource, "error_code", "0"),
 					resource.TestCheckResourceAttr(datasource, "connection_name", createCfg["connection_name"]),
-					resource.TestCheckResourceAttr(datasource, "connection_type", createCfg["connection_type"]),
 					resource.TestCheckResourceAttr(datasource, "connection_attributes.base_url", createCfg["base_url"]),
 					resource.TestCheckResourceAttr(datasource, "connection_attributes.api_version", createCfg["api_version"]),
 					resource.TestCheckResourceAttr(datasource, "connection_attributes.use_oauth", createCfg["use_oauth"]),
@@ -79,7 +78,6 @@ locals {
 }
 
 resource "saviynt_workday_connection_resource" "workday" {
-  connection_type    = local.cfg.connection_type
   connection_name    = local.cfg.connection_name
   base_url           = local.cfg.base_url
   api_version        = local.cfg.api_version

@@ -32,7 +32,6 @@ variable "SSH_KEY" {
 }
 
 resource "saviynt_unix_connection_resource" "example" {
-  connection_type = "Unix"
   connection_name = "Terraform_Unix_Connector"
   host_name       = var.HOST_NAME
   port_number     = var.PORT_NUMBER
