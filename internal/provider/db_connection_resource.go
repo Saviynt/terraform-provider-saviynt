@@ -62,6 +62,11 @@ type DBConnectorResourceModel struct {
 	StatusThresholdConfig  types.String `tfsdk:"status_threshold_config"`
 	MaxPaginationSize      types.String `tfsdk:"max_pagination_size"`
 	CliCommandJson         types.String `tfsdk:"cli_command_json"`
+	//TER-176
+	CreateEntitlementJson types.String `tfsdk:"create_entitlement_json"`
+	DeleteEntitlementJson types.String `tfsdk:"delete_entitlement_json"`
+	EntitlementExistJson  types.String `tfsdk:"entitlement_exist_json"`
+	UpdateEntitlementJson types.String `tfsdk:"update_entitlement_json"`
 }
 
 type dbConnectionResource struct {
@@ -231,6 +236,27 @@ func DBConnectorResourceSchema() map[string]schema.Attribute {
 			Computed:    true,
 			Description: "JSON to specify commands executable on the target server",
 		},
+		//TER-176
+		"create_entitlement_json": schema.StringAttribute{
+			Optional:    true,
+			Computed:    true,
+			Description: " JSON to specify the Queries/stored procedures which will be used to Create the New Entitlements. Objects Exposed - (entitlementMgmtObj, task, user, endpoint and all the objects defined in Dynamic Attributes).",
+		},
+		"delete_entitlement_json": schema.StringAttribute{
+			Optional:    true,
+			Computed:    true,
+			Description: " JSON to specify the Queries/stored procedures which will be used to Delete the Entitlements. Objects Exposed - (entitlementMgmtObj, task, user, endpoint and all the objects defined in Dynamic Attributes).",
+		},
+		"entitlement_exist_json": schema.StringAttribute{
+			Optional:    true,
+			Computed:    true,
+			Description: "JSON to specify the Query which will be used to check whether an entitlement exists. Objects Exposed - (entitlementMgmtObj, task, user, endpoint and all the objects defined in Dynamic Attributes).",
+		},
+		"update_entitlement_json": schema.StringAttribute{
+			Optional:    true,
+			Computed:    true,
+			Description: " JSON to specify the Queries/stored procedures which will be used to Update the Entitlements. Objects Exposed - (entitlementMgmtObj, task, user, endpoint and all the objects defined in Dynamic Attributes).",
+		},
 	}
 }
 
@@ -333,6 +359,11 @@ func (r *dbConnectionResource) Create(ctx context.Context, req resource.CreateRe
 		STATUS_THRESHOLD_CONFIG: util.StringPointerOrEmpty(plan.StatusThresholdConfig),
 		MAX_PAGINATION_SIZE:     util.StringPointerOrEmpty(plan.MaxPaginationSize),
 		CLI_COMMAND_JSON:        util.StringPointerOrEmpty(plan.CliCommandJson),
+		//TER-176
+		CREATEENTITLEMENTJSON: util.StringPointerOrEmpty(plan.CreateEntitlementJson),
+		DELETEENTITLEMENTJSON: util.StringPointerOrEmpty(plan.DeleteEntitlementJson),
+		ENTITLEMENTEXISTJSON:  util.StringPointerOrEmpty(plan.EntitlementExistJson),
+		UPDATEENTITLEMENTJSON: util.StringPointerOrEmpty(plan.UpdateEntitlementJson),
 	}
 	if plan.VaultConnection.ValueString() != "" {
 		dbConn.BaseConnector.VaultConnection = util.SafeStringConnector(plan.VaultConnection.ValueString())
@@ -351,7 +382,6 @@ func (r *dbConnectionResource) Create(ctx context.Context, req resource.CreateRe
 		return
 	}
 	plan.ID = types.StringValue(fmt.Sprintf("%d", *apiResp.ConnectionKey))
-	plan.ConnectionType = types.StringValue("DB")
 	plan.ConnectionKey = types.Int64Value(int64(*apiResp.ConnectionKey))
 	plan.Description = util.SafeStringDatasource(plan.Description.ValueStringPointer())
 	plan.DefaultSavRoles = util.SafeStringDatasource(plan.DefaultSavRoles.ValueStringPointer())
@@ -381,6 +411,11 @@ func (r *dbConnectionResource) Create(ctx context.Context, req resource.CreateRe
 	plan.StatusThresholdConfig = util.SafeStringDatasource(plan.StatusThresholdConfig.ValueStringPointer())
 	plan.MaxPaginationSize = util.SafeStringDatasource(plan.MaxPaginationSize.ValueStringPointer())
 	plan.CliCommandJson = util.SafeStringDatasource(plan.CliCommandJson.ValueStringPointer())
+	//TER-176
+	plan.CreateEntitlementJson = util.SafeStringDatasource(plan.CreateEntitlementJson.ValueStringPointer())
+	plan.DeleteEntitlementJson = util.SafeStringDatasource(plan.DeleteEntitlementJson.ValueStringPointer())
+	plan.EntitlementExistJson = util.SafeStringDatasource(plan.EntitlementExistJson.ValueStringPointer())
+	plan.UpdateEntitlementJson = util.SafeStringDatasource(plan.UpdateEntitlementJson.ValueStringPointer())
 	plan.Msg = types.StringValue(util.SafeDeref(apiResp.Msg))
 	plan.ErrorCode = types.StringValue(util.SafeDeref(apiResp.ErrorCode))
 	resp.Diagnostics.Append(resp.State.Set(ctx, &plan)...)
@@ -417,7 +452,6 @@ func (r *dbConnectionResource) Read(ctx context.Context, req resource.ReadReques
 	state.ConnectionKey = util.SafeInt64(apiResp.DBConnectionResponse.Connectionkey)
 	state.Description = util.SafeStringDatasource(apiResp.DBConnectionResponse.Description)
 	state.DefaultSavRoles = util.SafeStringDatasource(apiResp.DBConnectionResponse.Defaultsavroles)
-	state.ConnectionType = util.SafeStringDatasource(apiResp.DBConnectionResponse.Connectiontype)
 	state.EmailTemplate = util.SafeStringDatasource(apiResp.DBConnectionResponse.Emailtemplate)
 	state.PasswordMinLength = util.SafeStringDatasource(apiResp.DBConnectionResponse.Connectionattributes.PASSWORD_MIN_LENGTH)
 	state.AccountExistsJson = util.SafeStringDatasource(apiResp.DBConnectionResponse.Connectionattributes.ACCOUNTEXISTSJSON)
@@ -447,6 +481,11 @@ func (r *dbConnectionResource) Read(ctx context.Context, req resource.ReadReques
 	state.UpdateAccountJson = util.SafeStringDatasource(apiResp.DBConnectionResponse.Connectionattributes.UPDATEACCOUNTJSON)
 	state.GrantAccessJson = util.SafeStringDatasource(apiResp.DBConnectionResponse.Connectionattributes.GRANTACCESSJSON)
 	state.CliCommandJson = util.SafeStringDatasource(apiResp.DBConnectionResponse.Connectionattributes.CLI_COMMAND_JSON)
+	//TER-176
+	state.CreateEntitlementJson = util.SafeStringDatasource(apiResp.DBConnectionResponse.Connectionattributes.CREATEENTITLEMENTJSON)
+	state.DeleteEntitlementJson = util.SafeStringDatasource(apiResp.DBConnectionResponse.Connectionattributes.DELETEENTITLEMENTJSON)
+	state.EntitlementExistJson = util.SafeStringDatasource(apiResp.DBConnectionResponse.Connectionattributes.ENTITLEMENTEXISTJSON)
+	state.UpdateEntitlementJson = util.SafeStringDatasource(apiResp.DBConnectionResponse.Connectionattributes.UPDATEENTITLEMENTJSON)
 	apiMessage := util.SafeDeref(apiResp.DBConnectionResponse.Msg)
 	if apiMessage == "success" {
 		state.Msg = types.StringValue("Connection Successful")
@@ -487,11 +526,6 @@ func (r *dbConnectionResource) Update(ctx context.Context, req resource.UpdateRe
 	if plan.ConnectionName.ValueString() != state.ConnectionName.ValueString() {
 		resp.Diagnostics.AddError("Error", "Connection name cannot be updated")
 		log.Printf("[ERROR]: Connection name cannot be updated")
-		return
-	}
-	if plan.ConnectionType.ValueString() != state.ConnectionType.ValueString() {
-		resp.Diagnostics.AddError("Error", "Connection type cannot by updated")
-		log.Printf("[ERROR]: Connection type cannot by updated")
 		return
 	}
 
@@ -539,6 +573,11 @@ func (r *dbConnectionResource) Update(ctx context.Context, req resource.UpdateRe
 		STATUS_THRESHOLD_CONFIG: util.StringPointerOrEmpty(plan.StatusThresholdConfig),
 		MAX_PAGINATION_SIZE:     util.StringPointerOrEmpty(plan.MaxPaginationSize),
 		CLI_COMMAND_JSON:        util.StringPointerOrEmpty(plan.CliCommandJson),
+		//TER-176
+		CREATEENTITLEMENTJSON: util.StringPointerOrEmpty(plan.CreateEntitlementJson),
+		DELETEENTITLEMENTJSON: util.StringPointerOrEmpty(plan.DeleteEntitlementJson),
+		ENTITLEMENTEXISTJSON:  util.StringPointerOrEmpty(plan.EntitlementExistJson),
+		UPDATEENTITLEMENTJSON: util.StringPointerOrEmpty(plan.UpdateEntitlementJson),
 	}
 	if plan.VaultConnection.ValueString() != "" {
 		dbConn.BaseConnector.VaultConnection = util.SafeStringConnector(plan.VaultConnection.ValueString())
@@ -577,7 +616,6 @@ func (r *dbConnectionResource) Update(ctx context.Context, req resource.UpdateRe
 	plan.ConnectionKey = util.SafeInt64(getResp.DBConnectionResponse.Connectionkey)
 	plan.Description = util.SafeStringDatasource(getResp.DBConnectionResponse.Description)
 	plan.DefaultSavRoles = util.SafeStringDatasource(getResp.DBConnectionResponse.Defaultsavroles)
-	plan.ConnectionType = util.SafeStringDatasource(getResp.DBConnectionResponse.Connectiontype)
 	plan.EmailTemplate = util.SafeStringDatasource(getResp.DBConnectionResponse.Emailtemplate)
 	plan.PasswordMinLength = util.SafeStringDatasource(getResp.DBConnectionResponse.Connectionattributes.PASSWORD_MIN_LENGTH)
 	plan.AccountExistsJson = util.SafeStringDatasource(getResp.DBConnectionResponse.Connectionattributes.ACCOUNTEXISTSJSON)
@@ -607,6 +645,11 @@ func (r *dbConnectionResource) Update(ctx context.Context, req resource.UpdateRe
 	plan.UpdateAccountJson = util.SafeStringDatasource(getResp.DBConnectionResponse.Connectionattributes.UPDATEACCOUNTJSON)
 	plan.GrantAccessJson = util.SafeStringDatasource(getResp.DBConnectionResponse.Connectionattributes.GRANTACCESSJSON)
 	plan.CliCommandJson = util.SafeStringDatasource(getResp.DBConnectionResponse.Connectionattributes.CLI_COMMAND_JSON)
+	//TER-176
+	plan.CreateEntitlementJson = util.SafeStringDatasource(getResp.DBConnectionResponse.Connectionattributes.CREATEENTITLEMENTJSON)
+	plan.DeleteEntitlementJson = util.SafeStringDatasource(getResp.DBConnectionResponse.Connectionattributes.DELETEENTITLEMENTJSON)
+	plan.EntitlementExistJson = util.SafeStringDatasource(getResp.DBConnectionResponse.Connectionattributes.ENTITLEMENTEXISTJSON)
+	plan.UpdateEntitlementJson = util.SafeStringDatasource(getResp.DBConnectionResponse.Connectionattributes.UPDATEENTITLEMENTJSON)
 	apiMessage := util.SafeDeref(getResp.DBConnectionResponse.Msg)
 	if apiMessage == "success" {
 		plan.Msg = types.StringValue("Connection Successful")

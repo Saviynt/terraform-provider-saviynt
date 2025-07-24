@@ -45,7 +45,6 @@ locals {
 }
 
 resource "saviynt_entraid_connection_resource" "example" {
-  connection_type           = "AzureAD"
   connection_name           = "Terraform_EntraId_Connector"
   client_id                 = var.CLIENT_ID
   client_secret             = var.CLIENT_SECRET
@@ -439,11 +438,10 @@ resource "saviynt_entraid_connection_resource" "example" {
 - `change_pass_json` (String) JSON template to change password.
 - `config_json` (String) Main config JSON.
 - `connection_json` (String) Connection JSON configuration.
-- `connection_type` (String) Connection type (e.g., 'AD' for Active Directory). Example: "AD"
 - `create_account_json` (String) JSON template to create an account.
 - `create_channel_json` (String) JSON to create channel.
 - `create_group_json` (String) JSON to create group.
-- `create_new_endpoints` (String) Configuration to create new endpoints.
+- `create_new_endpoints` (String) Configuration to create new endpoints.Value accpetd are YES/NO.
 - `create_service_principal_json` (String) JSON to create service principal.
 - `create_team_json` (String) JSON to create team.
 - `create_users` (String) Flag or configuration for creating users.

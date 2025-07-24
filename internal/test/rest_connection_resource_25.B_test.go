@@ -8,7 +8,6 @@
 //   - Create: provisions a new Rest connection and asserts each attribute via JSONPath checks.
 //   - Import: verifies the resource can be imported by its connection name.
 //   - Update: applies configuration changes and confirms the updated attribute values.
-//   - Negative Cases: ensures updates to `connection_name` and `connection_type` are rejected.
 //
 // Test data is loaded from `rest_connection_resource_test_data.json` using `testutil.LoadConnectorData`.
 // Environment variables `SAVIYNT_URL`, `SAVIYNT_USERNAME`, and `SAVIYNT_PASSWORD` must be set
@@ -28,21 +27,20 @@ import (
 	"github.com/hashicorp/terraform-plugin-testing/tfjsonpath"
 )
 
-func TestAccSaviyntRESTConnectionResource(t *testing.T) {
+func TestAccSaviyntRESTConnectionResource25B(t *testing.T) {
 	filePath := testutil.GetTestDataPath(t, "./test_data/rest_connection_test_data.json")
 	filePath = testutil.PrepareTestDataWithEnv(t, filePath)
 	createCfg := testutil.LoadConnectorData(t, filePath, "create")
 	updateCfg := testutil.LoadConnectorData(t, filePath, "update")
 	resourceName := "saviynt_rest_connection_resource.rest"
 	resource.Test(t, resource.TestCase{
-		PreCheck:                 func() { TestAccPreCheck(t) },
-		ProtoV6ProviderFactories: TestAccProtoV6ProviderFactories,
+		PreCheck:                 func() { TestAccPreCheck25B(t) },
+		ProtoV6ProviderFactories: TestAccProtoV6ProviderFactories25B,
 		Steps: []resource.TestStep{
 			// Create
 			{
-				Config: testAccRESTConnectionResourceConfig(filePath, "create"),
+				Config: testAccRESTConnectionResourceConfig25B(filePath, "create"),
 				ConfigStateChecks: []statecheck.StateCheck{
-					statecheck.ExpectKnownValue(resourceName, tfjsonpath.New("connection_type"), knownvalue.StringExact(createCfg["connection_type"])),
 					statecheck.ExpectKnownValue(resourceName, tfjsonpath.New("connection_name"), knownvalue.StringExact(createCfg["connection_name"])),
 					statecheck.ExpectKnownValue(resourceName, tfjsonpath.New("import_user_json"), knownvalue.StringExact(createCfg["import_user_json"])),
 					statecheck.ExpectKnownValue(resourceName, tfjsonpath.New("create_account_json"), knownvalue.StringExact(createCfg["create_account_json"])),
@@ -53,6 +51,10 @@ func TestAccSaviyntRESTConnectionResource(t *testing.T) {
 					statecheck.ExpectKnownValue(resourceName, tfjsonpath.New("import_account_ent_json"), knownvalue.StringExact(createCfg["import_account_ent_json"])),
 					statecheck.ExpectKnownValue(resourceName, tfjsonpath.New("disable_account_json"), knownvalue.StringExact(createCfg["disable_account_json"])),
 					statecheck.ExpectKnownValue(resourceName, tfjsonpath.New("enable_account_json"), knownvalue.StringExact(createCfg["enable_account_json"])),
+					statecheck.ExpectKnownValue(resourceName, tfjsonpath.New("application_discovery_json"), knownvalue.StringExact(createCfg["application_discovery_json"])),
+					statecheck.ExpectKnownValue(resourceName, tfjsonpath.New("create_entitlement_json"), knownvalue.StringExact(createCfg["create_entitlement_json"])),
+					statecheck.ExpectKnownValue(resourceName, tfjsonpath.New("delete_entitlement_json"), knownvalue.StringExact(createCfg["delete_entitlement_json"])),
+					statecheck.ExpectKnownValue(resourceName, tfjsonpath.New("update_entitlement_json"), knownvalue.StringExact(createCfg["update_entitlement_json"])),
 				},
 			},
 			// Import
@@ -65,9 +67,8 @@ func TestAccSaviyntRESTConnectionResource(t *testing.T) {
 			},
 			// Update
 			{
-				Config: testAccRESTConnectionResourceConfig(filePath, "update"),
+				Config: testAccRESTConnectionResourceConfig25B(filePath, "update"),
 				ConfigStateChecks: []statecheck.StateCheck{
-					statecheck.ExpectKnownValue(resourceName, tfjsonpath.New("connection_type"), knownvalue.StringExact(updateCfg["connection_type"])),
 					statecheck.ExpectKnownValue(resourceName, tfjsonpath.New("connection_name"), knownvalue.StringExact(updateCfg["connection_name"])),
 					statecheck.ExpectKnownValue(resourceName, tfjsonpath.New("import_user_json"), knownvalue.StringExact(updateCfg["import_user_json"])),
 					statecheck.ExpectKnownValue(resourceName, tfjsonpath.New("create_account_json"), knownvalue.StringExact(updateCfg["create_account_json"])),
@@ -78,23 +79,22 @@ func TestAccSaviyntRESTConnectionResource(t *testing.T) {
 					statecheck.ExpectKnownValue(resourceName, tfjsonpath.New("import_account_ent_json"), knownvalue.StringExact(updateCfg["import_account_ent_json"])),
 					statecheck.ExpectKnownValue(resourceName, tfjsonpath.New("disable_account_json"), knownvalue.StringExact(updateCfg["disable_account_json"])),
 					statecheck.ExpectKnownValue(resourceName, tfjsonpath.New("enable_account_json"), knownvalue.StringExact(updateCfg["enable_account_json"])),
+					statecheck.ExpectKnownValue(resourceName, tfjsonpath.New("application_discovery_json"), knownvalue.StringExact(updateCfg["application_discovery_json"])),
+					statecheck.ExpectKnownValue(resourceName, tfjsonpath.New("create_entitlement_json"), knownvalue.StringExact(updateCfg["create_entitlement_json"])),
+					statecheck.ExpectKnownValue(resourceName, tfjsonpath.New("delete_entitlement_json"), knownvalue.StringExact(updateCfg["delete_entitlement_json"])),
+					statecheck.ExpectKnownValue(resourceName, tfjsonpath.New("update_entitlement_json"), knownvalue.StringExact(updateCfg["update_entitlement_json"])),
 				},
 			},
 			// Update the Connectionname to a new value
 			{
-				Config:      testAccRESTConnectionResourceConfig(filePath, "update_connection_name"),
+				Config:      testAccRESTConnectionResourceConfig25B(filePath, "update_connection_name"),
 				ExpectError: regexp.MustCompile(`Connection name cannot be updated`),
-			},
-			// Update the Connectiontype to a new value
-			{
-				Config:      testAccRESTConnectionResourceConfig(filePath, "update_connection_type"),
-				ExpectError: regexp.MustCompile(`Connection type cannot by updated`),
 			},
 		},
 	})
 }
 
-func testAccRESTConnectionResourceConfig(jsonPath, operation string) string {
+func testAccRESTConnectionResourceConfig25B(jsonPath, operation string) string {
 	return fmt.Sprintf(`
 provider "saviynt" {
   server_url = "%s"
@@ -107,7 +107,6 @@ locals {
 }
 
 resource "saviynt_rest_connection_resource" "rest" {
-  connection_type            = local.cfg.connection_type
   connection_name            = local.cfg.connection_name
   connection_json            = jsonencode(local.cfg.connection_json)
   import_user_json           = jsonencode(local.cfg.import_user_json)
@@ -120,10 +119,14 @@ resource "saviynt_rest_connection_resource" "rest" {
   change_pass_json           = jsonencode(local.cfg.change_pass_json)
   disable_account_json       = jsonencode(local.cfg.disable_account_json)
   enable_account_json        = jsonencode(local.cfg.enable_account_json)
+  application_discovery_json = jsonencode(local.cfg.application_discovery_json)
+  create_entitlement_json    = jsonencode(local.cfg.create_entitlement_json)
+  delete_entitlement_json    =jsonencode(local.cfg.delete_entitlement_json)
+  update_entitlement_json    =jsonencode(local.cfg.update_entitlement_json)
 }
-`, os.Getenv("SAVIYNT_URL"),
-		os.Getenv("SAVIYNT_USERNAME"),
-		os.Getenv("SAVIYNT_PASSWORD"),
+`, os.Getenv("SAVIYNT_URL_25B"),
+		os.Getenv("SAVIYNT_USERNAME_25B"),
+		os.Getenv("SAVIYNT_PASSWORD_25B"),
 		jsonPath,
 		operation,
 	)

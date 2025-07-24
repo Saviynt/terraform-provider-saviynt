@@ -64,6 +64,11 @@ type RESTConnectionAttributes struct {
 	IsTimeoutSupported       types.Bool              `tfsdk:"is_timeout_supported"`
 	ImportAccountEntJSON     types.String            `tfsdk:"import_account_ent_json"`
 	IsTimeoutConfigValidated types.Bool              `tfsdk:"is_timeout_config_validated"`
+	//TER-176
+	ApplicationDiscoveryJson types.String `tfsdk:"application_discovery_json"`
+	CreateEntitlementJson    types.String `tfsdk:"create_entitlement_json"`
+	DeleteEntitlementJson    types.String `tfsdk:"delete_entitlement_json"`
+	UpdateEntitlementJson    types.String `tfsdk:"update_entitlement_json"`
 }
 
 func NewRESTConnectionDatasource() datasource.DataSource {
@@ -112,6 +117,11 @@ func RESTConnectorsDataSourceSchema() map[string]schema.Attribute {
 					Computed:   true,
 					Attributes: ConnectionTimeoutConfigeSchema(),
 				},
+				//TER-176
+				"application_discovery_json": schema.StringAttribute{Computed: true},
+				"create_entitlement_json":    schema.StringAttribute{Computed: true},
+				"delete_entitlement_json":    schema.StringAttribute{Computed: true},
+				"update_entitlement_json":    schema.StringAttribute{Computed: true},
 			},
 		},
 	}
@@ -253,6 +263,10 @@ func (d *restConnectionDatasource) Read(ctx context.Context, req datasource.Read
 				ConnectionTimeout:       util.SafeInt64(apiResp.RESTConnectionResponse.Connectionattributes.ConnectionTimeoutConfig.ConnectionTimeout),
 				RetryFailureStatusCode:  util.SafeInt64(apiResp.RESTConnectionResponse.Connectionattributes.ConnectionTimeoutConfig.RetryFailureStatusCode),
 			},
+			ApplicationDiscoveryJson: util.SafeStringDatasource(apiResp.RESTConnectionResponse.Connectionattributes.ApplicationDiscoveryJSON),
+			CreateEntitlementJson:    util.SafeStringDatasource(apiResp.RESTConnectionResponse.Connectionattributes.CreateEntitlementJSON),
+			DeleteEntitlementJson:    util.SafeStringDatasource(apiResp.RESTConnectionResponse.Connectionattributes.DeleteEntitlementJSON),
+			UpdateEntitlementJson:    util.SafeStringDatasource(apiResp.RESTConnectionResponse.Connectionattributes.UpdateEntitlementJSON),
 		}
 	}
 

@@ -290,14 +290,7 @@ func (r *securitySystemResource) Create(ctx context.Context, req resource.Create
 		return
 	}
 	log.Printf("[INFO] Security system resource created successfully. Response: %v", createReq)
-	// if apiResp!=nil && *apiResp.ErrorCode == "1" && strings.Contains(strings.ToLower(util.SafeDeref(apiResp.Msg)), "already exists") {
-	// 	message := fmt.Sprintf("Security System %s already exists. Import the existing resource into Terraform state.", plan.Systemname.ValueString())
-	// 	resp.Diagnostics.AddError(
-	// 		"Security System Already Exists",
-	// 		message,
-	// 	)
-	// 	return
-	// }
+
 	updateReq := openapi.UpdateSecuritySystemRequest{
 		//required fields
 		Systemname:  plan.Systemname.ValueString(),
@@ -328,7 +321,17 @@ func (r *securitySystemResource) Create(ctx context.Context, req resource.Create
 		InherentSODReportFields:            util.StringsFromSet(plan.InherentSODReportFields),
 	}
 	// Execute the update API call.
-	_, _, _ = apiClient.SecuritySystemsAPI.UpdateSecuritySystem(ctx).UpdateSecuritySystemRequest(updateReq).Execute()
+	updateResp, _, err := apiClient.SecuritySystemsAPI.UpdateSecuritySystem(ctx).UpdateSecuritySystemRequest(updateReq).Execute()
+	if err != nil {
+		log.Printf("Problem with the creating function")
+		resp.Diagnostics.AddError("API creating Failed", fmt.Sprintf("Error: %v", err))
+		return
+	}
+	if updateResp != nil && *updateResp.ErrorCode != "0" {
+		log.Printf("[ERROR]: Error in creating Security system resource. Errorcode: %v, Message: %v", *updateResp.ErrorCode, *updateResp.Msg)
+		resp.Diagnostics.AddError("Creation of Security System resource failed", *updateResp.Msg)
+		return
+	}
 	log.Printf("[INFO] Security system resource updated successfully. Response: %v", updateReq)
 
 	// Set the resource ID and store the API response in state.

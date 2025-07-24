@@ -6,6 +6,11 @@ Name | Type | Description | Notes
 ------------ | ------------- | ------------- | -------------
 **URL** | **string** | Primary/root domain URL list (comma Separated) | 
 **USERNAME** | **string** | Service account username | 
+**ENABLEGROUPMANAGEMENT** | Pointer to **string** | True implies group management capability limited to AD only. | [optional] 
+**IMPORTDATACOOKIES** | Pointer to **string** |  | [optional] 
+**MOVEACCOUNTJSON** | Pointer to **string** | JSON to specify movement action logic explicitely. If you have defined &#39;moveObjectToOU&#39; parameter in your update/enable/disable actions implicitely, then no need to define this explicitely here | [optional] 
+**PasswdPolicyJSON** | Pointer to **string** | Optional Password policy JSON, in case you have no password policy defined/assigned in your Security System. | [optional] 
+**CreateUpdateMappings** | Pointer to **string** | Mapping used during group creation to specify which attribute of a group maps to which attribute on Saviynt. | [optional] 
 **PASSWORD** | **string** | Service account password | 
 **CONNECTION_URL** | **string** | ADSI remote agent Connection URL | 
 **PROVISIONING_URL** | Pointer to **string** | ADSI remote agent Provisioning URL | [optional] 
@@ -104,6 +109,131 @@ and a boolean to check if the value has been set.
 
 SetUSERNAME sets USERNAME field to given value.
 
+
+### GetENABLEGROUPMANAGEMENT
+
+`func (o *ADSIConnector) GetENABLEGROUPMANAGEMENT() string`
+
+GetENABLEGROUPMANAGEMENT returns the ENABLEGROUPMANAGEMENT field if non-nil, zero value otherwise.
+
+### GetENABLEGROUPMANAGEMENTOk
+
+`func (o *ADSIConnector) GetENABLEGROUPMANAGEMENTOk() (*string, bool)`
+
+GetENABLEGROUPMANAGEMENTOk returns a tuple with the ENABLEGROUPMANAGEMENT field if it's non-nil, zero value otherwise
+and a boolean to check if the value has been set.
+
+### SetENABLEGROUPMANAGEMENT
+
+`func (o *ADSIConnector) SetENABLEGROUPMANAGEMENT(v string)`
+
+SetENABLEGROUPMANAGEMENT sets ENABLEGROUPMANAGEMENT field to given value.
+
+### HasENABLEGROUPMANAGEMENT
+
+`func (o *ADSIConnector) HasENABLEGROUPMANAGEMENT() bool`
+
+HasENABLEGROUPMANAGEMENT returns a boolean if a field has been set.
+
+### GetIMPORTDATACOOKIES
+
+`func (o *ADSIConnector) GetIMPORTDATACOOKIES() string`
+
+GetIMPORTDATACOOKIES returns the IMPORTDATACOOKIES field if non-nil, zero value otherwise.
+
+### GetIMPORTDATACOOKIESOk
+
+`func (o *ADSIConnector) GetIMPORTDATACOOKIESOk() (*string, bool)`
+
+GetIMPORTDATACOOKIESOk returns a tuple with the IMPORTDATACOOKIES field if it's non-nil, zero value otherwise
+and a boolean to check if the value has been set.
+
+### SetIMPORTDATACOOKIES
+
+`func (o *ADSIConnector) SetIMPORTDATACOOKIES(v string)`
+
+SetIMPORTDATACOOKIES sets IMPORTDATACOOKIES field to given value.
+
+### HasIMPORTDATACOOKIES
+
+`func (o *ADSIConnector) HasIMPORTDATACOOKIES() bool`
+
+HasIMPORTDATACOOKIES returns a boolean if a field has been set.
+
+### GetMOVEACCOUNTJSON
+
+`func (o *ADSIConnector) GetMOVEACCOUNTJSON() string`
+
+GetMOVEACCOUNTJSON returns the MOVEACCOUNTJSON field if non-nil, zero value otherwise.
+
+### GetMOVEACCOUNTJSONOk
+
+`func (o *ADSIConnector) GetMOVEACCOUNTJSONOk() (*string, bool)`
+
+GetMOVEACCOUNTJSONOk returns a tuple with the MOVEACCOUNTJSON field if it's non-nil, zero value otherwise
+and a boolean to check if the value has been set.
+
+### SetMOVEACCOUNTJSON
+
+`func (o *ADSIConnector) SetMOVEACCOUNTJSON(v string)`
+
+SetMOVEACCOUNTJSON sets MOVEACCOUNTJSON field to given value.
+
+### HasMOVEACCOUNTJSON
+
+`func (o *ADSIConnector) HasMOVEACCOUNTJSON() bool`
+
+HasMOVEACCOUNTJSON returns a boolean if a field has been set.
+
+### GetPasswdPolicyJSON
+
+`func (o *ADSIConnector) GetPasswdPolicyJSON() string`
+
+GetPasswdPolicyJSON returns the PasswdPolicyJSON field if non-nil, zero value otherwise.
+
+### GetPasswdPolicyJSONOk
+
+`func (o *ADSIConnector) GetPasswdPolicyJSONOk() (*string, bool)`
+
+GetPasswdPolicyJSONOk returns a tuple with the PasswdPolicyJSON field if it's non-nil, zero value otherwise
+and a boolean to check if the value has been set.
+
+### SetPasswdPolicyJSON
+
+`func (o *ADSIConnector) SetPasswdPolicyJSON(v string)`
+
+SetPasswdPolicyJSON sets PasswdPolicyJSON field to given value.
+
+### HasPasswdPolicyJSON
+
+`func (o *ADSIConnector) HasPasswdPolicyJSON() bool`
+
+HasPasswdPolicyJSON returns a boolean if a field has been set.
+
+### GetCreateUpdateMappings
+
+`func (o *ADSIConnector) GetCreateUpdateMappings() string`
+
+GetCreateUpdateMappings returns the CreateUpdateMappings field if non-nil, zero value otherwise.
+
+### GetCreateUpdateMappingsOk
+
+`func (o *ADSIConnector) GetCreateUpdateMappingsOk() (*string, bool)`
+
+GetCreateUpdateMappingsOk returns a tuple with the CreateUpdateMappings field if it's non-nil, zero value otherwise
+and a boolean to check if the value has been set.
+
+### SetCreateUpdateMappings
+
+`func (o *ADSIConnector) SetCreateUpdateMappings(v string)`
+
+SetCreateUpdateMappings sets CreateUpdateMappings field to given value.
+
+### HasCreateUpdateMappings
+
+`func (o *ADSIConnector) HasCreateUpdateMappings() bool`
+
+HasCreateUpdateMappings returns a boolean if a field has been set.
 
 ### GetPASSWORD
 
