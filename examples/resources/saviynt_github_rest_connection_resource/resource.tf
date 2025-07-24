@@ -5,7 +5,6 @@ variable "ORG_LIST" {
   type = string
 }
 resource "saviynt_github_rest_connection_resource" "example" {
-  connection_type = "GithubRest"
   connection_name = "Terraform_Github_Connection"
   connection_json = jsonencode({
     authentications = {

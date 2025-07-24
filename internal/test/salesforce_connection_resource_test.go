@@ -8,7 +8,6 @@
 //   - Create: provisions a new Salesforce connection and asserts each attribute via JSONPath checks.
 //   - Import: verifies the resource can be imported by its connection name.
 //   - Update: applies configuration changes and confirms the updated attribute values.
-//   - Negative Cases: ensures updates to `connection_name` and `connection_type` are rejected.
 //
 // Test data is loaded from `salesforce_connection_resource_test_data.json` using `testutil.LoadConnectorData`.
 // Environment variables `SAVIYNT_URL`, `SAVIYNT_USERNAME`, and `SAVIYNT_PASSWORD` must be set
@@ -44,7 +43,6 @@ func TestAccSaviyntSalesforceConnectionResource(t *testing.T) {
 				Config: testAccSalesforceConnectionResourceConfig(filePath, "create"),
 				ConfigStateChecks: []statecheck.StateCheck{
 					statecheck.ExpectKnownValue(resourceName, tfjsonpath.New("connection_name"), knownvalue.StringExact(createCfg["connection_name"])),
-					statecheck.ExpectKnownValue(resourceName, tfjsonpath.New("connection_type"), knownvalue.StringExact(createCfg["connection_type"])),
 					statecheck.ExpectKnownValue(resourceName, tfjsonpath.New("redirect_uri"), knownvalue.StringExact(createCfg["redirect_uri"])),
 					statecheck.ExpectKnownValue(resourceName, tfjsonpath.New("instance_url"), knownvalue.StringExact(createCfg["instance_url"])),
 					statecheck.ExpectKnownValue(resourceName, tfjsonpath.New("object_to_be_imported"), knownvalue.StringExact(createCfg["object_to_be_imported"])),
@@ -66,7 +64,6 @@ func TestAccSaviyntSalesforceConnectionResource(t *testing.T) {
 				Config: testAccSalesforceConnectionResourceConfig(filePath, "update"),
 				ConfigStateChecks: []statecheck.StateCheck{
 					statecheck.ExpectKnownValue(resourceName, tfjsonpath.New("connection_name"), knownvalue.StringExact(updateCfg["connection_name"])),
-					statecheck.ExpectKnownValue(resourceName, tfjsonpath.New("connection_type"), knownvalue.StringExact(updateCfg["connection_type"])),
 					statecheck.ExpectKnownValue(resourceName, tfjsonpath.New("redirect_uri"), knownvalue.StringExact(updateCfg["redirect_uri"])),
 					statecheck.ExpectKnownValue(resourceName, tfjsonpath.New("instance_url"), knownvalue.StringExact(updateCfg["instance_url"])),
 					statecheck.ExpectKnownValue(resourceName, tfjsonpath.New("object_to_be_imported"), knownvalue.StringExact(updateCfg["object_to_be_imported"])),
@@ -79,11 +76,6 @@ func TestAccSaviyntSalesforceConnectionResource(t *testing.T) {
 			{
 				Config:      testAccSalesforceConnectionResourceConfig(filePath, "update_connection_name"),
 				ExpectError: regexp.MustCompile(`Connection name cannot be updated`),
-			},
-			// Update the Connectiontype to a new value
-			{
-				Config:      testAccSalesforceConnectionResourceConfig(filePath, "update_connection_type"),
-				ExpectError: regexp.MustCompile(`Connection type cannot be updated`),
 			},
 		},
 	})
@@ -102,7 +94,6 @@ locals {
 }
 
   resource "saviynt_salesforce_connection_resource" "ss" {
-  connection_type       = local.cfg.connection_type
   connection_name       = local.cfg.connection_name
   client_id             = local.cfg.client_id
   redirect_uri          = local.cfg.redirect_uri

@@ -82,6 +82,10 @@ type DBConnector struct {
 	MAX_PAGINATION_SIZE *string `json:"MAX_PAGINATION_SIZE,omitempty"`
 	// JSON to specify the commands which can be executed in target server.
 	CLI_COMMAND_JSON *string `json:"CLI_COMMAND_JSON,omitempty"`
+	CREATEENTITLEMENTJSON *string `json:"CREATEENTITLEMENTJSON,omitempty"`
+	DELETEENTITLEMENTJSON *string `json:"DELETEENTITLEMENTJSON,omitempty"`
+	ENTITLEMENTEXISTJSON *string `json:"ENTITLEMENTEXISTJSON,omitempty"`
+	UPDATEENTITLEMENTJSON *string `json:"UPDATEENTITLEMENTJSON,omitempty"`
 }
 
 type _DBConnector DBConnector
@@ -1037,6 +1041,134 @@ func (o *DBConnector) SetCLI_COMMAND_JSON(v string) {
 	o.CLI_COMMAND_JSON = &v
 }
 
+// GetCREATEENTITLEMENTJSON returns the CREATEENTITLEMENTJSON field value if set, zero value otherwise.
+func (o *DBConnector) GetCREATEENTITLEMENTJSON() string {
+	if o == nil || IsNil(o.CREATEENTITLEMENTJSON) {
+		var ret string
+		return ret
+	}
+	return *o.CREATEENTITLEMENTJSON
+}
+
+// GetCREATEENTITLEMENTJSONOk returns a tuple with the CREATEENTITLEMENTJSON field value if set, nil otherwise
+// and a boolean to check if the value has been set.
+func (o *DBConnector) GetCREATEENTITLEMENTJSONOk() (*string, bool) {
+	if o == nil || IsNil(o.CREATEENTITLEMENTJSON) {
+		return nil, false
+	}
+	return o.CREATEENTITLEMENTJSON, true
+}
+
+// HasCREATEENTITLEMENTJSON returns a boolean if a field has been set.
+func (o *DBConnector) HasCREATEENTITLEMENTJSON() bool {
+	if o != nil && !IsNil(o.CREATEENTITLEMENTJSON) {
+		return true
+	}
+
+	return false
+}
+
+// SetCREATEENTITLEMENTJSON gets a reference to the given string and assigns it to the CREATEENTITLEMENTJSON field.
+func (o *DBConnector) SetCREATEENTITLEMENTJSON(v string) {
+	o.CREATEENTITLEMENTJSON = &v
+}
+
+// GetDELETEENTITLEMENTJSON returns the DELETEENTITLEMENTJSON field value if set, zero value otherwise.
+func (o *DBConnector) GetDELETEENTITLEMENTJSON() string {
+	if o == nil || IsNil(o.DELETEENTITLEMENTJSON) {
+		var ret string
+		return ret
+	}
+	return *o.DELETEENTITLEMENTJSON
+}
+
+// GetDELETEENTITLEMENTJSONOk returns a tuple with the DELETEENTITLEMENTJSON field value if set, nil otherwise
+// and a boolean to check if the value has been set.
+func (o *DBConnector) GetDELETEENTITLEMENTJSONOk() (*string, bool) {
+	if o == nil || IsNil(o.DELETEENTITLEMENTJSON) {
+		return nil, false
+	}
+	return o.DELETEENTITLEMENTJSON, true
+}
+
+// HasDELETEENTITLEMENTJSON returns a boolean if a field has been set.
+func (o *DBConnector) HasDELETEENTITLEMENTJSON() bool {
+	if o != nil && !IsNil(o.DELETEENTITLEMENTJSON) {
+		return true
+	}
+
+	return false
+}
+
+// SetDELETEENTITLEMENTJSON gets a reference to the given string and assigns it to the DELETEENTITLEMENTJSON field.
+func (o *DBConnector) SetDELETEENTITLEMENTJSON(v string) {
+	o.DELETEENTITLEMENTJSON = &v
+}
+
+// GetENTITLEMENTEXISTJSON returns the ENTITLEMENTEXISTJSON field value if set, zero value otherwise.
+func (o *DBConnector) GetENTITLEMENTEXISTJSON() string {
+	if o == nil || IsNil(o.ENTITLEMENTEXISTJSON) {
+		var ret string
+		return ret
+	}
+	return *o.ENTITLEMENTEXISTJSON
+}
+
+// GetENTITLEMENTEXISTJSONOk returns a tuple with the ENTITLEMENTEXISTJSON field value if set, nil otherwise
+// and a boolean to check if the value has been set.
+func (o *DBConnector) GetENTITLEMENTEXISTJSONOk() (*string, bool) {
+	if o == nil || IsNil(o.ENTITLEMENTEXISTJSON) {
+		return nil, false
+	}
+	return o.ENTITLEMENTEXISTJSON, true
+}
+
+// HasENTITLEMENTEXISTJSON returns a boolean if a field has been set.
+func (o *DBConnector) HasENTITLEMENTEXISTJSON() bool {
+	if o != nil && !IsNil(o.ENTITLEMENTEXISTJSON) {
+		return true
+	}
+
+	return false
+}
+
+// SetENTITLEMENTEXISTJSON gets a reference to the given string and assigns it to the ENTITLEMENTEXISTJSON field.
+func (o *DBConnector) SetENTITLEMENTEXISTJSON(v string) {
+	o.ENTITLEMENTEXISTJSON = &v
+}
+
+// GetUPDATEENTITLEMENTJSON returns the UPDATEENTITLEMENTJSON field value if set, zero value otherwise.
+func (o *DBConnector) GetUPDATEENTITLEMENTJSON() string {
+	if o == nil || IsNil(o.UPDATEENTITLEMENTJSON) {
+		var ret string
+		return ret
+	}
+	return *o.UPDATEENTITLEMENTJSON
+}
+
+// GetUPDATEENTITLEMENTJSONOk returns a tuple with the UPDATEENTITLEMENTJSON field value if set, nil otherwise
+// and a boolean to check if the value has been set.
+func (o *DBConnector) GetUPDATEENTITLEMENTJSONOk() (*string, bool) {
+	if o == nil || IsNil(o.UPDATEENTITLEMENTJSON) {
+		return nil, false
+	}
+	return o.UPDATEENTITLEMENTJSON, true
+}
+
+// HasUPDATEENTITLEMENTJSON returns a boolean if a field has been set.
+func (o *DBConnector) HasUPDATEENTITLEMENTJSON() bool {
+	if o != nil && !IsNil(o.UPDATEENTITLEMENTJSON) {
+		return true
+	}
+
+	return false
+}
+
+// SetUPDATEENTITLEMENTJSON gets a reference to the given string and assigns it to the UPDATEENTITLEMENTJSON field.
+func (o *DBConnector) SetUPDATEENTITLEMENTJSON(v string) {
+	o.UPDATEENTITLEMENTJSON = &v
+}
+
 func (o DBConnector) MarshalJSON() ([]byte, error) {
 	toSerialize,err := o.ToMap()
 	if err != nil {
@@ -1136,6 +1268,18 @@ func (o DBConnector) ToMap() (map[string]interface{}, error) {
 	}
 	if !IsNil(o.CLI_COMMAND_JSON) {
 		toSerialize["CLI_COMMAND_JSON"] = o.CLI_COMMAND_JSON
+	}
+	if !IsNil(o.CREATEENTITLEMENTJSON) {
+		toSerialize["CREATEENTITLEMENTJSON"] = o.CREATEENTITLEMENTJSON
+	}
+	if !IsNil(o.DELETEENTITLEMENTJSON) {
+		toSerialize["DELETEENTITLEMENTJSON"] = o.DELETEENTITLEMENTJSON
+	}
+	if !IsNil(o.ENTITLEMENTEXISTJSON) {
+		toSerialize["ENTITLEMENTEXISTJSON"] = o.ENTITLEMENTEXISTJSON
+	}
+	if !IsNil(o.UPDATEENTITLEMENTJSON) {
+		toSerialize["UPDATEENTITLEMENTJSON"] = o.UPDATEENTITLEMENTJSON
 	}
 	return toSerialize, nil
 }

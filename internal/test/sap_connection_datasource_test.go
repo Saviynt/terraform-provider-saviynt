@@ -52,7 +52,6 @@ func TestAccSaviyntSapConnectionDataSource(t *testing.T) {
 					resource.TestCheckResourceAttr(datasource, "msg", "success"),
 					resource.TestCheckResourceAttr(datasource, "error_code", "0"),
 					resource.TestCheckResourceAttr(datasource, "connection_name", createCfg["connection_name"]),
-					resource.TestCheckResourceAttr(datasource, "connection_type", createCfg["connection_type"]),
 					resource.TestCheckResourceAttr(datasource, "connection_attributes.message_server", createCfg["message_server"]),
 					resource.TestCheckResourceAttr(datasource, "connection_attributes.jco_snc_mode", createCfg["jco_snc_mode"]),
 					resource.TestCheckResourceAttr(datasource, "connection_attributes.system_name", createCfg["system_name"]),
@@ -80,7 +79,6 @@ locals {
 }
 
 resource "saviynt_sap_connection_resource" "sap" {
-  connection_type    				 = local.cfg.connection_type
   connection_name    				 = local.cfg.connection_name
   message_server                     = local.cfg.message_server
   jco_snc_mode                       = local.cfg.jco_snc_mode
