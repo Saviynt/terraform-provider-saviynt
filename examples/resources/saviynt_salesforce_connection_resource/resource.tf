@@ -22,7 +22,6 @@ variable "INSTANCE_URL" {
   description = "Instance URL for Salesforce connection"
 }
 resource "saviynt_salesforce_connection_resource" "ss" {
-  connection_type       = "SalesForce"
   connection_name       = "Terraform_Salesforce_Connection"
   client_id             = var.CLIENT_ID
   client_secret         = var.CLIENT_SECRET

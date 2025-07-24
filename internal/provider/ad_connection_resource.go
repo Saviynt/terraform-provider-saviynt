@@ -454,6 +454,7 @@ func (r *adConnectionResource) Create(ctx context.Context, req resource.CreateRe
 		resp.Diagnostics.AddError("API Create Failed", "Connection name already exists. Please import or use a different name")
 		return
 	}
+
 	adConn := openapi.ADConnector{
 		BaseConnector: openapi.BaseConnector{
 			//required field
@@ -540,7 +541,6 @@ func (r *adConnectionResource) Create(ctx context.Context, req resource.CreateRe
 		return
 	}
 	plan.ID = types.StringValue(fmt.Sprintf("%d", *apiResp.ConnectionKey))
-	plan.ConnectionType = types.StringValue("AD")
 	plan.ConnectionKey = types.Int64Value(int64(*apiResp.ConnectionKey))
 	plan.Description = util.SafeStringDatasource(plan.Description.ValueStringPointer())
 	plan.DefaultSavRoles = util.SafeStringDatasource(plan.DefaultSavRoles.ValueStringPointer())
@@ -637,10 +637,8 @@ func (r *adConnectionResource) Read(ctx context.Context, req resource.ReadReques
 	state.ConnectionName = util.SafeStringDatasource(apiResp.ADConnectionResponse.Connectionname)
 	state.Description = util.SafeStringDatasource(apiResp.ADConnectionResponse.Description)
 	state.DefaultSavRoles = util.SafeStringDatasource(apiResp.ADConnectionResponse.Defaultsavroles)
-	state.ConnectionType = util.SafeStringDatasource(apiResp.ADConnectionResponse.Connectiontype)
 	state.EmailTemplate = util.SafeStringDatasource(apiResp.ADConnectionResponse.Emailtemplate)
 	state.URL = util.SafeStringDatasource(apiResp.ADConnectionResponse.Connectionattributes.URL)
-	state.ConnectionType = util.SafeStringDatasource(apiResp.ADConnectionResponse.Connectiontype)
 	state.Advsearch = util.SafeStringDatasource(apiResp.ADConnectionResponse.Connectionattributes.ADVSEARCH)
 	state.CreateAccountJson = util.SafeStringDatasource(apiResp.ADConnectionResponse.Connectionattributes.CREATEACCOUNTJSON)
 	state.DisableAccountJson = util.SafeStringDatasource(apiResp.ADConnectionResponse.Connectionattributes.DISABLEACCOUNTJSON)
@@ -732,11 +730,6 @@ func (r *adConnectionResource) Update(ctx context.Context, req resource.UpdateRe
 	if plan.ConnectionName.ValueString() != state.ConnectionName.ValueString() {
 		resp.Diagnostics.AddError("Error", "Connection name cannot be updated")
 		log.Printf("[ERROR]: Connection name cannot be updated")
-		return
-	}
-	if plan.ConnectionType.ValueString() != state.ConnectionType.ValueString() {
-		resp.Diagnostics.AddError("Error", "Connection type cannot by updated")
-		log.Printf("[ERROR]: Connection type cannot by updated")
 		return
 	}
 	cfg.HTTPClient = http.DefaultClient
@@ -845,10 +838,8 @@ func (r *adConnectionResource) Update(ctx context.Context, req resource.UpdateRe
 	plan.ConnectionName = util.SafeStringDatasource(getResp.ADConnectionResponse.Connectionname)
 	plan.Description = util.SafeStringDatasource(getResp.ADConnectionResponse.Description)
 	plan.DefaultSavRoles = util.SafeStringDatasource(getResp.ADConnectionResponse.Defaultsavroles)
-	plan.ConnectionType = util.SafeStringDatasource(getResp.ADConnectionResponse.Connectiontype)
 	plan.EmailTemplate = util.SafeStringDatasource(getResp.ADConnectionResponse.Emailtemplate)
 	plan.URL = util.SafeStringDatasource(getResp.ADConnectionResponse.Connectionattributes.URL)
-	plan.ConnectionType = util.SafeStringDatasource(getResp.ADConnectionResponse.Connectiontype)
 	plan.Advsearch = util.SafeStringDatasource(getResp.ADConnectionResponse.Connectionattributes.ADVSEARCH)
 	plan.CreateAccountJson = util.SafeStringDatasource(getResp.ADConnectionResponse.Connectionattributes.CREATEACCOUNTJSON)
 	plan.DisableAccountJson = util.SafeStringDatasource(getResp.ADConnectionResponse.Connectionattributes.DISABLEACCOUNTJSON)

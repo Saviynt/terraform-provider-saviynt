@@ -1,7 +1,6 @@
 #!/bin/sh
 # Copyright (c) 2025 Saviynt Inc.
 # SPDX-License-Identifier: MPL-2.0
-
 # ref: https://help.github.com/articles/adding-an-existing-project-to-github-using-the-command-line/
 #
 # Usage example: /bin/sh ./git_push.sh wing328 openapi-petstore-perl "minor update" "gitlab.com"

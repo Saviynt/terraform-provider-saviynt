@@ -58,7 +58,6 @@ variable "DOMAIN" {
   description = "Value of DOMCONTRDN"
 }
 resource "saviynt_ad_connection_resource" "example" {
-  connection_type       = "AD"
   connection_name       = "Terraform_AD_Connector"
   url                   = format("%s://%s:%d", var.LDAP_PROTOCOL, var.IP_ADDRESS, var.LDAP_PORT)
   password              = var.PASSWORD
@@ -289,7 +288,6 @@ resource "saviynt_ad_connection_resource" "example" {
 - `base` (String) LDAP base DN. Example: "CN=Users,DC=Saviynt,DC=ABC,DC=Com"
 - `check_for_unique` (String) Uniqueness validation rule JSON. Example: '{"sAMAccountName":"${task.accountName}"}'
 - `config_json` (String) JSON for connection timeout configuration. Example: '{"connectionTimeoutConfig":{"connectionTimeout":10,"readTimeout":50,"retryWait":2,"retryCount":3}}'
-- `connection_type` (String) Connection type (e.g., 'AD' for Active Directory). Example: "AD"
 - `create_account_json` (String) JSON to create an account. Example: '{"cn":"${cn}","displayname":"${user.displayname}", ...}'
 - `create_org_json` (String) JSON for organization creation.
 - `create_update_mappings` (String) Mapping for group creation/updation (JSON string). Example: '{"cn":"${role?.customproperty27}","objectCategory":"CN=Group,CN=Schema,CN=Configuration,...}'

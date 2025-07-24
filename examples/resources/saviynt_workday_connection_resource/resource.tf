@@ -45,7 +45,6 @@ variable "REFRESH_TOKEN" {
 
 # Workday SOAP using basic auth
 resource "saviynt_workday_connection_resource" "soap" {
-  connection_type = "Workday"
   connection_name = "Terraform_Workday_Connector"
   base_url        = var.BASE_URL
   api_version     = var.API_VERSION

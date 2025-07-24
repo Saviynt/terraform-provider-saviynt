@@ -39,7 +39,6 @@ variable "PROVISIONING_URL" {
   description = "Value of PROVISIONING_URL"
 }
 resource "saviynt_adsi_connection_resource" "example" {
-  connection_type     = "ADSI"
   connection_name     = "Terraform_ADSI_Connector"
   email_template      = "Account Password Expiry Email"
   url                 = format("%s://%s", var.LDAP_PROTOCOL, var.IP_ADDRESS)
