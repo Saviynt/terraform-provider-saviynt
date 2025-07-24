@@ -561,7 +561,6 @@ func (r *sapConnectionResource) Create(ctx context.Context, req resource.CreateR
 		return
 	}
 	plan.ID = types.StringValue(fmt.Sprintf("%d", *apiResp.ConnectionKey))
-	plan.ConnectionType = types.StringValue("SAP")
 	plan.ConnectionKey = types.Int64Value(int64(*apiResp.ConnectionKey))
 	plan.Description = util.SafeStringDatasource(plan.Description.ValueStringPointer())
 	plan.DefaultSavRoles = util.SafeStringDatasource(plan.DefaultSavRoles.ValueStringPointer())
@@ -659,7 +658,6 @@ func (r *sapConnectionResource) Read(ctx context.Context, req resource.ReadReque
 	state.ConnectionName = util.SafeStringDatasource(apiResp.SAPConnectionResponse.Connectionname)
 	state.Description = util.SafeStringDatasource(apiResp.SAPConnectionResponse.Description)
 	state.DefaultSavRoles = util.SafeStringDatasource(apiResp.SAPConnectionResponse.Defaultsavroles)
-	state.ConnectionType = util.SafeStringDatasource(apiResp.SAPConnectionResponse.Connectiontype)
 	state.EmailTemplate = util.SafeStringDatasource(apiResp.SAPConnectionResponse.Emailtemplate)
 	state.Createaccountjson = util.SafeStringDatasource(apiResp.SAPConnectionResponse.Connectionattributes.CREATEACCOUNTJSON)
 	state.AuditLogJson = util.SafeStringDatasource(apiResp.SAPConnectionResponse.Connectionattributes.AUDIT_LOG_JSON)
@@ -759,11 +757,6 @@ func (r *sapConnectionResource) Update(ctx context.Context, req resource.UpdateR
 	if plan.ConnectionName.ValueString() != state.ConnectionName.ValueString() {
 		resp.Diagnostics.AddError("Error", "Connection name cannot be updated")
 		log.Printf("[ERROR]: Connection name cannot be updated")
-		return
-	}
-	if plan.ConnectionType.ValueString() != state.ConnectionType.ValueString() {
-		resp.Diagnostics.AddError("Error", "Connection type cannot by updated")
-		log.Printf("[ERROR]: Connection type cannot by updated")
 		return
 	}
 
@@ -869,7 +862,6 @@ func (r *sapConnectionResource) Update(ctx context.Context, req resource.UpdateR
 	plan.ConnectionName = util.SafeStringDatasource(getResp.SAPConnectionResponse.Connectionname)
 	plan.Description = util.SafeStringDatasource(getResp.SAPConnectionResponse.Description)
 	plan.DefaultSavRoles = util.SafeStringDatasource(getResp.SAPConnectionResponse.Defaultsavroles)
-	plan.ConnectionType = util.SafeStringDatasource(getResp.SAPConnectionResponse.Connectiontype)
 	plan.EmailTemplate = util.SafeStringDatasource(getResp.SAPConnectionResponse.Emailtemplate)
 	plan.Createaccountjson = util.SafeStringDatasource(getResp.SAPConnectionResponse.Connectionattributes.CREATEACCOUNTJSON)
 	plan.AuditLogJson = util.SafeStringDatasource(getResp.SAPConnectionResponse.Connectionattributes.AUDIT_LOG_JSON)

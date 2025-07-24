@@ -8,7 +8,6 @@
 //   - Create: provisions a new Unix connection and asserts each attribute via JSONPath checks.
 //   - Import: verifies the resource can be imported by its connection name.
 //   - Update: applies configuration changes and confirms the updated attribute values.
-//   - Negative Cases: ensures updates to `connection_name` and `connection_type` are rejected.
 //
 // Test data is loaded from `unix_connection_resource_test_data.json` using `testutil.LoadConnectorData`.
 // Environment variables `SAVIYNT_URL`, `SAVIYNT_USERNAME`, and `SAVIYNT_PASSWORD` must be set
@@ -45,7 +44,6 @@ func TestAccSaviyntUnixConnectionResource(t *testing.T) {
 				Config: testAccUnixConnectionResourceConfig(filePath, "create"),
 				ConfigStateChecks: []statecheck.StateCheck{
 					statecheck.ExpectKnownValue(resourceName, tfjsonpath.New("connection_name"), knownvalue.StringExact(createCfg["connection_name"])),
-					statecheck.ExpectKnownValue(resourceName, tfjsonpath.New("connection_type"), knownvalue.StringExact(createCfg["connection_type"])),
 					statecheck.ExpectKnownValue(resourceName, tfjsonpath.New("host_name"), knownvalue.StringExact(createCfg["host_name"])),
 					statecheck.ExpectKnownValue(resourceName, tfjsonpath.New("port_number"), knownvalue.StringExact(createCfg["port_number"])),
 					statecheck.ExpectKnownValue(resourceName, tfjsonpath.New("groups_file"), knownvalue.StringExact(createCfg["groups_file"])),
@@ -66,7 +64,6 @@ func TestAccSaviyntUnixConnectionResource(t *testing.T) {
 				Config: testAccUnixConnectionResourceConfig(filePath, "update"),
 				ConfigStateChecks: []statecheck.StateCheck{
 					statecheck.ExpectKnownValue(resourceName, tfjsonpath.New("connection_name"), knownvalue.StringExact(updateCfg["connection_name"])),
-					statecheck.ExpectKnownValue(resourceName, tfjsonpath.New("connection_type"), knownvalue.StringExact(updateCfg["connection_type"])),
 					statecheck.ExpectKnownValue(resourceName, tfjsonpath.New("host_name"), knownvalue.StringExact(updateCfg["host_name"])),
 					statecheck.ExpectKnownValue(resourceName, tfjsonpath.New("port_number"), knownvalue.StringExact(updateCfg["port_number"])),
 					statecheck.ExpectKnownValue(resourceName, tfjsonpath.New("groups_file"), knownvalue.StringExact(updateCfg["groups_file"])),
@@ -78,11 +75,6 @@ func TestAccSaviyntUnixConnectionResource(t *testing.T) {
 			{
 				Config:      testAccUnixConnectionResourceConfig(filePath, "update_connection_name"),
 				ExpectError: regexp.MustCompile(`Connection name cannot be updated`),
-			},
-			// Update the Connectiontype to a new value
-			{
-				Config:      testAccUnixConnectionResourceConfig(filePath, "update_connection_type"),
-				ExpectError: regexp.MustCompile(`Connection type cannot by updated`),
 			},
 		},
 	})
@@ -100,7 +92,6 @@ func testAccUnixConnectionResourceConfig(jsonPath, operation string) string {
 }
 
   resource "saviynt_unix_connection_resource" "unix" {
-  connection_type                    = local.cfg.connection_type
   connection_name                    = local.cfg.connection_name
   host_name       = local.cfg.host_name
   port_number     = local.cfg.port_number

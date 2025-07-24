@@ -62,6 +62,11 @@ type RestConnectorResourceModel struct {
 	SendOtpJson           types.String `tfsdk:"send_otp_json"`
 	ValidateOtpJson       types.String `tfsdk:"validate_otp_json"`
 	PamConfig             types.String `tfsdk:"pam_config"`
+	// TER-176
+	ApplicationDiscoveryJson types.String `tfsdk:"application_discovery_json"`
+	CreateEntitlementJson    types.String `tfsdk:"create_entitlement_json"`
+	DeleteEntitlementJson    types.String `tfsdk:"delete_entitlement_json"`
+	UpdateEntitlementJson    types.String `tfsdk:"update_entitlement_json"`
 }
 
 type restConnectionResource struct {
@@ -203,6 +208,27 @@ func RestConnectorResourceSchema() map[string]schema.Attribute {
 			Computed:    true,
 			Description: "PAM configuration JSON.",
 		},
+		//TER-176
+		"application_discovery_json": schema.StringAttribute{
+			Optional:    true,
+			Computed:    true,
+			Description: "The ApplicationDiscoveryJSON attribute is specifically implemented for ServiceNow application discovery, allowing automated discovery and import of applications from ServiceNow instances.",
+		},
+		"create_entitlement_json": schema.StringAttribute{
+			Optional:    true,
+			Computed:    true,
+			Description: "The three entitlement JSON attributes (Create, Update, Delete) are part of a comprehensive entitlement management system for REST connectors, with supporting constants and service classes.",
+		},
+		"delete_entitlement_json": schema.StringAttribute{
+			Optional:    true,
+			Computed:    true,
+			Description: "The three entitlement JSON attributes (Create, Update, Delete) are part of a comprehensive entitlement management system for REST connectors, with supporting constants and service classes.",
+		},
+		"update_entitlement_json": schema.StringAttribute{
+			Optional:    true,
+			Computed:    true,
+			Description: "The three entitlement JSON attributes (Create, Update, Delete) are part of a comprehensive entitlement management system for REST connectors, with supporting constants and service classes.",
+		},
 	}
 }
 
@@ -244,13 +270,6 @@ func (r *restConnectionResource) Create(ctx context.Context, req resource.Create
 	if resp.Diagnostics.HasError() {
 		return
 	}
-	//for connJson data conversion from string to map[string]interface{}
-	// var connJSON map[string]interface{}
-	// err := json.Unmarshal([]byte(config.ConnectionJSON.ValueString()), &connJSON)
-	// log.Print("[DEBUG] Unmarshalling ConnectionJSON: ", connJSON)
-	// if err != nil {
-	// 	log.Fatalf("Failed to unmarshal ConnectionJSON: %v", err)
-	// }
 
 	cfg := openapi.NewConfiguration()
 	apiBaseURL := strings.TrimPrefix(strings.TrimPrefix(r.client.APIBaseURL(), "https://"), "http://")
@@ -309,6 +328,11 @@ func (r *restConnectionResource) Create(ctx context.Context, req resource.Create
 		SendOtpJSON:             util.StringPointerOrEmpty(plan.SendOtpJson),
 		ValidateOtpJSON:         util.StringPointerOrEmpty(plan.ValidateOtpJson),
 		PAM_CONFIG:              util.StringPointerOrEmpty(plan.PamConfig),
+		//TER-176
+		ApplicationDiscoveryJSON: util.StringPointerOrEmpty(plan.ApplicationDiscoveryJson),
+		CreateEntitlementJSON:    util.StringPointerOrEmpty(plan.CreateEntitlementJson),
+		DeleteEntitlementJSON:    util.StringPointerOrEmpty(plan.DeleteEntitlementJson),
+		UpdateEntitlementJSON:    util.StringPointerOrEmpty(plan.UpdateEntitlementJson),
 	}
 	restConnRequest := openapi.CreateOrUpdateRequest{
 		RESTConnector: &restConn,
@@ -322,7 +346,6 @@ func (r *restConnectionResource) Create(ctx context.Context, req resource.Create
 		return
 	}
 	plan.ID = types.StringValue(fmt.Sprintf("%d", *apiResp.ConnectionKey))
-	plan.ConnectionType = types.StringValue("REST")
 	plan.ConnectionKey = types.Int64Value(int64(*apiResp.ConnectionKey))
 	plan.Description = util.SafeStringDatasource(plan.Description.ValueStringPointer())
 	plan.DefaultSavRoles = util.SafeStringDatasource(plan.DefaultSavRoles.ValueStringPointer())
@@ -350,6 +373,11 @@ func (r *restConnectionResource) Create(ctx context.Context, req resource.Create
 	plan.SendOtpJson = util.SafeStringDatasource(plan.SendOtpJson.ValueStringPointer())
 	plan.ValidateOtpJson = util.SafeStringDatasource(plan.ValidateOtpJson.ValueStringPointer())
 	plan.PamConfig = util.SafeStringDatasource(plan.PamConfig.ValueStringPointer())
+	//TER-176
+	plan.ApplicationDiscoveryJson = util.SafeStringDatasource(plan.ApplicationDiscoveryJson.ValueStringPointer())
+	plan.CreateEntitlementJson = util.SafeStringDatasource(plan.CreateEntitlementJson.ValueStringPointer())
+	plan.DeleteEntitlementJson = util.SafeStringDatasource(plan.DeleteEntitlementJson.ValueStringPointer())
+	plan.UpdateEntitlementJson = util.SafeStringDatasource(plan.UpdateEntitlementJson.ValueStringPointer())
 	plan.Msg = types.StringValue(util.SafeDeref(apiResp.Msg))
 	plan.ErrorCode = types.StringValue(util.SafeDeref(apiResp.ErrorCode))
 	resp.Diagnostics.Append(resp.State.Set(ctx, &plan)...)
@@ -385,7 +413,6 @@ func (r *restConnectionResource) Read(ctx context.Context, req resource.ReadRequ
 	state.ConnectionName = util.SafeStringDatasource(apiResp.RESTConnectionResponse.Connectionname)
 	state.Description = util.SafeStringDatasource(apiResp.RESTConnectionResponse.Description)
 	state.DefaultSavRoles = util.SafeStringDatasource(apiResp.RESTConnectionResponse.Defaultsavroles)
-	state.ConnectionType = util.SafeStringDatasource(apiResp.RESTConnectionResponse.Connectiontype)
 	state.EmailTemplate = util.SafeStringDatasource(apiResp.RESTConnectionResponse.Emailtemplate)
 	state.ImportUserJson = util.SafeStringDatasource(apiResp.RESTConnectionResponse.Connectionattributes.ImportUserJSON)
 	state.ImportAccountEntJson = util.SafeStringDatasource(apiResp.RESTConnectionResponse.Connectionattributes.ImportAccountEntJSON)
@@ -410,6 +437,11 @@ func (r *restConnectionResource) Read(ctx context.Context, req resource.ReadRequ
 	state.SendOtpJson = util.SafeStringDatasource(apiResp.RESTConnectionResponse.Connectionattributes.SendOtpJSON)
 	state.ValidateOtpJson = util.SafeStringDatasource(apiResp.RESTConnectionResponse.Connectionattributes.ValidateOtpJSON)
 	state.PamConfig = util.SafeStringDatasource(apiResp.RESTConnectionResponse.Connectionattributes.PAM_CONFIG)
+	//TER-176
+	state.ApplicationDiscoveryJson = util.SafeStringDatasource(apiResp.RESTConnectionResponse.Connectionattributes.ApplicationDiscoveryJSON)
+	state.CreateEntitlementJson = util.SafeStringDatasource(apiResp.RESTConnectionResponse.Connectionattributes.CreateEntitlementJSON)
+	state.DeleteEntitlementJson = util.SafeStringDatasource(apiResp.RESTConnectionResponse.Connectionattributes.DeleteEntitlementJSON)
+	state.UpdateEntitlementJson = util.SafeStringDatasource(apiResp.RESTConnectionResponse.Connectionattributes.UpdateEntitlementJSON)
 	apiMessage := util.SafeDeref(apiResp.RESTConnectionResponse.Msg)
 	if apiMessage == "success" {
 		state.Msg = types.StringValue("Connection Successful")
@@ -445,11 +477,6 @@ func (r *restConnectionResource) Update(ctx context.Context, req resource.Update
 		log.Printf("[ERROR]: Connection name cannot be updated")
 		return
 	}
-	if plan.ConnectionType.ValueString() != state.ConnectionType.ValueString() {
-		resp.Diagnostics.AddError("Error", "Connection type cannot by updated")
-		log.Printf("[ERROR]: Connection type cannot by updated")
-		return
-	}
 
 	cfg := openapi.NewConfiguration()
 	apiBaseURL := strings.TrimPrefix(strings.TrimPrefix(r.client.APIBaseURL(), "https://"), "http://")
@@ -458,16 +485,6 @@ func (r *restConnectionResource) Update(ctx context.Context, req resource.Update
 	cfg.AddDefaultHeader("Authorization", "Bearer "+r.token)
 
 	cfg.HTTPClient = http.DefaultClient
-
-	//for connJson data conversion from string to map[string]interface{}
-	// var connJSON map[string]interface{}
-	// if !config.ConnectionJSON.IsNull() && config.ConnectionJSON.ValueString() != "" {
-	// 	err := json.Unmarshal([]byte(config.ConnectionJSON.ValueString()), &connJSON)
-	// 	if err != nil {
-	// 		resp.Diagnostics.AddError("Invalid JSON", fmt.Sprintf("Failed to parse connection_json: %v", err))
-	// 		return
-	// 	}
-	// }
 
 	restConn := openapi.RESTConnector{
 		BaseConnector: openapi.BaseConnector{
@@ -507,6 +524,11 @@ func (r *restConnectionResource) Update(ctx context.Context, req resource.Update
 		SendOtpJSON:             util.StringPointerOrEmpty(plan.SendOtpJson),
 		ValidateOtpJSON:         util.StringPointerOrEmpty(plan.ValidateOtpJson),
 		PAM_CONFIG:              util.StringPointerOrEmpty(plan.PamConfig),
+		//TER-176
+		ApplicationDiscoveryJSON: util.StringPointerOrEmpty(plan.ApplicationDiscoveryJson),
+		CreateEntitlementJSON:    util.StringPointerOrEmpty(plan.CreateEntitlementJson),
+		DeleteEntitlementJSON:    util.StringPointerOrEmpty(plan.DeleteEntitlementJson),
+		UpdateEntitlementJSON:    util.StringPointerOrEmpty(plan.UpdateEntitlementJson),
 	}
 	restConnRequest := openapi.CreateOrUpdateRequest{
 		RESTConnector: &restConn,
@@ -535,7 +557,6 @@ func (r *restConnectionResource) Update(ctx context.Context, req resource.Update
 	plan.ConnectionName = util.SafeStringDatasource(getResp.RESTConnectionResponse.Connectionname)
 	plan.Description = util.SafeStringDatasource(getResp.RESTConnectionResponse.Description)
 	plan.DefaultSavRoles = util.SafeStringDatasource(getResp.RESTConnectionResponse.Defaultsavroles)
-	plan.ConnectionType = util.SafeStringDatasource(getResp.RESTConnectionResponse.Connectiontype)
 	plan.EmailTemplate = util.SafeStringDatasource(getResp.RESTConnectionResponse.Emailtemplate)
 	plan.ImportUserJson = util.SafeStringDatasource(getResp.RESTConnectionResponse.Connectionattributes.ImportUserJSON)
 	plan.ImportAccountEntJson = util.SafeStringDatasource(getResp.RESTConnectionResponse.Connectionattributes.ImportAccountEntJSON)
@@ -560,6 +581,11 @@ func (r *restConnectionResource) Update(ctx context.Context, req resource.Update
 	plan.SendOtpJson = util.SafeStringDatasource(getResp.RESTConnectionResponse.Connectionattributes.SendOtpJSON)
 	plan.ValidateOtpJson = util.SafeStringDatasource(getResp.RESTConnectionResponse.Connectionattributes.ValidateOtpJSON)
 	plan.PamConfig = util.SafeStringDatasource(getResp.RESTConnectionResponse.Connectionattributes.PAM_CONFIG)
+	//TER-176
+	plan.ApplicationDiscoveryJson = util.SafeStringDatasource(getResp.RESTConnectionResponse.Connectionattributes.ApplicationDiscoveryJSON)
+	plan.CreateEntitlementJson = util.SafeStringDatasource(getResp.RESTConnectionResponse.Connectionattributes.CreateEntitlementJSON)
+	plan.DeleteEntitlementJson = util.SafeStringDatasource(getResp.RESTConnectionResponse.Connectionattributes.DeleteEntitlementJSON)
+	plan.UpdateEntitlementJson = util.SafeStringDatasource(getResp.RESTConnectionResponse.Connectionattributes.UpdateEntitlementJSON)
 	apiMessage := util.SafeDeref(getResp.RESTConnectionResponse.Msg)
 	if apiMessage == "success" {
 		plan.Msg = types.StringValue("Connection Successful")

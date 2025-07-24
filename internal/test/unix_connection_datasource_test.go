@@ -52,7 +52,6 @@ func TestAccSaviyntUnixConnectionDataSource(t *testing.T) {
 					resource.TestCheckResourceAttr(datasource, "msg", "success"),
 					resource.TestCheckResourceAttr(datasource, "error_code", "0"),
 					resource.TestCheckResourceAttr(datasource, "connection_name", createCfg["connection_name"]),
-					resource.TestCheckResourceAttr(datasource, "connection_type", createCfg["connection_type"]),
 					resource.TestCheckResourceAttr(datasource, "connection_attributes.host_name", createCfg["host_name"]),
 					resource.TestCheckResourceAttr(datasource, "connection_attributes.port_number", createCfg["port_number"]),
 					resource.TestCheckResourceAttr(datasource, "connection_attributes.groups_file", createCfg["groups_file"]),
@@ -76,7 +75,6 @@ locals {
 }
 
 resource "saviynt_unix_connection_resource" "unix" {
-  connection_type    				 = local.cfg.connection_type
   connection_name    				 = local.cfg.connection_name
   host_name       = local.cfg.host_name
   port_number     = local.cfg.port_number

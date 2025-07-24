@@ -27,7 +27,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-testing/terraform"
 )
 
-func TestAccSaviyntRESTConnectionDataSource(t *testing.T) {
+func TestAccSaviyntRESTConnectionDataSource25A(t *testing.T) {
 	filePath := testutil.GetTestDataPath(t, "./test_data/rest_connection_test_data.json")
 	filePath = testutil.PrepareTestDataWithEnv(t, filePath)
 	createCfg := testutil.LoadConnectorData(t, filePath, "ds")
@@ -38,7 +38,7 @@ func TestAccSaviyntRESTConnectionDataSource(t *testing.T) {
 		ProtoV6ProviderFactories: TestAccProtoV6ProviderFactories,
 		Steps: []resource.TestStep{
 			{
-				Config: testAccRESTConnectionDataSourceConfig(filePath),
+				Config: testAccRESTConnectionDataSourceConfig25A(filePath),
 				Check: resource.ComposeTestCheckFunc(
 					func(s *terraform.State) error {
 						_, ok := s.RootModule().Resources[datasource]
@@ -52,7 +52,6 @@ func TestAccSaviyntRESTConnectionDataSource(t *testing.T) {
 					resource.TestCheckResourceAttr(datasource, "msg", "success"),
 					resource.TestCheckResourceAttr(datasource, "error_code", "0"),
 					resource.TestCheckResourceAttr(datasource, "connection_name", createCfg["connection_name"]),
-					resource.TestCheckResourceAttr(datasource, "connection_type", createCfg["connection_type"]),
 					resource.TestCheckResourceAttr(datasource, "connection_attributes.import_user_json", createCfg["import_user_json"]),
 					resource.TestCheckResourceAttr(datasource, "connection_attributes.create_account_json", createCfg["create_account_json"]),
 					resource.TestCheckResourceAttr(datasource, "connection_attributes.update_account_json", createCfg["update_account_json"]),
@@ -68,7 +67,7 @@ func TestAccSaviyntRESTConnectionDataSource(t *testing.T) {
 	})
 }
 
-func testAccRESTConnectionDataSourceConfig(jsonPath string) string {
+func testAccRESTConnectionDataSourceConfig25A(jsonPath string) string {
 	return fmt.Sprintf(`
 provider "saviynt" {
   server_url = "%s"
@@ -81,7 +80,6 @@ locals {
 }
 
 resource "saviynt_rest_connection_resource" "rest" {
-  connection_type            = local.cfg.connection_type
   connection_name            = local.cfg.connection_name
   connection_json            = jsonencode(local.cfg.connection_json)
   import_user_json           = jsonencode(local.cfg.import_user_json)

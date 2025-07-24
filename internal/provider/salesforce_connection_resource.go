@@ -253,7 +253,6 @@ func (r *salesforceConnectionResource) Create(ctx context.Context, req resource.
 		return
 	}
 	plan.ID = types.StringValue(fmt.Sprintf("%d", *apiResp.ConnectionKey))
-	plan.ConnectionType = types.StringValue("SalesForce")
 	plan.ConnectionKey = types.Int64Value(int64(*apiResp.ConnectionKey))
 	plan.Description = util.SafeStringDatasource(plan.Description.ValueStringPointer())
 	plan.DefaultSavRoles = util.SafeStringDatasource(plan.DefaultSavRoles.ValueStringPointer())
@@ -308,7 +307,6 @@ func (r *salesforceConnectionResource) Read(ctx context.Context, req resource.Re
 	state.ConnectionName = util.SafeStringDatasource(apiResp.SalesforceConnectionResponse.Connectionname)
 	state.Description = util.SafeStringDatasource(apiResp.SalesforceConnectionResponse.Description)
 	state.DefaultSavRoles = util.SafeStringDatasource(apiResp.SalesforceConnectionResponse.Defaultsavroles)
-	state.ConnectionType = util.SafeStringDatasource(apiResp.SalesforceConnectionResponse.Connectiontype)
 	state.Msg = util.SafeStringDatasource(apiResp.SalesforceConnectionResponse.Msg)
 	state.EmailTemplate = util.SafeStringDatasource(apiResp.SalesforceConnectionResponse.Emailtemplate)
 	state.ObjectToBeImported = util.SafeStringDatasource(apiResp.SalesforceConnectionResponse.Connectionattributes.OBJECT_TO_BE_IMPORTED)
@@ -365,11 +363,6 @@ func (r *salesforceConnectionResource) Update(ctx context.Context, req resource.
 	if plan.ConnectionName.ValueString() != state.ConnectionName.ValueString() {
 		resp.Diagnostics.AddError("Error", "Connection name cannot be updated")
 		log.Printf("[ERROR]: Connection name cannot be updated")
-		return
-	}
-	if plan.ConnectionType.ValueString() != state.ConnectionType.ValueString() {
-		resp.Diagnostics.AddError("Error", "Connection type cannot be updated")
-		log.Printf("[ERROR]: Connection type cannot be updated")
 		return
 	}
 
@@ -430,7 +423,6 @@ func (r *salesforceConnectionResource) Update(ctx context.Context, req resource.
 	plan.ConnectionName = util.SafeStringDatasource(getResp.SalesforceConnectionResponse.Connectionname)
 	plan.Description = util.SafeStringDatasource(getResp.SalesforceConnectionResponse.Description)
 	plan.DefaultSavRoles = util.SafeStringDatasource(getResp.SalesforceConnectionResponse.Defaultsavroles)
-	plan.ConnectionType = util.SafeStringDatasource(getResp.SalesforceConnectionResponse.Connectiontype)
 	plan.Msg = util.SafeStringDatasource(getResp.SalesforceConnectionResponse.Msg)
 	plan.EmailTemplate = util.SafeStringDatasource(getResp.SalesforceConnectionResponse.Emailtemplate)
 	plan.ObjectToBeImported = util.SafeStringDatasource(getResp.SalesforceConnectionResponse.Connectionattributes.OBJECT_TO_BE_IMPORTED)
