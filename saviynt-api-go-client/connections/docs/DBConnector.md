@@ -34,6 +34,10 @@ Name | Type | Description | Notes
 **STATUS_THRESHOLD_CONFIG** | Pointer to **string** | Applicable for Accounts full import only.If this config isdefined with status/threshold values, it will take precedence over account_not_in_file_action defined in ACCOUNTIMPORT xml.If this config is defined with only correlateInactiveAccounts, then account_not_in_file_action will used as normal.The attributes of statusAndThresholdConfig json are:statusColumn: Property in saviynt which stores the status of target system.activeStatus:All possible values that denotes the Active status of the target system.accountThresholdValue: No. of accounts to be deleted in Saviynt &gt;&#x3D; accountThresholdValue, it performs NO ACTION, else it disables the accounts.inactivateAccountsNotInFile: If true,accounts not in file are marked as Inactive. If false, accounts not in file are marked as SUSPENDED FROM IMPORT SERVICE.CorrelateInactiveAccounts: If true, correlates disabled accounts as well with the users. | [optional] 
 **MAX_PAGINATION_SIZE** | Pointer to **string** | Defines the max number of records from the target to be processed in each page | [optional] 
 **CLI_COMMAND_JSON** | Pointer to **string** | JSON to specify the commands which can be executed in target server. | [optional] 
+**CREATEENTITLEMENTJSON** | Pointer to **string** |  | [optional] 
+**DELETEENTITLEMENTJSON** | Pointer to **string** |  | [optional] 
+**ENTITLEMENTEXISTJSON** | Pointer to **string** |  | [optional] 
+**UPDATEENTITLEMENTJSON** | Pointer to **string** |  | [optional] 
 
 ## Methods
 
@@ -783,6 +787,106 @@ SetCLI_COMMAND_JSON sets CLI_COMMAND_JSON field to given value.
 `func (o *DBConnector) HasCLI_COMMAND_JSON() bool`
 
 HasCLI_COMMAND_JSON returns a boolean if a field has been set.
+
+### GetCREATEENTITLEMENTJSON
+
+`func (o *DBConnector) GetCREATEENTITLEMENTJSON() string`
+
+GetCREATEENTITLEMENTJSON returns the CREATEENTITLEMENTJSON field if non-nil, zero value otherwise.
+
+### GetCREATEENTITLEMENTJSONOk
+
+`func (o *DBConnector) GetCREATEENTITLEMENTJSONOk() (*string, bool)`
+
+GetCREATEENTITLEMENTJSONOk returns a tuple with the CREATEENTITLEMENTJSON field if it's non-nil, zero value otherwise
+and a boolean to check if the value has been set.
+
+### SetCREATEENTITLEMENTJSON
+
+`func (o *DBConnector) SetCREATEENTITLEMENTJSON(v string)`
+
+SetCREATEENTITLEMENTJSON sets CREATEENTITLEMENTJSON field to given value.
+
+### HasCREATEENTITLEMENTJSON
+
+`func (o *DBConnector) HasCREATEENTITLEMENTJSON() bool`
+
+HasCREATEENTITLEMENTJSON returns a boolean if a field has been set.
+
+### GetDELETEENTITLEMENTJSON
+
+`func (o *DBConnector) GetDELETEENTITLEMENTJSON() string`
+
+GetDELETEENTITLEMENTJSON returns the DELETEENTITLEMENTJSON field if non-nil, zero value otherwise.
+
+### GetDELETEENTITLEMENTJSONOk
+
+`func (o *DBConnector) GetDELETEENTITLEMENTJSONOk() (*string, bool)`
+
+GetDELETEENTITLEMENTJSONOk returns a tuple with the DELETEENTITLEMENTJSON field if it's non-nil, zero value otherwise
+and a boolean to check if the value has been set.
+
+### SetDELETEENTITLEMENTJSON
+
+`func (o *DBConnector) SetDELETEENTITLEMENTJSON(v string)`
+
+SetDELETEENTITLEMENTJSON sets DELETEENTITLEMENTJSON field to given value.
+
+### HasDELETEENTITLEMENTJSON
+
+`func (o *DBConnector) HasDELETEENTITLEMENTJSON() bool`
+
+HasDELETEENTITLEMENTJSON returns a boolean if a field has been set.
+
+### GetENTITLEMENTEXISTJSON
+
+`func (o *DBConnector) GetENTITLEMENTEXISTJSON() string`
+
+GetENTITLEMENTEXISTJSON returns the ENTITLEMENTEXISTJSON field if non-nil, zero value otherwise.
+
+### GetENTITLEMENTEXISTJSONOk
+
+`func (o *DBConnector) GetENTITLEMENTEXISTJSONOk() (*string, bool)`
+
+GetENTITLEMENTEXISTJSONOk returns a tuple with the ENTITLEMENTEXISTJSON field if it's non-nil, zero value otherwise
+and a boolean to check if the value has been set.
+
+### SetENTITLEMENTEXISTJSON
+
+`func (o *DBConnector) SetENTITLEMENTEXISTJSON(v string)`
+
+SetENTITLEMENTEXISTJSON sets ENTITLEMENTEXISTJSON field to given value.
+
+### HasENTITLEMENTEXISTJSON
+
+`func (o *DBConnector) HasENTITLEMENTEXISTJSON() bool`
+
+HasENTITLEMENTEXISTJSON returns a boolean if a field has been set.
+
+### GetUPDATEENTITLEMENTJSON
+
+`func (o *DBConnector) GetUPDATEENTITLEMENTJSON() string`
+
+GetUPDATEENTITLEMENTJSON returns the UPDATEENTITLEMENTJSON field if non-nil, zero value otherwise.
+
+### GetUPDATEENTITLEMENTJSONOk
+
+`func (o *DBConnector) GetUPDATEENTITLEMENTJSONOk() (*string, bool)`
+
+GetUPDATEENTITLEMENTJSONOk returns a tuple with the UPDATEENTITLEMENTJSON field if it's non-nil, zero value otherwise
+and a boolean to check if the value has been set.
+
+### SetUPDATEENTITLEMENTJSON
+
+`func (o *DBConnector) SetUPDATEENTITLEMENTJSON(v string)`
+
+SetUPDATEENTITLEMENTJSON sets UPDATEENTITLEMENTJSON field to given value.
+
+### HasUPDATEENTITLEMENTJSON
+
+`func (o *DBConnector) HasUPDATEENTITLEMENTJSON() bool`
+
+HasUPDATEENTITLEMENTJSON returns a boolean if a field has been set.
 
 
 [[Back to Model list]](../README.md#documentation-for-models) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to README]](../README.md)

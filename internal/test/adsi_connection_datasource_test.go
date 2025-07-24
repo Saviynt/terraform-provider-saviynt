@@ -52,7 +52,6 @@ func TestAccSaviyntADSIConnectionDataSource(t *testing.T) {
 					resource.TestCheckResourceAttr(datasource, "msg", "success"),
 					resource.TestCheckResourceAttr(datasource, "error_code", "0"),
 					resource.TestCheckResourceAttr(datasource, "connection_name", createCfg["connection_name"]),
-					resource.TestCheckResourceAttr(datasource, "connection_type", createCfg["connection_type"]),
 					resource.TestCheckResourceAttr(datasource, "connection_attributes.url", createCfg["url"]),
 					resource.TestCheckResourceAttr(datasource, "connection_attributes.connection_url", createCfg["connection_url"]),
 					resource.TestCheckResourceAttr(datasource, "connection_attributes.provisioning_url", createCfg["provisioning_url"]),
@@ -82,7 +81,6 @@ locals {
 }
 
 resource "saviynt_adsi_connection_resource" "adsi" {
-  connection_type              = local.cfg.connection_type
   connection_name              = local.cfg.connection_name
   url                          = local.cfg.url
   password                     = local.cfg.password

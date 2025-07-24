@@ -19,7 +19,6 @@ variable "PASSWORD" {
   sensitive   = true
 }
 resource "saviynt_db_connection_resource" "example" {
-  connection_type           = "DB"
   connection_name           = "Terraform_DB_Connector"
   url                       = var.URL
   username                  = var.USERNAME

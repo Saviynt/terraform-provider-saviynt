@@ -15,6 +15,11 @@ Name | Type | Description | Notes
 **Saveinvault** | Pointer to **string** | Flag indicating whether the encrypted attribute should be saved in the configured vault. | [optional] 
 **URL** | **string** | Host Name for connection | 
 **USERNAME** | **string** | Property for USERNAME | 
+**ENABLEGROUPMANAGEMENT** | Pointer to **string** | True implies group management capability limited to AD only. | [optional] 
+**IMPORTDATACOOKIES** | Pointer to **string** |  | [optional] 
+**MOVEACCOUNTJSON** | Pointer to **string** | JSON to specify movement action logic explicitely. If you have defined &#39;moveObjectToOU&#39; parameter in your update/enable/disable actions implicitely, then no need to define this explicitely here | [optional] 
+**PasswdPolicyJSON** | Pointer to **string** |  | [optional] 
+**CreateUpdateMappings** | Pointer to **string** | Mapping used during group creation to specify which attribute of a group maps to which attribute on Saviynt. | [optional] 
 **PASSWORD** | **string** | Property for PASSWORD | 
 **CONNECTION_URL** | **string** | ADSI remote agent Connection URL | 
 **PROVISIONING_URL** | Pointer to **string** | ADSI remote agent Provisioning URL | [optional] 
@@ -133,11 +138,14 @@ Name | Type | Description | Notes
 **RemoveAccountJSON** | Pointer to **string** | Property for RemoveAccountJSON | [optional] 
 **TicketStatusJSON** | Pointer to **string** |  | [optional] 
 **CreateTicketJSON** | Pointer to **string** |  | [optional] 
-**PasswdPolicyJSON** | Pointer to **string** |  | [optional] 
 **AddFFIDAccessJSON** | Pointer to **string** |  | [optional] 
 **RemoveFFIDAccessJSON** | Pointer to **string** |  | [optional] 
 **SendOtpJSON** | Pointer to **string** |  | [optional] 
 **ValidateOtpJSON** | Pointer to **string** |  | [optional] 
+**CreateEntitlementJSON** | Pointer to **string** |  | [optional] 
+**DeleteEntitlementJSON** | Pointer to **string** |  | [optional] 
+**UpdateEntitlementJSON** | Pointer to **string** |  | [optional] 
+**ApplicationDiscoveryJSON** | Pointer to **string** |  | [optional] 
 **BASEURL** | **string** |  | 
 **TENANT_ID** | **string** |  | 
 **LOGIN_URL** | **string** |  | 
@@ -188,6 +196,10 @@ Name | Type | Description | Notes
 **USERIMPORT** | Pointer to **string** | User Import XML file content | [optional] 
 **MAX_PAGINATION_SIZE** | Pointer to **string** | Defines the max number of records from the target to be processed in each page | [optional] 
 **CLI_COMMAND_JSON** | Pointer to **string** | JSON to specify the commands which can be executed in target server. | [optional] 
+**CREATEENTITLEMENTJSON** | Pointer to **string** |  | [optional] 
+**DELETEENTITLEMENTJSON** | Pointer to **string** |  | [optional] 
+**ENTITLEMENTEXISTJSON** | Pointer to **string** |  | [optional] 
+**UPDATEENTITLEMENTJSON** | Pointer to **string** |  | [optional] 
 **ACCESS_TOKEN** | Pointer to **string** | Property for ACCESS_TOKEN | [optional] 
 **AAD_TENANT_ID** | **string** | Property for AAD_TENANT_ID | 
 **AZURE_MGMT_ACCESS_TOKEN** | Pointer to **string** | Property for AZURE_MGMT_ACCESS_TOKEN | [optional] 
@@ -534,6 +546,131 @@ and a boolean to check if the value has been set.
 
 SetUSERNAME sets USERNAME field to given value.
 
+
+### GetENABLEGROUPMANAGEMENT
+
+`func (o *CreateOrUpdateRequest) GetENABLEGROUPMANAGEMENT() string`
+
+GetENABLEGROUPMANAGEMENT returns the ENABLEGROUPMANAGEMENT field if non-nil, zero value otherwise.
+
+### GetENABLEGROUPMANAGEMENTOk
+
+`func (o *CreateOrUpdateRequest) GetENABLEGROUPMANAGEMENTOk() (*string, bool)`
+
+GetENABLEGROUPMANAGEMENTOk returns a tuple with the ENABLEGROUPMANAGEMENT field if it's non-nil, zero value otherwise
+and a boolean to check if the value has been set.
+
+### SetENABLEGROUPMANAGEMENT
+
+`func (o *CreateOrUpdateRequest) SetENABLEGROUPMANAGEMENT(v string)`
+
+SetENABLEGROUPMANAGEMENT sets ENABLEGROUPMANAGEMENT field to given value.
+
+### HasENABLEGROUPMANAGEMENT
+
+`func (o *CreateOrUpdateRequest) HasENABLEGROUPMANAGEMENT() bool`
+
+HasENABLEGROUPMANAGEMENT returns a boolean if a field has been set.
+
+### GetIMPORTDATACOOKIES
+
+`func (o *CreateOrUpdateRequest) GetIMPORTDATACOOKIES() string`
+
+GetIMPORTDATACOOKIES returns the IMPORTDATACOOKIES field if non-nil, zero value otherwise.
+
+### GetIMPORTDATACOOKIESOk
+
+`func (o *CreateOrUpdateRequest) GetIMPORTDATACOOKIESOk() (*string, bool)`
+
+GetIMPORTDATACOOKIESOk returns a tuple with the IMPORTDATACOOKIES field if it's non-nil, zero value otherwise
+and a boolean to check if the value has been set.
+
+### SetIMPORTDATACOOKIES
+
+`func (o *CreateOrUpdateRequest) SetIMPORTDATACOOKIES(v string)`
+
+SetIMPORTDATACOOKIES sets IMPORTDATACOOKIES field to given value.
+
+### HasIMPORTDATACOOKIES
+
+`func (o *CreateOrUpdateRequest) HasIMPORTDATACOOKIES() bool`
+
+HasIMPORTDATACOOKIES returns a boolean if a field has been set.
+
+### GetMOVEACCOUNTJSON
+
+`func (o *CreateOrUpdateRequest) GetMOVEACCOUNTJSON() string`
+
+GetMOVEACCOUNTJSON returns the MOVEACCOUNTJSON field if non-nil, zero value otherwise.
+
+### GetMOVEACCOUNTJSONOk
+
+`func (o *CreateOrUpdateRequest) GetMOVEACCOUNTJSONOk() (*string, bool)`
+
+GetMOVEACCOUNTJSONOk returns a tuple with the MOVEACCOUNTJSON field if it's non-nil, zero value otherwise
+and a boolean to check if the value has been set.
+
+### SetMOVEACCOUNTJSON
+
+`func (o *CreateOrUpdateRequest) SetMOVEACCOUNTJSON(v string)`
+
+SetMOVEACCOUNTJSON sets MOVEACCOUNTJSON field to given value.
+
+### HasMOVEACCOUNTJSON
+
+`func (o *CreateOrUpdateRequest) HasMOVEACCOUNTJSON() bool`
+
+HasMOVEACCOUNTJSON returns a boolean if a field has been set.
+
+### GetPasswdPolicyJSON
+
+`func (o *CreateOrUpdateRequest) GetPasswdPolicyJSON() string`
+
+GetPasswdPolicyJSON returns the PasswdPolicyJSON field if non-nil, zero value otherwise.
+
+### GetPasswdPolicyJSONOk
+
+`func (o *CreateOrUpdateRequest) GetPasswdPolicyJSONOk() (*string, bool)`
+
+GetPasswdPolicyJSONOk returns a tuple with the PasswdPolicyJSON field if it's non-nil, zero value otherwise
+and a boolean to check if the value has been set.
+
+### SetPasswdPolicyJSON
+
+`func (o *CreateOrUpdateRequest) SetPasswdPolicyJSON(v string)`
+
+SetPasswdPolicyJSON sets PasswdPolicyJSON field to given value.
+
+### HasPasswdPolicyJSON
+
+`func (o *CreateOrUpdateRequest) HasPasswdPolicyJSON() bool`
+
+HasPasswdPolicyJSON returns a boolean if a field has been set.
+
+### GetCreateUpdateMappings
+
+`func (o *CreateOrUpdateRequest) GetCreateUpdateMappings() string`
+
+GetCreateUpdateMappings returns the CreateUpdateMappings field if non-nil, zero value otherwise.
+
+### GetCreateUpdateMappingsOk
+
+`func (o *CreateOrUpdateRequest) GetCreateUpdateMappingsOk() (*string, bool)`
+
+GetCreateUpdateMappingsOk returns a tuple with the CreateUpdateMappings field if it's non-nil, zero value otherwise
+and a boolean to check if the value has been set.
+
+### SetCreateUpdateMappings
+
+`func (o *CreateOrUpdateRequest) SetCreateUpdateMappings(v string)`
+
+SetCreateUpdateMappings sets CreateUpdateMappings field to given value.
+
+### HasCreateUpdateMappings
+
+`func (o *CreateOrUpdateRequest) HasCreateUpdateMappings() bool`
+
+HasCreateUpdateMappings returns a boolean if a field has been set.
 
 ### GetPASSWORD
 
@@ -3460,31 +3597,6 @@ SetCreateTicketJSON sets CreateTicketJSON field to given value.
 
 HasCreateTicketJSON returns a boolean if a field has been set.
 
-### GetPasswdPolicyJSON
-
-`func (o *CreateOrUpdateRequest) GetPasswdPolicyJSON() string`
-
-GetPasswdPolicyJSON returns the PasswdPolicyJSON field if non-nil, zero value otherwise.
-
-### GetPasswdPolicyJSONOk
-
-`func (o *CreateOrUpdateRequest) GetPasswdPolicyJSONOk() (*string, bool)`
-
-GetPasswdPolicyJSONOk returns a tuple with the PasswdPolicyJSON field if it's non-nil, zero value otherwise
-and a boolean to check if the value has been set.
-
-### SetPasswdPolicyJSON
-
-`func (o *CreateOrUpdateRequest) SetPasswdPolicyJSON(v string)`
-
-SetPasswdPolicyJSON sets PasswdPolicyJSON field to given value.
-
-### HasPasswdPolicyJSON
-
-`func (o *CreateOrUpdateRequest) HasPasswdPolicyJSON() bool`
-
-HasPasswdPolicyJSON returns a boolean if a field has been set.
-
 ### GetAddFFIDAccessJSON
 
 `func (o *CreateOrUpdateRequest) GetAddFFIDAccessJSON() string`
@@ -3584,6 +3696,106 @@ SetValidateOtpJSON sets ValidateOtpJSON field to given value.
 `func (o *CreateOrUpdateRequest) HasValidateOtpJSON() bool`
 
 HasValidateOtpJSON returns a boolean if a field has been set.
+
+### GetCreateEntitlementJSON
+
+`func (o *CreateOrUpdateRequest) GetCreateEntitlementJSON() string`
+
+GetCreateEntitlementJSON returns the CreateEntitlementJSON field if non-nil, zero value otherwise.
+
+### GetCreateEntitlementJSONOk
+
+`func (o *CreateOrUpdateRequest) GetCreateEntitlementJSONOk() (*string, bool)`
+
+GetCreateEntitlementJSONOk returns a tuple with the CreateEntitlementJSON field if it's non-nil, zero value otherwise
+and a boolean to check if the value has been set.
+
+### SetCreateEntitlementJSON
+
+`func (o *CreateOrUpdateRequest) SetCreateEntitlementJSON(v string)`
+
+SetCreateEntitlementJSON sets CreateEntitlementJSON field to given value.
+
+### HasCreateEntitlementJSON
+
+`func (o *CreateOrUpdateRequest) HasCreateEntitlementJSON() bool`
+
+HasCreateEntitlementJSON returns a boolean if a field has been set.
+
+### GetDeleteEntitlementJSON
+
+`func (o *CreateOrUpdateRequest) GetDeleteEntitlementJSON() string`
+
+GetDeleteEntitlementJSON returns the DeleteEntitlementJSON field if non-nil, zero value otherwise.
+
+### GetDeleteEntitlementJSONOk
+
+`func (o *CreateOrUpdateRequest) GetDeleteEntitlementJSONOk() (*string, bool)`
+
+GetDeleteEntitlementJSONOk returns a tuple with the DeleteEntitlementJSON field if it's non-nil, zero value otherwise
+and a boolean to check if the value has been set.
+
+### SetDeleteEntitlementJSON
+
+`func (o *CreateOrUpdateRequest) SetDeleteEntitlementJSON(v string)`
+
+SetDeleteEntitlementJSON sets DeleteEntitlementJSON field to given value.
+
+### HasDeleteEntitlementJSON
+
+`func (o *CreateOrUpdateRequest) HasDeleteEntitlementJSON() bool`
+
+HasDeleteEntitlementJSON returns a boolean if a field has been set.
+
+### GetUpdateEntitlementJSON
+
+`func (o *CreateOrUpdateRequest) GetUpdateEntitlementJSON() string`
+
+GetUpdateEntitlementJSON returns the UpdateEntitlementJSON field if non-nil, zero value otherwise.
+
+### GetUpdateEntitlementJSONOk
+
+`func (o *CreateOrUpdateRequest) GetUpdateEntitlementJSONOk() (*string, bool)`
+
+GetUpdateEntitlementJSONOk returns a tuple with the UpdateEntitlementJSON field if it's non-nil, zero value otherwise
+and a boolean to check if the value has been set.
+
+### SetUpdateEntitlementJSON
+
+`func (o *CreateOrUpdateRequest) SetUpdateEntitlementJSON(v string)`
+
+SetUpdateEntitlementJSON sets UpdateEntitlementJSON field to given value.
+
+### HasUpdateEntitlementJSON
+
+`func (o *CreateOrUpdateRequest) HasUpdateEntitlementJSON() bool`
+
+HasUpdateEntitlementJSON returns a boolean if a field has been set.
+
+### GetApplicationDiscoveryJSON
+
+`func (o *CreateOrUpdateRequest) GetApplicationDiscoveryJSON() string`
+
+GetApplicationDiscoveryJSON returns the ApplicationDiscoveryJSON field if non-nil, zero value otherwise.
+
+### GetApplicationDiscoveryJSONOk
+
+`func (o *CreateOrUpdateRequest) GetApplicationDiscoveryJSONOk() (*string, bool)`
+
+GetApplicationDiscoveryJSONOk returns a tuple with the ApplicationDiscoveryJSON field if it's non-nil, zero value otherwise
+and a boolean to check if the value has been set.
+
+### SetApplicationDiscoveryJSON
+
+`func (o *CreateOrUpdateRequest) SetApplicationDiscoveryJSON(v string)`
+
+SetApplicationDiscoveryJSON sets ApplicationDiscoveryJSON field to given value.
+
+### HasApplicationDiscoveryJSON
+
+`func (o *CreateOrUpdateRequest) HasApplicationDiscoveryJSON() bool`
+
+HasApplicationDiscoveryJSON returns a boolean if a field has been set.
 
 ### GetBASEURL
 
@@ -4809,6 +5021,106 @@ SetCLI_COMMAND_JSON sets CLI_COMMAND_JSON field to given value.
 `func (o *CreateOrUpdateRequest) HasCLI_COMMAND_JSON() bool`
 
 HasCLI_COMMAND_JSON returns a boolean if a field has been set.
+
+### GetCREATEENTITLEMENTJSON
+
+`func (o *CreateOrUpdateRequest) GetCREATEENTITLEMENTJSON() string`
+
+GetCREATEENTITLEMENTJSON returns the CREATEENTITLEMENTJSON field if non-nil, zero value otherwise.
+
+### GetCREATEENTITLEMENTJSONOk
+
+`func (o *CreateOrUpdateRequest) GetCREATEENTITLEMENTJSONOk() (*string, bool)`
+
+GetCREATEENTITLEMENTJSONOk returns a tuple with the CREATEENTITLEMENTJSON field if it's non-nil, zero value otherwise
+and a boolean to check if the value has been set.
+
+### SetCREATEENTITLEMENTJSON
+
+`func (o *CreateOrUpdateRequest) SetCREATEENTITLEMENTJSON(v string)`
+
+SetCREATEENTITLEMENTJSON sets CREATEENTITLEMENTJSON field to given value.
+
+### HasCREATEENTITLEMENTJSON
+
+`func (o *CreateOrUpdateRequest) HasCREATEENTITLEMENTJSON() bool`
+
+HasCREATEENTITLEMENTJSON returns a boolean if a field has been set.
+
+### GetDELETEENTITLEMENTJSON
+
+`func (o *CreateOrUpdateRequest) GetDELETEENTITLEMENTJSON() string`
+
+GetDELETEENTITLEMENTJSON returns the DELETEENTITLEMENTJSON field if non-nil, zero value otherwise.
+
+### GetDELETEENTITLEMENTJSONOk
+
+`func (o *CreateOrUpdateRequest) GetDELETEENTITLEMENTJSONOk() (*string, bool)`
+
+GetDELETEENTITLEMENTJSONOk returns a tuple with the DELETEENTITLEMENTJSON field if it's non-nil, zero value otherwise
+and a boolean to check if the value has been set.
+
+### SetDELETEENTITLEMENTJSON
+
+`func (o *CreateOrUpdateRequest) SetDELETEENTITLEMENTJSON(v string)`
+
+SetDELETEENTITLEMENTJSON sets DELETEENTITLEMENTJSON field to given value.
+
+### HasDELETEENTITLEMENTJSON
+
+`func (o *CreateOrUpdateRequest) HasDELETEENTITLEMENTJSON() bool`
+
+HasDELETEENTITLEMENTJSON returns a boolean if a field has been set.
+
+### GetENTITLEMENTEXISTJSON
+
+`func (o *CreateOrUpdateRequest) GetENTITLEMENTEXISTJSON() string`
+
+GetENTITLEMENTEXISTJSON returns the ENTITLEMENTEXISTJSON field if non-nil, zero value otherwise.
+
+### GetENTITLEMENTEXISTJSONOk
+
+`func (o *CreateOrUpdateRequest) GetENTITLEMENTEXISTJSONOk() (*string, bool)`
+
+GetENTITLEMENTEXISTJSONOk returns a tuple with the ENTITLEMENTEXISTJSON field if it's non-nil, zero value otherwise
+and a boolean to check if the value has been set.
+
+### SetENTITLEMENTEXISTJSON
+
+`func (o *CreateOrUpdateRequest) SetENTITLEMENTEXISTJSON(v string)`
+
+SetENTITLEMENTEXISTJSON sets ENTITLEMENTEXISTJSON field to given value.
+
+### HasENTITLEMENTEXISTJSON
+
+`func (o *CreateOrUpdateRequest) HasENTITLEMENTEXISTJSON() bool`
+
+HasENTITLEMENTEXISTJSON returns a boolean if a field has been set.
+
+### GetUPDATEENTITLEMENTJSON
+
+`func (o *CreateOrUpdateRequest) GetUPDATEENTITLEMENTJSON() string`
+
+GetUPDATEENTITLEMENTJSON returns the UPDATEENTITLEMENTJSON field if non-nil, zero value otherwise.
+
+### GetUPDATEENTITLEMENTJSONOk
+
+`func (o *CreateOrUpdateRequest) GetUPDATEENTITLEMENTJSONOk() (*string, bool)`
+
+GetUPDATEENTITLEMENTJSONOk returns a tuple with the UPDATEENTITLEMENTJSON field if it's non-nil, zero value otherwise
+and a boolean to check if the value has been set.
+
+### SetUPDATEENTITLEMENTJSON
+
+`func (o *CreateOrUpdateRequest) SetUPDATEENTITLEMENTJSON(v string)`
+
+SetUPDATEENTITLEMENTJSON sets UPDATEENTITLEMENTJSON field to given value.
+
+### HasUPDATEENTITLEMENTJSON
+
+`func (o *CreateOrUpdateRequest) HasUPDATEENTITLEMENTJSON() bool`
+
+HasUPDATEENTITLEMENTJSON returns a boolean if a field has been set.
 
 ### GetACCESS_TOKEN
 

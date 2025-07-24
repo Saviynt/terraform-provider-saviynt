@@ -2,7 +2,6 @@
 // SPDX-License-Identifier: MPL-2.0
 
 resource "saviynt_sap_connection_resource" "ss" {
-  connection_type             = "SAP"
   connection_name             = "Terraform_Sap_Connection"
   message_server              = "FALSE"
   jco_ashost                  = "<jco_ashost>"

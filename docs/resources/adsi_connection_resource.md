@@ -54,7 +54,6 @@ variable "PROVISIONING_URL" {
   description = "Value of PROVISIONING_URL"
 }
 resource "saviynt_adsi_connection_resource" "example" {
-  connection_type     = "ADSI"
   connection_name     = "Terraform_ADSI_Connector"
   email_template      = "Account Password Expiry Email"
   url                 = format("%s://%s", var.LDAP_PROTOCOL, var.IP_ADDRESS)
@@ -437,7 +436,6 @@ resource "saviynt_adsi_connection_resource" "example" {
 - `addaccessentitlementjson` (String) Configuration to Add nested group hierarchy
 - `addaccessjson` (String) Configuration to ADD Access (cross domain/forest group membership) to an account.
 - `checkforunique` (String) Evaluate the uniqueness of an attribute
-- `connection_type` (String) Connection type (e.g., 'AD' for Active Directory). Example: "AD"
 - `createaccountjson` (String) Specify the attributes values which will be used to Create the New Account.
 - `creategroupjson` (String) Configuration to Create a Group
 - `createserviceaccountjson` (String) Specify the Field Value which will be used to Create the New Service Account.

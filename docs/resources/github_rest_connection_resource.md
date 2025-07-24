@@ -20,7 +20,6 @@ variable "ORG_LIST" {
   type = string
 }
 resource "saviynt_github_rest_connection_resource" "example" {
-  connection_type = "GithubRest"
   connection_name = "Terraform_Github_Connection"
   connection_json = jsonencode({
     authentications = {
@@ -497,7 +496,6 @@ resource "saviynt_github_rest_connection_resource" "example" {
 
 - `access_tokens` (String) Property for ACCESS_TOKENS
 - `connection_json` (String) Property for ConnectionJSON
-- `connection_type` (String) Connection type (e.g., 'AD' for Active Directory). Example: "AD"
 - `defaultsavroles` (String) Default SAV roles for managing the connection. Example: "ROLE_ORG"
 - `description` (String) Description for the connection. Example: "ORG_AD"
 - `email_template` (String) Email template for notifications. Example: "New Account Task Creation"

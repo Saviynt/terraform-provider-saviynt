@@ -30,7 +30,6 @@ locals {
 }
 
 resource "saviynt_entraid_connection_resource" "example" {
-  connection_type           = "AzureAD"
   connection_name           = "Terraform_EntraId_Connector"
   client_id                 = var.CLIENT_ID
   client_secret             = var.CLIENT_SECRET

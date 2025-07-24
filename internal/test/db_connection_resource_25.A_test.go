@@ -8,7 +8,6 @@
 //   - Create: provisions a new DB connection and asserts each attribute via JSONPath checks.
 //   - Import: verifies the resource can be imported by its connection name.
 //   - Update: applies configuration changes and confirms the updated attribute values.
-//   - Negative Cases: ensures updates to `connection_name` and `connection_type` are rejected.
 //
 // Test data is loaded from `db_connection_resource_test_data.json` using `testutil.LoadConnectorData`.
 // Environment variables `SAVIYNT_URL`, `SAVIYNT_USERNAME`, and `SAVIYNT_PASSWORD` must be set
@@ -28,7 +27,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-testing/tfjsonpath"
 )
 
-func TestAccSaviyntDBConnectionResource(t *testing.T) {
+func TestAccSaviyntDBConnectionResource25A(t *testing.T) {
 	filePath := testutil.GetTestDataPath(t, "./test_data/db_connection_test_data.json")
 	filePath = testutil.PrepareTestDataWithEnv(t, filePath)
 	createCfg := testutil.LoadConnectorData(t, filePath, "create")
@@ -40,10 +39,9 @@ func TestAccSaviyntDBConnectionResource(t *testing.T) {
 		Steps: []resource.TestStep{
 			// Create
 			{
-				Config: testAccDBConnectionResourceConfig(filePath, "create"),
+				Config: testAccDBConnectionResourceConfig25A(filePath, "create"),
 				ConfigStateChecks: []statecheck.StateCheck{
 					statecheck.ExpectKnownValue(resourceName, tfjsonpath.New("connection_name"), knownvalue.StringExact(createCfg["connection_name"])),
-					statecheck.ExpectKnownValue(resourceName, tfjsonpath.New("connection_type"), knownvalue.StringExact(createCfg["connection_type"])),
 					statecheck.ExpectKnownValue(resourceName, tfjsonpath.New("url"), knownvalue.StringExact(createCfg["url"])),
 					statecheck.ExpectKnownValue(resourceName, tfjsonpath.New("driver_name"), knownvalue.StringExact(createCfg["driver_name"])),
 					statecheck.ExpectKnownValue(resourceName, tfjsonpath.New("create_account_json"), knownvalue.StringExact(createCfg["create_account_json"])),
@@ -70,11 +68,10 @@ func TestAccSaviyntDBConnectionResource(t *testing.T) {
 			},
 			// Update
 			{
-				Config: testAccDBConnectionResourceConfig(filePath, "update"),
+				Config: testAccDBConnectionResourceConfig25A(filePath, "update"),
 				ConfigStateChecks: []statecheck.StateCheck{
 					//Encrypted Connection Attributes are removed
 					statecheck.ExpectKnownValue(resourceName, tfjsonpath.New("connection_name"), knownvalue.StringExact(updateCfg["connection_name"])),
-					statecheck.ExpectKnownValue(resourceName, tfjsonpath.New("connection_type"), knownvalue.StringExact(updateCfg["connection_type"])),
 					statecheck.ExpectKnownValue(resourceName, tfjsonpath.New("url"), knownvalue.StringExact(updateCfg["url"])),
 					statecheck.ExpectKnownValue(resourceName, tfjsonpath.New("driver_name"), knownvalue.StringExact(updateCfg["driver_name"])),
 					statecheck.ExpectKnownValue(resourceName, tfjsonpath.New("create_account_json"), knownvalue.StringExact(updateCfg["create_account_json"])),
@@ -93,19 +90,14 @@ func TestAccSaviyntDBConnectionResource(t *testing.T) {
 			},
 			// Update the Connectionname to a new value
 			{
-				Config:      testAccDBConnectionResourceConfig(filePath, "update_connection_name"),
+				Config:      testAccDBConnectionResourceConfig25A(filePath, "update_connection_name"),
 				ExpectError: regexp.MustCompile(`Connection name cannot be updated`),
-			},
-			// Update the Connectiontype to a new value
-			{
-				Config:      testAccDBConnectionResourceConfig(filePath, "update_connection_type"),
-				ExpectError: regexp.MustCompile(`Connection type cannot by updated`),
 			},
 		},
 	})
 }
 
-func testAccDBConnectionResourceConfig(jsonPath, operation string) string {
+func testAccDBConnectionResourceConfig25A(jsonPath, operation string) string {
 	return fmt.Sprintf(`
 provider "saviynt" {
   server_url = "%s"
@@ -118,7 +110,6 @@ locals {
 }
 
 resource "saviynt_db_connection_resource" "db" {
-  connection_type           = local.cfg.connection_type
   connection_name           = local.cfg.connection_name
   url                       = local.cfg.url
   username                  = local.cfg.username
@@ -135,15 +126,14 @@ resource "saviynt_db_connection_resource" "db" {
   disable_account_json      = jsonencode(local.cfg.disable_account_json)
   account_exists_json       = jsonencode(local.cfg.account_exists_json)
   update_user_json          = jsonencode(local.cfg.update_user_json)
-
   accounts_import           = local.cfg.accounts_import
   entitlement_value_import  = local.cfg.entitlement_value_import
   user_import               = local.cfg.user_import
 
 }
-`, os.Getenv("SAVIYNT_URL"),
-		os.Getenv("SAVIYNT_USERNAME"),
-		os.Getenv("SAVIYNT_PASSWORD"),
+`, os.Getenv("SAVIYNT_URL_25A"),
+		os.Getenv("SAVIYNT_USERNAME_25A"),
+		os.Getenv("SAVIYNT_PASSWORD_25A"),
 		jsonPath,
 		operation,
 	)

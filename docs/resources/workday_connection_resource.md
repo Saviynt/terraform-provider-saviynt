@@ -60,7 +60,6 @@ variable "REFRESH_TOKEN" {
 
 # Workday SOAP using basic auth
 resource "saviynt_workday_connection_resource" "soap" {
-  connection_type = "Workday"
   connection_name = "Terraform_Workday_Connector"
   base_url        = var.BASE_URL
   api_version     = var.API_VERSION
@@ -400,7 +399,7 @@ resource "saviynt_workday_connection_resource" "soap" {
 ### Required
 
 - `connection_name` (String) Name of the connection. Example: "Active Directory_Doc"
-- `use_oauth` (String) Whether to use OAuth authentication.
+- `use_oauth` (String) Whether to use OAuth authentication.Values can be TRUE/FALSE
 
 ### Optional
 
@@ -415,7 +414,6 @@ resource "saviynt_workday_connection_resource" "soap" {
 - `base_url` (String) Base URL of the Workday tenant instance.
 - `client_id` (String) OAuth client ID.
 - `client_secret` (String) OAuth client secret.
-- `connection_type` (String) Connection type (e.g., 'AD' for Active Directory). Example: "AD"
 - `create_account_payload` (String) Payload for creating an account.
 - `custom_config` (String) Custom configuration for Workday connector.
 - `defaultsavroles` (String) Default SAV roles for managing the connection. Example: "ROLE_ORG"

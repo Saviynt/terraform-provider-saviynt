@@ -52,7 +52,6 @@ func TestAccSaviyntSalesforceConnectionDataSource(t *testing.T) {
 					resource.TestCheckResourceAttr(datasource, "msg", "success"),
 					resource.TestCheckResourceAttr(datasource, "error_code", "0"),
 					resource.TestCheckResourceAttr(datasource, "connection_name", createCfg["connection_name"]),
-					resource.TestCheckResourceAttr(datasource, "connection_type", createCfg["connection_type"]),
 					resource.TestCheckResourceAttr(datasource, "connection_attributes.redirect_uri", createCfg["redirect_uri"]),
 					resource.TestCheckResourceAttr(datasource, "connection_attributes.instance_url", createCfg["instance_url"]),
 					resource.TestCheckResourceAttr(datasource, "connection_attributes.object_to_be_imported", createCfg["object_to_be_imported"]),
@@ -77,7 +76,6 @@ locals {
 }
 
 resource "saviynt_salesforce_connection_resource" "salesforce" {
-  connection_type    = local.cfg.connection_type
   connection_name    = local.cfg.connection_name
   client_id             = local.cfg.client_id
   redirect_uri          = local.cfg.redirect_uri

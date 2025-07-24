@@ -52,7 +52,6 @@ func TestAccSaviyntEntraIdConnectionDataSource(t *testing.T) {
 					resource.TestCheckResourceAttr(datasource, "msg", "success"),
 					resource.TestCheckResourceAttr(datasource, "error_code", "0"),
 					resource.TestCheckResourceAttr(datasource, "connection_name", createCfg["connection_name"]),
-					resource.TestCheckResourceAttr(datasource, "connection_type", createCfg["connection_type"]),
 					resource.TestCheckResourceAttr(datasource, "connection_attributes.aad_tenant_id", createCfg["aad_tenant_id"]),
 					resource.TestCheckResourceAttr(datasource, "connection_attributes.authentication_endpoint", createCfg["authentication_endpoint"]),
 					resource.TestCheckResourceAttr(datasource, "connection_attributes.microsoft_graph_endpoint", createCfg["microsoft_graph_endpoint"]),
@@ -88,7 +87,6 @@ locals {
 }
 
 resource "saviynt_entraid_connection_resource" "entraid" {
-  connection_type           = local.cfg.connection_type
   connection_name           = local.cfg.connection_name
   client_id                 = local.cfg.client_id
   client_secret             = local.cfg.client_secret

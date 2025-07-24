@@ -1,4 +1,4 @@
-// Copyright (c) 2025 Saviynt Inc.
+// Copyright (c) Saviynt Inc.
 // SPDX-License-Identifier: MPL-2.0
 
 /*

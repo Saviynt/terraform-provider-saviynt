@@ -26,6 +26,15 @@ type ADSIConnector struct {
 	URL string `json:"URL"`
 	// Service account username
 	USERNAME string `json:"USERNAME"`
+	// True implies group management capability limited to AD only.
+	ENABLEGROUPMANAGEMENT *string `json:"ENABLEGROUPMANAGEMENT,omitempty"`
+	IMPORTDATACOOKIES *string `json:"IMPORTDATACOOKIES,omitempty"`
+	// JSON to specify movement action logic explicitely. If you have defined 'moveObjectToOU' parameter in your update/enable/disable actions implicitely, then no need to define this explicitely here
+	MOVEACCOUNTJSON *string `json:"MOVEACCOUNTJSON,omitempty"`
+	// Optional Password policy JSON, in case you have no password policy defined/assigned in your Security System.
+	PasswdPolicyJSON *string `json:"PasswdPolicyJSON,omitempty"`
+	// Mapping used during group creation to specify which attribute of a group maps to which attribute on Saviynt.
+	CreateUpdateMappings *string `json:"createUpdateMappings,omitempty"`
 	// Service account password
 	PASSWORD string `json:"PASSWORD"`
 	// ADSI remote agent Connection URL
@@ -177,6 +186,166 @@ func (o *ADSIConnector) GetUSERNAMEOk() (*string, bool) {
 // SetUSERNAME sets field value
 func (o *ADSIConnector) SetUSERNAME(v string) {
 	o.USERNAME = v
+}
+
+// GetENABLEGROUPMANAGEMENT returns the ENABLEGROUPMANAGEMENT field value if set, zero value otherwise.
+func (o *ADSIConnector) GetENABLEGROUPMANAGEMENT() string {
+	if o == nil || IsNil(o.ENABLEGROUPMANAGEMENT) {
+		var ret string
+		return ret
+	}
+	return *o.ENABLEGROUPMANAGEMENT
+}
+
+// GetENABLEGROUPMANAGEMENTOk returns a tuple with the ENABLEGROUPMANAGEMENT field value if set, nil otherwise
+// and a boolean to check if the value has been set.
+func (o *ADSIConnector) GetENABLEGROUPMANAGEMENTOk() (*string, bool) {
+	if o == nil || IsNil(o.ENABLEGROUPMANAGEMENT) {
+		return nil, false
+	}
+	return o.ENABLEGROUPMANAGEMENT, true
+}
+
+// HasENABLEGROUPMANAGEMENT returns a boolean if a field has been set.
+func (o *ADSIConnector) HasENABLEGROUPMANAGEMENT() bool {
+	if o != nil && !IsNil(o.ENABLEGROUPMANAGEMENT) {
+		return true
+	}
+
+	return false
+}
+
+// SetENABLEGROUPMANAGEMENT gets a reference to the given string and assigns it to the ENABLEGROUPMANAGEMENT field.
+func (o *ADSIConnector) SetENABLEGROUPMANAGEMENT(v string) {
+	o.ENABLEGROUPMANAGEMENT = &v
+}
+
+// GetIMPORTDATACOOKIES returns the IMPORTDATACOOKIES field value if set, zero value otherwise.
+func (o *ADSIConnector) GetIMPORTDATACOOKIES() string {
+	if o == nil || IsNil(o.IMPORTDATACOOKIES) {
+		var ret string
+		return ret
+	}
+	return *o.IMPORTDATACOOKIES
+}
+
+// GetIMPORTDATACOOKIESOk returns a tuple with the IMPORTDATACOOKIES field value if set, nil otherwise
+// and a boolean to check if the value has been set.
+func (o *ADSIConnector) GetIMPORTDATACOOKIESOk() (*string, bool) {
+	if o == nil || IsNil(o.IMPORTDATACOOKIES) {
+		return nil, false
+	}
+	return o.IMPORTDATACOOKIES, true
+}
+
+// HasIMPORTDATACOOKIES returns a boolean if a field has been set.
+func (o *ADSIConnector) HasIMPORTDATACOOKIES() bool {
+	if o != nil && !IsNil(o.IMPORTDATACOOKIES) {
+		return true
+	}
+
+	return false
+}
+
+// SetIMPORTDATACOOKIES gets a reference to the given string and assigns it to the IMPORTDATACOOKIES field.
+func (o *ADSIConnector) SetIMPORTDATACOOKIES(v string) {
+	o.IMPORTDATACOOKIES = &v
+}
+
+// GetMOVEACCOUNTJSON returns the MOVEACCOUNTJSON field value if set, zero value otherwise.
+func (o *ADSIConnector) GetMOVEACCOUNTJSON() string {
+	if o == nil || IsNil(o.MOVEACCOUNTJSON) {
+		var ret string
+		return ret
+	}
+	return *o.MOVEACCOUNTJSON
+}
+
+// GetMOVEACCOUNTJSONOk returns a tuple with the MOVEACCOUNTJSON field value if set, nil otherwise
+// and a boolean to check if the value has been set.
+func (o *ADSIConnector) GetMOVEACCOUNTJSONOk() (*string, bool) {
+	if o == nil || IsNil(o.MOVEACCOUNTJSON) {
+		return nil, false
+	}
+	return o.MOVEACCOUNTJSON, true
+}
+
+// HasMOVEACCOUNTJSON returns a boolean if a field has been set.
+func (o *ADSIConnector) HasMOVEACCOUNTJSON() bool {
+	if o != nil && !IsNil(o.MOVEACCOUNTJSON) {
+		return true
+	}
+
+	return false
+}
+
+// SetMOVEACCOUNTJSON gets a reference to the given string and assigns it to the MOVEACCOUNTJSON field.
+func (o *ADSIConnector) SetMOVEACCOUNTJSON(v string) {
+	o.MOVEACCOUNTJSON = &v
+}
+
+// GetPasswdPolicyJSON returns the PasswdPolicyJSON field value if set, zero value otherwise.
+func (o *ADSIConnector) GetPasswdPolicyJSON() string {
+	if o == nil || IsNil(o.PasswdPolicyJSON) {
+		var ret string
+		return ret
+	}
+	return *o.PasswdPolicyJSON
+}
+
+// GetPasswdPolicyJSONOk returns a tuple with the PasswdPolicyJSON field value if set, nil otherwise
+// and a boolean to check if the value has been set.
+func (o *ADSIConnector) GetPasswdPolicyJSONOk() (*string, bool) {
+	if o == nil || IsNil(o.PasswdPolicyJSON) {
+		return nil, false
+	}
+	return o.PasswdPolicyJSON, true
+}
+
+// HasPasswdPolicyJSON returns a boolean if a field has been set.
+func (o *ADSIConnector) HasPasswdPolicyJSON() bool {
+	if o != nil && !IsNil(o.PasswdPolicyJSON) {
+		return true
+	}
+
+	return false
+}
+
+// SetPasswdPolicyJSON gets a reference to the given string and assigns it to the PasswdPolicyJSON field.
+func (o *ADSIConnector) SetPasswdPolicyJSON(v string) {
+	o.PasswdPolicyJSON = &v
+}
+
+// GetCreateUpdateMappings returns the CreateUpdateMappings field value if set, zero value otherwise.
+func (o *ADSIConnector) GetCreateUpdateMappings() string {
+	if o == nil || IsNil(o.CreateUpdateMappings) {
+		var ret string
+		return ret
+	}
+	return *o.CreateUpdateMappings
+}
+
+// GetCreateUpdateMappingsOk returns a tuple with the CreateUpdateMappings field value if set, nil otherwise
+// and a boolean to check if the value has been set.
+func (o *ADSIConnector) GetCreateUpdateMappingsOk() (*string, bool) {
+	if o == nil || IsNil(o.CreateUpdateMappings) {
+		return nil, false
+	}
+	return o.CreateUpdateMappings, true
+}
+
+// HasCreateUpdateMappings returns a boolean if a field has been set.
+func (o *ADSIConnector) HasCreateUpdateMappings() bool {
+	if o != nil && !IsNil(o.CreateUpdateMappings) {
+		return true
+	}
+
+	return false
+}
+
+// SetCreateUpdateMappings gets a reference to the given string and assigns it to the CreateUpdateMappings field.
+func (o *ADSIConnector) SetCreateUpdateMappings(v string) {
+	o.CreateUpdateMappings = &v
 }
 
 // GetPASSWORD returns the PASSWORD field value
@@ -1423,6 +1592,21 @@ func (o ADSIConnector) ToMap() (map[string]interface{}, error) {
 	}
 	toSerialize["URL"] = o.URL
 	toSerialize["USERNAME"] = o.USERNAME
+	if !IsNil(o.ENABLEGROUPMANAGEMENT) {
+		toSerialize["ENABLEGROUPMANAGEMENT"] = o.ENABLEGROUPMANAGEMENT
+	}
+	if !IsNil(o.IMPORTDATACOOKIES) {
+		toSerialize["IMPORTDATACOOKIES"] = o.IMPORTDATACOOKIES
+	}
+	if !IsNil(o.MOVEACCOUNTJSON) {
+		toSerialize["MOVEACCOUNTJSON"] = o.MOVEACCOUNTJSON
+	}
+	if !IsNil(o.PasswdPolicyJSON) {
+		toSerialize["PasswdPolicyJSON"] = o.PasswdPolicyJSON
+	}
+	if !IsNil(o.CreateUpdateMappings) {
+		toSerialize["createUpdateMappings"] = o.CreateUpdateMappings
+	}
 	toSerialize["PASSWORD"] = o.PASSWORD
 	toSerialize["CONNECTION_URL"] = o.CONNECTION_URL
 	if !IsNil(o.PROVISIONING_URL) {

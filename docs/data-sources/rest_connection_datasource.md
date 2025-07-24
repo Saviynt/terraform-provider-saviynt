@@ -56,11 +56,14 @@ Read-Only:
 
 - `add_access_json` (String)
 - `add_ffid_access_json` (String)
+- `application_discovery_json` (String)
 - `config_json` (String)
 - `connection_timeout_config` (Attributes) (see [below for nested schema](#nestedatt--connection_attributes--connection_timeout_config))
 - `connection_type` (String)
 - `create_account_json` (String)
+- `create_entitlement_json` (String)
 - `create_ticket_json` (String)
+- `delete_entitlement_json` (String)
 - `disable_account_json` (String)
 - `enable_account_json` (String)
 - `endpoints_filter` (String)
@@ -78,6 +81,7 @@ Read-Only:
 - `status_threshold_config` (String)
 - `ticket_status_json` (String)
 - `update_account_json` (String)
+- `update_entitlement_json` (String)
 - `update_user_json` (String)
 - `validate_otp_json` (String)
 

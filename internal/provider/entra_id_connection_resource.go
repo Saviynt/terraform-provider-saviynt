@@ -161,7 +161,7 @@ func EntraIdConnectorResourceSchema() map[string]schema.Attribute {
 		"create_new_endpoints": schema.StringAttribute{
 			Optional:    true,
 			Computed:    true,
-			Description: "Configuration to create new endpoints.",
+			Description: "Configuration to create new endpoints.Value accpetd are YES/NO.",
 		},
 		"managed_account_type": schema.StringAttribute{
 			Optional:    true,
@@ -473,7 +473,6 @@ func (r *entraIdConnectionResource) Create(ctx context.Context, req resource.Cre
 		return
 	}
 	plan.ID = types.StringValue(fmt.Sprintf("%d", *apiResp.ConnectionKey))
-	plan.ConnectionType = types.StringValue("AzureAD")
 	plan.ConnectionKey = types.Int64Value(int64(*apiResp.ConnectionKey))
 	plan.Description = util.SafeStringDatasource(plan.Description.ValueStringPointer())
 	plan.DefaultSavRoles = util.SafeStringDatasource(plan.DefaultSavRoles.ValueStringPointer())
@@ -555,7 +554,6 @@ func (r *entraIdConnectionResource) Read(ctx context.Context, req resource.ReadR
 	state.ConnectionKey = util.SafeInt64(apiResp.EntraIDConnectionResponse.Connectionkey)
 	state.Description = util.SafeStringDatasource(apiResp.EntraIDConnectionResponse.Description)
 	state.DefaultSavRoles = util.SafeStringDatasource(apiResp.EntraIDConnectionResponse.Defaultsavroles)
-	state.ConnectionType = util.SafeStringDatasource(apiResp.EntraIDConnectionResponse.Connectiontype)
 	state.EmailTemplate = util.SafeStringDatasource(apiResp.EntraIDConnectionResponse.Emailtemplate)
 	state.UpdateUserJson = util.SafeStringDatasource(apiResp.EntraIDConnectionResponse.Connectionattributes.UpdateUserJSON)
 	state.MicrosoftGraphEndpoint = util.SafeStringDatasource(apiResp.EntraIDConnectionResponse.Connectionattributes.MICROSOFT_GRAPH_ENDPOINT)
@@ -639,11 +637,6 @@ func (r *entraIdConnectionResource) Update(ctx context.Context, req resource.Upd
 	if plan.ConnectionName.ValueString() != state.ConnectionName.ValueString() {
 		resp.Diagnostics.AddError("Error", "Connection name cannot be updated")
 		log.Printf("[ERROR]: Connection name cannot be updated")
-		return
-	}
-	if plan.ConnectionType.ValueString() != state.ConnectionType.ValueString() {
-		resp.Diagnostics.AddError("Error", "Connection type cannot by updated")
-		log.Printf("[ERROR]: Connection type cannot by updated")
 		return
 	}
 
@@ -740,7 +733,6 @@ func (r *entraIdConnectionResource) Update(ctx context.Context, req resource.Upd
 	plan.ConnectionKey = util.SafeInt64(getResp.EntraIDConnectionResponse.Connectionkey)
 	plan.Description = util.SafeStringDatasource(getResp.EntraIDConnectionResponse.Description)
 	plan.DefaultSavRoles = util.SafeStringDatasource(getResp.EntraIDConnectionResponse.Defaultsavroles)
-	plan.ConnectionType = util.SafeStringDatasource(getResp.EntraIDConnectionResponse.Connectiontype)
 	plan.EmailTemplate = util.SafeStringDatasource(getResp.EntraIDConnectionResponse.Emailtemplate)
 	plan.UpdateUserJson = util.SafeStringDatasource(getResp.EntraIDConnectionResponse.Connectionattributes.UpdateUserJSON)
 	plan.MicrosoftGraphEndpoint = util.SafeStringDatasource(getResp.EntraIDConnectionResponse.Connectionattributes.MICROSOFT_GRAPH_ENDPOINT)

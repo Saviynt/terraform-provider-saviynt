@@ -8,7 +8,6 @@
 //   - Create: provisions a new ADSI connection and asserts each attribute via JSONPath checks.
 //   - Import: verifies the resource can be imported by its connection name.
 //   - Update: applies configuration changes and confirms the updated attribute values.
-//   - Negative Cases: ensures updates to `connection_name` and `connection_type` are rejected.
 //
 // Test data is loaded from `adsi_connection_resource_test_data.json` using `testutil.LoadConnectorData`.
 // Environment variables `SAVIYNT_URL`, `SAVIYNT_USERNAME`, and `SAVIYNT_PASSWORD` must be set
@@ -43,7 +42,6 @@ func TestAccSaviyntADSIConnectionResource(t *testing.T) {
 				Config: testAccADSIConnectionResourceConfig(filePath, "create"),
 				ConfigStateChecks: []statecheck.StateCheck{
 					statecheck.ExpectKnownValue(resourceName, tfjsonpath.New("connection_name"), knownvalue.StringExact(createCfg["connection_name"])),
-					statecheck.ExpectKnownValue(resourceName, tfjsonpath.New("connection_type"), knownvalue.StringExact(createCfg["connection_type"])),
 					statecheck.ExpectKnownValue(resourceName, tfjsonpath.New("url"), knownvalue.StringExact(createCfg["url"])),
 					statecheck.ExpectKnownValue(resourceName, tfjsonpath.New("connection_url"), knownvalue.StringExact(createCfg["connection_url"])),
 					statecheck.ExpectKnownValue(resourceName, tfjsonpath.New("provisioning_url"), knownvalue.StringExact(createCfg["provisioning_url"])),
@@ -73,7 +71,6 @@ func TestAccSaviyntADSIConnectionResource(t *testing.T) {
 				Config: testAccADSIConnectionResourceConfig(filePath, "update"),
 				ConfigStateChecks: []statecheck.StateCheck{
 					statecheck.ExpectKnownValue(resourceName, tfjsonpath.New("connection_name"), knownvalue.StringExact(updateCfg["connection_name"])),
-					statecheck.ExpectKnownValue(resourceName, tfjsonpath.New("connection_type"), knownvalue.StringExact(updateCfg["connection_type"])),
 					statecheck.ExpectKnownValue(resourceName, tfjsonpath.New("url"), knownvalue.StringExact(updateCfg["url"])),
 					statecheck.ExpectKnownValue(resourceName, tfjsonpath.New("connection_url"), knownvalue.StringExact(updateCfg["connection_url"])),
 					statecheck.ExpectKnownValue(resourceName, tfjsonpath.New("provisioning_url"), knownvalue.StringExact(updateCfg["provisioning_url"])),
@@ -95,11 +92,6 @@ func TestAccSaviyntADSIConnectionResource(t *testing.T) {
 				Config:      testAccADSIConnectionResourceConfig(filePath, "update_connection_name"),
 				ExpectError: regexp.MustCompile(`Connection name cannot be updated`),
 			},
-			// Update the Connectiontype to a new value
-			{
-				Config:      testAccADSIConnectionResourceConfig(filePath, "update_connection_type"),
-				ExpectError: regexp.MustCompile(`Connection type cannot by updated`),
-			},
 		},
 	})
 }
@@ -117,7 +109,6 @@ locals {
 }
 
 resource "saviynt_adsi_connection_resource" "adsi" {
-  connection_type              = local.cfg.connection_type
   connection_name              = local.cfg.connection_name
   url                          = local.cfg.url
   password                     = local.cfg.password

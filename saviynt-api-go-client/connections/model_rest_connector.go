@@ -49,6 +49,10 @@ type RESTConnector struct {
 	SendOtpJSON *string `json:"SendOtpJSON,omitempty"`
 	ValidateOtpJSON *string `json:"ValidateOtpJSON,omitempty"`
 	PAM_CONFIG *string `json:"PAM_CONFIG,omitempty"`
+	CreateEntitlementJSON *string `json:"CreateEntitlementJSON,omitempty"`
+	DeleteEntitlementJSON *string `json:"DeleteEntitlementJSON,omitempty"`
+	UpdateEntitlementJSON *string `json:"UpdateEntitlementJSON,omitempty"`
+	ApplicationDiscoveryJSON *string `json:"ApplicationDiscoveryJSON,omitempty"`
 }
 
 type _RESTConnector RESTConnector
@@ -840,6 +844,134 @@ func (o *RESTConnector) SetPAM_CONFIG(v string) {
 	o.PAM_CONFIG = &v
 }
 
+// GetCreateEntitlementJSON returns the CreateEntitlementJSON field value if set, zero value otherwise.
+func (o *RESTConnector) GetCreateEntitlementJSON() string {
+	if o == nil || IsNil(o.CreateEntitlementJSON) {
+		var ret string
+		return ret
+	}
+	return *o.CreateEntitlementJSON
+}
+
+// GetCreateEntitlementJSONOk returns a tuple with the CreateEntitlementJSON field value if set, nil otherwise
+// and a boolean to check if the value has been set.
+func (o *RESTConnector) GetCreateEntitlementJSONOk() (*string, bool) {
+	if o == nil || IsNil(o.CreateEntitlementJSON) {
+		return nil, false
+	}
+	return o.CreateEntitlementJSON, true
+}
+
+// HasCreateEntitlementJSON returns a boolean if a field has been set.
+func (o *RESTConnector) HasCreateEntitlementJSON() bool {
+	if o != nil && !IsNil(o.CreateEntitlementJSON) {
+		return true
+	}
+
+	return false
+}
+
+// SetCreateEntitlementJSON gets a reference to the given string and assigns it to the CreateEntitlementJSON field.
+func (o *RESTConnector) SetCreateEntitlementJSON(v string) {
+	o.CreateEntitlementJSON = &v
+}
+
+// GetDeleteEntitlementJSON returns the DeleteEntitlementJSON field value if set, zero value otherwise.
+func (o *RESTConnector) GetDeleteEntitlementJSON() string {
+	if o == nil || IsNil(o.DeleteEntitlementJSON) {
+		var ret string
+		return ret
+	}
+	return *o.DeleteEntitlementJSON
+}
+
+// GetDeleteEntitlementJSONOk returns a tuple with the DeleteEntitlementJSON field value if set, nil otherwise
+// and a boolean to check if the value has been set.
+func (o *RESTConnector) GetDeleteEntitlementJSONOk() (*string, bool) {
+	if o == nil || IsNil(o.DeleteEntitlementJSON) {
+		return nil, false
+	}
+	return o.DeleteEntitlementJSON, true
+}
+
+// HasDeleteEntitlementJSON returns a boolean if a field has been set.
+func (o *RESTConnector) HasDeleteEntitlementJSON() bool {
+	if o != nil && !IsNil(o.DeleteEntitlementJSON) {
+		return true
+	}
+
+	return false
+}
+
+// SetDeleteEntitlementJSON gets a reference to the given string and assigns it to the DeleteEntitlementJSON field.
+func (o *RESTConnector) SetDeleteEntitlementJSON(v string) {
+	o.DeleteEntitlementJSON = &v
+}
+
+// GetUpdateEntitlementJSON returns the UpdateEntitlementJSON field value if set, zero value otherwise.
+func (o *RESTConnector) GetUpdateEntitlementJSON() string {
+	if o == nil || IsNil(o.UpdateEntitlementJSON) {
+		var ret string
+		return ret
+	}
+	return *o.UpdateEntitlementJSON
+}
+
+// GetUpdateEntitlementJSONOk returns a tuple with the UpdateEntitlementJSON field value if set, nil otherwise
+// and a boolean to check if the value has been set.
+func (o *RESTConnector) GetUpdateEntitlementJSONOk() (*string, bool) {
+	if o == nil || IsNil(o.UpdateEntitlementJSON) {
+		return nil, false
+	}
+	return o.UpdateEntitlementJSON, true
+}
+
+// HasUpdateEntitlementJSON returns a boolean if a field has been set.
+func (o *RESTConnector) HasUpdateEntitlementJSON() bool {
+	if o != nil && !IsNil(o.UpdateEntitlementJSON) {
+		return true
+	}
+
+	return false
+}
+
+// SetUpdateEntitlementJSON gets a reference to the given string and assigns it to the UpdateEntitlementJSON field.
+func (o *RESTConnector) SetUpdateEntitlementJSON(v string) {
+	o.UpdateEntitlementJSON = &v
+}
+
+// GetApplicationDiscoveryJSON returns the ApplicationDiscoveryJSON field value if set, zero value otherwise.
+func (o *RESTConnector) GetApplicationDiscoveryJSON() string {
+	if o == nil || IsNil(o.ApplicationDiscoveryJSON) {
+		var ret string
+		return ret
+	}
+	return *o.ApplicationDiscoveryJSON
+}
+
+// GetApplicationDiscoveryJSONOk returns a tuple with the ApplicationDiscoveryJSON field value if set, nil otherwise
+// and a boolean to check if the value has been set.
+func (o *RESTConnector) GetApplicationDiscoveryJSONOk() (*string, bool) {
+	if o == nil || IsNil(o.ApplicationDiscoveryJSON) {
+		return nil, false
+	}
+	return o.ApplicationDiscoveryJSON, true
+}
+
+// HasApplicationDiscoveryJSON returns a boolean if a field has been set.
+func (o *RESTConnector) HasApplicationDiscoveryJSON() bool {
+	if o != nil && !IsNil(o.ApplicationDiscoveryJSON) {
+		return true
+	}
+
+	return false
+}
+
+// SetApplicationDiscoveryJSON gets a reference to the given string and assigns it to the ApplicationDiscoveryJSON field.
+func (o *RESTConnector) SetApplicationDiscoveryJSON(v string) {
+	o.ApplicationDiscoveryJSON = &v
+}
+
 func (o RESTConnector) MarshalJSON() ([]byte, error) {
 	toSerialize,err := o.ToMap()
 	if err != nil {
@@ -929,6 +1061,18 @@ func (o RESTConnector) ToMap() (map[string]interface{}, error) {
 	}
 	if !IsNil(o.PAM_CONFIG) {
 		toSerialize["PAM_CONFIG"] = o.PAM_CONFIG
+	}
+	if !IsNil(o.CreateEntitlementJSON) {
+		toSerialize["CreateEntitlementJSON"] = o.CreateEntitlementJSON
+	}
+	if !IsNil(o.DeleteEntitlementJSON) {
+		toSerialize["DeleteEntitlementJSON"] = o.DeleteEntitlementJSON
+	}
+	if !IsNil(o.UpdateEntitlementJSON) {
+		toSerialize["UpdateEntitlementJSON"] = o.UpdateEntitlementJSON
+	}
+	if !IsNil(o.ApplicationDiscoveryJSON) {
+		toSerialize["ApplicationDiscoveryJSON"] = o.ApplicationDiscoveryJSON
 	}
 	return toSerialize, nil
 }

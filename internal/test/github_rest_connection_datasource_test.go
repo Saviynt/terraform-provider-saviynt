@@ -52,7 +52,6 @@ func TestAccSaviyntGithubRestConnectionDataSource(t *testing.T) {
 					resource.TestCheckResourceAttr(datasource, "msg", "success"),
 					resource.TestCheckResourceAttr(datasource, "error_code", "0"),
 					resource.TestCheckResourceAttr(datasource, "connection_name", createCfg["connection_name"]),
-					resource.TestCheckResourceAttr(datasource, "connection_type", createCfg["connection_type"]),
 					resource.TestCheckResourceAttr(datasource, "connection_attributes.organization_list", createCfg["organization_list"]),
 				),
 			},
@@ -73,7 +72,6 @@ locals {
 }
 
 resource "saviynt_github_rest_connection_resource" "github_rest" {
-  connection_type    				 = local.cfg.connection_type
   connection_name   				 = local.cfg.connection_name
   organization_list                  = local.cfg.organization_list
 }
