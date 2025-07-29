@@ -37,6 +37,7 @@ func NewEndpointsDataSource() datasource.DataSource {
 
 type EndpointsDataSourceModel struct {
 	Results        []Endpoint   `tfsdk:"results"`
+	Authenticate   types.Bool   `tfsdk:"authenticate"`
 	DisplayCount   types.Int64  `tfsdk:"display_count"`
 	ErrorCode      types.String `tfsdk:"error_code"`
 	TotalCount     types.Int64  `tfsdk:"total_count"`
@@ -329,6 +330,10 @@ func (d *endpointsDataSource) Schema(ctx context.Context, req datasource.SchemaR
 				Optional:    true,
 				ElementType: types.StringType,
 				Description: "List of endpoint keys to filter",
+			},
+			"authenticate": schema.BoolAttribute{
+				Required:    true,
+				Description: "If false, do not store endpoints details in state",
 			},
 			"connection_type": schema.StringAttribute{
 				Optional:    true,
@@ -661,7 +666,20 @@ func (d *endpointsDataSource) Read(ctx context.Context, req datasource.ReadReque
 			state.Results = append(state.Results, endpointState)
 		}
 	}
-
+	if !state.Authenticate.IsNull() && !state.Authenticate.IsUnknown() {
+		if state.Authenticate.ValueBool() {
+			resp.Diagnostics.AddWarning(
+				"Authentication Enabled",
+				"`authenticate` is true; all endpoints details will be returned in state.",
+			)
+		} else {
+			resp.Diagnostics.AddWarning(
+				"Authentication Disabled",
+				"`authenticate` is false; endpoints will be removed from state.",
+			)
+			state.Results = nil
+		}
+	}
 	stateDiagnostics := resp.State.Set(ctx, &state)
 	resp.Diagnostics.Append(stateDiagnostics...)
 

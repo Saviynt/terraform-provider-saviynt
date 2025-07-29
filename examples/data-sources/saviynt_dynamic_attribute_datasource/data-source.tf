@@ -2,7 +2,9 @@
 // SPDX-License-Identifier: MPL-2.0
 
 # For retrieving all dynamic attributes
-data "saviynt_dynamic_attribute_datasource" "da" {}
+data "saviynt_dynamic_attribute_datasource" "da" {
+  authenticate = true
+}
 
 data "saviynt_dynamic_attribute_datasource" "few" {
   securitysystem     = ["system1", "system2"]
@@ -12,4 +14,5 @@ data "saviynt_dynamic_attribute_datasource" "few" {
   offset             = "3"
   max                = "29"
   loggedinuser       = "username"
+  authenticate       = true
 }

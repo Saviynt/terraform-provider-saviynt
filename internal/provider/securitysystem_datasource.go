@@ -30,6 +30,7 @@ type securitySystemsDataSource struct {
 
 type SecuritySystemsDataSourceModel struct {
 	Systemname     types.String            `tfsdk:"systemname"`
+	Authenticate   types.Bool              `tfsdk:"authenticate"`
 	Max            types.Int64             `tfsdk:"max"`
 	Offset         types.Int64             `tfsdk:"offset"`
 	Connectionname types.String            `tfsdk:"connectionname"`
@@ -99,6 +100,10 @@ func (d *securitySystemsDataSource) Schema(ctx context.Context, req datasource.S
 			"systemname": schema.StringAttribute{
 				Optional:    true,
 				Description: "Name of the security systeme.",
+			},
+			"authenticate": schema.BoolAttribute{
+				Required:    true,
+				Description: "If false, do not store security system details in state",
 			},
 			"max": schema.Int64Attribute{
 				Optional:    true,
@@ -289,7 +294,6 @@ func (d *securitySystemsDataSource) Read(ctx context.Context, req datasource.Rea
 	state.DisplayCount = types.Int64Value(int64(*apiResp.DisplayCount))
 	state.ErrorCode = types.StringValue(*apiResp.ErrorCode)
 	state.TotalCount = types.Int64Value(int64(*apiResp.TotalCount))
-
 	if apiResp.SecuritySystemDetails != nil {
 		for _, item := range apiResp.SecuritySystemDetails {
 			securitySystemState := SecuritySystemDetails{
@@ -330,6 +334,20 @@ func (d *securitySystemsDataSource) Read(ctx context.Context, req datasource.Rea
 				InherentSodReportFields:            util.StringsToTypeStrings(item.InherentSODReportFields),
 			}
 			state.Results = append(state.Results, securitySystemState)
+		}
+	}
+	if !state.Authenticate.IsNull() && !state.Authenticate.IsUnknown() {
+		if state.Authenticate.ValueBool() {
+			resp.Diagnostics.AddWarning(
+				"Authentication Enabled",
+				"`authenticate` is true; all security system details will be returned in state.",
+			)
+		} else {
+			resp.Diagnostics.AddWarning(
+				"Authentication Disabled",
+				"`authenticate` is false; security system details will be removed from state.",
+			)
+			state.Results = nil
 		}
 	}
 
