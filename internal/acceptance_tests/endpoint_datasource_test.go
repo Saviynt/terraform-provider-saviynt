@@ -88,6 +88,7 @@ resource "saviynt_endpoint_resource" "e" {
   
 data "saviynt_endpoints_datasource" "test" {
 	endpointname = local.cfg.endpoint_name
+	authenticate       = true
 	depends_on = [saviynt_endpoint_resource.e]
 }
 `, os.Getenv("SAVIYNT_URL"),
