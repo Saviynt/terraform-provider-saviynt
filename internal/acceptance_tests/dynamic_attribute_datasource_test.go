@@ -210,6 +210,7 @@ func testAccSaviyntDynamicAttributeDataSourceConfig(jsonPath string) string {
 	
 	data "saviynt_dynamic_attribute_datasource" "test" {
 		endpoint           = [local.cfg.endpoint]
+		authenticate       = true
 		depends_on = [saviynt_dynamic_attribute_resource.da]
 	}
 `, os.Getenv("SAVIYNT_URL"),

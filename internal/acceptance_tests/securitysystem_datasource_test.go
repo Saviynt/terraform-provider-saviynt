@@ -88,6 +88,7 @@ resource "saviynt_security_system_resource" "ss" {
   
 data "saviynt_security_system_datasource" "test" {
 	systemname = local.cfg.systemname
+	authenticate       = true
 	depends_on = [saviynt_security_system_resource.ss]
 }
 `, os.Getenv("SAVIYNT_URL"),
