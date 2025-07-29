@@ -7,4 +7,5 @@ data "saviynt_endpoints_datasource" "all" {}
 # Get endpoint by name
 data "saviynt_endpoints_datasource" "by_name" {
   endpointname = "sample"
+  authenticate = true
 }

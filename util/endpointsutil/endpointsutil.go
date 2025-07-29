@@ -4,6 +4,7 @@
 package endpointsutil
 
 import (
+	"bytes"
 	"encoding/json"
 	"strings"
 )
@@ -68,14 +69,16 @@ func NormalizeToStringBool(val string) string {
 }
 
 func NormalizeJSON(input string) (string, error) {
+	// First validate that it's valid JSON
 	var jsonObj interface{}
 	if err := json.Unmarshal([]byte(input), &jsonObj); err != nil {
 		return "", err
 	}
 
-	compact, err := json.Marshal(jsonObj)
-	if err != nil {
+	// Use json.Compact to normalize whitespace while preserving key order
+	var buf bytes.Buffer
+	if err := json.Compact(&buf, []byte(input)); err != nil {
 		return "", err
 	}
-	return string(compact), nil
+	return buf.String(), nil
 }
