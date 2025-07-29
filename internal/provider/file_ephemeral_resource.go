@@ -153,7 +153,11 @@ func (r *FileCredentialsResource) Open(ctx context.Context, req ephemeral.OpenRe
 		return
 	}
 	path := data.FilePath.ValueString()
-	createCfg := util.LoadConnectorDataForEphemeral(path)
+	createCfg, err := util.LoadConnectorDataForEphemeral(path)
+	if err != nil {
+		resp.Diagnostics.AddError("Failed to load connector data", err.Error())
+		return
+	}
 	for key, val := range createCfg {
 		key = strings.TrimSpace(key)
 		val = strings.TrimSpace(val)

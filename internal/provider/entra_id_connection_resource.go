@@ -467,11 +467,17 @@ func (r *entraIdConnectionResource) Create(ctx context.Context, req resource.Cre
 
 	// Initialize API client
 	apiResp, _, err := apiClient.ConnectionsAPI.CreateOrUpdate(ctx).CreateOrUpdateRequest(entraidConnRequest).Execute()
-	if err != nil || *apiResp.ErrorCode != "0" {
+	if err != nil {
 		log.Printf("[ERROR] Failed to create API resource. Error: %v", err)
 		resp.Diagnostics.AddError("API Create Failed", fmt.Sprintf("Error: %v", err))
 		return
 	}
+	if apiResp != nil && *apiResp.ErrorCode != "0" {
+		log.Printf("[ERROR]: Error in creating EntraId connection resource. Errorcode: %v, Message: %v", *apiResp.ErrorCode, *apiResp.Msg)
+		resp.Diagnostics.AddError("Creation of EntraId connection failed", *apiResp.Msg)
+		return
+	}
+
 	plan.ID = types.StringValue(fmt.Sprintf("%d", *apiResp.ConnectionKey))
 	plan.ConnectionKey = types.Int64Value(int64(*apiResp.ConnectionKey))
 	plan.Description = util.SafeStringDatasource(plan.Description.ValueStringPointer())
@@ -548,6 +554,12 @@ func (r *entraIdConnectionResource) Read(ctx context.Context, req resource.ReadR
 		resp.Diagnostics.AddError("API Read Failed In Read Block", fmt.Sprintf("Error: %v", err))
 		return
 	}
+	if apiResp != nil && apiResp.EntraIDConnectionResponse != nil && *apiResp.EntraIDConnectionResponse.Errorcode != 0 {
+		log.Printf("[ERROR]: Error in reading EntraId connection. Errorcode: %v, Message: %v", *apiResp.EntraIDConnectionResponse.Errorcode, *apiResp.EntraIDConnectionResponse.Msg)
+		resp.Diagnostics.AddError("Read EntraId connection failed", *apiResp.EntraIDConnectionResponse.Msg)
+		return
+	}
+
 	state.ConnectionKey = types.Int64Value(int64(*apiResp.EntraIDConnectionResponse.Connectionkey))
 	state.ID = types.StringValue(fmt.Sprintf("%d", *apiResp.EntraIDConnectionResponse.Connectionkey))
 	state.ConnectionName = util.SafeStringDatasource(apiResp.EntraIDConnectionResponse.Connectionname)
@@ -718,6 +730,12 @@ func (r *entraIdConnectionResource) Update(ctx context.Context, req resource.Upd
 		resp.Diagnostics.AddError("API Update Failed", fmt.Sprintf("Error: %v", err))
 		return
 	}
+	if apiResp != nil && *apiResp.ErrorCode != "0" {
+		log.Printf("[ERROR]: Error in updation EntraId connection. Errorcode: %v, Message: %v", *apiResp.ErrorCode, *apiResp.Msg)
+		resp.Diagnostics.AddError("Updation of EntraId connection failed", *apiResp.Msg)
+		return
+	}
+
 	reqParams := openapi.GetConnectionDetailsRequest{}
 
 	reqParams.SetConnectionname(plan.ConnectionName.ValueString())
@@ -727,6 +745,12 @@ func (r *entraIdConnectionResource) Update(ctx context.Context, req resource.Upd
 		resp.Diagnostics.AddError("API Read Failed In Update Block", fmt.Sprintf("Error: %v", *getResp.EntraIDConnectionResponse.Msg))
 		return
 	}
+	if getResp != nil && getResp.EntraIDConnectionResponse != nil && *getResp.EntraIDConnectionResponse.Errorcode != 0 {
+		log.Printf("[ERROR]: Error in reading EntraId connection after updation. Errorcode: %v, Message: %v", *getResp.EntraIDConnectionResponse.Errorcode, *getResp.EntraIDConnectionResponse.Msg)
+		resp.Diagnostics.AddError("Read EntraId connection after updatio failed", *getResp.EntraIDConnectionResponse.Msg)
+		return
+	}
+
 	plan.ConnectionKey = types.Int64Value(int64(*getResp.EntraIDConnectionResponse.Connectionkey))
 	plan.ID = types.StringValue(fmt.Sprintf("%d", *getResp.EntraIDConnectionResponse.Connectionkey))
 	plan.ConnectionName = util.SafeStringDatasource(getResp.EntraIDConnectionResponse.Connectionname)
