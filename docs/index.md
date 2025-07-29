@@ -6,7 +6,7 @@ description: |-
   The Saviynt Terraform provider empowers you to leverage Terraform's declarative Infrastructure-as-Code (IaC) capabilities to provision, configure, and manage resources within the Saviynt Identity Cloud.The provider needs to be configured with the correct credentials in the provider block to be used. For the resources and datasources supported, refer to the navigation menu on the left.
 ---
 
-# saviynt Provider
+# Saviynt Provider
 
 The Saviynt Terraform provider empowers you to leverage Terraform's declarative Infrastructure-as-Code (IaC) capabilities to provision, configure, and manage resources within the Saviynt Identity Cloud.<br/><br/>The provider needs to be configured with the correct credentials in the provider block to be used. For the resources and datasources supported, refer to the navigation menu on the left.
 
@@ -40,3 +40,127 @@ provider "saviynt" {
 - `password` (String, Sensitive) Password for user authentication.
 - `server_url` (String) URL of Saviynt server.
 - `username` (String) Username for authentication.
+
+<!-- ### Compatible Saviynt EIC Versions
+- 25.B, 25.A, 24.10, 24.4 -->
+
+---
+
+### Supported Saviynt Versions by Provider
+| Terraform Provider Version | Supported Saviynt EIC Versions |
+| -------------------------- | ------------------------------ |
+| `v0.2.8`                   | `25.B`, `25.A`, `24.10`        |
+| `v0.2.7`                   | `24.4`                         |
+
+---
+
+### Attribute Compatibility by EIC Version
+The table below shows attributes that are supported in newer versions of Saviynt EIC. If using an older version of Saviynt, some attributes may not work.
+Check the table to see which attributes are supported in your version before using them.
+
+| Connector                | Attribute(s) Added                                                                                                    | Present in 25.B | Present in 25.A | Present in 24.10 | Present in 24.4                                                                                        |
+| ------------------------ | --------------------------------------------------------------------------------------------------------------------- | --------------- | --------------- | ---------------- | ------------------------------------------------------------------------------------------------ |
+| **Workday Connector**    | `ORGROLE_IMPORT_PAYLOAD`                                                                          | Yes              | No             | No              | No|
+| **REST Connector**       | `ApplicationDiscoveryJSON`, `CreateEntitlementJSON`, `DeleteEntitlementJSON`, `UpdateEntitlementJSON`         | Yes             | No              | No               | No                                                                              |
+| **DB Connector**         | `CREATEENTITLEMENTJSON`, `DELETEENTITLEMENTJSON`, `ENTITLEMENTEXISTJSON`, `UPDATEENTITLEMENTJSON`             | Yes             | No              | No               | No                                                                              |
+| **GithubREST Connector** | `status_threshold_config`                                                                           | Yes              | Yes              | No               | No                                                                          |
+| **Security System** | `instant_provisioning`                                                                           | Yes              | No              | No               | No                                                                         |
+| **Endpoints** | `mapped_endpoints`, `requestable_role_types.show_on`                                                                           | Yes              | Yes              | Yes               | No                                                                         |
+
+---
+
+### Importing Resources
+This provider supports importing existing Saviynt EIC resources using custom IDs. Refer to the table below for the required import ID for each resource type:
+
+| Resource Type        | Import ID   | Example                                                        |
+| -------------------- | ----------------- | -------------------------------------------------------------- |
+| Security System      | `systemname`     | `terraform import saviynt_security_system_resource.example SYSTEM1`     |
+| Endpoint             | `endpoint_name`    | `terraform import saviynt_endpoint_resource.example ENDPOINT1`          |
+| Connection Resources | `connection_name` | `terraform import saviynt_ad_connection_resource.example AD_CONN1`      |
+| Dynamic Attributes   | `endpoint`        | `terraform import saviynt_dynamic_attribute_resource.example ENDPOINT1` |
+
+---
+
+## Credential Management Best Practices
+To ensure secure handling of sensitive credentials, follow these best practices:
+1. **Use Vault-backed Secrets**   : Externalize sensitive values using a secure secrets manager such as HashiCorp Vault. This avoids hardcoding secrets in .tf files or storing them in Terraform state.
+2. **Prefer Environment Variables**   : If Vault integration is not available, use environment variables (e.g., TF_VAR_password) to pass secrets instead of storing them in source files.
+3. **Use Ephemeral Resources for Sensitive Data**
+   Handle all sensitive data using **ephemeral resources** — those created only when needed and destroyed immediately afterward. Avoid long-term storage of secrets in:
+   - Terraform state files (`terraform.tfstate`)
+   - Version control systems (e.g., Git)
+   - Local plaintext configuration files
+
+---
+
+## Feature: `authenticate` Toggle for All Data Source
+
+The Saviynt datasources now have a required boolean flag `authenticate` to control the visibility of sensitive data.
+
+### Purpose
+
+This feature is designed to help prevent potential sensitive data from appearing in Terraform state files or CLI output during `plan` and `apply` when a datasource is called.
+
+### Behavior
+
+- When `authenticate = false`:
+  - The provider will **omit** all the attributes from state file.
+- When `authenticate = true`:
+  - All attributes will be returned as usual with sensitive still not visible.
+
+### Example Usage
+
+```hcl
+data "saviynt_rest_connection_datasource" "example" {
+  connection_name = "Terraform_REST_Connector"
+  authenticate    = false
+}
+```
+
+---
+
+## Known Limitations
+The following limitations are present in the latest version of the provider. These are being prioritized for resolution in the upcoming release alongside new feature additions:
+### 1. All Resource objects
+ - `terraform destroy` is not supported for any resources except for dynamic attributes.
+### 2. Endpoints
+- **State management is not supported** for the following attributes:
+  - `Owner`
+  - `ResourceOwner`
+  - `OutOfBandAccess`
+- For`saviynt_endpoint_resource.requestable_role_types.request_option`, the supported values for proper state tracking are:
+  - `DropdownSingle`
+  - `Table`
+  - `TableOnlyAdd`
+- The following settings are **not currently configurable via Terraform**:
+  - `Disable Remove Service Account`
+  - `Disable Modify Service Account`
+  - `Disable New Account Request if Account Exists`
+### 3. Connections
+- `description` field can't be set from Terraform currently.
+- **State management** is not supported for the following attributes due to their sensitive nature:
+  - **AD**: `password`
+  - **ADSI**: `password`
+  - **DB**: `password`, `change_pass_json`
+  - **EntraId**: `access_token`, `azure_mgmt_access_token`, `client_secret`, `windows_connector_json`, `connection_json`
+  - **Github REST**: `connection_json`, `access_tokens`
+  - **REST**: `connection_json`
+  - **Salesforce**: `client_secret`, `refresh_token`
+  - **Unix**: `password`, `passphrase`, `ssh_key`, `ssh_pass_through_password`, `ssh_pass_through_sshkey`, `ssh_pass_through_passphrase`
+  - **Workday**: `password`, `client_secret`, `refresh_token`
+- The following fields are **not currently configurable via Terraform**:
+  - **Github REST**: `Status_Threshold_Config`, `Pam_Config`
+  - **Workday**: `orgrole_import_payload`
+### 4. Dynamic Attributes
+- For `saviynt_dynamic_attribute_resource.dynamic_attributes.attribute_type`, the supported values for proper state tracking are:
+  - `NUMBER`
+  - `STRING`
+  - `ENUM`
+  - `BOOLEAN`
+  - `MULTIPLE SELECT FROM LIST`
+  - `MULTIPLE SELECT FROM SQL QUERY`
+  - `SINGLE SELECT FROM SQL QUERY`
+  - `PASSWORD`
+  - `LARGE TEXT`
+  - `CHECK BOX`
+  - `DATE`

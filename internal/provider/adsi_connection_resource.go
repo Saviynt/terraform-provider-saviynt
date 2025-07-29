@@ -428,11 +428,17 @@ func (r *adsiConnectionResource) Create(ctx context.Context, req resource.Create
 
 	// Initialize API client
 	apiResp, _, err := apiClient.ConnectionsAPI.CreateOrUpdate(ctx).CreateOrUpdateRequest(adsiConnRequest).Execute()
-	if err != nil || *apiResp.ErrorCode != "0" {
-		log.Printf("[ERROR] Failed to create API resource. Error: %v", *apiResp.Msg)
+	if err != nil {
+		log.Printf("[ERROR] Failed to create API resource. Error: %v", err)
 		resp.Diagnostics.AddError("API Create Failed", fmt.Sprintf("Error: %v", err))
 		return
 	}
+	if apiResp != nil && *apiResp.ErrorCode != "0" {
+		log.Printf("[ERROR]: Error in creating ADSI connection resource. Errorcode: %v, Message: %v", *apiResp.ErrorCode, *apiResp.Msg)
+		resp.Diagnostics.AddError("Creation of ADSI connection failed", *apiResp.Msg)
+		return
+	}
+
 	plan.ID = types.StringValue(fmt.Sprintf("%d", *apiResp.ConnectionKey))
 	plan.ConnectionKey = types.Int64Value(int64(*apiResp.ConnectionKey))
 	plan.Description = util.SafeStringDatasource(plan.Description.ValueStringPointer())
@@ -504,6 +510,12 @@ func (r *adsiConnectionResource) Read(ctx context.Context, req resource.ReadRequ
 		resp.Diagnostics.AddError("API Read Failed In Read Block", fmt.Sprintf("Error: %v", err))
 		return
 	}
+	if apiResp != nil && apiResp.ADSIConnectionResponse != nil && *apiResp.ADSIConnectionResponse.Errorcode != 0 {
+		log.Printf("[ERROR]: Error in reading ADSI connection resource. Errorcode: %v, Message: %v", *apiResp.ADSIConnectionResponse.Errorcode, *apiResp.ADSIConnectionResponse.Msg)
+		resp.Diagnostics.AddError("Reading of ADSI connection resource failed", *apiResp.ADSIConnectionResponse.Msg)
+		return
+	}
+
 	state.ConnectionKey = types.Int64Value(int64(*apiResp.ADSIConnectionResponse.Connectionkey))
 	state.ID = types.StringValue(fmt.Sprintf("%d", *apiResp.ADSIConnectionResponse.Connectionkey))
 	state.ConnectionName = util.SafeStringDatasource(apiResp.ADSIConnectionResponse.Connectionname)
@@ -667,11 +679,17 @@ func (r *adsiConnectionResource) Update(ctx context.Context, req resource.Update
 	// Initialize API client
 	apiClient := openapi.NewAPIClient(cfg)
 	apiResp, _, err := apiClient.ConnectionsAPI.CreateOrUpdate(ctx).CreateOrUpdateRequest(adsiConnRequest).Execute()
-	if err != nil || *apiResp.ErrorCode != "0" {
+	if err != nil {
 		log.Printf("Problem with the update function")
 		resp.Diagnostics.AddError("API Update Failed", fmt.Sprintf("Error: %v", err))
 		return
 	}
+	if apiResp != nil && *apiResp.ErrorCode != "0" {
+		log.Printf("[ERROR]: Error in updating ADSI connection. Errorcode: %v, Message: %v", *apiResp.ErrorCode, *apiResp.Msg)
+		resp.Diagnostics.AddError("Updating of ADSI connection failed", *apiResp.Msg)
+		return
+	}
+
 	reqParams := openapi.GetConnectionDetailsRequest{}
 
 	reqParams.SetConnectionname(plan.ConnectionName.ValueString())
@@ -681,6 +699,12 @@ func (r *adsiConnectionResource) Update(ctx context.Context, req resource.Update
 		resp.Diagnostics.AddError("API Read Failed In Update Block", fmt.Sprintf("Error: %v", err))
 		return
 	}
+	if getResp != nil && getResp.ADSIConnectionResponse != nil && *getResp.ADSIConnectionResponse.Errorcode != 0 {
+		log.Printf("[ERROR]: Error in reading ADSI connection after updation. Errorcode: %v, Message: %v", *getResp.ADSIConnectionResponse.Errorcode, *getResp.ADSIConnectionResponse.Msg)
+		resp.Diagnostics.AddError("Reading after updation of ADSI connection failed", *getResp.ADSIConnectionResponse.Msg)
+		return
+	}
+
 	plan.ConnectionKey = types.Int64Value(int64(*getResp.ADSIConnectionResponse.Connectionkey))
 	plan.ID = types.StringValue(fmt.Sprintf("%d", *getResp.ADSIConnectionResponse.Connectionkey))
 	plan.ConnectionName = util.SafeStringDatasource(getResp.ADSIConnectionResponse.Connectionname)

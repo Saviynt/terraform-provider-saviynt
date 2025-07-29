@@ -7,5 +7,6 @@ data "saviynt_security_system_datasource" "all" {}
 
 # Get a security system by its name
 data "saviynt_security_system_datasource" "by_name" {
-  systemname = "sample"
+  systemname   = "sample"
+  authenticate = true
 }

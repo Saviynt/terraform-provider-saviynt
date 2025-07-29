@@ -42,6 +42,7 @@ type DynamicAttributeDataSourceModel struct {
 	ErrorCode         types.String        `tfsdk:"error_code"`
 	DisplayCount      types.Int32         `tfsdk:"display_count"`
 	TotalCount        types.Int32         `tfsdk:"total_count"`
+	Authenticate    types.Bool   `tfsdk:"authenticate"`
 	Dynamicattributes []DynamicAttributes `tfsdk:"dynamic_attributes_list"`
 }
 
@@ -129,6 +130,10 @@ func (d *DynamicAttributeDataSource) Schema(ctx context.Context, req datasource.
 				Optional:    true,
 				Description: "Logged In User",
 				Computed:    false,
+			},
+			"authenticate": schema.BoolAttribute{
+				Required:    true,
+				Description: "If false, do not store connection_attributes in state",
 			},
 			"dynamic_attributes_list": schema.ListNestedAttribute{
 				Computed: true,
@@ -280,6 +285,22 @@ func (d *DynamicAttributeDataSource) Read(ctx context.Context, req datasource.Re
 	} else {
 		state.Dynamicattributes = nil
 	}
+
+	if !state.Authenticate.IsNull() && !state.Authenticate.IsUnknown() {
+		if state.Authenticate.ValueBool() {
+			resp.Diagnostics.AddWarning(
+				"Authentication Enabled",
+				"`authenticate` is true; all dynamic_attributes will be returned in state.",
+			)
+		} else {
+			resp.Diagnostics.AddWarning(
+				"Authentication Disabled",
+				"`authenticate` is false; dynamic_attributes will be removed from state.",
+			)
+			state.Dynamicattributes = nil
+		}
+	}
+
 	stateDiagnostics := resp.State.Set(ctx, &state)
 	resp.Diagnostics.Append(stateDiagnostics...)
 }

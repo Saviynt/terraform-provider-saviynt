@@ -247,11 +247,17 @@ func (r *salesforceConnectionResource) Create(ctx context.Context, req resource.
 	}
 
 	apiResp, _, err := apiClient.ConnectionsAPI.CreateOrUpdate(ctx).CreateOrUpdateRequest(salesforceConnRequest).Execute()
-	if err != nil || *apiResp.ErrorCode != "0" {
+	if err != nil {
 		log.Printf("[ERROR] Failed to create API resource. Error: %v", err)
 		resp.Diagnostics.AddError("API Create Failed", fmt.Sprintf("Error: %v", err))
 		return
 	}
+	if apiResp != nil && *apiResp.ErrorCode != "0" {
+		log.Printf("[ERROR]: Error in creating Salesforce connection resource. Errorcode: %v, Message: %v", *apiResp.ErrorCode, *apiResp.Msg)
+		resp.Diagnostics.AddError("Creation of Salesforce connection failed", *apiResp.Msg)
+		return
+	}
+
 	plan.ID = types.StringValue(fmt.Sprintf("%d", *apiResp.ConnectionKey))
 	plan.ConnectionKey = types.Int64Value(int64(*apiResp.ConnectionKey))
 	plan.Description = util.SafeStringDatasource(plan.Description.ValueStringPointer())
@@ -302,6 +308,12 @@ func (r *salesforceConnectionResource) Read(ctx context.Context, req resource.Re
 		resp.Diagnostics.AddError("API Read Failed", fmt.Sprintf("Error: %v", err))
 		return
 	}
+	if apiResp != nil && apiResp.SalesforceConnectionResponse != nil && *apiResp.SalesforceConnectionResponse.Errorcode != 0 {
+		log.Printf("[ERROR]: Error in reading Salesforce connection resource. Errorcode: %v, Message: %v", *apiResp.SalesforceConnectionResponse.Errorcode, *apiResp.SalesforceConnectionResponse.Msg)
+		resp.Diagnostics.AddError("Reading Salesforce connection failed", *apiResp.SalesforceConnectionResponse.Msg)
+		return
+	}
+
 	state.ConnectionKey = types.Int64Value(int64(*apiResp.SalesforceConnectionResponse.Connectionkey))
 	state.ID = types.StringValue(fmt.Sprintf("%d", *apiResp.SalesforceConnectionResponse.Connectionkey))
 	state.ConnectionName = util.SafeStringDatasource(apiResp.SalesforceConnectionResponse.Connectionname)
@@ -404,11 +416,17 @@ func (r *salesforceConnectionResource) Update(ctx context.Context, req resource.
 	// Initialize API client
 	apiClient := openapi.NewAPIClient(cfg)
 	apiResp, _, err := apiClient.ConnectionsAPI.CreateOrUpdate(ctx).CreateOrUpdateRequest(salesforceConnRequest).Execute()
-	if err != nil || *apiResp.ErrorCode != "0" {
+	if err != nil {
 		log.Printf("[ERROR] Failed to create API resource. Error: %v", err)
 		resp.Diagnostics.AddError("API Create Failed", fmt.Sprintf("Error: %v", err))
 		return
 	}
+	if apiResp != nil && *apiResp.ErrorCode != "0" {
+		log.Printf("[ERROR]: Error in updating Salesforce connection after updation. Errorcode: %v, Message: %v", *apiResp.ErrorCode, *apiResp.Msg)
+		resp.Diagnostics.AddError("Updation of Salesforce connection", *apiResp.Msg)
+		return
+	}
+
 	reqParams := openapi.GetConnectionDetailsRequest{}
 
 	reqParams.SetConnectionname(plan.ConnectionName.ValueString())
@@ -418,6 +436,12 @@ func (r *salesforceConnectionResource) Update(ctx context.Context, req resource.
 		resp.Diagnostics.AddError("API Read Failed", fmt.Sprintf("Error: %v", err))
 		return
 	}
+	if getResp != nil && getResp.SalesforceConnectionResponse != nil && *getResp.SalesforceConnectionResponse.Errorcode != 0 {
+		log.Printf("[ERROR]: Error in reading Salesforce connection after updation. Errorcode: %v, Message: %v", *getResp.SalesforceConnectionResponse.Errorcode, *getResp.SalesforceConnectionResponse.Msg)
+		resp.Diagnostics.AddError("Reading Salesforce connection after updation failed", *getResp.SalesforceConnectionResponse.Msg)
+		return
+	}
+
 	plan.ConnectionKey = types.Int64Value(int64(*getResp.SalesforceConnectionResponse.Connectionkey))
 	plan.ID = types.StringValue(fmt.Sprintf("%d", *getResp.SalesforceConnectionResponse.Connectionkey))
 	plan.ConnectionName = util.SafeStringDatasource(getResp.SalesforceConnectionResponse.Connectionname)
