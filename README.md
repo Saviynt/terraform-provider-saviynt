@@ -23,7 +23,7 @@ New to Terraform? Check out the [official Terraform introduction by HashiCorp](h
 
 ##  Requirements
 
-- Terraform version `>= 1.8+`
+- Terraform version `>= 1.11+`
 - Go programming language `>= 1.21+`
 - Saviynt Identity Cloud instance and credentials.
 
