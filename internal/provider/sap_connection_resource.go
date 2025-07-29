@@ -555,11 +555,17 @@ func (r *sapConnectionResource) Create(ctx context.Context, req resource.CreateR
 	}
 
 	apiResp, _, err := apiClient.ConnectionsAPI.CreateOrUpdate(ctx).CreateOrUpdateRequest(sapConnRequest).Execute()
-	if err != nil || *apiResp.ErrorCode != "0" {
+	if err != nil {
 		log.Printf("[ERROR] Failed to create API resource. Error: %v", err)
 		resp.Diagnostics.AddError("API Create Failed", fmt.Sprintf("Error: %v", err))
 		return
 	}
+	if apiResp != nil && *apiResp.ErrorCode != "0" {
+		log.Printf("[ERROR]: Error in creating SAP connection resource. Errorcode: %v, Message: %v", *apiResp.ErrorCode, *apiResp.Msg)
+		resp.Diagnostics.AddError("Creation of SAP connection failed", *apiResp.Msg)
+		return
+	}
+
 	plan.ID = types.StringValue(fmt.Sprintf("%d", *apiResp.ConnectionKey))
 	plan.ConnectionKey = types.Int64Value(int64(*apiResp.ConnectionKey))
 	plan.Description = util.SafeStringDatasource(plan.Description.ValueStringPointer())
@@ -653,6 +659,12 @@ func (r *sapConnectionResource) Read(ctx context.Context, req resource.ReadReque
 		resp.Diagnostics.AddError("API Read Failed", fmt.Sprintf("Error: %v", err))
 		return
 	}
+	if apiResp != nil && apiResp.SAPConnectionResponse != nil && *apiResp.SAPConnectionResponse.Errorcode != 0 {
+		log.Printf("[ERROR]: Error in reading SAP connection resource. Errorcode: %v, Message: %v", *apiResp.SAPConnectionResponse.Errorcode, *apiResp.SAPConnectionResponse.Msg)
+		resp.Diagnostics.AddError("Reading SAP connection resource failed", *apiResp.SAPConnectionResponse.Msg)
+		return
+	}
+
 	state.ConnectionKey = types.Int64Value(int64(*apiResp.SAPConnectionResponse.Connectionkey))
 	state.ID = types.StringValue(fmt.Sprintf("%d", *apiResp.SAPConnectionResponse.Connectionkey))
 	state.ConnectionName = util.SafeStringDatasource(apiResp.SAPConnectionResponse.Connectionname)
@@ -843,11 +855,17 @@ func (r *sapConnectionResource) Update(ctx context.Context, req resource.UpdateR
 	// Initialize API client
 	apiClient := openapi.NewAPIClient(cfg)
 	apiResp, _, err := apiClient.ConnectionsAPI.CreateOrUpdate(ctx).CreateOrUpdateRequest(sapConnRequest).Execute()
-	if err != nil || *apiResp.ErrorCode != "0" {
+	if err != nil {
 		log.Printf("Problem with the update function")
 		resp.Diagnostics.AddError("API Update Failed", fmt.Sprintf("Error: %v", err))
 		return
 	}
+	if apiResp != nil && *apiResp.ErrorCode != "0" {
+		log.Printf("[ERROR]: Error in updating SAP connection resource. Errorcode: %v, Message: %v", *apiResp.ErrorCode, *apiResp.Msg)
+		resp.Diagnostics.AddError("Updation of SAP connection failed", *apiResp.Msg)
+		return
+	}
+
 	reqParams := openapi.GetConnectionDetailsRequest{}
 
 	reqParams.SetConnectionname(plan.ConnectionName.ValueString())
@@ -857,6 +875,12 @@ func (r *sapConnectionResource) Update(ctx context.Context, req resource.UpdateR
 		resp.Diagnostics.AddError("API Read Failed", fmt.Sprintf("Error: %v", err))
 		return
 	}
+	if getResp != nil && getResp.SAPConnectionResponse != nil && *getResp.SAPConnectionResponse.Errorcode != 0 {
+		log.Printf("[ERROR]: Error in reading SAP connection resource after updation. Errorcode: %v, Message: %v", *getResp.SAPConnectionResponse.Errorcode, *getResp.SAPConnectionResponse.Msg)
+		resp.Diagnostics.AddError("Reading SAP connection after updation failed", *getResp.SAPConnectionResponse.Msg)
+		return
+	}
+
 	plan.ConnectionKey = types.Int64Value(int64(*getResp.SAPConnectionResponse.Connectionkey))
 	plan.ID = types.StringValue(fmt.Sprintf("%d", *getResp.SAPConnectionResponse.Connectionkey))
 	plan.ConnectionName = util.SafeStringDatasource(getResp.SAPConnectionResponse.Connectionname)

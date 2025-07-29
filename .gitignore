@@ -37,3 +37,6 @@ test_provider/
 
 # Keep windows files with windows line endings
 *.winfile eol=crlf
+
+#gitlab-runner
+*run_pipeline_locally.sh

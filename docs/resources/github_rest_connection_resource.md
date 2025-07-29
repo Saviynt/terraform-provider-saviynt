@@ -503,7 +503,6 @@ resource "saviynt_github_rest_connection_resource" "example" {
 - `import_account_ent_json` (String) Property for ImportAccountEntJSON
 - `msg` (String) A message indicating the outcome of the operation.
 - `organization_list` (String) Property for ORGANIZATION_LIST
-- `pam_config` (String) Property for PAM_CONFIG
 - `save_in_vault` (String) Flag indicating whether the encrypted attribute should be saved in the configured vault. Example: "false"
 - `status_threshold_config` (String) Property for STATUS_THRESHOLD_CONFIG
 - `vault_configuration` (String) JSON string specifying vault configuration. Example: '{"path":"/secrets/data/kv-dev-intgn1/-AD_Credential","keyMapping":{"PASSWORD":"AD_PASSWORD~#~None"}}'
