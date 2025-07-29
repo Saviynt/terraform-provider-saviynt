@@ -19,6 +19,8 @@ Retrieve the details for a given Salesforce connector by its name or key
 data "saviynt_salesforce_connection_datasource" "example" {
   connection_key = "123"
   # connection_name="sample"          #Either one can be used
+
+  authenticate = true
 }
 ```
 

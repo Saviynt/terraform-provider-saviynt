@@ -374,11 +374,17 @@ func (r *unixConnectionResource) Create(ctx context.Context, req resource.Create
 	}
 
 	apiResp, _, err := apiClient.ConnectionsAPI.CreateOrUpdate(ctx).CreateOrUpdateRequest(unixRequest).Execute()
-	if err != nil || *apiResp.ErrorCode != "0" {
+	if err != nil {
 		log.Printf("[ERROR] Failed to create API resource. Error: %v", err)
 		resp.Diagnostics.AddError("API Create Failed", fmt.Sprintf("Error: %v", err))
 		return
 	}
+	if apiResp != nil && *apiResp.ErrorCode != "0" {
+		log.Printf("[ERROR]: Error in creating Unix connection resource. Errorcode: %v, Message: %v", *apiResp.ErrorCode, *apiResp.Msg)
+		resp.Diagnostics.AddError("Creation of Unix connection failed", *apiResp.Msg)
+		return
+	}
+
 	plan.ID = types.StringValue(fmt.Sprintf("%d", *apiResp.ConnectionKey))
 	plan.ConnectionKey = types.Int64Value(int64(*apiResp.ConnectionKey))
 	plan.Description = util.SafeStringDatasource(plan.Description.ValueStringPointer())
@@ -443,6 +449,12 @@ func (r *unixConnectionResource) Read(ctx context.Context, req resource.ReadRequ
 		resp.Diagnostics.AddError("API Read Failed", fmt.Sprintf("Error: %v", err))
 		return
 	}
+	if apiResp != nil && apiResp.UNIXConnectionResponse != nil && *apiResp.UNIXConnectionResponse.Errorcode != 0 {
+		log.Printf("[ERROR]: Error in reading Unix connection resource. Errorcode: %v, Message: %v", *apiResp.UNIXConnectionResponse.Errorcode, *apiResp.UNIXConnectionResponse.Msg)
+		resp.Diagnostics.AddError("Reading Unix connection resource failed", *apiResp.UNIXConnectionResponse.Msg)
+		return
+	}
+
 	state.ConnectionKey = types.Int64Value(int64(*apiResp.UNIXConnectionResponse.Connectionkey))
 	state.ID = types.StringValue(fmt.Sprintf("%d", *apiResp.UNIXConnectionResponse.Connectionkey))
 	state.ConnectionName = util.SafeStringDatasource(apiResp.UNIXConnectionResponse.Connectionname)
@@ -586,11 +598,17 @@ func (r *unixConnectionResource) Update(ctx context.Context, req resource.Update
 	// Initialize API client
 	apiClient := openapi.NewAPIClient(cfg)
 	apiResp, _, err := apiClient.ConnectionsAPI.CreateOrUpdate(ctx).CreateOrUpdateRequest(unixConnRequest).Execute()
-	if err != nil || *apiResp.ErrorCode != "0" {
+	if err != nil {
 		log.Printf("Problem with the update function")
 		resp.Diagnostics.AddError("API Update Failed", fmt.Sprintf("Error: %v", err))
 		return
 	}
+	if apiResp != nil && *apiResp.ErrorCode != "0" {
+		log.Printf("[ERROR]: Error in updating Unix connection resource. Errorcode: %v, Message: %v", *apiResp.ErrorCode, *apiResp.Msg)
+		resp.Diagnostics.AddError("Updation of Unix connection failed", *apiResp.Msg)
+		return
+	}
+
 	reqParams := openapi.GetConnectionDetailsRequest{}
 
 	reqParams.SetConnectionname(plan.ConnectionName.ValueString())
@@ -600,6 +618,12 @@ func (r *unixConnectionResource) Update(ctx context.Context, req resource.Update
 		resp.Diagnostics.AddError("API Read Failed", fmt.Sprintf("Error: %v", err))
 		return
 	}
+	if getResp != nil && getResp.UNIXConnectionResponse != nil && *getResp.UNIXConnectionResponse.Errorcode != 0 {
+		log.Printf("[ERROR]: Error in reading Unix connection resource after updation. Errorcode: %v, Message: %v", *getResp.UNIXConnectionResponse.Errorcode, *getResp.UNIXConnectionResponse.Msg)
+		resp.Diagnostics.AddError("Reading Unix connection after updation failed", *getResp.UNIXConnectionResponse.Msg)
+		return
+	}
+
 	plan.ConnectionKey = types.Int64Value(int64(*getResp.UNIXConnectionResponse.Connectionkey))
 	plan.ID = types.StringValue(fmt.Sprintf("%d", *getResp.UNIXConnectionResponse.Connectionkey))
 	plan.ConnectionName = util.SafeStringDatasource(getResp.UNIXConnectionResponse.Connectionname)

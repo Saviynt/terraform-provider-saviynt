@@ -406,11 +406,17 @@ func (r *workdayConnectionResource) Create(ctx context.Context, req resource.Cre
 	}
 
 	apiResp, _, err := apiClient.ConnectionsAPI.CreateOrUpdate(ctx).CreateOrUpdateRequest(workdayConnRequest).Execute()
-	if err != nil || *apiResp.ErrorCode != "0" {
+	if err != nil {
 		log.Printf("[ERROR] Failed to create API resource. Error: %v", err)
 		resp.Diagnostics.AddError("API Create Failed", fmt.Sprintf("Error: %v", err))
 		return
 	}
+	if apiResp != nil && *apiResp.ErrorCode != "0" {
+		log.Printf("[ERROR]: Error in creating Workday connection resource. Errorcode: %v, Message: %v", *apiResp.ErrorCode, *apiResp.Msg)
+		resp.Diagnostics.AddError("Creation of Workday connection failed", *apiResp.Msg)
+		return
+	}
+
 	if plan.UseEnhancedOrgRole.IsNull() || plan.UseEnhancedOrgRole.ValueString() == "" {
 		plan.UseEnhancedOrgRole = types.StringValue("TRUE")
 	}
@@ -482,6 +488,12 @@ func (r *workdayConnectionResource) Read(ctx context.Context, req resource.ReadR
 		resp.Diagnostics.AddError("API Read Failed", fmt.Sprintf("Error: %v", err))
 		return
 	}
+	if apiResp != nil && apiResp.WorkdayConnectionResponse != nil && *apiResp.WorkdayConnectionResponse.Errorcode != 0 {
+		log.Printf("[ERROR]: Error in reading Workday connection resource. Errorcode: %v, Message: %v", *apiResp.WorkdayConnectionResponse.Errorcode, *apiResp.WorkdayConnectionResponse.Msg)
+		resp.Diagnostics.AddError("Reading Workday connection resource failed", *apiResp.WorkdayConnectionResponse.Msg)
+		return
+	}
+
 	state.ConnectionKey = types.Int64Value(int64(*apiResp.WorkdayConnectionResponse.Connectionkey))
 	state.ID = types.StringValue(fmt.Sprintf("%d", *apiResp.WorkdayConnectionResponse.Connectionkey))
 	state.ConnectionName = util.SafeStringDatasource(apiResp.WorkdayConnectionResponse.Connectionname)
@@ -627,10 +639,16 @@ func (r *workdayConnectionResource) Update(ctx context.Context, req resource.Upd
 	// Initialize API client
 	apiClient := openapi.NewAPIClient(cfg)
 	apiResp, _, err := apiClient.ConnectionsAPI.CreateOrUpdate(ctx).CreateOrUpdateRequest(workdayConnRequest).Execute()
-	if err != nil || *apiResp.ErrorCode != "0" {
+	if err != nil {
 		resp.Diagnostics.AddError("API Create Failed", fmt.Sprintf("Error: %v", err))
 		return
 	}
+	if apiResp != nil && *apiResp.ErrorCode != "0" {
+		log.Printf("[ERROR]: Error in updating Workday connection resource. Errorcode: %v, Message: %v", *apiResp.ErrorCode, *apiResp.Msg)
+		resp.Diagnostics.AddError("Updation of Workday connection failed", *apiResp.Msg)
+		return
+	}
+
 	reqParams := openapi.GetConnectionDetailsRequest{}
 
 	reqParams.SetConnectionname(plan.ConnectionName.ValueString())
@@ -640,6 +658,12 @@ func (r *workdayConnectionResource) Update(ctx context.Context, req resource.Upd
 		resp.Diagnostics.AddError("API Read Failed", fmt.Sprintf("Error: %v", err))
 		return
 	}
+	if getResp != nil && getResp.WorkdayConnectionResponse != nil && *getResp.WorkdayConnectionResponse.Errorcode != 0 {
+		log.Printf("[ERROR]: Error in reading Workday connection resource after updation. Errorcode: %v, Message: %v", *getResp.WorkdayConnectionResponse.Errorcode, *getResp.WorkdayConnectionResponse.Msg)
+		resp.Diagnostics.AddError("Reading Workday connection after updation failed", *getResp.WorkdayConnectionResponse.Msg)
+		return
+	}
+
 	plan.ConnectionKey = types.Int64Value(int64(*getResp.WorkdayConnectionResponse.Connectionkey))
 	plan.ID = types.StringValue(fmt.Sprintf("%d", *getResp.WorkdayConnectionResponse.Connectionkey))
 	plan.ConnectionName = util.SafeStringDatasource(getResp.WorkdayConnectionResponse.Connectionname)
