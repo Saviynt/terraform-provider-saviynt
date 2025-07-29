@@ -50,6 +50,8 @@ Following connectors are available:
 
 Ephemeral resources available:
 - [File ephemeral resource](#ephemeral-file-credential-resource)
+- [Env ephemeral resource](#ephemeral-env-credential-resource)
+
 ---
 
 ##  Documentation
@@ -57,6 +59,42 @@ Ephemeral resources available:
 Check out the [Latest Saviynt Provider Docs](https://registry.terraform.io/providers/saviynt/saviynt/latest/docs) to know more.
 
 ---
+
+### Supported Saviynt Versions by Provider
+| Terraform Provider Version | Supported Saviynt EIC Versions |
+| -------------------------- | ------------------------------ |
+| `v0.2.8`                   | `25.B`, `25.A`, `24.10`        |
+| `v0.2.7`                   | `24.4`                         |
+
+---
+
+### Attribute Compatibility by EIC Version
+The table below shows attributes that are supported in newer versions of Saviynt EIC. If using an older version of Saviynt, some attributes may not work.
+Check the table to see which attributes are supported in your version before using them.
+
+| Connector                | Attribute(s) Added                                                                                                    | Present in 25.B | Present in 25.A | Present in 24.10 | Present in 24.4                                                                                        |
+| ------------------------ | --------------------------------------------------------------------------------------------------------------------- | --------------- | --------------- | ---------------- | ------------------------------------------------------------------------------------------------ |
+| **Workday Connector**    | `ORGROLE_IMPORT_PAYLOAD`                                                                          | Yes              | No             | No              | No|
+| **REST Connector**       | `ApplicationDiscoveryJSON`, `CreateEntitlementJSON`, `DeleteEntitlementJSON`, `UpdateEntitlementJSON`         | Yes             | No              | No               | No                                                                              |
+| **DB Connector**         | `CREATEENTITLEMENTJSON`, `DELETEENTITLEMENTJSON`, `ENTITLEMENTEXISTJSON`, `UPDATEENTITLEMENTJSON`             | Yes             | No              | No               | No                                                                              |
+| **GithubREST Connector** | `status_threshold_config`                                                                           | Yes              | Yes              | No               | No                                                                          |
+| **Security System** | `instant_provisioning`                                                                           | Yes              | No              | No               | No                                                                         |
+| **Endpoints** | `mapped_endpoints`, `requestable_role_types.show_on`                                                                           | Yes              | Yes              | Yes               | No                                                                         |
+
+---
+
+### Importing Resources
+This provider supports importing existing Saviynt EIC resources using custom IDs. Refer to the table below for the required import ID for each resource type:
+
+| Resource Type        | Import ID   | Example                                                        |
+| -------------------- | ----------------- | -------------------------------------------------------------- |
+| Security System      | `systemname`     | `terraform import saviynt_security_system_resource.example SYSTEM1`     |
+| Endpoint             | `endpoint_name`    | `terraform import saviynt_endpoint_resource.example ENDPOINT1`          |
+| Connection Resources | `connection_name` | `terraform import saviynt_ad_connection_resource.example AD_CONN1`      |
+| Dynamic Attributes   | `endpoint`        | `terraform import saviynt_dynamic_attribute_resource.example ENDPOINT1` |
+
+---
+
 ## Getting started
 
 Before installing the provider, ensure that you have the following dependencies installed:
@@ -480,6 +518,42 @@ The ephemeral credential resource reads from a local JSON file structured with t
 - Ensure the credential file is secured and not committed to version control.
 - Avoid using this resource in long-lived plans, as it relies on local files that may change or expire.
 
+## Ephemeral Env Credential Resource
+
+The **Ephemeral Env Credential Resource** is a transient Terraform resource that provides temporary, in-memory credentials to other connector resources by reading values from the environment variables at apply time. This allows secure and flexible provisioning without persisting sensitive data in the Terraform state.
+
+### Supported Connectors
+
+The following connectors are supported and can consume credentials provided by this resource:
+
+- **AD**: `username`, `password`
+- **ADSI**: `username`, `password`
+- **DB**: `username`, `password`, `change_pass_json`
+- **EntraId**: `client_id`, `client_secret`, `access_token`,`azure_mgmt_access_token`, `windows_connector_json`, `change_pass_json`, `connection_json`
+- **Github REST**: `connection_json`, `access_tokens`
+- **REST**: `connection_json`, `change_pass_json`
+- **Salesforce**: `client_id`, `client_secret`, `refresh_token`
+- **SAP**: `password`, `prov_password`
+- **Unix**: `username`, `password`, `change_password_json`,  `passphrase`, `ssh_key`, `ssh_pass_through_password`, `ssh_pass_through_sshkey`, `ssh_pass_through_passphrase`
+- **Workday**: `username`, `password`, `client_id`, `client_secret`, `refresh_token`
+
+### Usage
+
+The ephemeral credential resource reads from environment variables. These fields are then dynamically injected into the respective connector resources during the `apply` phase.
+
+> **Note:** This resource is ephemeral and does not store any state. It is designed for use cases where credentials must remain local and transient.
+
+## Credential Management Best Practices
+To ensure secure handling of sensitive credentials, follow these best practices:
+1. **Use Vault-backed Secrets**   : Externalize sensitive values using a secure secrets manager such as HashiCorp Vault. This avoids hardcoding secrets in .tf files or storing them in Terraform state.
+2. **Prefer Environment Variables**   : If Vault integration is not available, use environment variables (e.g., TF_VAR_password) to pass secrets instead of storing them in source files.
+3. **Use Ephemeral Resources for Sensitive Data**  
+   Handle all sensitive data using **ephemeral resources** — those created only when needed and destroyed immediately afterward. Avoid long-term storage of secrets in:
+
+   - Terraform state files (`terraform.tfstate`)
+   - Version control systems (e.g., Git)
+   - Local plaintext configuration files
+
 ---
 
 <!-- ##  Examples
@@ -503,14 +577,13 @@ Examples are available for all resources. Follow the following steps to try out 
 The following limitations are present in the latest version of the provider. These are being prioritized for resolution in the upcoming release alongside new feature additions:
 
 ### 1. All Resource objects
- - `terraform destroy` is not supported.
+ - `terraform destroy` is not supported for any resource except dynamic attributes.
 
 ### 2. Endpoints
 
 - **State management is not supported** for the following attributes:
   - `Owner`
   - `ResourceOwner`
-  - `Requestable`
   - `OutOfBandAccess`
 
 - The `MappedEndpoints` field **cannot be configured during endpoint creation**; it must be managed after the endpoint is created.

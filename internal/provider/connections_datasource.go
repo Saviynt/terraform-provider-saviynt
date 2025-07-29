@@ -45,6 +45,7 @@ type ConnectionsDataSourceModel struct {
 	Msg            types.String `tfsdk:"msg"`
 	ConnectionType types.String `tfsdk:"connection_type"`
 	Max            types.String `tfsdk:"max"`
+	Authenticate    types.Bool   `tfsdk:"authenticate"`
 }
 
 type Connection struct {
@@ -88,6 +89,10 @@ func (d *connectionsDataSource) Schema(ctx context.Context, req datasource.Schem
 			"display_count": schema.Int64Attribute{
 				Computed:    true,
 				Description: "Number of records returned in the response",
+			},
+			"authenticate": schema.BoolAttribute{
+				Required:    true,
+				Description: "If false, do not store connection_attributes in state",
 			},
 			"error_code": schema.StringAttribute{
 				Computed:    true,
@@ -235,6 +240,21 @@ func (d *connectionsDataSource) Read(ctx context.Context, req datasource.ReadReq
 			}
 
 			state.Results = append(state.Results, resultState)
+		}
+	}
+
+	if !state.Authenticate.IsNull() && !state.Authenticate.IsUnknown() {
+		if state.Authenticate.ValueBool() {
+			resp.Diagnostics.AddWarning(
+				"Authentication Enabled",
+				"`authenticate` is true; all connections will be returned in state.",
+			)
+		} else {
+			resp.Diagnostics.AddWarning(
+				"Authentication Disabled",
+				"`authenticate` is false; connections will be removed from state.",
+			)
+			state.Results = nil
 		}
 	}
 

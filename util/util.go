@@ -6,6 +6,7 @@ package util
 import (
 	"context"
 	"encoding/json"
+	"fmt"
 	"log"
 	"os"
 	"sort"
@@ -252,15 +253,23 @@ func Int32PtrToTFString(val *int32) types.String {
 	return types.StringNull()
 }
 
-func LoadConnectorDataForEphemeral(filePath string) map[string]string {
+func LoadConnectorDataForEphemeral(filePath string) (map[string]string, error) {
+	// Validate input
+	if strings.TrimSpace(filePath) == "" {
+		return nil, fmt.Errorf("filepath cannot be empty")
+	}
+	// Check if file exists
+	if _, err := os.Stat(filePath); os.IsNotExist(err) {
+		return nil, fmt.Errorf("file does not exist: %s", filePath)
+	}
 	data, err := os.ReadFile(filePath)
 	if err != nil {
-		log.Fatalf("failed to read test config file: %v", err)
+		return nil, fmt.Errorf("failed to read connector config file: %v", err)
 	}
 
 	var allData map[string]interface{}
 	if err := json.Unmarshal(data, &allData); err != nil {
-		log.Fatalf("failed to unmarshal test config: %v", err)
+		return nil, fmt.Errorf("failed to unmarshal connector config: %v", err)
 	}
 
 	result := make(map[string]string)
@@ -272,7 +281,7 @@ func LoadConnectorDataForEphemeral(filePath string) map[string]string {
 		case map[string]interface{}, []interface{}:
 			jsonValue, err := json.Marshal(v)
 			if err != nil {
-				log.Fatalf("failed to marshal key %s: %v", key, err)
+				return nil, fmt.Errorf("failed to marshal key %s: %v", key, err)
 			}
 			result[key] = string(jsonValue)
 
@@ -280,13 +289,13 @@ func LoadConnectorDataForEphemeral(filePath string) map[string]string {
 			// Marshal any other types safely (e.g., numbers, bool)
 			jsonValue, err := json.Marshal(v)
 			if err != nil {
-				log.Fatalf("failed to marshal key %s: %v", key, err)
+				return nil, fmt.Errorf("failed to marshal key %s: %v", key, err)
 			}
 			result[key] = string(jsonValue)
 		}
 	}
 
-	return result
+	return result, nil
 }
 
 func TypesStringOrOriginal(original types.String, apiValue *string) types.String {
@@ -297,7 +306,7 @@ func TypesStringOrOriginal(original types.String, apiValue *string) types.String
 }
 
 func SafeStringAlt(s *string, replace string) types.String {
-	if types.StringValue(*s) == types.StringValue("") {
+	if s == nil || *s == "" {
 		return types.StringValue(replace)
 	}
 
