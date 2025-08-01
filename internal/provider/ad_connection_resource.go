@@ -705,6 +705,13 @@ func (r *adConnectionResource) Read(ctx context.Context, req resource.ReadReques
 	state.CheckForUnique = util.SafeStringDatasource(apiResp.ADConnectionResponse.Connectionattributes.CHECKFORUNIQUE)
 	state.EnableGroupManagement = util.SafeStringDatasource(apiResp.ADConnectionResponse.Connectionattributes.ENABLEGROUPMANAGEMENT)
 	state.OrgImportJson = util.SafeStringDatasource(apiResp.ADConnectionResponse.Connectionattributes.ORGIMPORTJSON)
+	apiMessage := util.SafeDeref(apiResp.ADConnectionResponse.Msg)
+	if apiMessage == "success" {
+		state.Msg = types.StringValue("Connection Successful")
+	} else {
+		state.Msg = types.StringValue(apiMessage)
+	}
+	state.ErrorCode = util.Int32PtrToTFString(apiResp.ADConnectionResponse.Errorcode)
 	stateDiagnostics := resp.State.Set(ctx, &state)
 	resp.Diagnostics.Append(stateDiagnostics...)
 	if resp.Diagnostics.HasError() {
@@ -918,8 +925,13 @@ func (r *adConnectionResource) Update(ctx context.Context, req resource.UpdateRe
 	plan.CheckForUnique = util.SafeStringDatasource(getResp.ADConnectionResponse.Connectionattributes.CHECKFORUNIQUE)
 	plan.EnableGroupManagement = util.SafeStringDatasource(getResp.ADConnectionResponse.Connectionattributes.ENABLEGROUPMANAGEMENT)
 	plan.OrgImportJson = util.SafeStringDatasource(getResp.ADConnectionResponse.Connectionattributes.ORGIMPORTJSON)
-	plan.Msg = types.StringValue(util.SafeDeref(apiResp.Msg))
-	plan.ErrorCode = types.StringValue(util.SafeDeref(apiResp.ErrorCode))
+	apiMessage := util.SafeDeref(getResp.ADConnectionResponse.Msg)
+	if apiMessage == "success" {
+		plan.Msg = types.StringValue("Connection Successful")
+	} else {
+		plan.Msg = types.StringValue(apiMessage)
+	}
+	plan.ErrorCode = util.Int32PtrToTFString(getResp.ADConnectionResponse.Errorcode)
 	stateUpdateDiagnostics := resp.State.Set(ctx, plan)
 	resp.Diagnostics.Append(stateUpdateDiagnostics...)
 }
