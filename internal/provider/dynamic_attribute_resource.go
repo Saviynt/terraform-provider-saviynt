@@ -1,7 +1,7 @@
 // Copyright (c) 2025 Saviynt Inc.
 // SPDX-License-Identifier: MPL-2.0
 
-// saviynt_dynamic_attribute_resource manages ADSI connectors in the Saviynt Security Manager.
+// saviynt_dynamic_attribute_resource manages dynamic attributes in the Saviynt Security Manager.
 // The resource implements the full Terraform lifecycle:
 //   - Create: provisions new dynamic attributes for an endpoint using the supplied configuration.
 //   - Read: fetches the current dynamic attribute state from Saviynt to keep Terraform’s state in sync.

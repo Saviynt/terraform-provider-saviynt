@@ -487,8 +487,22 @@ account_import_payload = trimspace(
   EOF
 )
 ```
+
 ---
-## Ephemeral File Credential Resource
+
+## Credential Management Best Practices
+To ensure secure handling of sensitive credentials, follow these best practices:
+1. **Use Vault-backed Secrets**   : Externalize sensitive values using a secure secrets manager such as HashiCorp Vault. This avoids hardcoding secrets in .tf files or storing them in Terraform state.
+2. **Prefer Environment Variables**   : If Vault integration is not available, use environment variables (e.g., TF_VAR_password) to pass secrets instead of storing them in source files.
+3. **Use Ephemeral Resources for Sensitive Data**
+   Handle all sensitive data using **ephemeral resources** — those created only when needed and destroyed immediately afterward. Avoid long-term storage of secrets in:
+   - Terraform state files (`terraform.tfstate`)
+   - Version control systems (e.g., Git)
+   - Local plaintext configuration files
+
+---
+
+## Feature: Ephemeral File Credential Resource
 
 The **Ephemeral File Credential Resource** is a transient Terraform resource that provides temporary, in-memory credentials to other connector resources by reading values from a local JSON file at apply time. This allows secure and flexible provisioning without persisting sensitive data in the Terraform state.
 
@@ -513,12 +527,12 @@ The ephemeral credential resource reads from a local JSON file structured with t
 
 > **Note:** This resource is ephemeral and does not store any state. It is designed for use cases where credentials must remain local and transient.
 
-## Security Considerations
+### Security Considerations
 
 - Ensure the credential file is secured and not committed to version control.
 - Avoid using this resource in long-lived plans, as it relies on local files that may change or expire.
 
-## Ephemeral Env Credential Resource
+## Feature: Ephemeral Env Credential Resource
 
 The **Ephemeral Env Credential Resource** is a transient Terraform resource that provides temporary, in-memory credentials to other connector resources by reading values from the environment variables at apply time. This allows secure and flexible provisioning without persisting sensitive data in the Terraform state.
 
@@ -543,16 +557,30 @@ The ephemeral credential resource reads from environment variables. These fields
 
 > **Note:** This resource is ephemeral and does not store any state. It is designed for use cases where credentials must remain local and transient.
 
-## Credential Management Best Practices
-To ensure secure handling of sensitive credentials, follow these best practices:
-1. **Use Vault-backed Secrets**   : Externalize sensitive values using a secure secrets manager such as HashiCorp Vault. This avoids hardcoding secrets in .tf files or storing them in Terraform state.
-2. **Prefer Environment Variables**   : If Vault integration is not available, use environment variables (e.g., TF_VAR_password) to pass secrets instead of storing them in source files.
-3. **Use Ephemeral Resources for Sensitive Data**  
-   Handle all sensitive data using **ephemeral resources** — those created only when needed and destroyed immediately afterward. Avoid long-term storage of secrets in:
 
-   - Terraform state files (`terraform.tfstate`)
-   - Version control systems (e.g., Git)
-   - Local plaintext configuration files
+## Feature: `authenticate` Toggle for All Data Source
+
+The Saviynt datasources now have a required boolean flag `authenticate` to control the visibility of sensitive data.
+
+### Purpose
+
+This feature is designed to help prevent potential sensitive data from appearing in Terraform state files or CLI output during `plan` and `apply` when a datasource is called.
+
+### Behavior
+
+- When `authenticate = false`:
+  - The provider will **omit** all the attributes from state file.
+- When `authenticate = true`:
+  - All attributes will be returned as usual with sensitive still not visible.
+
+### Example Usage
+
+```hcl
+data "saviynt_rest_connection_datasource" "example" {
+  connection_name = "Terraform_REST_Connector"
+  authenticate    = false
+}
+```
 
 ---
 
@@ -613,7 +641,81 @@ The following limitations are present in the latest version of the provider. The
   - **SAP**: `password`, `prov_password`
   - **Unix**: `password`, `passphrase`, `ssh_key`, `ssh_pass_through_password`, `ssh_pass_through_sshkey`, `ssh_pass_through_passphrase`
   - **Workday**: `password`, `client_secret`, `refresh_token`
+
 ---
+
+## Troubleshooting Guide – Breaking Changes, API Errors & Configuration Tips
+
+This section outlines recent changes that may cause issues during Terraform runs and provides guidance on how to resolve them.
+
+### 1. Breaking Change: Removal of connection_type Attribute
+The connection_type attribute has been removed from all connector resources.
+**Impact**:
+If your Terraform configuration includes this attribute, it will now result in an error during `terraform plan` or `apply`.
+
+**Example Error**:
+```
+╷
+│ Error: Unsupported argument
+│
+│   on provider.tf line 33, in resource "saviynt_ad_connection_resource" "AD1":
+│   33:   connection_type = "AD"
+│
+│ An argument named "connection_type" is not expected here.
+```
+
+**Action Required**:
+Manually remove all instances of connection_type from your Terraform resource blocks related to connector resources.
+
+### 2. Security Notice: API Access Restriction Based on SAV Role
+If the **Restrict API access based on SAV Role** option is enabled (`Settings > API` in ECM), you might encounter the following error during resource creation:
+
+**Example Error**:
+```
+│ Error: API Read Failed In Create Block
+│
+│  with saviynt_endpoint_resource.example,
+│  on generated.tf line 5, in resource "saviynt_endpoint_resource" "example":
+│   5: resource "saviynt_endpoint_resource" "example" {
+│
+│ Error: 412 Precondition Failed
+```
+Recommendation:
+Ensure that **Restrict API access based on SAV Role** is disabled for successful provisioning via Terraform.
+
+### 3. API Compatibility Warning: `readlabels` Settings
+Changes to the following settings under `Settings > Configuration Files>externalconfig.properties` can affect the structure of API responses:
+```properties
+users.readlabels=true
+endpoints.readlabels=true
+entitlements.readlabels=true
+roles.readlabels=true
+```
+**Impact**:
+- When these properties are set to `false`, API responses return machine-friendly field names like:
+```json
+"customproperty10": "Project",
+"customproperty12": "Role"
+```
+- When set to `true` (default and recommended), responses return human-readable keys:
+```json
+"Custom Property 10": "Project",
+"Custom Property 11": "Team"
+```
+
+**Recommendation**:
+Keep all `readlabels` settings set to `true` to ensure compatibility with Terraform provider expectations and avoid field mapping issues.
+
+---
+
+### Summary
+| Change Area           | Description                                         | Action Required                         |
+|------------------------|-----------------------------------------------------|------------------------------------------|
+| `connection_type` Removal | Deprecated from connector resources                | Remove from your resource configuration  |
+| SAV Role Restriction   | May result in 412 errors if enabled                 | Adjust SAV role or disable restriction   |
+| `readlabels` Settings  | Alters field naming in API response                 | Keep values as `true`                    |
+
+___
 
 ##  Contributing
 
