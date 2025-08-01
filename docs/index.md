@@ -46,13 +46,38 @@ provider "saviynt" {
 
 ---
 
+##  Features
+
+Following resources are available for management: 
+- Security System
+- Endpoint
+- Connections
+
+Following connectors are available:
+- Active Directory(AD)
+- REST
+- ADSI
+- Database(DB)
+- EntraID(AzureAD)
+- SAP
+- Salesforce
+- Workday
+- Unix
+- Github REST
+
+Ephemeral resources available:
+- [File ephemeral resource](#feature-ephemeral-file-credential-resource)
+- [Env ephemeral resource](#feature-ephemeral-env-credential-resource)
+
+---
+
 ### Supported Saviynt Versions by Provider
 | Terraform Provider Version | Supported Saviynt EIC Versions |
 | -------------------------- | ------------------------------ |
 | `v0.2.8`                   | `25.B`, `25.A`, `24.10`        |
 | `v0.2.7`                   | `24.4`                         |
 
----
+--- 
 
 ### Attribute Compatibility by EIC Version
 The table below shows attributes that are supported in newer versions of Saviynt EIC. If using an older version of Saviynt, some attributes may not work.
@@ -92,6 +117,62 @@ To ensure secure handling of sensitive credentials, follow these best practices:
    - Local plaintext configuration files
 
 ---
+
+## Feature: Ephemeral File Credential Resource
+
+The **Ephemeral File Credential Resource** is a transient Terraform resource that provides temporary, in-memory credentials to other connector resources by reading values from a local JSON file at apply time. This allows secure and flexible provisioning without persisting sensitive data in the Terraform state.
+
+### Supported Connectors
+
+The following connectors are supported and can consume credentials provided by this resource:
+
+- **AD**: `username`, `password`
+- **ADSI**: `username`, `password`
+- **DB**: `username`, `password`, `change_pass_json`
+- **EntraId**: `client_id`, `client_secret`, `access_token`,`azure_mgmt_access_token`, `windows_connector_json`, `change_pass_json`, `connection_json`
+- **Github REST**: `connection_json`, `access_tokens`
+- **REST**: `connection_json`, `change_pass_json`
+- **Salesforce**: `client_id`, `client_secret`, `refresh_token`
+- **SAP**: `password`, `prov_password`
+- **Unix**: `username`, `password`, `change_password_json`,  `passphrase`, `ssh_key`, `ssh_pass_through_password`, `ssh_pass_through_sshkey`, `ssh_pass_through_passphrase`
+- **Workday**: `username`, `password`, `client_id`, `client_secret`, `refresh_token`
+
+### Usage
+
+The ephemeral credential resource reads from a local JSON file structured with the required fields for the target connector. These fields are then dynamically injected into the respective connector resources during the `apply` phase.
+
+> **Note:** This resource is ephemeral and does not store any state. It is designed for use cases where credentials must remain local and transient.
+
+### Security Considerations
+
+- Ensure the credential file is secured and not committed to version control.
+- Avoid using this resource in long-lived plans, as it relies on local files that may change or expire.
+
+## Feature: Ephemeral Env Credential Resource
+
+The **Ephemeral Env Credential Resource** is a transient Terraform resource that provides temporary, in-memory credentials to other connector resources by reading values from the environment variables at apply time. This allows secure and flexible provisioning without persisting sensitive data in the Terraform state.
+
+### Supported Connectors
+
+The following connectors are supported and can consume credentials provided by this resource:
+
+- **AD**: `username`, `password`
+- **ADSI**: `username`, `password`
+- **DB**: `username`, `password`, `change_pass_json`
+- **EntraId**: `client_id`, `client_secret`, `access_token`,`azure_mgmt_access_token`, `windows_connector_json`, `change_pass_json`, `connection_json`
+- **Github REST**: `connection_json`, `access_tokens`
+- **REST**: `connection_json`, `change_pass_json`
+- **Salesforce**: `client_id`, `client_secret`, `refresh_token`
+- **SAP**: `password`, `prov_password`
+- **Unix**: `username`, `password`, `change_password_json`,  `passphrase`, `ssh_key`, `ssh_pass_through_password`, `ssh_pass_through_sshkey`, `ssh_pass_through_passphrase`
+- **Workday**: `username`, `password`, `client_id`, `client_secret`, `refresh_token`
+
+### Usage
+
+The ephemeral credential resource reads from environment variables. These fields are then dynamically injected into the respective connector resources during the `apply` phase.
+
+> **Note:** This resource is ephemeral and does not store any state. It is designed for use cases where credentials must remain local and transient.
+
 
 ## Feature: `authenticate` Toggle for All Data Source
 
@@ -164,3 +245,78 @@ The following limitations are present in the latest version of the provider. The
   - `LARGE TEXT`
   - `CHECK BOX`
   - `DATE`
+
+  ---
+
+## Troubleshooting Guide – Breaking Changes, API Errors & Configuration Tips
+
+This section outlines recent changes that may cause issues during Terraform runs and provides guidance on how to resolve them.
+
+### 1. Breaking Change: Removal of connection_type Attribute
+The connection_type attribute has been removed from all connector resources.
+**Impact**:
+If your Terraform configuration includes this attribute, it will now result in an error during `terraform plan` or `apply`.
+
+**Example Error**:
+```
+╷
+│ Error: Unsupported argument
+│
+│   on provider.tf line 33, in resource "saviynt_ad_connection_resource" "AD1":
+│   33:   connection_type = "AD"
+│
+│ An argument named "connection_type" is not expected here.
+```
+
+**Action Required**:
+Manually remove all instances of connection_type from your Terraform resource blocks related to connector resources.
+
+### 2. Security Notice: API Access Restriction Based on SAV Role
+If the **Restrict API access based on SAV Role** option is enabled (`Settings > API` in ECM), you might encounter the following error during resource creation:
+
+**Example Error**:
+```
+│ Error: API Read Failed In Create Block
+│
+│  with saviynt_endpoint_resource.example,
+│  on generated.tf line 5, in resource "saviynt_endpoint_resource" "example":
+│   5: resource "saviynt_endpoint_resource" "example" {
+│
+│ Error: 412 Precondition Failed
+```
+Recommendation:
+Ensure that **Restrict API access based on SAV Role** is disabled for successful provisioning via Terraform.
+
+### 3. API Compatibility Warning: `readlabels` Settings
+Changes to the following settings under `Settings > Configuration Files>externalconfig.properties` can affect the structure of API responses:
+```properties
+users.readlabels=true
+endpoints.readlabels=true
+entitlements.readlabels=true
+roles.readlabels=true
+```
+**Impact**:
+- When these properties are set to `false`, API responses return machine-friendly field names like:
+```json
+"customproperty10": "Project",
+"customproperty12": "Role"
+```
+- When set to `true` (default and recommended), responses return human-readable keys:
+```json
+"Custom Property 10": "Project",
+"Custom Property 11": "Team"
+```
+
+**Recommendation**:
+Keep all `readlabels` settings set to `true` to ensure compatibility with Terraform provider expectations and avoid field mapping issues.
+
+---
+
+### Summary
+| Change Area           | Description                                         | Action Required                         |
+|------------------------|-----------------------------------------------------|------------------------------------------|
+| `connection_type` Removal | Deprecated from connector resources                | Remove from your resource configuration  |
+| SAV Role Restriction   | May result in 412 errors if enabled                 | Adjust SAV role or disable restriction   |
+| `readlabels` Settings  | Alters field naming in API response                 | Keep values as `true`                    |
+
+___
