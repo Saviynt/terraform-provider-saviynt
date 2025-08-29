@@ -6,6 +6,6 @@ Use the following operations to perform full lifecycle management of your EntraI
 - **Read** (Retrieve) the connector’s current configuration  
 - **Update** its configuration
 
-[See Saviynt documentation for more details](https://docs.saviyntcloud.com/bundle/AD-v55x/page/Content/Azure-AD-Integration-Overview.htm)
+[See Saviynt documentation for more details](https://docs.saviyntcloud.com/bundle/AzureAD-25/page/Content/Using-Classic-Integration-v2022x.htm)
 
 - Simple example [can be found here](./resource.tf).

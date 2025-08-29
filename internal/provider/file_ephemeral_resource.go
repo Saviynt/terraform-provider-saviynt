@@ -30,6 +30,7 @@ func NewFileCredentialsResource() ephemeral.EphemeralResource {
 
 type FileCredentialsModel struct {
 	FilePath                 types.String `tfsdk:"file_path"`
+	AuthToken                types.String `tfsdk:"auth_token"`
 	Username                 types.String `tfsdk:"username"`
 	Password                 types.String `tfsdk:"password"`
 	Change_Pass_Json         types.String `tfsdk:"change_pass_json"`
@@ -61,6 +62,11 @@ func (r *FileCredentialsResource) Schema(ctx context.Context, _ ephemeral.Schema
 			"file_path": schema.StringAttribute{
 				Required:            true,
 				MarkdownDescription: "Path to a JSON (or key-value) file containing credentials.",
+			},
+			"auth_token": schema.StringAttribute{
+				Computed:            true,
+				MarkdownDescription: "Authentication token read from the file.",
+				Sensitive:           true,
 			},
 			"username": schema.StringAttribute{
 				Computed:            true,
@@ -164,6 +170,8 @@ func (r *FileCredentialsResource) Open(ctx context.Context, req ephemeral.OpenRe
 		switch key {
 		case "USERNAME":
 			data.Username = types.StringValue(val)
+		case "AUTH_TOKEN":
+			data.AuthToken = types.StringValue(val)
 		case "PASSWORD":
 			data.Password = types.StringValue(val)
 		case "CHANGE_PASS_JSON":

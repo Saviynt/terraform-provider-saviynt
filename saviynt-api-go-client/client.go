@@ -21,6 +21,7 @@ import (
 	"github.com/saviynt/saviynt-api-go-client/dynamicattributes"
 	"github.com/saviynt/saviynt-api-go-client/email"
 	"github.com/saviynt/saviynt-api-go-client/endpoints"
+	"github.com/saviynt/saviynt-api-go-client/entitlementtype"
 	"github.com/saviynt/saviynt-api-go-client/filedirectory"
 	"github.com/saviynt/saviynt-api-go-client/jobcontrol"
 	"github.com/saviynt/saviynt-api-go-client/mtlsauthentication"
@@ -57,6 +58,8 @@ type Client struct {
 	emailClient                   *email.APIClient
 	Endpoints                     *endpoints.EndpointsAPIService
 	endpointsClient               *endpoints.APIClient
+	EntitlementType               *entitlementtype.EntitlementTypeAPIService
+	entitlementTypeClient         *entitlementtype.APIClient
 	FileDirectory                 *filedirectory.FileDirectoryAPIService
 	fileDirectoryClient           *filedirectory.APIClient
 	JobControl                    *jobcontrol.JobControlAPIService
@@ -94,6 +97,8 @@ func newClientHTTPClient(serverURL string, username *string, httpClient *http.Cl
 	c.Email = c.emailClient.EmailAPI
 	c.endpointsClient = newClientEndpoints(c.APIBaseURL(), c.httpClient)
 	c.Endpoints = c.endpointsClient.EndpointsAPI
+	c.entitlementTypeClient = newClientEntitlementType(c.APIBaseURL(), c.httpClient)
+	c.EntitlementType = c.entitlementTypeClient.EntitlementTypeAPI
 	c.fileDirectoryClient = newClientFileDirectory(c.APIBaseURL(), c.httpClient)
 	c.FileDirectory = c.fileDirectoryClient.FileDirectoryAPI
 	c.jobControlClient = newClientJobControl(c.APIBaseURL(), c.httpClient)
@@ -198,6 +203,13 @@ func newClientEndpoints(apiBaseURL string, httpClient *http.Client) *endpoints.A
 	cfg.HTTPClient = httpClient
 	cfg.Servers = endpoints.ServerConfigurations{{URL: apiBaseURL}}
 	return endpoints.NewAPIClient(cfg)
+}
+
+func newClientEntitlementType(apiBaseURL string, httpClient *http.Client) *entitlementtype.APIClient {
+	cfg := entitlementtype.NewConfiguration()
+	cfg.HTTPClient = httpClient
+	cfg.Servers = entitlementtype.ServerConfigurations{{URL: apiBaseURL}}
+	return entitlementtype.NewAPIClient(cfg)
 }
 
 func newClientFileDirectory(apiBaseURL string, httpClient *http.Client) *filedirectory.APIClient {

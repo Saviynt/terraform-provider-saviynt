@@ -475,7 +475,7 @@ resource "saviynt_entraid_connection_resource" "example" {
 - `update_group_json` (String) JSON to update group.
 - `update_service_principal_json` (String) JSON to update service principal.
 - `update_user_json` (String) JSON template to update user.
-- `vault_configuration` (String) JSON string specifying vault configuration. Example: '{"path":"/secrets/data/kv-dev-intgn1/-AD_Credential","keyMapping":{"PASSWORD":"AD_PASSWORD~#~None"}}'
+- `vault_configuration` (String) JSON string specifying vault configuration.
 - `vault_connection` (String) Specifies the type of vault connection being used (e.g., 'Hashicorp'). Example: "Hashicorp"
 - `windows_connector_json` (String) Windows connector JSON configuration.
 

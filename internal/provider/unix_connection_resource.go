@@ -12,25 +12,26 @@ package provider
 import (
 	"context"
 	"fmt"
-	"log"
-	"net/http"
 	"os"
-	"strings"
+	"terraform-provider-Saviynt/internal/client"
 	"terraform-provider-Saviynt/util"
 	connectionsutil "terraform-provider-Saviynt/util/connectionsutil"
-
-	s "github.com/saviynt/saviynt-api-go-client"
-	openapi "github.com/saviynt/saviynt-api-go-client/connections"
+	"terraform-provider-Saviynt/util/errorsutil"
 
 	"github.com/hashicorp/terraform-plugin-framework/path"
 	"github.com/hashicorp/terraform-plugin-framework/resource"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema"
 	"github.com/hashicorp/terraform-plugin-framework/types"
+	"github.com/hashicorp/terraform-plugin-log/tflog"
+	openapi "github.com/saviynt/saviynt-api-go-client/connections"
 )
 
 // Ensure provider defined types fully satisfy framework interfaces.
-var _ resource.Resource = &unixConnectionResource{}
-var _ resource.ResourceWithImportState = &unixConnectionResource{}
+var _ resource.Resource = &UnixConnectionResource{}
+var _ resource.ResourceWithImportState = &UnixConnectionResource{}
+
+// Initialize error codes for Unix Connection operations
+var unixErrorCodes = errorsutil.NewConnectorErrorCodes(errorsutil.ConnectorTypeUnix)
 
 type UnixConnectorResourceModel struct {
 	BaseConnectorResourceModel
@@ -71,17 +72,352 @@ type UnixConnectorResourceModel struct {
 	SSHPassThroughPassphrase      types.String `tfsdk:"ssh_pass_through_passphrase"`
 }
 
-type unixConnectionResource struct {
-	client *s.Client
-	token  string
+type UnixConnectionResource struct {
+	client            client.SaviyntClientInterface
+	token             string
+	connectionFactory client.ConnectionFactoryInterface
 }
 
-func NewUnixTestConnectionResource() resource.Resource {
-	return &unixConnectionResource{}
+func NewUnixConnectionResource() resource.Resource {
+	return &UnixConnectionResource{
+		connectionFactory: &client.DefaultConnectionFactory{},
+	}
 }
 
-func (r *unixConnectionResource) Metadata(ctx context.Context, req resource.MetadataRequest, resp *resource.MetadataResponse) {
+func NewUnixConnectionResourceWithFactory(factory client.ConnectionFactoryInterface) resource.Resource {
+	return &UnixConnectionResource{
+		connectionFactory: factory,
+	}
+}
+
+func (r *UnixConnectionResource) Metadata(ctx context.Context, req resource.MetadataRequest, resp *resource.MetadataResponse) {
 	resp.TypeName = "saviynt_unix_connection_resource"
+}
+
+// SetClient sets the client for testing purposes
+func (r *UnixConnectionResource) SetClient(client client.SaviyntClientInterface) {
+	r.client = client
+}
+
+// SetToken sets the token for testing purposes
+func (r *UnixConnectionResource) SetToken(token string) {
+	r.token = token
+}
+
+func (r *UnixConnectionResource) BuildUnixConnector(plan *UnixConnectorResourceModel, config *UnixConnectorResourceModel) openapi.UNIXConnector {
+	unixConn := openapi.UNIXConnector{
+		BaseConnector: openapi.BaseConnector{
+			//required field
+			Connectiontype: "Unix",
+			ConnectionName: plan.ConnectionName.ValueString(),
+			//optional field
+			Description:     util.StringPointerOrEmpty(plan.Description),
+			Defaultsavroles: util.StringPointerOrEmpty(plan.DefaultSavRoles),
+			EmailTemplate:   util.StringPointerOrEmpty(plan.EmailTemplate),
+		},
+		//required field
+		HOST_NAME:   plan.HostName.ValueString(),
+		PORT_NUMBER: plan.PortNumber.ValueString(),
+		USERNAME:    config.Username.ValueString(),
+		//optional field
+		PASSWORD:                            util.StringPointerOrEmpty(config.Password),
+		GROUPS_FILE:                         util.StringPointerOrEmpty(plan.GroupsFile),
+		ACCOUNTS_FILE:                       util.StringPointerOrEmpty(plan.AccountsFile),
+		SHADOW_FILE:                         util.StringPointerOrEmpty(plan.ShadowFile),
+		PROVISION_ACCOUNT_COMMAND:           util.StringPointerOrEmpty(plan.ProvisionAccountCommand),
+		DEPROVISION_ACCOUNT_COMMAND:         util.StringPointerOrEmpty(plan.DeprovisionAccountCommand),
+		ADD_ACCESS_COMMAND:                  util.StringPointerOrEmpty(plan.AddAccessCommand),
+		REMOVE_ACCESS_COMMAND:               util.StringPointerOrEmpty(plan.RemoveAccessCommand),
+		CHANGE_PASSWRD_JSON:                 util.StringPointerOrEmpty(config.ChangePasswordJSON),
+		PEM_KEY_FILE:                        util.StringPointerOrEmpty(plan.PemKeyFile),
+		ENABLE_ACCOUNT_COMMAND:              util.StringPointerOrEmpty(plan.EnableAccountCommand),
+		DISABLE_ACCOUNT_COMMAND:             util.StringPointerOrEmpty(plan.DisableAccountCommand),
+		ACCOUNT_ENTITLEMENT_MAPPING_COMMAND: util.StringPointerOrEmpty(plan.AccountEntitlementMappingCmd),
+		PASSPHRASE:                          util.StringPointerOrEmpty(config.Passphrase),
+		UPDATE_ACCOUNT_COMMAND:              util.StringPointerOrEmpty(plan.UpdateAccountCommand),
+		CREATE_GROUP_COMMAND:                util.StringPointerOrEmpty(plan.CreateGroupCommand),
+		DELETE_GROUP_COMMAND:                util.StringPointerOrEmpty(plan.DeleteGroupCommand),
+		ADD_GROUP_OWNER_COMMAND:             util.StringPointerOrEmpty(plan.AddGroupOwnerCommand),
+		ADD_PRIMARY_GROUP_COMMAND:           util.StringPointerOrEmpty(plan.AddPrimaryGroupCommand),
+		FIREFIGHTERID_GRANT_ACCESS_COMMAND:  util.StringPointerOrEmpty(plan.FirefighterGrantAccessCommand),
+		FIREFIGHTERID_REVOKE_ACCESS_COMMAND: util.StringPointerOrEmpty(plan.FirefighterRevokeAccessCmd),
+		INACTIVE_LOCK_ACCOUNT:               util.StringPointerOrEmpty(plan.InactiveLockAccount),
+		STATUS_THRESHOLD_CONFIG:             util.StringPointerOrEmpty(plan.StatusThresholdConfig),
+		CUSTOM_CONFIG_JSON:                  util.StringPointerOrEmpty(plan.CustomConfigJSON),
+		SSH_KEY:                             util.StringPointerOrEmpty(config.SSHKey),
+		LOCK_ACCOUNT_COMMAND:                util.StringPointerOrEmpty(plan.LockAccountCommand),
+		UNLOCK_ACCOUNT_COMMAND:              util.StringPointerOrEmpty(plan.UnlockAccountCommand),
+		PassThroughConnectionDetails:        util.StringPointerOrEmpty(plan.PassThroughConnectionDetails),
+		SSHPassThroughPassword:              util.StringPointerOrEmpty(config.SSHPassThroughPassword),
+		SSHPassThroughSSHKEY:                util.StringPointerOrEmpty(config.SSHPassThroughSSHKEY),
+		SSHPassThroughPassphrase:            util.StringPointerOrEmpty(config.SSHPassThroughPassphrase),
+	}
+
+	// Handle vault configuration
+	if !plan.VaultConnection.IsNull() && plan.VaultConnection.ValueString() != "" {
+		unixConn.BaseConnector.VaultConnection = util.SafeStringConnector(plan.VaultConnection.ValueString())
+		unixConn.BaseConnector.VaultConfiguration = util.SafeStringConnector(plan.VaultConfiguration.ValueString())
+		unixConn.BaseConnector.Saveinvault = util.SafeStringConnector(plan.SaveInVault.ValueString())
+	}
+
+	return unixConn
+}
+
+func (r *UnixConnectionResource) UpdateModelFromCreateResponse(plan *UnixConnectorResourceModel, apiResp *openapi.CreateOrUpdateResponse) {
+	plan.ID = types.StringValue(fmt.Sprintf("%d", *apiResp.ConnectionKey))
+	plan.ConnectionKey = types.Int64Value(int64(*apiResp.ConnectionKey))
+	plan.Description = util.SafeStringDatasource(plan.Description.ValueStringPointer())
+	plan.DefaultSavRoles = util.SafeStringDatasource(plan.DefaultSavRoles.ValueStringPointer())
+	plan.EmailTemplate = util.SafeStringDatasource(plan.EmailTemplate.ValueStringPointer())
+	plan.HostName = util.SafeStringDatasource(plan.HostName.ValueStringPointer())
+	plan.PortNumber = util.SafeStringDatasource(plan.PortNumber.ValueStringPointer())
+	plan.Username = util.SafeStringDatasource(plan.Username.ValueStringPointer())
+	plan.GroupsFile = util.SafeStringDatasource(plan.GroupsFile.ValueStringPointer())
+	plan.AccountsFile = util.SafeStringDatasource(plan.AccountsFile.ValueStringPointer())
+	plan.ShadowFile = util.SafeStringDatasource(plan.ShadowFile.ValueStringPointer())
+	plan.ProvisionAccountCommand = util.SafeStringDatasource(plan.ProvisionAccountCommand.ValueStringPointer())
+	plan.DeprovisionAccountCommand = util.SafeStringDatasource(plan.DeprovisionAccountCommand.ValueStringPointer())
+	plan.AddAccessCommand = util.SafeStringDatasource(plan.AddAccessCommand.ValueStringPointer())
+	plan.RemoveAccessCommand = util.SafeStringDatasource(plan.RemoveAccessCommand.ValueStringPointer())
+	plan.ChangePasswordJSON = util.SafeStringDatasource(plan.ChangePasswordJSON.ValueStringPointer())
+	plan.PemKeyFile = util.SafeStringDatasource(plan.PemKeyFile.ValueStringPointer())
+	plan.EnableAccountCommand = util.SafeStringDatasource(plan.EnableAccountCommand.ValueStringPointer())
+	plan.DisableAccountCommand = util.SafeStringDatasource(plan.DisableAccountCommand.ValueStringPointer())
+	plan.AccountEntitlementMappingCmd = util.SafeStringDatasource(plan.AccountEntitlementMappingCmd.ValueStringPointer())
+	plan.UpdateAccountCommand = util.SafeStringDatasource(plan.UpdateAccountCommand.ValueStringPointer())
+	plan.CreateGroupCommand = util.SafeStringDatasource(plan.CreateGroupCommand.ValueStringPointer())
+	plan.DeleteGroupCommand = util.SafeStringDatasource(plan.DeleteGroupCommand.ValueStringPointer())
+	plan.AddGroupOwnerCommand = util.SafeStringDatasource(plan.AddGroupOwnerCommand.ValueStringPointer())
+	plan.AddPrimaryGroupCommand = util.SafeStringDatasource(plan.AddPrimaryGroupCommand.ValueStringPointer())
+	plan.FirefighterGrantAccessCommand = util.SafeStringDatasource(plan.FirefighterGrantAccessCommand.ValueStringPointer())
+	plan.FirefighterRevokeAccessCmd = util.SafeStringDatasource(plan.FirefighterRevokeAccessCmd.ValueStringPointer())
+	plan.InactiveLockAccount = util.SafeStringDatasource(plan.InactiveLockAccount.ValueStringPointer())
+	plan.StatusThresholdConfig = util.SafeStringDatasource(plan.StatusThresholdConfig.ValueStringPointer())
+	plan.CustomConfigJSON = util.SafeStringDatasource(plan.CustomConfigJSON.ValueStringPointer())
+	plan.LockAccountCommand = util.SafeStringDatasource(plan.LockAccountCommand.ValueStringPointer())
+	plan.UnlockAccountCommand = util.SafeStringDatasource(plan.UnlockAccountCommand.ValueStringPointer())
+	plan.PassThroughConnectionDetails = util.SafeStringDatasource(plan.PassThroughConnectionDetails.ValueStringPointer())
+	plan.Msg = types.StringValue(util.SafeDeref(apiResp.Msg))
+	plan.ErrorCode = types.StringValue(util.SafeDeref(apiResp.ErrorCode))
+}
+
+func (r *UnixConnectionResource) CreateUnixConnection(ctx context.Context, plan *UnixConnectorResourceModel, config *UnixConnectorResourceModel) (*openapi.CreateOrUpdateResponse, error) {
+	connectionName := plan.ConnectionName.ValueString()
+	opCtx := errorsutil.CreateOperationContext(errorsutil.ConnectorTypeUnix, "create", connectionName)
+
+	// Create logging context (separate from API context)
+	logCtx := opCtx.AddContextToLogger(ctx)
+
+	opCtx.LogOperationStart(logCtx, "Starting Unix connection creation")
+
+	// Use the factory to create connection operations
+	connectionOps := r.connectionFactory.CreateConnectionOperations(r.client.APIBaseURL(), r.token)
+
+	// Check if connection already exists (idempotency check)
+	tflog.Debug(logCtx, "Checking if connection already exists")
+
+	// Use original context for API calls to maintain test compatibility
+	existingResource, _, _ := connectionOps.GetConnectionDetails(ctx, connectionName)
+	if existingResource != nil &&
+		existingResource.UNIXConnectionResponse != nil &&
+		existingResource.UNIXConnectionResponse.Errorcode != nil &&
+		*existingResource.UNIXConnectionResponse.Errorcode == 0 {
+
+		errorCode := unixErrorCodes.DuplicateName()
+		opCtx.LogOperationError(ctx, "Connection name already exists.Please import or use a different name", errorCode,
+			fmt.Errorf("duplicate connection name"))
+		return nil, errorsutil.CreateStandardError(errorsutil.ConnectorTypeUnix, errorCode, "create", connectionName, nil)
+	}
+
+	// Build Unix connection create request
+	tflog.Debug(ctx, "Building Unix connection create request")
+
+	unixConn := r.BuildUnixConnector(plan, config)
+	createReq := openapi.CreateOrUpdateRequest{
+		UNIXConnector: &unixConn,
+	}
+
+	// Execute create operation through interface
+	tflog.Debug(ctx, "Executing create operation")
+
+	apiResp, _, err := connectionOps.CreateOrUpdateConnection(ctx, createReq)
+	if err != nil {
+		errorCode := unixErrorCodes.CreateFailed()
+		opCtx.LogOperationError(ctx, "Failed to create Unix connection", errorCode, err)
+		return nil, errorsutil.CreateStandardError(errorsutil.ConnectorTypeUnix, errorCode, "create", connectionName, err)
+	}
+
+	if apiResp != nil && *apiResp.ErrorCode != "0" {
+		apiErr := fmt.Errorf("API returned error code %s: %s", *apiResp.ErrorCode, errorsutil.SanitizeMessage(apiResp.Msg))
+		errorCode := unixErrorCodes.APIError()
+		opCtx.LogOperationError(ctx, "Unix connection creation failed with API error", errorCode, apiErr,
+			map[string]interface{}{
+				"api_error_code": *apiResp.ErrorCode,
+				"message":        errorsutil.SanitizeMessage(apiResp.Msg),
+			})
+		return nil, errorsutil.CreateStandardError(errorsutil.ConnectorTypeUnix, errorCode, "create", connectionName, apiErr)
+	}
+
+	opCtx.LogOperationEnd(logCtx, "Unix connection created successfully",
+		map[string]interface{}{"connection_key": func() interface{} {
+			if apiResp.ConnectionKey != nil {
+				return *apiResp.ConnectionKey
+			}
+			return "unknown"
+		}()})
+
+	return apiResp, nil
+}
+
+func (r *UnixConnectionResource) ReadUnixConnection(ctx context.Context, connectionName string) (*openapi.GetConnectionDetailsResponse, error) {
+	opCtx := errorsutil.CreateOperationContext(errorsutil.ConnectorTypeUnix, "read", connectionName)
+
+	// Create logging context (separate from API context)
+	logCtx := opCtx.AddContextToLogger(ctx)
+
+	opCtx.LogOperationStart(logCtx, "Starting Unix connection read operation")
+
+	// Use the factory to create connection operations
+	connectionOps := r.connectionFactory.CreateConnectionOperations(r.client.APIBaseURL(), r.token)
+
+	// Execute read operation through interface - use original context for API calls
+	apiResp, _, err := connectionOps.GetConnectionDetails(ctx, connectionName)
+	if err != nil {
+		errorCode := unixErrorCodes.ReadFailed()
+		opCtx.LogOperationError(logCtx, "Failed to read Unix connection", errorCode, err)
+		return nil, errorsutil.CreateStandardError(errorsutil.ConnectorTypeUnix, errorCode, "read", connectionName, err)
+	}
+
+	if apiResp != nil && apiResp.UNIXConnectionResponse != nil && *apiResp.UNIXConnectionResponse.Errorcode != 0 {
+		apiErr := fmt.Errorf("API returned error code %d: %s", *apiResp.UNIXConnectionResponse.Errorcode, errorsutil.SanitizeMessage(apiResp.UNIXConnectionResponse.Msg))
+		errorCode := unixErrorCodes.APIError()
+		opCtx.LogOperationError(ctx, "Unix connection read failed with API error", errorCode, apiErr,
+			map[string]interface{}{
+				"api_error_code": *apiResp.UNIXConnectionResponse.Errorcode,
+				"message":        errorsutil.SanitizeMessage(apiResp.UNIXConnectionResponse.Msg),
+			})
+		return nil, errorsutil.CreateStandardError(errorsutil.ConnectorTypeUnix, errorCode, "read", connectionName, apiErr)
+	}
+
+	opCtx.LogOperationEnd(logCtx, "Unix connection read completed successfully",
+		map[string]interface{}{"connection_key": func() interface{} {
+			if apiResp.UNIXConnectionResponse != nil && apiResp.UNIXConnectionResponse.Connectionkey != nil {
+				return *apiResp.UNIXConnectionResponse.Connectionkey
+			}
+			return "unknown"
+		}()})
+
+	return apiResp, nil
+}
+
+func (r *UnixConnectionResource) UpdateModelFromReadResponse(state *UnixConnectorResourceModel, apiResp *openapi.GetConnectionDetailsResponse) {
+	state.ConnectionKey = types.Int64Value(int64(*apiResp.UNIXConnectionResponse.Connectionkey))
+	state.ID = types.StringValue(fmt.Sprintf("%d", *apiResp.UNIXConnectionResponse.Connectionkey))
+	state.ConnectionName = util.SafeStringDatasource(apiResp.UNIXConnectionResponse.Connectionname)
+	state.Description = util.SafeStringDatasource(apiResp.UNIXConnectionResponse.Description)
+	state.DefaultSavRoles = util.SafeStringDatasource(apiResp.UNIXConnectionResponse.Defaultsavroles)
+	state.EmailTemplate = util.SafeStringDatasource(apiResp.UNIXConnectionResponse.Emailtemplate)
+
+	// Map Unix-specific connection attributes
+	if apiResp.UNIXConnectionResponse.Connectionattributes != nil {
+		state.HostName = util.SafeStringDatasource(apiResp.UNIXConnectionResponse.Connectionattributes.HOST_NAME)
+		state.PortNumber = util.SafeStringDatasource(apiResp.UNIXConnectionResponse.Connectionattributes.PORT_NUMBER)
+		state.Username = util.SafeStringDatasource(apiResp.UNIXConnectionResponse.Connectionattributes.USERNAME)
+		state.GroupsFile = util.SafeStringDatasource(apiResp.UNIXConnectionResponse.Connectionattributes.GROUPS_FILE)
+		state.AccountsFile = util.SafeStringDatasource(apiResp.UNIXConnectionResponse.Connectionattributes.ACCOUNTS_FILE)
+		state.ShadowFile = util.SafeStringDatasource(apiResp.UNIXConnectionResponse.Connectionattributes.SHADOW_FILE)
+		state.ProvisionAccountCommand = util.SafeStringDatasource(apiResp.UNIXConnectionResponse.Connectionattributes.PROVISION_ACCOUNT_COMMAND)
+		state.DeprovisionAccountCommand = util.SafeStringDatasource(apiResp.UNIXConnectionResponse.Connectionattributes.DEPROVISION_ACCOUNT_COMMAND)
+		state.AddAccessCommand = util.SafeStringDatasource(apiResp.UNIXConnectionResponse.Connectionattributes.ADD_ACCESS_COMMAND)
+		state.RemoveAccessCommand = util.SafeStringDatasource(apiResp.UNIXConnectionResponse.Connectionattributes.REMOVE_ACCESS_COMMAND)
+		state.ChangePasswordJSON = util.SafeStringDatasource(apiResp.UNIXConnectionResponse.Connectionattributes.CHANGE_PASSWRD_JSON)
+		state.PemKeyFile = util.SafeStringDatasource(apiResp.UNIXConnectionResponse.Connectionattributes.PEM_KEY_FILE)
+		state.EnableAccountCommand = util.SafeStringDatasource(apiResp.UNIXConnectionResponse.Connectionattributes.ENABLE_ACCOUNT_COMMAND)
+		state.DisableAccountCommand = util.SafeStringDatasource(apiResp.UNIXConnectionResponse.Connectionattributes.DISABLE_ACCOUNT_COMMAND)
+		state.AccountEntitlementMappingCmd = util.SafeStringDatasource(apiResp.UNIXConnectionResponse.Connectionattributes.ACCOUNT_ENTITLEMENT_MAPPING_COMMAND)
+		state.UpdateAccountCommand = util.SafeStringDatasource(apiResp.UNIXConnectionResponse.Connectionattributes.UPDATE_ACCOUNT_COMMAND)
+		state.CreateGroupCommand = util.SafeStringDatasource(apiResp.UNIXConnectionResponse.Connectionattributes.CREATE_GROUP_COMMAND)
+		state.DeleteGroupCommand = util.SafeStringDatasource(apiResp.UNIXConnectionResponse.Connectionattributes.DELETE_GROUP_COMMAND)
+		state.AddGroupOwnerCommand = util.SafeStringDatasource(apiResp.UNIXConnectionResponse.Connectionattributes.ADD_GROUP_OWNER_COMMAND)
+		state.AddPrimaryGroupCommand = util.SafeStringDatasource(apiResp.UNIXConnectionResponse.Connectionattributes.ADD_PRIMARY_GROUP_COMMAND)
+		state.FirefighterGrantAccessCommand = util.SafeStringDatasource(apiResp.UNIXConnectionResponse.Connectionattributes.FIREFIGHTERID_GRANT_ACCESS_COMMAND)
+		state.FirefighterRevokeAccessCmd = util.SafeStringDatasource(apiResp.UNIXConnectionResponse.Connectionattributes.FIREFIGHTERID_REVOKE_ACCESS_COMMAND)
+		state.InactiveLockAccount = util.SafeStringDatasource(apiResp.UNIXConnectionResponse.Connectionattributes.INACTIVE_LOCK_ACCOUNT)
+		state.StatusThresholdConfig = util.SafeStringDatasource(apiResp.UNIXConnectionResponse.Connectionattributes.STATUS_THRESHOLD_CONFIG)
+		state.CustomConfigJSON = util.SafeStringDatasource(apiResp.UNIXConnectionResponse.Connectionattributes.CUSTOM_CONFIG_JSON)
+		state.LockAccountCommand = util.SafeStringDatasource(apiResp.UNIXConnectionResponse.Connectionattributes.LOCK_ACCOUNT_COMMAND)
+		state.UnlockAccountCommand = util.SafeStringDatasource(apiResp.UNIXConnectionResponse.Connectionattributes.UNLOCK_ACCOUNT_COMMAND)
+		state.PassThroughConnectionDetails = util.SafeStringDatasource(apiResp.UNIXConnectionResponse.Connectionattributes.PassThroughConnectionDetails)
+	}
+
+	// Handle API message
+	apiMessage := util.SafeDeref(apiResp.UNIXConnectionResponse.Msg)
+	if apiMessage == "success" {
+		state.Msg = types.StringValue("Connection Successful")
+	} else {
+		state.Msg = types.StringValue(apiMessage)
+	}
+	state.ErrorCode = util.Int32PtrToTFString(apiResp.UNIXConnectionResponse.Errorcode)
+}
+
+func (r *UnixConnectionResource) UpdateUnixConnection(ctx context.Context, plan *UnixConnectorResourceModel, config *UnixConnectorResourceModel) (*openapi.CreateOrUpdateResponse, error) {
+	connectionName := plan.ConnectionName.ValueString()
+	opCtx := errorsutil.CreateOperationContext(errorsutil.ConnectorTypeUnix, "update", connectionName)
+
+	// Create logging context (separate from API context)
+	logCtx := opCtx.AddContextToLogger(ctx)
+
+	opCtx.LogOperationStart(logCtx, "Starting Unix connection update")
+
+	// Use the factory to create connection operations
+	connectionOps := r.connectionFactory.CreateConnectionOperations(r.client.APIBaseURL(), r.token)
+
+	// Build Unix connection update request
+	tflog.Debug(logCtx, "Building Unix connection update request")
+
+	unixConn := r.BuildUnixConnector(plan, config)
+	if plan.VaultConnection.ValueString() == "" {
+		emptyStr := ""
+		unixConn.BaseConnector.VaultConnection = &emptyStr
+		unixConn.BaseConnector.VaultConfiguration = &emptyStr
+		unixConn.BaseConnector.Saveinvault = &emptyStr
+	}
+
+	updateReq := openapi.CreateOrUpdateRequest{
+		UNIXConnector: &unixConn,
+	}
+
+	// Execute update operation through interface
+	tflog.Debug(logCtx, "Executing update operation")
+
+	// Use original context for API calls to maintain test compatibility
+	apiResp, _, err := connectionOps.CreateOrUpdateConnection(ctx, updateReq)
+	if err != nil {
+		errorCode := unixErrorCodes.UpdateFailed()
+		opCtx.LogOperationError(logCtx, "Failed to update Unix connection", errorCode, err)
+		return nil, errorsutil.CreateStandardError(errorsutil.ConnectorTypeUnix, errorCode, "update", connectionName, err)
+	}
+
+	if apiResp != nil && *apiResp.ErrorCode != "0" {
+		apiErr := fmt.Errorf("API returned error code %s: %s", *apiResp.ErrorCode, errorsutil.SanitizeMessage(apiResp.Msg))
+		errorCode := unixErrorCodes.APIError()
+		opCtx.LogOperationError(logCtx, "Unix connection update failed with API error", errorCode, apiErr,
+			map[string]interface{}{
+				"api_error_code": *apiResp.ErrorCode,
+				"message":        errorsutil.SanitizeMessage(apiResp.Msg),
+			})
+		return nil, errorsutil.CreateStandardError(errorsutil.ConnectorTypeUnix, errorCode, "update", connectionName, apiErr)
+	}
+
+	opCtx.LogOperationEnd(logCtx, "Unix connection updated successfully",
+		map[string]interface{}{"connection_key": func() interface{} {
+			if apiResp.ConnectionKey != nil {
+				return *apiResp.ConnectionKey
+			}
+			return "unknown"
+		}()})
+
+	return apiResp, nil
 }
 
 func UnixConnectorResourceSchema() map[string]schema.Attribute {
@@ -261,415 +597,272 @@ func UnixConnectorResourceSchema() map[string]schema.Attribute {
 	}
 }
 
-func (r *unixConnectionResource) Schema(ctx context.Context, req resource.SchemaRequest, resp *resource.SchemaResponse) {
+func (r *UnixConnectionResource) Schema(ctx context.Context, req resource.SchemaRequest, resp *resource.SchemaResponse) {
 	resp.Schema = schema.Schema{
 		Description: util.UnixConnDescription,
 		Attributes:  connectionsutil.MergeResourceAttributes(BaseConnectorResourceSchema(), UnixConnectorResourceSchema()),
 	}
 }
 
-func (r *unixConnectionResource) Configure(ctx context.Context, req resource.ConfigureRequest, resp *resource.ConfigureResponse) {
+func (r *UnixConnectionResource) Configure(ctx context.Context, req resource.ConfigureRequest, resp *resource.ConfigureResponse) {
+	opCtx := errorsutil.CreateOperationContext(errorsutil.ConnectorTypeUnix, "configure", "")
+	ctx = opCtx.AddContextToLogger(ctx)
+
+	opCtx.LogOperationStart(ctx, "Starting Unix connection resource configuration")
+
 	// Check if provider data is available.
 	if req.ProviderData == nil {
-		log.Println("ProviderData is nil, returning early.")
+		tflog.Debug(ctx, "ProviderData is nil, returning early")
+		opCtx.LogOperationEnd(ctx, "Unix connection resource configuration completed - no provider data")
 		return
 	}
 
 	// Cast provider data to your provider type.
 	prov, ok := req.ProviderData.(*saviyntProvider)
 	if !ok {
-		resp.Diagnostics.AddError("Unexpected Provider Data", "Expected *saviyntProvider")
+		errorCode := unixErrorCodes.ProviderConfig()
+		opCtx.LogOperationError(ctx, "Provider configuration failed", errorCode,
+			fmt.Errorf("expected *saviyntProvider, got different type"),
+			map[string]interface{}{"expected_type": "*saviyntProvider"})
+
+		resp.Diagnostics.AddError(
+			errorsutil.GetErrorMessage(errorsutil.ErrProviderConfig),
+			fmt.Sprintf("[%s] Expected *saviyntProvider, got different type", errorCode),
+		)
 		return
 	}
 
-	// Set the client and token from the provider state.
-	r.client = prov.client
+	// Set the client and token from the provider state using interface wrapper.
+	r.client = &client.SaviyntClientWrapper{Client: prov.client}
 	r.token = prov.accessToken
+
+	opCtx.LogOperationEnd(ctx, "Unix connection resource configured successfully")
 }
 
-func (r *unixConnectionResource) Create(ctx context.Context, req resource.CreateRequest, resp *resource.CreateResponse) {
+func (r *UnixConnectionResource) Create(ctx context.Context, req resource.CreateRequest, resp *resource.CreateResponse) {
 	var plan, config UnixConnectorResourceModel
+
+	opCtx := errorsutil.CreateOperationContext(errorsutil.ConnectorTypeUnix, "terraform_create", "")
+	ctx = opCtx.AddContextToLogger(ctx)
+
+	opCtx.LogOperationStart(ctx, "Starting Unix connection resource creation")
+
 	// Extract plan from request
 	resp.Diagnostics.Append(req.Plan.Get(ctx, &plan)...)
 	if resp.Diagnostics.HasError() {
+		errorCode := unixErrorCodes.PlanExtraction()
+		opCtx.LogOperationError(ctx, "Failed to get plan from request", errorCode,
+			fmt.Errorf("plan extraction failed"))
+		resp.Diagnostics.AddError(
+			errorsutil.GetErrorMessage(errorsutil.ErrPlanExtraction),
+			fmt.Sprintf("[%s] Unable to extract Terraform plan from request", errorCode),
+		)
 		return
 	}
+
+	connectionName := plan.ConnectionName.ValueString()
+	// Update operation context with connection name
+	opCtx.ConnectionName = connectionName
+	ctx = opCtx.AddContextToLogger(ctx)
+
 	//Extract config from request
 	resp.Diagnostics.Append(req.Config.Get(ctx, &config)...)
 	if resp.Diagnostics.HasError() {
-		return
-	}
-	cfg := openapi.NewConfiguration()
-	apiBaseURL := strings.TrimPrefix(strings.TrimPrefix(r.client.APIBaseURL(), "https://"), "http://")
-	cfg.Host = apiBaseURL
-	cfg.Scheme = "https"
-	cfg.AddDefaultHeader("Authorization", "Bearer "+r.token)
-	cfg.HTTPClient = http.DefaultClient
-	apiClient := openapi.NewAPIClient(cfg)
-
-	reqParams := openapi.GetConnectionDetailsRequest{}
-	reqParams.SetConnectionname(plan.ConnectionName.ValueString())
-	// reqParams.SetConnectionkey(state.ConnectionKey.String())
-	existingResource, _, _ := apiClient.ConnectionsAPI.GetConnectionDetails(ctx).GetConnectionDetailsRequest(reqParams).Execute()
-	if existingResource != nil && existingResource.UNIXConnectionResponse != nil && existingResource.UNIXConnectionResponse.Errorcode != nil && *existingResource.UNIXConnectionResponse.Errorcode == 0 {
-		log.Printf("[ERROR] Connection name already exists. Please import or use a different name")
-		resp.Diagnostics.AddError("API Create Failed", "Connection name already exists. Please import or use a different name")
+		errorCode := unixErrorCodes.ConfigExtraction()
+		opCtx.LogOperationError(ctx, "Failed to get config from request", errorCode,
+			fmt.Errorf("config extraction failed"))
+		resp.Diagnostics.AddError(
+			errorsutil.GetErrorMessage(errorsutil.ErrConfigExtraction),
+			fmt.Sprintf("[%s] Unable to extract Terraform configuration from request for connection '%s'", errorCode, connectionName),
+		)
 		return
 	}
 
-	unixConn := openapi.UNIXConnector{
-		BaseConnector: openapi.BaseConnector{
-			//required values
-			Connectiontype: "Unix",
-			ConnectionName: plan.ConnectionName.ValueString(),
-			//optional values
-			Description:     util.StringPointerOrEmpty(plan.Description),
-			Defaultsavroles: util.StringPointerOrEmpty(plan.DefaultSavRoles),
-			EmailTemplate:   util.StringPointerOrEmpty(plan.EmailTemplate),
-		},
-		//required values
-		HOST_NAME:   plan.HostName.ValueString(),
-		PORT_NUMBER: plan.PortNumber.ValueString(),
-		USERNAME:    config.Username.ValueString(),
-		//optional values
-		PASSWORD:                            util.StringPointerOrEmpty(config.Password),
-		GROUPS_FILE:                         util.StringPointerOrEmpty(plan.GroupsFile),
-		ACCOUNTS_FILE:                       util.StringPointerOrEmpty(plan.AccountsFile),
-		SHADOW_FILE:                         util.StringPointerOrEmpty(plan.ShadowFile),
-		PROVISION_ACCOUNT_COMMAND:           util.StringPointerOrEmpty(plan.ProvisionAccountCommand),
-		DEPROVISION_ACCOUNT_COMMAND:         util.StringPointerOrEmpty(plan.DeprovisionAccountCommand),
-		ADD_ACCESS_COMMAND:                  util.StringPointerOrEmpty(plan.AddAccessCommand),
-		REMOVE_ACCESS_COMMAND:               util.StringPointerOrEmpty(plan.RemoveAccessCommand),
-		CHANGE_PASSWRD_JSON:                 util.StringPointerOrEmpty(config.ChangePasswordJSON),
-		PEM_KEY_FILE:                        util.StringPointerOrEmpty(plan.PemKeyFile),
-		ENABLE_ACCOUNT_COMMAND:              util.StringPointerOrEmpty(plan.EnableAccountCommand),
-		DISABLE_ACCOUNT_COMMAND:             util.StringPointerOrEmpty(plan.DisableAccountCommand),
-		ACCOUNT_ENTITLEMENT_MAPPING_COMMAND: util.StringPointerOrEmpty(plan.AccountEntitlementMappingCmd),
-		PASSPHRASE:                          util.StringPointerOrEmpty(config.Passphrase),
-		UPDATE_ACCOUNT_COMMAND:              util.StringPointerOrEmpty(plan.UpdateAccountCommand),
-		CREATE_GROUP_COMMAND:                util.StringPointerOrEmpty(plan.CreateGroupCommand),
-		DELETE_GROUP_COMMAND:                util.StringPointerOrEmpty(plan.DeleteGroupCommand),
-		ADD_GROUP_OWNER_COMMAND:             util.StringPointerOrEmpty(plan.AddGroupOwnerCommand),
-		ADD_PRIMARY_GROUP_COMMAND:           util.StringPointerOrEmpty(plan.AddPrimaryGroupCommand),
-		FIREFIGHTERID_GRANT_ACCESS_COMMAND:  util.StringPointerOrEmpty(plan.FirefighterGrantAccessCommand),
-		FIREFIGHTERID_REVOKE_ACCESS_COMMAND: util.StringPointerOrEmpty(plan.FirefighterRevokeAccessCmd),
-		INACTIVE_LOCK_ACCOUNT:               util.StringPointerOrEmpty(plan.InactiveLockAccount),
-		STATUS_THRESHOLD_CONFIG:             util.StringPointerOrEmpty(plan.StatusThresholdConfig),
-		CUSTOM_CONFIG_JSON:                  util.StringPointerOrEmpty(plan.CustomConfigJSON),
-		SSH_KEY:                             util.StringPointerOrEmpty(config.SSHKey),
-		LOCK_ACCOUNT_COMMAND:                util.StringPointerOrEmpty(plan.LockAccountCommand),
-		UNLOCK_ACCOUNT_COMMAND:              util.StringPointerOrEmpty(plan.UnlockAccountCommand),
-		PassThroughConnectionDetails:        util.StringPointerOrEmpty(plan.PassThroughConnectionDetails),
-		SSHPassThroughPassword:              util.StringPointerOrEmpty(config.SSHPassThroughPassword),
-		SSHPassThroughSSHKEY:                util.StringPointerOrEmpty(config.SSHPassThroughSSHKEY),
-		SSHPassThroughPassphrase:            util.StringPointerOrEmpty(config.SSHPassThroughPassphrase),
-	}
-	if plan.VaultConnection.ValueString() != "" {
-		unixConn.BaseConnector.VaultConnection = util.SafeStringConnector(plan.VaultConnection.ValueString())
-		unixConn.BaseConnector.VaultConfiguration = util.SafeStringConnector(plan.VaultConfiguration.ValueString())
-		unixConn.BaseConnector.Saveinvault = util.SafeStringConnector(plan.SaveInVault.ValueString())
-	}
-	unixRequest := openapi.CreateOrUpdateRequest{
-		UNIXConnector: &unixConn,
-	}
-
-	apiResp, _, err := apiClient.ConnectionsAPI.CreateOrUpdate(ctx).CreateOrUpdateRequest(unixRequest).Execute()
+	// Use interface pattern instead of direct API client creation
+	apiResp, err := r.CreateUnixConnection(ctx, &plan, &config)
 	if err != nil {
-		log.Printf("[ERROR] Failed to create API resource. Error: %v", err)
-		resp.Diagnostics.AddError("API Create Failed", fmt.Sprintf("Error: %v", err))
-		return
-	}
-	if apiResp != nil && *apiResp.ErrorCode != "0" {
-		log.Printf("[ERROR]: Error in creating Unix connection resource. Errorcode: %v, Message: %v", *apiResp.ErrorCode, *apiResp.Msg)
-		resp.Diagnostics.AddError("Creation of Unix connection failed", *apiResp.Msg)
+		opCtx.LogOperationError(ctx, "Unix connection creation failed", "", err)
+		resp.Diagnostics.AddError(
+			"Unix Connection Creation Failed",
+			err.Error(),
+		)
 		return
 	}
 
-	plan.ID = types.StringValue(fmt.Sprintf("%d", *apiResp.ConnectionKey))
-	plan.ConnectionKey = types.Int64Value(int64(*apiResp.ConnectionKey))
-	plan.Description = util.SafeStringDatasource(plan.Description.ValueStringPointer())
-	plan.DefaultSavRoles = util.SafeStringDatasource(plan.DefaultSavRoles.ValueStringPointer())
-	plan.EmailTemplate = util.SafeStringDatasource(plan.EmailTemplate.ValueStringPointer())
-	plan.HostName = util.SafeStringDatasource(plan.HostName.ValueStringPointer())
-	plan.PortNumber = util.SafeStringDatasource(plan.PortNumber.ValueStringPointer())
-	plan.Username = util.SafeStringDatasource(plan.Username.ValueStringPointer())
-	plan.GroupsFile = util.SafeStringDatasource(plan.GroupsFile.ValueStringPointer())
-	plan.AccountsFile = util.SafeStringDatasource(plan.AccountsFile.ValueStringPointer())
-	plan.ShadowFile = util.SafeStringDatasource(plan.ShadowFile.ValueStringPointer())
-	plan.ProvisionAccountCommand = util.SafeStringDatasource(plan.ProvisionAccountCommand.ValueStringPointer())
-	plan.DeprovisionAccountCommand = util.SafeStringDatasource(plan.DeprovisionAccountCommand.ValueStringPointer())
-	plan.AddAccessCommand = util.SafeStringDatasource(plan.AddAccessCommand.ValueStringPointer())
-	plan.RemoveAccessCommand = util.SafeStringDatasource(plan.RemoveAccessCommand.ValueStringPointer())
-	plan.ChangePasswordJSON = util.SafeStringDatasource(plan.ChangePasswordJSON.ValueStringPointer())
-	plan.PemKeyFile = util.SafeStringDatasource(plan.PemKeyFile.ValueStringPointer())
-	plan.EnableAccountCommand = util.SafeStringDatasource(plan.EnableAccountCommand.ValueStringPointer())
-	plan.DisableAccountCommand = util.SafeStringDatasource(plan.DisableAccountCommand.ValueStringPointer())
-	plan.AccountEntitlementMappingCmd = util.SafeStringDatasource(plan.AccountEntitlementMappingCmd.ValueStringPointer())
-	plan.UpdateAccountCommand = util.SafeStringDatasource(plan.UpdateAccountCommand.ValueStringPointer())
-	plan.CreateGroupCommand = util.SafeStringDatasource(plan.CreateGroupCommand.ValueStringPointer())
-	plan.DeleteGroupCommand = util.SafeStringDatasource(plan.DeleteGroupCommand.ValueStringPointer())
-	plan.AddGroupOwnerCommand = util.SafeStringDatasource(plan.AddGroupOwnerCommand.ValueStringPointer())
-	plan.AddPrimaryGroupCommand = util.SafeStringDatasource(plan.AddPrimaryGroupCommand.ValueStringPointer())
-	plan.FirefighterGrantAccessCommand = util.SafeStringDatasource(plan.FirefighterGrantAccessCommand.ValueStringPointer())
-	plan.FirefighterRevokeAccessCmd = util.SafeStringDatasource(plan.FirefighterRevokeAccessCmd.ValueStringPointer())
-	plan.InactiveLockAccount = util.SafeStringDatasource(plan.InactiveLockAccount.ValueStringPointer())
-	plan.StatusThresholdConfig = util.SafeStringDatasource(plan.StatusThresholdConfig.ValueStringPointer())
-	plan.CustomConfigJSON = util.SafeStringDatasource(plan.CustomConfigJSON.ValueStringPointer())
-	plan.LockAccountCommand = util.SafeStringDatasource(plan.LockAccountCommand.ValueStringPointer())
-	plan.UnlockAccountCommand = util.SafeStringDatasource(plan.UnlockAccountCommand.ValueStringPointer())
-	plan.PassThroughConnectionDetails = util.SafeStringDatasource(plan.PassThroughConnectionDetails.ValueStringPointer())
-	plan.Msg = types.StringValue(util.SafeDeref(apiResp.Msg))
-	plan.ErrorCode = types.StringValue(util.SafeDeref(apiResp.ErrorCode))
+	// Update model from create response
+	r.UpdateModelFromCreateResponse(&plan, apiResp)
 	resp.Diagnostics.Append(resp.State.Set(ctx, &plan)...)
+
+	opCtx.LogOperationEnd(ctx, "Unix connection resource created successfully",
+		map[string]interface{}{"connection_key": plan.ConnectionKey.ValueInt64()})
 }
 
-func (r *unixConnectionResource) Read(ctx context.Context, req resource.ReadRequest, resp *resource.ReadResponse) {
+func (r *UnixConnectionResource) Read(ctx context.Context, req resource.ReadRequest, resp *resource.ReadResponse) {
 	var state UnixConnectorResourceModel
+
+	opCtx := errorsutil.CreateOperationContext(errorsutil.ConnectorTypeUnix, "terraform_read", "")
+	ctx = opCtx.AddContextToLogger(ctx)
+
+	opCtx.LogOperationStart(ctx, "Starting Unix connection resource read")
 
 	resp.Diagnostics.Append(req.State.Get(ctx, &state)...)
 	if resp.Diagnostics.HasError() {
-		log.Println("Diagnostics contain errors, returning early.")
+		errorCode := unixErrorCodes.StateExtraction()
+		opCtx.LogOperationError(ctx, "Failed to get state from request", errorCode,
+			fmt.Errorf("state extraction failed"))
+		resp.Diagnostics.AddError(
+			errorsutil.GetErrorMessage(errorsutil.ErrStateExtraction),
+			fmt.Sprintf("[%s] Unable to extract Terraform state from request", errorCode),
+		)
 		return
 	}
 
-	// Configure API client
-	cfg := openapi.NewConfiguration()
-	apiBaseURL := strings.TrimPrefix(strings.TrimPrefix(r.client.APIBaseURL(), "https://"), "http://")
-	cfg.Host = apiBaseURL
-	cfg.Scheme = "https"
-	cfg.AddDefaultHeader("Authorization", "Bearer "+r.token)
-	cfg.HTTPClient = http.DefaultClient
+	connectionName := state.ConnectionName.ValueString()
+	// Update operation context with connection name
+	opCtx.ConnectionName = connectionName
+	ctx = opCtx.AddContextToLogger(ctx)
 
-	apiClient := openapi.NewAPIClient(cfg)
-	reqParams := openapi.GetConnectionDetailsRequest{}
-	reqParams.SetConnectionname(state.ConnectionName.ValueString())
-	apiResp, _, err := apiClient.ConnectionsAPI.GetConnectionDetails(ctx).GetConnectionDetailsRequest(reqParams).Execute()
+	// Use interface pattern instead of direct API client creation
+	apiResp, err := r.ReadUnixConnection(ctx, connectionName)
 	if err != nil {
-		log.Printf("Problem with the get function in read block")
-		resp.Diagnostics.AddError("API Read Failed", fmt.Sprintf("Error: %v", err))
-		return
-	}
-	if apiResp != nil && apiResp.UNIXConnectionResponse != nil && *apiResp.UNIXConnectionResponse.Errorcode != 0 {
-		log.Printf("[ERROR]: Error in reading Unix connection resource. Errorcode: %v, Message: %v", *apiResp.UNIXConnectionResponse.Errorcode, *apiResp.UNIXConnectionResponse.Msg)
-		resp.Diagnostics.AddError("Reading Unix connection resource failed", *apiResp.UNIXConnectionResponse.Msg)
+		opCtx.LogOperationError(ctx, "Unix connection read failed", "", err)
+		resp.Diagnostics.AddError(
+			"Unix Connection Read Failed",
+			err.Error(),
+		)
 		return
 	}
 
-	state.ConnectionKey = types.Int64Value(int64(*apiResp.UNIXConnectionResponse.Connectionkey))
-	state.ID = types.StringValue(fmt.Sprintf("%d", *apiResp.UNIXConnectionResponse.Connectionkey))
-	state.ConnectionName = util.SafeStringDatasource(apiResp.UNIXConnectionResponse.Connectionname)
-	state.Description = util.SafeStringDatasource(apiResp.UNIXConnectionResponse.Description)
-	state.DefaultSavRoles = util.SafeStringDatasource(apiResp.UNIXConnectionResponse.Defaultsavroles)
-	state.EmailTemplate = util.SafeStringDatasource(apiResp.UNIXConnectionResponse.Emailtemplate)
-	state.GroupsFile = util.SafeStringDatasource(apiResp.UNIXConnectionResponse.Connectionattributes.GROUPS_FILE)
-	state.AccountEntitlementMappingCmd = util.SafeStringDatasource(apiResp.UNIXConnectionResponse.Connectionattributes.ACCOUNT_ENTITLEMENT_MAPPING_COMMAND)
-	state.RemoveAccessCommand = util.SafeStringDatasource(apiResp.UNIXConnectionResponse.Connectionattributes.REMOVE_ACCESS_COMMAND)
-	state.PemKeyFile = util.SafeStringDatasource(apiResp.UNIXConnectionResponse.Connectionattributes.PEM_KEY_FILE)
-	state.PassThroughConnectionDetails = util.SafeStringDatasource(apiResp.UNIXConnectionResponse.Connectionattributes.PassThroughConnectionDetails)
-	state.DisableAccountCommand = util.SafeStringDatasource(apiResp.UNIXConnectionResponse.Connectionattributes.DISABLE_ACCOUNT_COMMAND)
-	state.PortNumber = util.SafeStringDatasource(apiResp.UNIXConnectionResponse.Connectionattributes.PORT_NUMBER)
-	state.CreateGroupCommand = util.SafeStringDatasource(apiResp.UNIXConnectionResponse.Connectionattributes.CREATE_GROUP_COMMAND)
-	state.AccountsFile = util.SafeStringDatasource(apiResp.UNIXConnectionResponse.Connectionattributes.ACCOUNTS_FILE)
-	state.DeleteGroupCommand = util.SafeStringDatasource(apiResp.UNIXConnectionResponse.Connectionattributes.DELETE_GROUP_COMMAND)
-	state.HostName = util.SafeStringDatasource(apiResp.UNIXConnectionResponse.Connectionattributes.HOST_NAME)
-	state.AddGroupOwnerCommand = util.SafeStringDatasource(apiResp.UNIXConnectionResponse.Connectionattributes.ADD_GROUP_OWNER_COMMAND)
-	state.StatusThresholdConfig = util.SafeStringDatasource(apiResp.UNIXConnectionResponse.Connectionattributes.STATUS_THRESHOLD_CONFIG)
-	state.Username = util.SafeStringDatasource(apiResp.UNIXConnectionResponse.Connectionattributes.USERNAME)
-	state.InactiveLockAccount = util.SafeStringDatasource(apiResp.UNIXConnectionResponse.Connectionattributes.INACTIVE_LOCK_ACCOUNT)
-	state.AddAccessCommand = util.SafeStringDatasource(apiResp.UNIXConnectionResponse.Connectionattributes.ADD_ACCESS_COMMAND)
-	state.UpdateAccountCommand = util.SafeStringDatasource(apiResp.UNIXConnectionResponse.Connectionattributes.UPDATE_ACCOUNT_COMMAND)
-	state.ShadowFile = util.SafeStringDatasource(apiResp.UNIXConnectionResponse.Connectionattributes.SHADOW_FILE)
-	state.ProvisionAccountCommand = util.SafeStringDatasource(apiResp.UNIXConnectionResponse.Connectionattributes.PROVISION_ACCOUNT_COMMAND)
-	state.FirefighterGrantAccessCommand = util.SafeStringDatasource(apiResp.UNIXConnectionResponse.Connectionattributes.FIREFIGHTERID_GRANT_ACCESS_COMMAND)
-	state.UnlockAccountCommand = util.SafeStringDatasource(apiResp.UNIXConnectionResponse.Connectionattributes.UNLOCK_ACCOUNT_COMMAND)
-	state.DeprovisionAccountCommand = util.SafeStringDatasource(apiResp.UNIXConnectionResponse.Connectionattributes.DEPROVISION_ACCOUNT_COMMAND)
-	state.ChangePasswordJSON = util.SafeStringDatasource(apiResp.UNIXConnectionResponse.Connectionattributes.CHANGE_PASSWRD_JSON)
-	state.FirefighterRevokeAccessCmd = util.SafeStringDatasource(apiResp.UNIXConnectionResponse.Connectionattributes.FIREFIGHTERID_REVOKE_ACCESS_COMMAND)
-	state.AddPrimaryGroupCommand = util.SafeStringDatasource(apiResp.UNIXConnectionResponse.Connectionattributes.ADD_PRIMARY_GROUP_COMMAND)
-	state.LockAccountCommand = util.SafeStringDatasource(apiResp.UNIXConnectionResponse.Connectionattributes.LOCK_ACCOUNT_COMMAND)
-	state.CustomConfigJSON = util.SafeStringDatasource(apiResp.UNIXConnectionResponse.Connectionattributes.CUSTOM_CONFIG_JSON)
-	state.EnableAccountCommand = util.SafeStringDatasource(apiResp.UNIXConnectionResponse.Connectionattributes.ENABLE_ACCOUNT_COMMAND)
-	apiMessage := util.SafeDeref(apiResp.UNIXConnectionResponse.Msg)
-	if apiMessage == "success" {
-		state.Msg = types.StringValue("Connection Successful")
-	} else {
-		state.Msg = types.StringValue(apiMessage)
-	}
-	state.ErrorCode = util.Int32PtrToTFString(apiResp.UNIXConnectionResponse.Errorcode)
+	// Update model from read response
+	r.UpdateModelFromReadResponse(&state, apiResp)
+
 	stateDiagnostics := resp.State.Set(ctx, &state)
 	resp.Diagnostics.Append(stateDiagnostics...)
 	if resp.Diagnostics.HasError() {
-		log.Println("Diagnostics contain errors, returning early.")
+		errorCode := unixErrorCodes.StateUpdate()
+		opCtx.LogOperationError(ctx, "Failed to set state", errorCode,
+			fmt.Errorf("state update failed"))
+		resp.Diagnostics.AddError(
+			errorsutil.GetErrorMessage(errorsutil.ErrStateUpdate),
+			fmt.Sprintf("[%s] Unable to update Terraform state for connection '%s'", errorCode, connectionName),
+		)
 		return
 	}
+
+	opCtx.LogOperationEnd(ctx, "Unix connection resource read completed successfully")
 }
 
-func (r *unixConnectionResource) Update(ctx context.Context, req resource.UpdateRequest, resp *resource.UpdateResponse) {
+func (r *UnixConnectionResource) Update(ctx context.Context, req resource.UpdateRequest, resp *resource.UpdateResponse) {
 	var plan, state, config UnixConnectorResourceModel
+
+	opCtx := errorsutil.CreateOperationContext(errorsutil.ConnectorTypeUnix, "terraform_update", "")
+	ctx = opCtx.AddContextToLogger(ctx)
+
+	opCtx.LogOperationStart(ctx, "Starting Unix connection resource update")
+
 	// Extract state from request
 	resp.Diagnostics.Append(req.State.Get(ctx, &state)...)
 	if resp.Diagnostics.HasError() {
+		errorCode := unixErrorCodes.StateExtraction()
+		opCtx.LogOperationError(ctx, "Failed to get state from request", errorCode,
+			fmt.Errorf("state extraction failed"))
+		resp.Diagnostics.AddError(
+			errorsutil.GetErrorMessage(errorsutil.ErrStateExtraction),
+			fmt.Sprintf("[%s] Unable to extract Terraform state from request", errorCode),
+		)
 		return
 	}
+
 	// Extract plan from request
 	resp.Diagnostics.Append(req.Plan.Get(ctx, &plan)...)
 	if resp.Diagnostics.HasError() {
+		errorCode := unixErrorCodes.PlanExtraction()
+		opCtx.LogOperationError(ctx, "Failed to get plan from request", errorCode,
+			fmt.Errorf("plan extraction failed"))
+		resp.Diagnostics.AddError(
+			errorsutil.GetErrorMessage(errorsutil.ErrPlanExtraction),
+			fmt.Sprintf("[%s] Unable to extract Terraform plan from request for connection '%s'", errorCode, state.ConnectionName.ValueString()),
+		)
 		return
 	}
+
 	//Extract config from request
 	resp.Diagnostics.Append(req.Config.Get(ctx, &config)...)
 	if resp.Diagnostics.HasError() {
+		errorCode := unixErrorCodes.ConfigExtraction()
+		opCtx.LogOperationError(ctx, "Failed to get config from request", errorCode,
+			fmt.Errorf("config extraction failed"))
+		resp.Diagnostics.AddError(
+			errorsutil.GetErrorMessage(errorsutil.ErrConfigExtraction),
+			fmt.Sprintf("[%s] Unable to extract Terraform configuration from request for connection '%s'", errorCode, plan.ConnectionName.ValueString()),
+		)
 		return
 	}
-	// Configure API client
-	cfg := openapi.NewConfiguration()
-	apiBaseURL := strings.TrimPrefix(strings.TrimPrefix(r.client.APIBaseURL(), "https://"), "http://")
-	cfg.Host = apiBaseURL
-	cfg.Scheme = "https"
-	cfg.AddDefaultHeader("Authorization", "Bearer "+r.token)
+
+	// Validate that connection name cannot be updated
 	if plan.ConnectionName.ValueString() != state.ConnectionName.ValueString() {
-		resp.Diagnostics.AddError("Error", "Connection name cannot be updated")
-		log.Printf("[ERROR]: Connection name cannot be updated")
+		errorCode := unixErrorCodes.NameImmutable()
+		opCtx.LogOperationError(ctx, "Connection name cannot be updated", errorCode,
+			fmt.Errorf("attempted to change connection name from '%s' to '%s'", state.ConnectionName.ValueString(), plan.ConnectionName.ValueString()),
+			map[string]interface{}{
+				"old_name": state.ConnectionName.ValueString(),
+				"new_name": plan.ConnectionName.ValueString(),
+			})
+		resp.Diagnostics.AddError(
+			errorsutil.GetErrorMessage(errorCode),
+			fmt.Sprintf("[%s] Cannot change connection name from '%s' to '%s'", errorCode, state.ConnectionName.ValueString(), plan.ConnectionName.ValueString()),
+		)
 		return
 	}
 
-	cfg.HTTPClient = http.DefaultClient
-	unixConn := openapi.UNIXConnector{
-		BaseConnector: openapi.BaseConnector{
-			//required values
-			Connectiontype: "Unix",
-			ConnectionName: plan.ConnectionName.ValueString(),
-			//optional values
-			Description:     util.StringPointerOrEmpty(plan.Description),
-			Defaultsavroles: util.StringPointerOrEmpty(plan.DefaultSavRoles),
-			EmailTemplate:   util.StringPointerOrEmpty(plan.EmailTemplate),
-		},
-		//required values
-		HOST_NAME:   plan.HostName.ValueString(),
-		PORT_NUMBER: plan.PortNumber.ValueString(),
-		USERNAME:    config.Username.ValueString(),
-		//optional values
-		PASSWORD:                            util.StringPointerOrEmpty(config.Password),
-		GROUPS_FILE:                         util.StringPointerOrEmpty(plan.GroupsFile),
-		ACCOUNTS_FILE:                       util.StringPointerOrEmpty(plan.AccountsFile),
-		SHADOW_FILE:                         util.StringPointerOrEmpty(plan.ShadowFile),
-		PROVISION_ACCOUNT_COMMAND:           util.StringPointerOrEmpty(plan.ProvisionAccountCommand),
-		DEPROVISION_ACCOUNT_COMMAND:         util.StringPointerOrEmpty(plan.DeprovisionAccountCommand),
-		ADD_ACCESS_COMMAND:                  util.StringPointerOrEmpty(plan.AddAccessCommand),
-		REMOVE_ACCESS_COMMAND:               util.StringPointerOrEmpty(plan.RemoveAccessCommand),
-		CHANGE_PASSWRD_JSON:                 util.StringPointerOrEmpty(config.ChangePasswordJSON),
-		PEM_KEY_FILE:                        util.StringPointerOrEmpty(plan.PemKeyFile),
-		ENABLE_ACCOUNT_COMMAND:              util.StringPointerOrEmpty(plan.EnableAccountCommand),
-		DISABLE_ACCOUNT_COMMAND:             util.StringPointerOrEmpty(plan.DisableAccountCommand),
-		ACCOUNT_ENTITLEMENT_MAPPING_COMMAND: util.StringPointerOrEmpty(plan.AccountEntitlementMappingCmd),
-		PASSPHRASE:                          util.StringPointerOrEmpty(config.Passphrase),
-		UPDATE_ACCOUNT_COMMAND:              util.StringPointerOrEmpty(plan.UpdateAccountCommand),
-		CREATE_GROUP_COMMAND:                util.StringPointerOrEmpty(plan.CreateGroupCommand),
-		DELETE_GROUP_COMMAND:                util.StringPointerOrEmpty(plan.DeleteGroupCommand),
-		ADD_GROUP_OWNER_COMMAND:             util.StringPointerOrEmpty(plan.AddGroupOwnerCommand),
-		ADD_PRIMARY_GROUP_COMMAND:           util.StringPointerOrEmpty(plan.AddPrimaryGroupCommand),
-		FIREFIGHTERID_GRANT_ACCESS_COMMAND:  util.StringPointerOrEmpty(plan.FirefighterGrantAccessCommand),
-		FIREFIGHTERID_REVOKE_ACCESS_COMMAND: util.StringPointerOrEmpty(plan.FirefighterRevokeAccessCmd),
-		INACTIVE_LOCK_ACCOUNT:               util.StringPointerOrEmpty(plan.InactiveLockAccount),
-		STATUS_THRESHOLD_CONFIG:             util.StringPointerOrEmpty(plan.StatusThresholdConfig),
-		CUSTOM_CONFIG_JSON:                  util.StringPointerOrEmpty(plan.CustomConfigJSON),
-		SSH_KEY:                             util.StringPointerOrEmpty(config.SSHKey),
-		LOCK_ACCOUNT_COMMAND:                util.StringPointerOrEmpty(plan.LockAccountCommand),
-		UNLOCK_ACCOUNT_COMMAND:              util.StringPointerOrEmpty(plan.UnlockAccountCommand),
-		PassThroughConnectionDetails:        util.StringPointerOrEmpty(plan.PassThroughConnectionDetails),
-		SSHPassThroughPassword:              util.StringPointerOrEmpty(config.SSHPassThroughPassword),
-		SSHPassThroughSSHKEY:                util.StringPointerOrEmpty(config.SSHPassThroughSSHKEY),
-		SSHPassThroughPassphrase:            util.StringPointerOrEmpty(config.SSHPassThroughPassphrase),
-	}
-	if plan.VaultConnection.ValueString() != "" {
-		unixConn.BaseConnector.VaultConnection = util.SafeStringConnector(plan.VaultConnection.ValueString())
-		unixConn.BaseConnector.VaultConfiguration = util.SafeStringConnector(plan.VaultConfiguration.ValueString())
-		unixConn.BaseConnector.Saveinvault = util.SafeStringConnector(plan.SaveInVault.ValueString())
-	} else {
-		emptyStr := ""
-		unixConn.BaseConnector.VaultConnection = &emptyStr
-		unixConn.BaseConnector.VaultConfiguration = &emptyStr
-		unixConn.BaseConnector.Saveinvault = &emptyStr
-	}
-	unixConnRequest := openapi.CreateOrUpdateRequest{
-		UNIXConnector: &unixConn,
-	}
+	connectionName := plan.ConnectionName.ValueString()
+	// Update operation context with connection name
+	opCtx.ConnectionName = connectionName
+	ctx = opCtx.AddContextToLogger(ctx)
 
-	// Initialize API client
-	apiClient := openapi.NewAPIClient(cfg)
-	apiResp, _, err := apiClient.ConnectionsAPI.CreateOrUpdate(ctx).CreateOrUpdateRequest(unixConnRequest).Execute()
+	// Use interface pattern instead of direct API client creation
+	_, err := r.UpdateUnixConnection(ctx, &plan, &config)
 	if err != nil {
-		log.Printf("Problem with the update function")
-		resp.Diagnostics.AddError("API Update Failed", fmt.Sprintf("Error: %v", err))
-		return
-	}
-	if apiResp != nil && *apiResp.ErrorCode != "0" {
-		log.Printf("[ERROR]: Error in updating Unix connection resource. Errorcode: %v, Message: %v", *apiResp.ErrorCode, *apiResp.Msg)
-		resp.Diagnostics.AddError("Updation of Unix connection failed", *apiResp.Msg)
+		opCtx.LogOperationError(ctx, "Unix connection update failed", "", err)
+		resp.Diagnostics.AddError(
+			"Unix Connection Update Failed",
+			err.Error(),
+		)
 		return
 	}
 
-	reqParams := openapi.GetConnectionDetailsRequest{}
-
-	reqParams.SetConnectionname(plan.ConnectionName.ValueString())
-	getResp, _, err := apiClient.ConnectionsAPI.GetConnectionDetails(ctx).GetConnectionDetailsRequest(reqParams).Execute()
+	// Read the updated connection to get the latest state
+	getResp, err := r.ReadUnixConnection(ctx, connectionName)
 	if err != nil {
-		log.Printf("Problem with the get function in update block")
-		resp.Diagnostics.AddError("API Read Failed", fmt.Sprintf("Error: %v", err))
-		return
-	}
-	if getResp != nil && getResp.UNIXConnectionResponse != nil && *getResp.UNIXConnectionResponse.Errorcode != 0 {
-		log.Printf("[ERROR]: Error in reading Unix connection resource after updation. Errorcode: %v, Message: %v", *getResp.UNIXConnectionResponse.Errorcode, *getResp.UNIXConnectionResponse.Msg)
-		resp.Diagnostics.AddError("Reading Unix connection after updation failed", *getResp.UNIXConnectionResponse.Msg)
+		opCtx.LogOperationError(ctx, "Failed to read updated Unix connection", "", err)
+		resp.Diagnostics.AddError(
+			"Unix Connection Post-Update Read Failed",
+			err.Error(),
+		)
 		return
 	}
 
-	plan.ConnectionKey = types.Int64Value(int64(*getResp.UNIXConnectionResponse.Connectionkey))
-	plan.ID = types.StringValue(fmt.Sprintf("%d", *getResp.UNIXConnectionResponse.Connectionkey))
-	plan.ConnectionName = util.SafeStringDatasource(getResp.UNIXConnectionResponse.Connectionname)
-	plan.Description = util.SafeStringDatasource(getResp.UNIXConnectionResponse.Description)
-	plan.DefaultSavRoles = util.SafeStringDatasource(getResp.UNIXConnectionResponse.Defaultsavroles)
-	plan.EmailTemplate = util.SafeStringDatasource(getResp.UNIXConnectionResponse.Emailtemplate)
-	plan.GroupsFile = util.SafeStringDatasource(getResp.UNIXConnectionResponse.Connectionattributes.GROUPS_FILE)
-	plan.AccountEntitlementMappingCmd = util.SafeStringDatasource(getResp.UNIXConnectionResponse.Connectionattributes.ACCOUNT_ENTITLEMENT_MAPPING_COMMAND)
-	plan.RemoveAccessCommand = util.SafeStringDatasource(getResp.UNIXConnectionResponse.Connectionattributes.REMOVE_ACCESS_COMMAND)
-	plan.PemKeyFile = util.SafeStringDatasource(getResp.UNIXConnectionResponse.Connectionattributes.PEM_KEY_FILE)
-	plan.PassThroughConnectionDetails = util.SafeStringDatasource(getResp.UNIXConnectionResponse.Connectionattributes.PassThroughConnectionDetails)
-	plan.DisableAccountCommand = util.SafeStringDatasource(getResp.UNIXConnectionResponse.Connectionattributes.DISABLE_ACCOUNT_COMMAND)
-	plan.PortNumber = util.SafeStringDatasource(getResp.UNIXConnectionResponse.Connectionattributes.PORT_NUMBER)
-	plan.CreateGroupCommand = util.SafeStringDatasource(getResp.UNIXConnectionResponse.Connectionattributes.CREATE_GROUP_COMMAND)
-	plan.AccountsFile = util.SafeStringDatasource(getResp.UNIXConnectionResponse.Connectionattributes.ACCOUNTS_FILE)
-	plan.DeleteGroupCommand = util.SafeStringDatasource(getResp.UNIXConnectionResponse.Connectionattributes.DELETE_GROUP_COMMAND)
-	plan.HostName = util.SafeStringDatasource(getResp.UNIXConnectionResponse.Connectionattributes.HOST_NAME)
-	plan.AddGroupOwnerCommand = util.SafeStringDatasource(getResp.UNIXConnectionResponse.Connectionattributes.ADD_GROUP_OWNER_COMMAND)
-	plan.StatusThresholdConfig = util.SafeStringDatasource(getResp.UNIXConnectionResponse.Connectionattributes.STATUS_THRESHOLD_CONFIG)
-	plan.Username = util.SafeStringDatasource(getResp.UNIXConnectionResponse.Connectionattributes.USERNAME)
-	plan.InactiveLockAccount = util.SafeStringDatasource(getResp.UNIXConnectionResponse.Connectionattributes.INACTIVE_LOCK_ACCOUNT)
-	plan.AddAccessCommand = util.SafeStringDatasource(getResp.UNIXConnectionResponse.Connectionattributes.ADD_ACCESS_COMMAND)
-	plan.UpdateAccountCommand = util.SafeStringDatasource(getResp.UNIXConnectionResponse.Connectionattributes.UPDATE_ACCOUNT_COMMAND)
-	plan.ShadowFile = util.SafeStringDatasource(getResp.UNIXConnectionResponse.Connectionattributes.SHADOW_FILE)
-	plan.ProvisionAccountCommand = util.SafeStringDatasource(getResp.UNIXConnectionResponse.Connectionattributes.PROVISION_ACCOUNT_COMMAND)
-	plan.FirefighterGrantAccessCommand = util.SafeStringDatasource(getResp.UNIXConnectionResponse.Connectionattributes.FIREFIGHTERID_GRANT_ACCESS_COMMAND)
-	plan.UnlockAccountCommand = util.SafeStringDatasource(getResp.UNIXConnectionResponse.Connectionattributes.UNLOCK_ACCOUNT_COMMAND)
-	plan.DeprovisionAccountCommand = util.SafeStringDatasource(getResp.UNIXConnectionResponse.Connectionattributes.DEPROVISION_ACCOUNT_COMMAND)
-	plan.ChangePasswordJSON = util.SafeStringDatasource(getResp.UNIXConnectionResponse.Connectionattributes.CHANGE_PASSWRD_JSON)
-	plan.FirefighterRevokeAccessCmd = util.SafeStringDatasource(getResp.UNIXConnectionResponse.Connectionattributes.FIREFIGHTERID_REVOKE_ACCESS_COMMAND)
-	plan.AddPrimaryGroupCommand = util.SafeStringDatasource(getResp.UNIXConnectionResponse.Connectionattributes.ADD_PRIMARY_GROUP_COMMAND)
-	plan.LockAccountCommand = util.SafeStringDatasource(getResp.UNIXConnectionResponse.Connectionattributes.LOCK_ACCOUNT_COMMAND)
-	plan.CustomConfigJSON = util.SafeStringDatasource(getResp.UNIXConnectionResponse.Connectionattributes.CUSTOM_CONFIG_JSON)
-	plan.EnableAccountCommand = util.SafeStringDatasource(getResp.UNIXConnectionResponse.Connectionattributes.ENABLE_ACCOUNT_COMMAND)
-	apiMessage := util.SafeDeref(getResp.UNIXConnectionResponse.Msg)
-	if apiMessage == "success" {
-		plan.Msg = types.StringValue("Connection Successful")
-	} else {
-		plan.Msg = types.StringValue(apiMessage)
-	}
-	plan.ErrorCode = util.Int32PtrToTFString(getResp.UNIXConnectionResponse.Errorcode)
+	// Update model from read response
+	r.UpdateModelFromReadResponse(&plan, getResp)
+
 	stateUpdateDiagnostics := resp.State.Set(ctx, plan)
 	resp.Diagnostics.Append(stateUpdateDiagnostics...)
+	if resp.Diagnostics.HasError() {
+		errorCode := unixErrorCodes.StateUpdate()
+		opCtx.LogOperationError(ctx, "Failed to update state after successful update", errorCode,
+			fmt.Errorf("state update failed"))
+		resp.Diagnostics.AddError(
+			errorsutil.GetErrorMessage(errorsutil.ErrStateUpdate),
+			fmt.Sprintf("[%s] Unable to update Terraform state after successful update for connection '%s'", errorCode, connectionName),
+		)
+		return
+	}
+
+	opCtx.LogOperationEnd(ctx, "Unix connection resource updated successfully",
+		map[string]interface{}{"connection_key": plan.ConnectionKey.ValueInt64()})
 }
 
-func (r *unixConnectionResource) Delete(ctx context.Context, req resource.DeleteRequest, resp *resource.DeleteResponse) {
+func (r *UnixConnectionResource) Delete(ctx context.Context, req resource.DeleteRequest, resp *resource.DeleteResponse) {
 	// resp.State.RemoveResource(ctx)
 	if os.Getenv("TF_ACC") == "1" {
 		resp.State.RemoveResource(ctx)
@@ -681,7 +874,16 @@ func (r *unixConnectionResource) Delete(ctx context.Context, req resource.Delete
 	)
 }
 
-func (r *unixConnectionResource) ImportState(ctx context.Context, req resource.ImportStateRequest, resp *resource.ImportStateResponse) {
+func (r *UnixConnectionResource) ImportState(ctx context.Context, req resource.ImportStateRequest, resp *resource.ImportStateResponse) {
+	// Importing an Unix connection resource requires the connection name
+	connectionName := req.ID
+	opCtx := errorsutil.CreateOperationContext(errorsutil.ConnectorTypeUnix, "terraform_import", connectionName)
+	ctx = opCtx.AddContextToLogger(ctx)
+
+	opCtx.LogOperationStart(ctx, "Starting Unix connection resource import")
 	// Retrieve import ID and save to id attribute
 	resource.ImportStatePassthroughID(ctx, path.Root("connection_name"), req, resp)
+
+	opCtx.LogOperationEnd(ctx, "Unix connection resource import completed successfully",
+		map[string]interface{}{"import_id": connectionName})
 }

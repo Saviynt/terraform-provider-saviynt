@@ -129,7 +129,7 @@ resource "saviynt_salesforce_connection_resource" "ss" {
 - `refresh_token` (String) The OAuth refresh token used to get access tokens from Salesforce.
 - `save_in_vault` (String) Flag indicating whether the encrypted attribute should be saved in the configured vault. Example: "false"
 - `status_threshold_config` (String) JSON configuration to define active/inactive thresholds and lock statuses.
-- `vault_configuration` (String) JSON string specifying vault configuration. Example: '{"path":"/secrets/data/kv-dev-intgn1/-AD_Credential","keyMapping":{"PASSWORD":"AD_PASSWORD~#~None"}}'
+- `vault_configuration` (String) JSON string specifying vault configuration.
 - `vault_connection` (String) Specifies the type of vault connection being used (e.g., 'Hashicorp'). Example: "Hashicorp"
 
 ### Read-Only

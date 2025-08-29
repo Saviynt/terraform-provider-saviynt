@@ -12,26 +12,27 @@ package provider
 import (
 	"context"
 	"fmt"
-	"log"
-	"net/http"
 	"os"
-	"strings"
+	"terraform-provider-Saviynt/internal/client"
 	"terraform-provider-Saviynt/util"
+	"terraform-provider-Saviynt/util/errorsutil"
+
 	connectionsutil "terraform-provider-Saviynt/util/connectionsutil"
-
-	openapi "github.com/saviynt/saviynt-api-go-client/connections"
-
-	s "github.com/saviynt/saviynt-api-go-client"
 
 	"github.com/hashicorp/terraform-plugin-framework/path"
 	"github.com/hashicorp/terraform-plugin-framework/resource"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema"
 	"github.com/hashicorp/terraform-plugin-framework/types"
+	"github.com/hashicorp/terraform-plugin-log/tflog"
+	openapi "github.com/saviynt/saviynt-api-go-client/connections"
 )
 
 // Ensure provider defined types fully satisfy framework interfaces.
-var _ resource.Resource = &workdayConnectionResource{}
-var _ resource.ResourceWithImportState = &workdayConnectionResource{}
+var _ resource.Resource = &WorkdayConnectionResource{}
+var _ resource.ResourceWithImportState = &WorkdayConnectionResource{}
+
+// Initialize error codes for Workday Connection operations
+var workdayErrorCodes = errorsutil.NewConnectorErrorCodes(errorsutil.ConnectorTypeWorkday)
 
 type WorkdayConnectorResourceModel struct {
 	BaseConnectorResourceModel
@@ -77,17 +78,26 @@ type WorkdayConnectorResourceModel struct {
 }
 
 // workdayConnectionResource implements the resource.Resource interface.
-type workdayConnectionResource struct {
-	client *s.Client
-	token  string
+type WorkdayConnectionResource struct {
+	client            client.SaviyntClientInterface
+	token             string
+	connectionFactory client.ConnectionFactoryInterface
 }
 
 // NewTestConnectionResource returns a new instance of testConnectionResource.
-func NewWorkdayTestConnectionResource() resource.Resource {
-	return &workdayConnectionResource{}
+func NewWorkdayConnectionResource() resource.Resource {
+	return &WorkdayConnectionResource{
+		connectionFactory: &client.DefaultConnectionFactory{},
+	}
 }
 
-func (r *workdayConnectionResource) Metadata(ctx context.Context, req resource.MetadataRequest, resp *resource.MetadataResponse) {
+func NewWorkdayConnectionResourceWithFactory(factory client.ConnectionFactoryInterface) resource.Resource {
+	return &WorkdayConnectionResource{
+		connectionFactory: factory,
+	}
+}
+
+func (r *WorkdayConnectionResource) Metadata(ctx context.Context, req resource.MetadataRequest, resp *resource.MetadataResponse) {
 	resp.TypeName = "saviynt_workday_connection_resource"
 }
 
@@ -291,74 +301,136 @@ func WorkdayConnectorResourceSchema() map[string]schema.Attribute {
 	}
 }
 
-func (r *workdayConnectionResource) Schema(ctx context.Context, req resource.SchemaRequest, resp *resource.SchemaResponse) {
+func (r *WorkdayConnectionResource) Schema(ctx context.Context, req resource.SchemaRequest, resp *resource.SchemaResponse) {
 	resp.Schema = schema.Schema{
 		Description: util.WorkdayConnDescription,
 		Attributes:  connectionsutil.MergeResourceAttributes(BaseConnectorResourceSchema(), WorkdayConnectorResourceSchema()),
 	}
 }
 
-func (r *workdayConnectionResource) Configure(ctx context.Context, req resource.ConfigureRequest, resp *resource.ConfigureResponse) {
+func (r *WorkdayConnectionResource) Configure(ctx context.Context, req resource.ConfigureRequest, resp *resource.ConfigureResponse) {
+	opCtx := errorsutil.CreateOperationContext(errorsutil.ConnectorTypeWorkday, "configure", "")
+	ctx = opCtx.AddContextToLogger(ctx)
+
+	opCtx.LogOperationStart(ctx, "Starting Workday connection resource configuration")
+
 	// Check if provider data is available.
 	if req.ProviderData == nil {
-		log.Println("ProviderData is nil, returning early.")
+		tflog.Debug(ctx, "ProviderData is nil, returning early")
+		opCtx.LogOperationEnd(ctx, "Workday connection resource configuration completed - no provider data")
 		return
 	}
 
 	// Cast provider data to your provider type.
 	prov, ok := req.ProviderData.(*saviyntProvider)
 	if !ok {
-		resp.Diagnostics.AddError("Unexpected Provider Data", "Expected *saviyntProvider")
+		errorCode := workdayErrorCodes.ProviderConfig()
+		opCtx.LogOperationError(ctx, "Provider configuration failed", errorCode,
+			fmt.Errorf("expected *saviyntProvider, got different type"),
+			map[string]interface{}{"expected_type": "*saviyntProvider"})
+
+		resp.Diagnostics.AddError(
+			errorsutil.GetErrorMessage(errorsutil.ErrProviderConfig),
+			fmt.Sprintf("[%s] Expected *saviyntProvider, got different type", errorCode),
+		)
 		return
 	}
 
-	// Set the client and token from the provider state.
-	r.client = prov.client
+	// Set the client and token from the provider state using interface wrapper.
+	r.client = &client.SaviyntClientWrapper{Client: prov.client}
 	r.token = prov.accessToken
+
+	opCtx.LogOperationEnd(ctx, "Workday connection resource configured successfully")
 }
 
-func (r *workdayConnectionResource) Create(ctx context.Context, req resource.CreateRequest, resp *resource.CreateResponse) {
-	var plan, config WorkdayConnectorResourceModel
-	// Extract plan from request
-	resp.Diagnostics.Append(req.Plan.Get(ctx, &plan)...)
-	if resp.Diagnostics.HasError() {
-		return
-	}
-	//Extract config from request
-	resp.Diagnostics.Append(req.Config.Get(ctx, &config)...)
-	if resp.Diagnostics.HasError() {
-		return
-	}
-	cfg := openapi.NewConfiguration()
-	apiBaseURL := strings.TrimPrefix(strings.TrimPrefix(r.client.APIBaseURL(), "https://"), "http://")
-	cfg.Host = apiBaseURL
-	cfg.Scheme = "https"
-	cfg.AddDefaultHeader("Authorization", "Bearer "+r.token)
-	cfg.HTTPClient = http.DefaultClient
-	apiClient := openapi.NewAPIClient(cfg)
+// SetClient sets the client for testing purposes
+func (r *WorkdayConnectionResource) SetClient(client client.SaviyntClientInterface) {
+	r.client = client
+}
 
-	reqParams := openapi.GetConnectionDetailsRequest{}
-	reqParams.SetConnectionname(plan.ConnectionName.ValueString())
-	// reqParams.SetConnectionkey(state.ConnectionKey.String())
-	existingResource, _, _ := apiClient.ConnectionsAPI.GetConnectionDetails(ctx).GetConnectionDetailsRequest(reqParams).Execute()
-	if existingResource != nil && existingResource.WorkdayConnectionResponse != nil && existingResource.WorkdayConnectionResponse.Errorcode != nil && *existingResource.WorkdayConnectionResponse.Errorcode == 0 {
-		log.Printf("[ERROR] Connection name already exists. Please import or use a different name")
-		resp.Diagnostics.AddError("API Create Failed", "Connection name already exists. Please import or use a different name")
-		return
+// SetToken sets the token for testing purposes
+func (r *WorkdayConnectionResource) SetToken(token string) {
+	r.token = token
+}
+
+func (r *WorkdayConnectionResource) CreateWorkdayConnection(ctx context.Context, plan *WorkdayConnectorResourceModel, config *WorkdayConnectorResourceModel) (*openapi.CreateOrUpdateResponse, error) {
+	connectionName := plan.ConnectionName.ValueString()
+	opCtx := errorsutil.CreateOperationContext(errorsutil.ConnectorTypeWorkday, "create", connectionName)
+
+	// Create logging context (separate from API context)
+	logCtx := opCtx.AddContextToLogger(ctx)
+
+	opCtx.LogOperationStart(logCtx, "Starting Workday connection creation")
+
+	// Use the factory to create connection operations
+	connectionOps := r.connectionFactory.CreateConnectionOperations(r.client.APIBaseURL(), r.token)
+
+	// Check if connection already exists (idempotency check)
+	tflog.Debug(logCtx, "Checking if connection already exists")
+
+	// Use original context for API calls to maintain test compatibility
+	existingResource, _, _ := connectionOps.GetConnectionDetails(ctx, connectionName)
+	if existingResource != nil &&
+		existingResource.WorkdayConnectionResponse != nil &&
+		existingResource.WorkdayConnectionResponse.Errorcode != nil &&
+		*existingResource.WorkdayConnectionResponse.Errorcode == 0 {
+
+		errorCode := workdayErrorCodes.DuplicateName()
+		opCtx.LogOperationError(ctx, "Connection name already exists.Please import or use a different name", errorCode,
+			fmt.Errorf("duplicate connection name"))
+		return nil, errorsutil.CreateStandardError(errorsutil.ConnectorTypeWorkday, errorCode, "create", connectionName, nil)
 	}
 
+	// Build Workday connection create request
+	tflog.Debug(ctx, "Building Workday connection create request")
+
+	workdayConn := r.BuildWorkdayConnector(plan, config)
+	createReq := openapi.CreateOrUpdateRequest{
+		WorkdayConnector: &workdayConn,
+	}
+
+	// Execute create operation through interface
+	tflog.Debug(ctx, "Executing create operation")
+
+	apiResp, _, err := connectionOps.CreateOrUpdateConnection(ctx, createReq)
+	if err != nil {
+		errorCode := workdayErrorCodes.CreateFailed()
+		opCtx.LogOperationError(ctx, "Failed to create Workday connection", errorCode, err)
+		return nil, errorsutil.CreateStandardError(errorsutil.ConnectorTypeWorkday, errorCode, "create", connectionName, err)
+	}
+
+	if apiResp != nil && *apiResp.ErrorCode != "0" {
+		apiErr := fmt.Errorf("API returned error code %s: %s", *apiResp.ErrorCode, errorsutil.SanitizeMessage(apiResp.Msg))
+		errorCode := workdayErrorCodes.APIError()
+		opCtx.LogOperationError(ctx, "Workday connection creation failed with API error", errorCode, apiErr,
+			map[string]interface{}{
+				"api_error_code": *apiResp.ErrorCode,
+				"message":        errorsutil.SanitizeMessage(apiResp.Msg),
+			})
+		return nil, errorsutil.CreateStandardError(errorsutil.ConnectorTypeWorkday, errorCode, "create", connectionName, apiErr)
+	}
+
+	opCtx.LogOperationEnd(logCtx, "Workday connection created successfully",
+		map[string]interface{}{"connection_key": func() interface{} {
+			if apiResp.ConnectionKey != nil {
+				return *apiResp.ConnectionKey
+			}
+			return "unknown"
+		}()})
+
+	return apiResp, nil
+}
+
+func (r *WorkdayConnectionResource) BuildWorkdayConnector(plan *WorkdayConnectorResourceModel, config *WorkdayConnectorResourceModel) openapi.WorkdayConnector {
 	workdayConn := openapi.WorkdayConnector{
 		BaseConnector: openapi.BaseConnector{
 			//required fields
 			Connectiontype: "Workday",
 			ConnectionName: plan.ConnectionName.ValueString(),
 			//optional fields
-			Description:        util.StringPointerOrEmpty(plan.Description),
-			Defaultsavroles:    util.StringPointerOrEmpty(plan.DefaultSavRoles),
-			EmailTemplate:      util.StringPointerOrEmpty(plan.EmailTemplate),
-			VaultConnection:    util.SafeStringConnector(plan.VaultConnection.ValueString()),
-			VaultConfiguration: util.SafeStringConnector(plan.VaultConfiguration.ValueString()),
-			Saveinvault:        util.SafeStringConnector(plan.SaveInVault.ValueString()),
+			Description:     util.StringPointerOrEmpty(plan.Description),
+			Defaultsavroles: util.StringPointerOrEmpty(plan.DefaultSavRoles),
+			EmailTemplate:   util.StringPointerOrEmpty(plan.EmailTemplate),
 		},
 		//required fields
 		USE_OAUTH: plan.UseOAuth.ValueString(),
@@ -401,27 +473,20 @@ func (r *workdayConnectionResource) Create(ctx context.Context, req resource.Cre
 		ASSIGN_ORGROLE_PAYLOAD:        util.StringPointerOrEmpty(plan.AssignOrgRolePayload),
 		REMOVE_ORGROLE_PAYLOAD:        util.StringPointerOrEmpty(plan.RemoveOrgRolePayload),
 	}
-	workdayConnRequest := openapi.CreateOrUpdateRequest{
-		WorkdayConnector: &workdayConn,
+
+	if plan.VaultConnection.ValueString() != "" {
+		workdayConn.BaseConnector.VaultConnection = util.SafeStringConnector(plan.VaultConnection.ValueString())
+		workdayConn.BaseConnector.VaultConfiguration = util.SafeStringConnector(plan.VaultConfiguration.ValueString())
+		workdayConn.BaseConnector.Saveinvault = util.SafeStringConnector(plan.SaveInVault.ValueString())
 	}
 
-	apiResp, _, err := apiClient.ConnectionsAPI.CreateOrUpdate(ctx).CreateOrUpdateRequest(workdayConnRequest).Execute()
-	if err != nil {
-		log.Printf("[ERROR] Failed to create API resource. Error: %v", err)
-		resp.Diagnostics.AddError("API Create Failed", fmt.Sprintf("Error: %v", err))
-		return
-	}
-	if apiResp != nil && *apiResp.ErrorCode != "0" {
-		log.Printf("[ERROR]: Error in creating Workday connection resource. Errorcode: %v, Message: %v", *apiResp.ErrorCode, *apiResp.Msg)
-		resp.Diagnostics.AddError("Creation of Workday connection failed", *apiResp.Msg)
-		return
-	}
+	return workdayConn
+}
 
-	if plan.UseEnhancedOrgRole.IsNull() || plan.UseEnhancedOrgRole.ValueString() == "" {
-		plan.UseEnhancedOrgRole = types.StringValue("TRUE")
-	}
+func (r *WorkdayConnectionResource) UpdateModelFromCreateResponse(plan *WorkdayConnectorResourceModel, apiResp *openapi.CreateOrUpdateResponse) {
 	plan.ID = types.StringValue(fmt.Sprintf("%d", *apiResp.ConnectionKey))
 	plan.ConnectionKey = types.Int64Value(int64(*apiResp.ConnectionKey))
+
 	plan.Description = util.SafeStringDatasource(plan.Description.ValueStringPointer())
 	plan.DefaultSavRoles = util.SafeStringDatasource(plan.DefaultSavRoles.ValueStringPointer())
 	plan.EmailTemplate = util.SafeStringDatasource(plan.EmailTemplate.ValueStringPointer())
@@ -459,43 +524,59 @@ func (r *workdayConnectionResource) Create(ctx context.Context, req resource.Cre
 	plan.UpdateUserPayload = util.SafeStringDatasource(plan.UpdateUserPayload.ValueStringPointer())
 	plan.AssignOrgRolePayload = util.SafeStringDatasource(plan.AssignOrgRolePayload.ValueStringPointer())
 	plan.RemoveOrgRolePayload = util.SafeStringDatasource(plan.RemoveOrgRolePayload.ValueStringPointer())
+	if plan.UseEnhancedOrgRole.IsNull() || plan.UseEnhancedOrgRole.ValueString() == "" {
+		plan.UseEnhancedOrgRole = types.StringValue("TRUE")
+	}
+
 	plan.Msg = types.StringValue(util.SafeDeref(apiResp.Msg))
 	plan.ErrorCode = types.StringValue(util.SafeDeref(apiResp.ErrorCode))
-	resp.Diagnostics.Append(resp.State.Set(ctx, &plan)...)
 }
 
-func (r *workdayConnectionResource) Read(ctx context.Context, req resource.ReadRequest, resp *resource.ReadResponse) {
-	var state WorkdayConnectorResourceModel
+func (r *WorkdayConnectionResource) ReadWorkdayConnection(ctx context.Context, connectionName string) (*openapi.GetConnectionDetailsResponse, error) {
+	opCtx := errorsutil.CreateOperationContext(errorsutil.ConnectorTypeWorkday, "read", connectionName)
 
-	resp.Diagnostics.Append(req.State.Get(ctx, &state)...)
-	if resp.Diagnostics.HasError() {
-		return
-	}
-	// Configure API client
-	cfg := openapi.NewConfiguration()
-	apiBaseURL := strings.TrimPrefix(strings.TrimPrefix(r.client.APIBaseURL(), "https://"), "http://")
-	cfg.Host = apiBaseURL
-	cfg.Scheme = "https"
-	cfg.AddDefaultHeader("Authorization", "Bearer "+r.token)
-	cfg.HTTPClient = http.DefaultClient
+	// Create logging context (separate from API context)
+	logCtx := opCtx.AddContextToLogger(ctx)
 
-	apiClient := openapi.NewAPIClient(cfg)
-	reqParams := openapi.GetConnectionDetailsRequest{}
-	reqParams.SetConnectionname(state.ConnectionName.ValueString())
-	apiResp, _, err := apiClient.ConnectionsAPI.GetConnectionDetails(ctx).GetConnectionDetailsRequest(reqParams).Execute()
+	opCtx.LogOperationStart(logCtx, "Starting Workday connection read operation")
+
+	// Use the factory to create connection operations
+	connectionOps := r.connectionFactory.CreateConnectionOperations(r.client.APIBaseURL(), r.token)
+
+	// Execute read operation through interface - use original context for API calls
+	apiResp, _, err := connectionOps.GetConnectionDetails(ctx, connectionName)
 	if err != nil {
-		log.Printf("Problem with the get function in read block")
-		resp.Diagnostics.AddError("API Read Failed", fmt.Sprintf("Error: %v", err))
-		return
-	}
-	if apiResp != nil && apiResp.WorkdayConnectionResponse != nil && *apiResp.WorkdayConnectionResponse.Errorcode != 0 {
-		log.Printf("[ERROR]: Error in reading Workday connection resource. Errorcode: %v, Message: %v", *apiResp.WorkdayConnectionResponse.Errorcode, *apiResp.WorkdayConnectionResponse.Msg)
-		resp.Diagnostics.AddError("Reading Workday connection resource failed", *apiResp.WorkdayConnectionResponse.Msg)
-		return
+		errorCode := workdayErrorCodes.ReadFailed()
+		opCtx.LogOperationError(logCtx, "Failed to read Workday connection", errorCode, err)
+		return nil, errorsutil.CreateStandardError(errorsutil.ConnectorTypeWorkday, errorCode, "read", connectionName, err)
 	}
 
+	if apiResp != nil && apiResp.WorkdayConnectionResponse != nil && *apiResp.WorkdayConnectionResponse.Errorcode != 0 {
+		apiErr := fmt.Errorf("API returned error code %d: %s", *apiResp.WorkdayConnectionResponse.Errorcode, errorsutil.SanitizeMessage(apiResp.WorkdayConnectionResponse.Msg))
+		errorCode := workdayErrorCodes.APIError()
+		opCtx.LogOperationError(ctx, "Workday connection read failed with API error", errorCode, apiErr,
+			map[string]interface{}{
+				"api_error_code": *apiResp.WorkdayConnectionResponse.Errorcode,
+				"message":        errorsutil.SanitizeMessage(apiResp.WorkdayConnectionResponse.Msg),
+			})
+		return nil, errorsutil.CreateStandardError(errorsutil.ConnectorTypeWorkday, errorCode, "read", connectionName, apiErr)
+	}
+
+	opCtx.LogOperationEnd(logCtx, "Workday connection read completed successfully",
+		map[string]interface{}{"connection_key": func() interface{} {
+			if apiResp.WorkdayConnectionResponse != nil && apiResp.WorkdayConnectionResponse.Connectionkey != nil {
+				return *apiResp.WorkdayConnectionResponse.Connectionkey
+			}
+			return "unknown"
+		}()})
+
+	return apiResp, nil
+}
+
+func (r *WorkdayConnectionResource) UpdateModelFromReadResponse(state *WorkdayConnectorResourceModel, apiResp *openapi.GetConnectionDetailsResponse) {
 	state.ConnectionKey = types.Int64Value(int64(*apiResp.WorkdayConnectionResponse.Connectionkey))
 	state.ID = types.StringValue(fmt.Sprintf("%d", *apiResp.WorkdayConnectionResponse.Connectionkey))
+
 	state.ConnectionName = util.SafeStringDatasource(apiResp.WorkdayConnectionResponse.Connectionname)
 	state.Description = util.SafeStringDatasource(apiResp.WorkdayConnectionResponse.Description)
 	state.DefaultSavRoles = util.SafeStringDatasource(apiResp.WorkdayConnectionResponse.Defaultsavroles)
@@ -542,181 +623,291 @@ func (r *workdayConnectionResource) Read(ctx context.Context, req resource.ReadR
 		state.Msg = types.StringValue(apiMessage)
 	}
 	state.ErrorCode = util.Int32PtrToTFString(apiResp.WorkdayConnectionResponse.Errorcode)
-	stateDiagnostics := resp.State.Set(ctx, &state)
-	resp.Diagnostics.Append(stateDiagnostics...)
-	if resp.Diagnostics.HasError() {
-		return
-	}
 }
-func (r *workdayConnectionResource) Update(ctx context.Context, req resource.UpdateRequest, resp *resource.UpdateResponse) {
-	var plan, state, config WorkdayConnectorResourceModel
-	// Extract state from request
-	resp.Diagnostics.Append(req.State.Get(ctx, &state)...)
-	if resp.Diagnostics.HasError() {
-		return
-	}
-	// Extract plan from request
-	resp.Diagnostics.Append(req.Plan.Get(ctx, &plan)...)
-	if resp.Diagnostics.HasError() {
-		return
-	}
-	//Extract config from request
-	resp.Diagnostics.Append(req.Config.Get(ctx, &config)...)
-	if resp.Diagnostics.HasError() {
-		return
-	}
-	// Configure API client
-	cfg := openapi.NewConfiguration()
-	apiBaseURL := strings.TrimPrefix(strings.TrimPrefix(r.client.APIBaseURL(), "https://"), "http://")
-	cfg.Host = apiBaseURL
-	cfg.Scheme = "https"
-	cfg.AddDefaultHeader("Authorization", "Bearer "+r.token)
-	if plan.ConnectionName.ValueString() != state.ConnectionName.ValueString() {
-		resp.Diagnostics.AddError("Error", "Connection name cannot be updated")
-		log.Printf("[ERROR]: Connection name cannot be updated")
-		return
+
+func (r *WorkdayConnectionResource) UpdateWorkdayConnection(ctx context.Context, plan *WorkdayConnectorResourceModel, config *WorkdayConnectorResourceModel) (*openapi.CreateOrUpdateResponse, error) {
+	connectionName := plan.ConnectionName.ValueString()
+	opCtx := errorsutil.CreateOperationContext(errorsutil.ConnectorTypeWorkday, "update", connectionName)
+
+	// Create logging context (separate from API context)
+	logCtx := opCtx.AddContextToLogger(ctx)
+
+	opCtx.LogOperationStart(logCtx, "Starting Workday connection update")
+
+	// Use the factory to create connection operations
+	connectionOps := r.connectionFactory.CreateConnectionOperations(r.client.APIBaseURL(), r.token)
+
+	// Build Workday connection update request
+	tflog.Debug(logCtx, "Building Workday connection update request")
+
+	workdayConn := r.BuildWorkdayConnector(plan, config)
+	if plan.VaultConnection.ValueString() == "" {
+		emptyStr := ""
+		workdayConn.BaseConnector.VaultConnection = &emptyStr
+		workdayConn.BaseConnector.VaultConfiguration = &emptyStr
+		workdayConn.BaseConnector.Saveinvault = &emptyStr
 	}
 
-	cfg.HTTPClient = http.DefaultClient
-	workdayConn := openapi.WorkdayConnector{
-		BaseConnector: openapi.BaseConnector{
-			//required fields
-			Connectiontype: "Workday",
-			ConnectionName: plan.ConnectionName.ValueString(),
-			//optional fields
-			Description:        util.StringPointerOrEmpty(plan.Description),
-			Defaultsavroles:    util.StringPointerOrEmpty(plan.DefaultSavRoles),
-			EmailTemplate:      util.StringPointerOrEmpty(plan.EmailTemplate),
-			VaultConnection:    util.SafeStringConnector(plan.VaultConnection.ValueString()),
-			VaultConfiguration: util.SafeStringConnector(plan.VaultConfiguration.ValueString()),
-			Saveinvault:        util.SafeStringConnector(plan.SaveInVault.ValueString()),
-		},
-		//required fields
-		USE_OAUTH: plan.UseOAuth.ValueString(),
-		//optional fields
-		USERS_LAST_IMPORT_TIME:        util.StringPointerOrEmpty(plan.UsersLastImportTime),
-		ACCOUNTS_LAST_IMPORT_TIME:     util.StringPointerOrEmpty(plan.AccountsLastImportTime),
-		ACCESS_LAST_IMPORT_TIME:       util.StringPointerOrEmpty(plan.AccessLastImportTime),
-		BASE_URL:                      util.StringPointerOrEmpty(plan.BaseURL),
-		API_VERSION:                   util.StringPointerOrEmpty(plan.APIVersion),
-		TENANT_NAME:                   util.StringPointerOrEmpty(plan.TenantName),
-		REPORT_OWNER:                  util.StringPointerOrEmpty(plan.ReportOwner),
-		INCLUDE_REFERENCE_DESCRIPTORS: util.StringPointerOrEmpty(plan.IncludeReferenceDesc),
-		USE_ENHANCED_ORGROLE:          util.StringPointerOrEmpty(plan.UseEnhancedOrgRole),
-		USEX509AUTHFORSOAP:            util.StringPointerOrEmpty(plan.UseX509AuthForSOAP),
-		X509KEY:                       util.StringPointerOrEmpty(plan.X509Key),
-		X509CERT:                      util.StringPointerOrEmpty(plan.X509Cert),
-		USERNAME:                      util.StringPointerOrEmpty(config.Username),
-		PASSWORD:                      util.StringPointerOrEmpty(config.Password),
-		CLIENT_ID:                     util.StringPointerOrEmpty(config.ClientID),
-		CLIENT_SECRET:                 util.StringPointerOrEmpty(config.ClientSecret),
-		REFRESH_TOKEN:                 util.StringPointerOrEmpty(config.RefreshToken),
-		PAGE_SIZE:                     util.StringPointerOrEmpty(plan.PageSize),
-		USER_IMPORT_PAYLOAD:           util.StringPointerOrEmpty(plan.UserImportPayload),
-		USER_IMPORT_MAPPING:           util.StringPointerOrEmpty(plan.UserImportMapping),
-		ACCOUNT_IMPORT_PAYLOAD:        util.StringPointerOrEmpty(plan.AccountImportPayload),
-		ACCOUNT_IMPORT_MAPPING:        util.StringPointerOrEmpty(plan.AccountImportMapping),
-		ACCESS_IMPORT_LIST:            util.StringPointerOrEmpty(plan.AccessImportList),
-		RAAS_MAPPING_JSON:             util.StringPointerOrEmpty(plan.RAASMappingJSON),
-		ACCESS_IMPORT_MAPPING:         util.StringPointerOrEmpty(plan.AccessImportMapping),
-		ORGROLE_IMPORT_PAYLOAD:        util.StringPointerOrEmpty(plan.OrgRoleImportPayload),
-		STATUS_KEY_JSON:               util.StringPointerOrEmpty(plan.StatusKeyJSON),
-		USERATTRIBUTEJSON:             util.StringPointerOrEmpty(plan.UserAttributeJSON),
-		CUSTOM_CONFIG:                 util.StringPointerOrEmpty(plan.CustomConfig),
-		PAM_CONFIG:                    util.StringPointerOrEmpty(plan.PAMConfig),
-		MODIFYUSERDATAJSON:            util.StringPointerOrEmpty(plan.ModifyUserDataJSON),
-		STATUS_THRESHOLD_CONFIG:       util.StringPointerOrEmpty(plan.StatusThresholdConfig),
-		CREATE_ACCOUNT_PAYLOAD:        util.StringPointerOrEmpty(plan.CreateAccountPayload),
-		UPDATE_ACCOUNT_PAYLOAD:        util.StringPointerOrEmpty(plan.UpdateAccountPayload),
-		UPDATE_USER_PAYLOAD:           util.StringPointerOrEmpty(plan.UpdateUserPayload),
-		ASSIGN_ORGROLE_PAYLOAD:        util.StringPointerOrEmpty(plan.AssignOrgRolePayload),
-		REMOVE_ORGROLE_PAYLOAD:        util.StringPointerOrEmpty(plan.RemoveOrgRolePayload),
-	}
-	workdayConnRequest := openapi.CreateOrUpdateRequest{
+	updateReq := openapi.CreateOrUpdateRequest{
 		WorkdayConnector: &workdayConn,
 	}
 
-	// Initialize API client
-	apiClient := openapi.NewAPIClient(cfg)
-	apiResp, _, err := apiClient.ConnectionsAPI.CreateOrUpdate(ctx).CreateOrUpdateRequest(workdayConnRequest).Execute()
+	// Execute update operation through interface
+	tflog.Debug(logCtx, "Executing update operation")
+
+	// Use original context for API calls to maintain test compatibility
+	apiResp, _, err := connectionOps.CreateOrUpdateConnection(ctx, updateReq)
 	if err != nil {
-		resp.Diagnostics.AddError("API Create Failed", fmt.Sprintf("Error: %v", err))
-		return
+		errorCode := workdayErrorCodes.UpdateFailed()
+		opCtx.LogOperationError(logCtx, "Failed to update Workday connection", errorCode, err)
+		return nil, errorsutil.CreateStandardError(errorsutil.ConnectorTypeWorkday, errorCode, "update", connectionName, err)
 	}
+
 	if apiResp != nil && *apiResp.ErrorCode != "0" {
-		log.Printf("[ERROR]: Error in updating Workday connection resource. Errorcode: %v, Message: %v", *apiResp.ErrorCode, *apiResp.Msg)
-		resp.Diagnostics.AddError("Updation of Workday connection failed", *apiResp.Msg)
-		return
+		apiErr := fmt.Errorf("API returned error code %s: %s", *apiResp.ErrorCode, errorsutil.SanitizeMessage(apiResp.Msg))
+		errorCode := workdayErrorCodes.APIError()
+		opCtx.LogOperationError(logCtx, "Workday connection update failed with API error", errorCode, apiErr,
+			map[string]interface{}{
+				"api_error_code": *apiResp.ErrorCode,
+				"message":        errorsutil.SanitizeMessage(apiResp.Msg),
+			})
+		return nil, errorsutil.CreateStandardError(errorsutil.ConnectorTypeWorkday, errorCode, "update", connectionName, apiErr)
 	}
 
-	reqParams := openapi.GetConnectionDetailsRequest{}
+	opCtx.LogOperationEnd(logCtx, "Workday connection updated successfully",
+		map[string]interface{}{"connection_key": func() interface{} {
+			if apiResp.ConnectionKey != nil {
+				return *apiResp.ConnectionKey
+			}
+			return "unknown"
+		}()})
 
-	reqParams.SetConnectionname(plan.ConnectionName.ValueString())
-	getResp, _, err := apiClient.ConnectionsAPI.GetConnectionDetails(ctx).GetConnectionDetailsRequest(reqParams).Execute()
-	if err != nil {
-		log.Printf("Problem with the get function in update block")
-		resp.Diagnostics.AddError("API Read Failed", fmt.Sprintf("Error: %v", err))
-		return
-	}
-	if getResp != nil && getResp.WorkdayConnectionResponse != nil && *getResp.WorkdayConnectionResponse.Errorcode != 0 {
-		log.Printf("[ERROR]: Error in reading Workday connection resource after updation. Errorcode: %v, Message: %v", *getResp.WorkdayConnectionResponse.Errorcode, *getResp.WorkdayConnectionResponse.Msg)
-		resp.Diagnostics.AddError("Reading Workday connection after updation failed", *getResp.WorkdayConnectionResponse.Msg)
-		return
-	}
-
-	plan.ConnectionKey = types.Int64Value(int64(*getResp.WorkdayConnectionResponse.Connectionkey))
-	plan.ID = types.StringValue(fmt.Sprintf("%d", *getResp.WorkdayConnectionResponse.Connectionkey))
-	plan.ConnectionName = util.SafeStringDatasource(getResp.WorkdayConnectionResponse.Connectionname)
-	plan.Description = util.SafeStringDatasource(getResp.WorkdayConnectionResponse.Description)
-	plan.DefaultSavRoles = util.SafeStringDatasource(getResp.WorkdayConnectionResponse.Defaultsavroles)
-	plan.EmailTemplate = util.SafeStringDatasource(getResp.WorkdayConnectionResponse.Emailtemplate)
-	plan.UseOAuth = util.SafeStringDatasource(getResp.WorkdayConnectionResponse.Connectionattributes.USE_OAUTH)
-	plan.UserImportMapping = util.SafeStringDatasource(getResp.WorkdayConnectionResponse.Connectionattributes.USER_IMPORT_MAPPING)
-	plan.AccountsLastImportTime = util.SafeStringDatasource(getResp.WorkdayConnectionResponse.Connectionattributes.ACCOUNTS_LAST_IMPORT_TIME)
-	plan.StatusKeyJSON = util.SafeStringDatasource(getResp.WorkdayConnectionResponse.Connectionattributes.STATUS_KEY_JSON)
-	plan.RAASMappingJSON = util.SafeStringDatasource(getResp.WorkdayConnectionResponse.Connectionattributes.RAAS_MAPPING_JSON)
-	plan.AccountImportPayload = util.SafeStringDatasource(getResp.WorkdayConnectionResponse.Connectionattributes.ACCOUNT_IMPORT_PAYLOAD)
-	plan.UpdateAccountPayload = util.SafeStringDatasource(getResp.WorkdayConnectionResponse.Connectionattributes.UPDATE_ACCOUNT_PAYLOAD)
-	plan.ClientID = util.SafeStringDatasource(getResp.WorkdayConnectionResponse.Connectionattributes.CLIENT_ID)
-	plan.StatusThresholdConfig = util.SafeStringDatasource(getResp.WorkdayConnectionResponse.Connectionattributes.STATUS_THRESHOLD_CONFIG)
-	plan.Username = util.SafeStringDatasource(getResp.WorkdayConnectionResponse.Connectionattributes.USERNAME)
-	plan.AccessImportList = util.SafeStringDatasource(getResp.WorkdayConnectionResponse.Connectionattributes.ACCESS_IMPORT_LIST)
-	plan.AccountImportMapping = util.SafeStringDatasource(getResp.WorkdayConnectionResponse.Connectionattributes.ACCOUNT_IMPORT_MAPPING)
-	plan.OrgRoleImportPayload = util.SafeStringDatasource(getResp.WorkdayConnectionResponse.Connectionattributes.ORGROLE_IMPORT_PAYLOAD)
-	plan.AssignOrgRolePayload = util.SafeStringDatasource(getResp.WorkdayConnectionResponse.Connectionattributes.ASSIGN_ORGROLE_PAYLOAD)
-	plan.AccessImportMapping = util.SafeStringDatasource(getResp.WorkdayConnectionResponse.Connectionattributes.ACCESS_IMPORT_MAPPING)
-	plan.APIVersion = util.SafeStringDatasource(getResp.WorkdayConnectionResponse.Connectionattributes.API_VERSION)
-	plan.RemoveOrgRolePayload = util.SafeStringDatasource(getResp.WorkdayConnectionResponse.Connectionattributes.REMOVE_ORGROLE_PAYLOAD)
-	plan.IncludeReferenceDesc = util.SafeStringDatasource(getResp.WorkdayConnectionResponse.Connectionattributes.INCLUDE_REFERENCE_DESCRIPTORS)
-	plan.ModifyUserDataJSON = util.SafeStringDatasource(getResp.WorkdayConnectionResponse.Connectionattributes.MODIFYUSERDATAJSON)
-	plan.UseX509AuthForSOAP = util.SafeStringDatasource(getResp.WorkdayConnectionResponse.Connectionattributes.USEX509AUTHFORSOAP)
-	plan.ReportOwner = util.SafeStringDatasource(getResp.WorkdayConnectionResponse.Connectionattributes.REPORT_OWNER)
-	plan.X509Key = util.SafeStringDatasource(getResp.WorkdayConnectionResponse.Connectionattributes.X509KEY)
-	plan.CustomConfig = util.SafeStringDatasource(getResp.WorkdayConnectionResponse.Connectionattributes.CUSTOM_CONFIG)
-	plan.UserAttributeJSON = util.SafeStringDatasource(getResp.WorkdayConnectionResponse.Connectionattributes.USERATTRIBUTEJSON)
-	plan.X509Cert = util.SafeStringDatasource(getResp.WorkdayConnectionResponse.Connectionattributes.X509CERT)
-	plan.UserImportPayload = util.SafeStringDatasource(getResp.WorkdayConnectionResponse.Connectionattributes.USER_IMPORT_PAYLOAD)
-	plan.PAMConfig = util.SafeStringDatasource(getResp.WorkdayConnectionResponse.Connectionattributes.PAM_CONFIG)
-	plan.AccessLastImportTime = util.SafeStringDatasource(getResp.WorkdayConnectionResponse.Connectionattributes.ACCESS_LAST_IMPORT_TIME)
-	plan.UsersLastImportTime = util.SafeStringDatasource(getResp.WorkdayConnectionResponse.Connectionattributes.USERS_LAST_IMPORT_TIME)
-	plan.UpdateUserPayload = util.SafeStringDatasource(getResp.WorkdayConnectionResponse.Connectionattributes.UPDATE_USER_PAYLOAD)
-	plan.PageSize = util.SafeStringDatasource(getResp.WorkdayConnectionResponse.Connectionattributes.PAGE_SIZE)
-	plan.TenantName = util.SafeStringDatasource(getResp.WorkdayConnectionResponse.Connectionattributes.TENANT_NAME)
-	plan.UseEnhancedOrgRole = util.SafeStringDatasource(getResp.WorkdayConnectionResponse.Connectionattributes.USE_ENHANCED_ORGROLE)
-	plan.CreateAccountPayload = util.SafeStringDatasource(getResp.WorkdayConnectionResponse.Connectionattributes.CREATE_ACCOUNT_PAYLOAD)
-	plan.BaseURL = util.SafeStringDatasource(getResp.WorkdayConnectionResponse.Connectionattributes.BASE_URL)
-	apiMessage := util.SafeDeref(getResp.WorkdayConnectionResponse.Msg)
-	if apiMessage == "success" {
-		plan.Msg = types.StringValue("Connection Successful")
-	} else {
-		plan.Msg = types.StringValue(apiMessage)
-	}
-	plan.ErrorCode = util.Int32PtrToTFString(getResp.WorkdayConnectionResponse.Errorcode)
-	stateUpdateDiagnostics := resp.State.Set(ctx, plan)
-	resp.Diagnostics.Append(stateUpdateDiagnostics...)
+	return apiResp, nil
 }
 
-func (r *workdayConnectionResource) Delete(ctx context.Context, req resource.DeleteRequest, resp *resource.DeleteResponse) {
+func (r *WorkdayConnectionResource) Create(ctx context.Context, req resource.CreateRequest, resp *resource.CreateResponse) {
+	var plan, config WorkdayConnectorResourceModel
+
+	opCtx := errorsutil.CreateOperationContext(errorsutil.ConnectorTypeWorkday, "terraform_create", "")
+	ctx = opCtx.AddContextToLogger(ctx)
+
+	opCtx.LogOperationStart(ctx, "Starting Workday connection resource creation")
+
+	// Extract plan from request
+	resp.Diagnostics.Append(req.Plan.Get(ctx, &plan)...)
+	if resp.Diagnostics.HasError() {
+		errorCode := workdayErrorCodes.PlanExtraction()
+		opCtx.LogOperationError(ctx, "Failed to get plan from request", errorCode,
+			fmt.Errorf("plan extraction failed"))
+		resp.Diagnostics.AddError(
+			errorsutil.GetErrorMessage(errorsutil.ErrPlanExtraction),
+			fmt.Sprintf("[%s] Unable to extract Terraform plan from request", errorCode),
+		)
+		return
+	}
+
+	connectionName := plan.ConnectionName.ValueString()
+	// Update operation context with connection name
+	opCtx.ConnectionName = connectionName
+	ctx = opCtx.AddContextToLogger(ctx)
+
+	//Extract config from request
+	resp.Diagnostics.Append(req.Config.Get(ctx, &config)...)
+	if resp.Diagnostics.HasError() {
+		errorCode := workdayErrorCodes.ConfigExtraction()
+		opCtx.LogOperationError(ctx, "Failed to get config from request", errorCode,
+			fmt.Errorf("config extraction failed"))
+		resp.Diagnostics.AddError(
+			errorsutil.GetErrorMessage(errorsutil.ErrConfigExtraction),
+			fmt.Sprintf("[%s] Unable to extract Terraform configuration from request for connection '%s'", errorCode, connectionName),
+		)
+		return
+	}
+
+	// Use interface pattern instead of direct API client creation
+	apiResp, err := r.CreateWorkdayConnection(ctx, &plan, &config)
+	if err != nil {
+		opCtx.LogOperationError(ctx, "Workday connection creation failed", "", err)
+		resp.Diagnostics.AddError(
+			"Workday Connection Creation Failed",
+			err.Error(),
+		)
+		return
+	}
+
+	// Update model from create response
+	r.UpdateModelFromCreateResponse(&plan, apiResp)
+	resp.Diagnostics.Append(resp.State.Set(ctx, &plan)...)
+
+	opCtx.LogOperationEnd(ctx, "Workday connection resource created successfully",
+		map[string]interface{}{"connection_key": plan.ConnectionKey.ValueInt64()})
+}
+
+func (r *WorkdayConnectionResource) Read(ctx context.Context, req resource.ReadRequest, resp *resource.ReadResponse) {
+	var state WorkdayConnectorResourceModel
+
+	opCtx := errorsutil.CreateOperationContext(errorsutil.ConnectorTypeWorkday, "terraform_read", "")
+	ctx = opCtx.AddContextToLogger(ctx)
+
+	opCtx.LogOperationStart(ctx, "Starting Workday connection resource read")
+
+	resp.Diagnostics.Append(req.State.Get(ctx, &state)...)
+	if resp.Diagnostics.HasError() {
+		errorCode := workdayErrorCodes.StateExtraction()
+		opCtx.LogOperationError(ctx, "Failed to get state from request", errorCode,
+			fmt.Errorf("state extraction failed"))
+		resp.Diagnostics.AddError(
+			errorsutil.GetErrorMessage(errorsutil.ErrStateExtraction),
+			fmt.Sprintf("[%s] Unable to extract Terraform state from request", errorCode),
+		)
+		return
+	}
+
+	connectionName := state.ConnectionName.ValueString()
+	// Update operation context with connection name
+	opCtx.ConnectionName = connectionName
+	ctx = opCtx.AddContextToLogger(ctx)
+
+	// Use interface pattern instead of direct API client creation
+	apiResp, err := r.ReadWorkdayConnection(ctx, connectionName)
+	if err != nil {
+		opCtx.LogOperationError(ctx, "Workday connection read failed", "", err)
+		resp.Diagnostics.AddError(
+			"Workday Connection Read Failed",
+			err.Error(),
+		)
+		return
+	}
+
+	// Update model from read response
+	r.UpdateModelFromReadResponse(&state, apiResp)
+
+	stateDiagnostics := resp.State.Set(ctx, &state)
+	resp.Diagnostics.Append(stateDiagnostics...)
+	if resp.Diagnostics.HasError() {
+		errorCode := workdayErrorCodes.StateUpdate()
+		opCtx.LogOperationError(ctx, "Failed to set state", errorCode,
+			fmt.Errorf("state update failed"))
+		resp.Diagnostics.AddError(
+			errorsutil.GetErrorMessage(errorsutil.ErrStateUpdate),
+			fmt.Sprintf("[%s] Unable to update Terraform state for connection '%s'", errorCode, connectionName),
+		)
+		return
+	}
+
+	opCtx.LogOperationEnd(ctx, "Workday connection resource read completed successfully")
+}
+func (r *WorkdayConnectionResource) Update(ctx context.Context, req resource.UpdateRequest, resp *resource.UpdateResponse) {
+	var plan, state, config WorkdayConnectorResourceModel
+
+	opCtx := errorsutil.CreateOperationContext(errorsutil.ConnectorTypeWorkday, "terraform_update", "")
+	ctx = opCtx.AddContextToLogger(ctx)
+
+	opCtx.LogOperationStart(ctx, "Starting Workday connection resource update")
+
+	// Extract state from request
+	resp.Diagnostics.Append(req.State.Get(ctx, &state)...)
+	if resp.Diagnostics.HasError() {
+		errorCode := workdayErrorCodes.StateExtraction()
+		opCtx.LogOperationError(ctx, "Failed to get state from request", errorCode,
+			fmt.Errorf("state extraction failed"))
+		resp.Diagnostics.AddError(
+			errorsutil.GetErrorMessage(errorsutil.ErrStateExtraction),
+			fmt.Sprintf("[%s] Unable to extract Terraform state from request", errorCode),
+		)
+		return
+	}
+
+	// Extract plan from request
+	resp.Diagnostics.Append(req.Plan.Get(ctx, &plan)...)
+	if resp.Diagnostics.HasError() {
+		errorCode := workdayErrorCodes.PlanExtraction()
+		opCtx.LogOperationError(ctx, "Failed to get plan from request", errorCode,
+			fmt.Errorf("plan extraction failed"))
+		resp.Diagnostics.AddError(
+			errorsutil.GetErrorMessage(errorsutil.ErrPlanExtraction),
+			fmt.Sprintf("[%s] Unable to extract Terraform plan from request for connection '%s'", errorCode, state.ConnectionName.ValueString()),
+		)
+		return
+	}
+
+	//Extract config from request
+	resp.Diagnostics.Append(req.Config.Get(ctx, &config)...)
+	if resp.Diagnostics.HasError() {
+		errorCode := workdayErrorCodes.ConfigExtraction()
+		opCtx.LogOperationError(ctx, "Failed to get config from request", errorCode,
+			fmt.Errorf("config extraction failed"))
+		resp.Diagnostics.AddError(
+			errorsutil.GetErrorMessage(errorsutil.ErrConfigExtraction),
+			fmt.Sprintf("[%s] Unable to extract Terraform configuration from request for connection '%s'", errorCode, plan.ConnectionName.ValueString()),
+		)
+		return
+	}
+
+	// Validate that connection name cannot be updated
+	if plan.ConnectionName.ValueString() != state.ConnectionName.ValueString() {
+		errorCode := workdayErrorCodes.NameImmutable()
+		opCtx.LogOperationError(ctx, "Connection name cannot be updated", errorCode,
+			fmt.Errorf("attempted to change connection name from '%s' to '%s'", state.ConnectionName.ValueString(), plan.ConnectionName.ValueString()),
+			map[string]interface{}{
+				"old_name": state.ConnectionName.ValueString(),
+				"new_name": plan.ConnectionName.ValueString(),
+			})
+		resp.Diagnostics.AddError(
+			errorsutil.GetErrorMessage(errorCode),
+			fmt.Sprintf("[%s] Cannot change connection name from '%s' to '%s'", errorCode, state.ConnectionName.ValueString(), plan.ConnectionName.ValueString()),
+		)
+		return
+	}
+
+	connectionName := plan.ConnectionName.ValueString()
+	// Update operation context with connection name
+	opCtx.ConnectionName = connectionName
+	ctx = opCtx.AddContextToLogger(ctx)
+
+	// Use interface pattern instead of direct API client creation
+	_, err := r.UpdateWorkdayConnection(ctx, &plan, &config)
+	if err != nil {
+		opCtx.LogOperationError(ctx, "Workday connection update failed", "", err)
+		resp.Diagnostics.AddError(
+			"Workday Connection Update Failed",
+			err.Error(),
+		)
+		return
+	}
+
+	// Read the updated connection to get the latest state
+	getResp, err := r.ReadWorkdayConnection(ctx, connectionName)
+	if err != nil {
+		opCtx.LogOperationError(ctx, "Failed to read updated Workday connection", "", err)
+		resp.Diagnostics.AddError(
+			"Workday Connection Post-Update Read Failed",
+			err.Error(),
+		)
+		return
+	}
+
+	// Update model from read response
+	r.UpdateModelFromReadResponse(&plan, getResp)
+
+	stateUpdateDiagnostics := resp.State.Set(ctx, plan)
+	resp.Diagnostics.Append(stateUpdateDiagnostics...)
+	if resp.Diagnostics.HasError() {
+		errorCode := workdayErrorCodes.StateUpdate()
+		opCtx.LogOperationError(ctx, "Failed to update state after successful update", errorCode,
+			fmt.Errorf("state update failed"))
+		resp.Diagnostics.AddError(
+			errorsutil.GetErrorMessage(errorsutil.ErrStateUpdate),
+			fmt.Sprintf("[%s] Unable to update Terraform state after successful update for connection '%s'", errorCode, connectionName),
+		)
+		return
+	}
+
+	opCtx.LogOperationEnd(ctx, "Workday connection resource updated successfully",
+		map[string]interface{}{"connection_key": plan.ConnectionKey.ValueInt64()})
+}
+
+func (r *WorkdayConnectionResource) Delete(ctx context.Context, req resource.DeleteRequest, resp *resource.DeleteResponse) {
 	// resp.State.RemoveResource(ctx)
 	if os.Getenv("TF_ACC") == "1" {
 		resp.State.RemoveResource(ctx)
@@ -728,7 +919,17 @@ func (r *workdayConnectionResource) Delete(ctx context.Context, req resource.Del
 	)
 }
 
-func (r *workdayConnectionResource) ImportState(ctx context.Context, req resource.ImportStateRequest, resp *resource.ImportStateResponse) {
-	// Retrieve import ID and save to id attribute
+func (r *WorkdayConnectionResource) ImportState(ctx context.Context, req resource.ImportStateRequest, resp *resource.ImportStateResponse) {
+	// Importing a Workday connection resource requires the connection name
+	connectionName := req.ID
+	opCtx := errorsutil.CreateOperationContext(errorsutil.ConnectorTypeWorkday, "terraform_import", connectionName)
+	ctx = opCtx.AddContextToLogger(ctx)
+
+	opCtx.LogOperationStart(ctx, "Starting Workday connection resource import")
+
+	// Retrieve import ID and save to connection_name attribute
 	resource.ImportStatePassthroughID(ctx, path.Root("connection_name"), req, resp)
+
+	opCtx.LogOperationEnd(ctx, "Workday connection resource import completed successfully",
+		map[string]interface{}{"import_id": connectionName})
 }

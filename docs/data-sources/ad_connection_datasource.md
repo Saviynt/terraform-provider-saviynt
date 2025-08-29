@@ -100,7 +100,6 @@ Read-Only:
 - `password_no_of_spl_chars` (String)
 - `read_operational_attributes` (String)
 - `remove_account_action` (String)
-- `reset_and_change_passwd_json` (String)
 - `reset_and_change_password_json` (String)
 - `reuse_account_json` (String)
 - `reuse_inactive_account` (String)
