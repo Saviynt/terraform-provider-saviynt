@@ -6,6 +6,6 @@ Use the following operations to perform full lifecycle management of your DB con
 - **Read** (Retrieve) the connector’s current configuration  
 - **Update** its configuration
 
-[See Saviynt documentation for more details](https://docs.saviyntcloud.com/bundle/KBAs/page/Content/Utilizing-Individual-Statement-Processing-in-Update-User-Scenario-in-the-Database-Connector.htm)
+[See Saviynt documentation for more details](https://docs.saviyntcloud.com/bundle/SAP-HANA-25/page/Content/Using-Classic-Integration-v2022x.htm)
 
 - Simple example [can be found here](./resource.tf).

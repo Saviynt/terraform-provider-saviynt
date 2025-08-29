@@ -347,3 +347,86 @@ func ConvertListToStringSlice(ctx context.Context, tfList types.List) []string {
 
 	return result
 }
+
+func ParseBoolPointerFromStringPointer(input *string) *bool {
+	if input == nil {
+		return nil
+	}
+	parsed, err := strconv.ParseBool(*input)
+	if err != nil {
+		return nil
+	}
+	return &parsed
+}
+
+func StringPtrToInt32Ptr(s *string) *int32 {
+	if s == nil {
+		return nil
+	}
+	val, err := strconv.Atoi(*s)
+	if err != nil {
+		return nil // or handle/log the error
+	}
+	i32 := int32(val)
+	return &i32
+}
+
+func BoolPointerOrEmtpy(tfBool types.Bool) *bool {
+	if tfBool.IsNull() || tfBool.IsUnknown() {
+		return nil
+	}
+	val := tfBool.ValueBool()
+	return &val
+}
+
+func Int32PointerOrEmpty(v types.Int32) *int32 {
+	if v.IsNull() || v.IsUnknown() {
+		return nil
+	}
+	val := int32(v.ValueInt32())
+	return &val
+}
+
+func ConvertTFStringsToGoStrings(input types.List) []string {
+	if input.IsNull() || input.IsUnknown() {
+		return nil
+	}
+
+	var result []string
+
+	for _, val := range input.Elements() {
+		strVal, ok := val.(types.String)
+		if !ok || strVal.IsNull() || strVal.IsUnknown() {
+			continue
+		}
+		result = append(result, strVal.ValueString())
+	}
+
+	if len(result) == 0 {
+		return nil
+	}
+
+	return result
+}
+
+func ConvertTFSetToGoStrings(input types.Set) []string {
+	if input.IsNull() || input.IsUnknown() {
+		return nil
+	}
+
+	var result []string
+
+	for _, val := range input.Elements() {
+		strVal, ok := val.(types.String)
+		if !ok || strVal.IsNull() || strVal.IsUnknown() {
+			continue
+		}
+		result = append(result, strVal.ValueString())
+	}
+
+	if len(result) == 0 {
+		return []string{} // Return empty array, not nil, to preserve user's explicit empty set
+	}
+
+	return result
+}

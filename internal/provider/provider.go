@@ -154,6 +154,8 @@ func (p *saviyntProvider) DataSources(ctx context.Context) []func() datasource.D
 		NewUnixConnectionsDataSource,
 		NewGithubRestConnectionsDataSource,
 		NewDynamicAttributeDataSource,
+		NewOktaConnectionsDataSource,
+		NewEntitlementTypeDataSource,
 	}
 }
 
@@ -161,19 +163,21 @@ func (p *saviyntProvider) DataSources(ctx context.Context) []func() datasource.D
 func (p *saviyntProvider) Resources(ctx context.Context) []func() resource.Resource {
 	return []func() resource.Resource{
 		NewSecuritySystemResource,
-		NewADTestConnectionResource,
-		NewRestTestConnectionResource,
-		NewDBTestConnectionResource,
-		NewADSITestConnectionResource,
-		NewWorkdayTestConnectionResource,
-		NewEntraIdTestConnectionResource,
-		NewSalesfoceTestConnectionResource,
-		NewSapTestConnectionResource,
-		NewUnixTestConnectionResource,
-		NewGithubRestTestConnectionResource,
+		NewADConnectionResource,
+		NewRestConnectionResource,
+		NewDBConnectionResource,
+		NewADSIConnectionResource,
+		NewWorkdayConnectionResource,
+		NewEntraIdConnectionResource,
+		NewSalesforceConnectionResource,
+		NewSapConnectionResource,
+		NewUnixConnectionResource,
+		NewGithubRestConnectionResource,
 		NewEndpointResource,
 		NewRolesResource,
 		NewDynamicAttributeResource,
+		NewOktaConnectionResource,
+		NewEntitlementTypeResource,
 	}
 }
 func (p *saviyntProvider) EphemeralResources(ctx context.Context) []func() ephemeral.EphemeralResource {

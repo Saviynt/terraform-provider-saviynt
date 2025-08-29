@@ -1,37 +1,32 @@
 // Copyright (c) 2025 Saviynt Inc.
 // SPDX-License-Identifier: MPL-2.0
 
-// saviynt_adsi_connection_resource manages ADSI connectors in the Saviynt Security Manager.
-// The resource implements the full Terraform lifecycle:
-//   - Create: provisions a new ADSI connector using the supplied configuration.
-//   - Read: fetches the current connector state from Saviynt to keep Terraform’s state in sync.
-//   - Update: applies any configuration changes to an existing connector.
-//   - Import: brings an existing connector under Terraform management by its name.
 package provider
 
 import (
 	"context"
 	"fmt"
-	"log"
-	"net/http"
 	"os"
-	"strings"
+	"terraform-provider-Saviynt/internal/client"
 	"terraform-provider-Saviynt/util"
+	"terraform-provider-Saviynt/util/errorsutil"
+
 	connectionsutil "terraform-provider-Saviynt/util/connectionsutil"
-
-	openapi "github.com/saviynt/saviynt-api-go-client/connections"
-
-	s "github.com/saviynt/saviynt-api-go-client"
 
 	"github.com/hashicorp/terraform-plugin-framework/path"
 	"github.com/hashicorp/terraform-plugin-framework/resource"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema"
 	"github.com/hashicorp/terraform-plugin-framework/types"
+	"github.com/hashicorp/terraform-plugin-log/tflog"
+	openapi "github.com/saviynt/saviynt-api-go-client/connections"
 )
 
-// Ensure provider defined types fully satisfy framework interfaces.
-var _ resource.Resource = &adsiConnectionResource{}
-var _ resource.ResourceWithImportState = &adsiConnectionResource{}
+// Ensure provider defined types fully satisfy framework interfaces
+var _ resource.Resource = &AdsiConnectionResource{}
+var _ resource.ResourceWithImportState = &AdsiConnectionResource{}
+
+// Initialize error codes for ADSI Connection operations
+var adsiErrorCodes = errorsutil.NewConnectorErrorCodes(errorsutil.ConnectorTypeADSI)
 
 type ADSIConnectorResourceModel struct {
 	BaseConnectorResourceModel
@@ -79,16 +74,25 @@ type ADSIConnectorResourceModel struct {
 	ModifyUserDataJson          types.String `tfsdk:"modifyuserdatajson"`
 }
 
-type adsiConnectionResource struct {
-	client *s.Client
-	token  string
+type AdsiConnectionResource struct {
+	client            client.SaviyntClientInterface
+	token             string
+	connectionFactory client.ConnectionFactoryInterface
 }
 
-func NewADSITestConnectionResource() resource.Resource {
-	return &adsiConnectionResource{}
+func NewADSIConnectionResource() resource.Resource {
+	return &AdsiConnectionResource{
+		connectionFactory: &client.DefaultConnectionFactory{},
+	}
 }
 
-func (r *adsiConnectionResource) Metadata(ctx context.Context, req resource.MetadataRequest, resp *resource.MetadataResponse) {
+func NewADSIConnectionResourceWithFactory(factory client.ConnectionFactoryInterface) resource.Resource {
+	return &AdsiConnectionResource{
+		connectionFactory: factory,
+	}
+}
+
+func (r *AdsiConnectionResource) Metadata(ctx context.Context, req resource.MetadataRequest, resp *resource.MetadataResponse) {
 	resp.TypeName = "saviynt_adsi_connection_resource"
 }
 
@@ -303,83 +307,144 @@ func ADSIConnectorResourceSchema() map[string]schema.Attribute {
 	}
 }
 
-func (r *adsiConnectionResource) Schema(ctx context.Context, req resource.SchemaRequest, resp *resource.SchemaResponse) {
+func (r *AdsiConnectionResource) Schema(ctx context.Context, req resource.SchemaRequest, resp *resource.SchemaResponse) {
 	resp.Schema = schema.Schema{
 		Description: util.ADSIConnDescription,
 		Attributes:  connectionsutil.MergeResourceAttributes(BaseConnectorResourceSchema(), ADSIConnectorResourceSchema()),
 	}
 }
 
-func (r *adsiConnectionResource) Configure(ctx context.Context, req resource.ConfigureRequest, resp *resource.ConfigureResponse) {
+func (r *AdsiConnectionResource) Configure(ctx context.Context, req resource.ConfigureRequest, resp *resource.ConfigureResponse) {
+	opCtx := errorsutil.CreateOperationContext(errorsutil.ConnectorTypeADSI, "configure", "")
+	ctx = opCtx.AddContextToLogger(ctx)
+
+	opCtx.LogOperationStart(ctx, "Starting ADSI connection resource configuration")
+
 	// Check if provider data is available.
 	if req.ProviderData == nil {
-		log.Println("ProviderData is nil, returning early.")
+		tflog.Debug(ctx, "ProviderData is nil, returning early")
+		opCtx.LogOperationEnd(ctx, "ADSI connection resource configuration completed - no provider data")
 		return
 	}
 
 	// Cast provider data to your provider type.
 	prov, ok := req.ProviderData.(*saviyntProvider)
 	if !ok {
-		resp.Diagnostics.AddError("Unexpected Provider Data", "Expected *saviyntProvider")
+		errorCode := adsiErrorCodes.ProviderConfig()
+		opCtx.LogOperationError(ctx, "Provider configuration failed", errorCode,
+			fmt.Errorf("expected *saviyntProvider, got different type"),
+			map[string]interface{}{"expected_type": "*saviyntProvider"})
+
+		resp.Diagnostics.AddError(
+			errorsutil.GetErrorMessage(errorsutil.ErrProviderConfig),
+			fmt.Sprintf("[%s] Expected *saviyntProvider, got different type", errorCode),
+		)
 		return
 	}
 
-	// Set the client and token from the provider state.
-	r.client = prov.client
+	// Set the client and token from the provider state using interface wrapper.
+	r.client = &client.SaviyntClientWrapper{Client: prov.client}
 	r.token = prov.accessToken
+
+	opCtx.LogOperationEnd(ctx, "ADSI connection resource configured successfully")
 }
 
-func (r *adsiConnectionResource) Create(ctx context.Context, req resource.CreateRequest, resp *resource.CreateResponse) {
-	var plan, config ADSIConnectorResourceModel
-	// Extract plan from request
-	resp.Diagnostics.Append(req.Plan.Get(ctx, &plan)...)
-	if resp.Diagnostics.HasError() {
-		return
-	}
-	// Extract config from request
-	resp.Diagnostics.Append(req.Config.Get(ctx, &config)...)
-	if resp.Diagnostics.HasError() {
-		return
-	}
-	cfg := openapi.NewConfiguration()
-	apiBaseURL := strings.TrimPrefix(strings.TrimPrefix(r.client.APIBaseURL(), "https://"), "http://")
-	cfg.Host = apiBaseURL
-	cfg.Scheme = "https"
-	cfg.AddDefaultHeader("Authorization", "Bearer "+r.token)
-	cfg.HTTPClient = http.DefaultClient
-	apiClient := openapi.NewAPIClient(cfg)
-	reqParams := openapi.GetConnectionDetailsRequest{}
-	reqParams.SetConnectionname(plan.ConnectionName.ValueString())
-	existingResource, _, _ := apiClient.ConnectionsAPI.GetConnectionDetails(ctx).GetConnectionDetailsRequest(reqParams).Execute()
+// SetClient sets the client for testing purposes
+func (r *AdsiConnectionResource) SetClient(client client.SaviyntClientInterface) {
+	r.client = client
+}
+
+// SetToken sets the token for testing purposes
+func (r *AdsiConnectionResource) SetToken(token string) {
+	r.token = token
+}
+
+func (r *AdsiConnectionResource) CreateADSIConnection(ctx context.Context, plan *ADSIConnectorResourceModel, config *ADSIConnectorResourceModel) (*openapi.CreateOrUpdateResponse, error) {
+	connectionName := plan.ConnectionName.ValueString()
+	opCtx := errorsutil.CreateOperationContext(errorsutil.ConnectorTypeADSI, "create", connectionName)
+
+	// Create logging context (separate from API context)
+	logCtx := opCtx.AddContextToLogger(ctx)
+
+	opCtx.LogOperationStart(logCtx, "Starting ADSI connection creation")
+
+	// Use the factory to create connection operations
+	connectionOps := r.connectionFactory.CreateConnectionOperations(r.client.APIBaseURL(), r.token)
+
+	// Check if connection already exists (idempotency check)
+	tflog.Debug(logCtx, "Checking if connection already exists")
+
+	// Use original context for API calls to maintain test compatibility
+	existingResource, _, _ := connectionOps.GetConnectionDetails(ctx, connectionName)
 	if existingResource != nil &&
 		existingResource.ADSIConnectionResponse != nil &&
 		existingResource.ADSIConnectionResponse.Errorcode != nil &&
 		*existingResource.ADSIConnectionResponse.Errorcode == 0 {
-		log.Printf("[ERROR] Connection name already exists. Please import or use a different name")
-		resp.Diagnostics.AddError("API Create Failed", "Connection name already exists. Please import or use a different name")
-		return
+
+		errorCode := adsiErrorCodes.DuplicateName()
+		opCtx.LogOperationError(ctx, "Connection name already exists. Please import or use a different name", errorCode,
+			fmt.Errorf("duplicate connection name"))
+		return nil, errorsutil.CreateStandardError(errorsutil.ConnectorTypeADSI, errorCode, "create", connectionName, nil)
 	}
 
+	// Build ADSI connection create request
+	tflog.Debug(ctx, "Building ADSI connection create request")
+
+	adsiConn := r.BuildADSIConnector(plan, config)
+	createReq := openapi.CreateOrUpdateRequest{
+		ADSIConnector: &adsiConn,
+	}
+
+	// Execute create operation through interface
+	tflog.Debug(ctx, "Executing create operation")
+
+	apiResp, _, err := connectionOps.CreateOrUpdateConnection(ctx, createReq)
+	if err != nil {
+		errorCode := adsiErrorCodes.CreateFailed()
+		opCtx.LogOperationError(ctx, "Failed to create ADSI connection", errorCode, err)
+		return nil, errorsutil.CreateStandardError(errorsutil.ConnectorTypeADSI, errorCode, "create", connectionName, err)
+	}
+
+	if apiResp != nil && *apiResp.ErrorCode != "0" {
+		apiErr := fmt.Errorf("API returned error code %s: %s", *apiResp.ErrorCode, errorsutil.SanitizeMessage(apiResp.Msg))
+		errorCode := adsiErrorCodes.APIError()
+		opCtx.LogOperationError(ctx, "ADSI connection creation failed with API error", errorCode, apiErr,
+			map[string]interface{}{
+				"api_error_code": *apiResp.ErrorCode,
+				"message":        errorsutil.SanitizeMessage(apiResp.Msg),
+			})
+		return nil, errorsutil.CreateStandardError(errorsutil.ConnectorTypeADSI, errorCode, "create", connectionName, apiErr)
+	}
+
+	opCtx.LogOperationEnd(logCtx, "ADSI connection created successfully",
+		map[string]interface{}{"connection_key": func() interface{} {
+			if apiResp.ConnectionKey != nil {
+				return *apiResp.ConnectionKey
+			}
+			return "unknown"
+		}()})
+
+	return apiResp, nil
+}
+
+func (r *AdsiConnectionResource) BuildADSIConnector(plan *ADSIConnectorResourceModel, config *ADSIConnectorResourceModel) openapi.ADSIConnector {
 	if plan.EntitlementAttribute.IsNull() || plan.EntitlementAttribute.IsUnknown() {
 		plan.EntitlementAttribute = types.StringValue("memberOf")
 	}
+
 	adsiConn := openapi.ADSIConnector{
 		BaseConnector: openapi.BaseConnector{
-			//required values
-			Connectiontype: "ADSI",
-			ConnectionName: plan.ConnectionName.ValueString(),
-			//optional values
+			Connectiontype:  "ADSI",
+			ConnectionName:  plan.ConnectionName.ValueString(),
 			Description:     util.StringPointerOrEmpty(plan.Description),
 			Defaultsavroles: util.StringPointerOrEmpty(plan.DefaultSavRoles),
 			EmailTemplate:   util.StringPointerOrEmpty(plan.EmailTemplate),
 		},
-		//required values
-		URL:            plan.URL.ValueString(),
-		USERNAME:       config.Username.ValueString(),
-		PASSWORD:       config.Password.ValueString(),
-		CONNECTION_URL: plan.ConnectionUrl.ValueString(),
-		FORESTLIST:     plan.ForestList.ValueString(),
-		//optional values
+		URL:                         plan.URL.ValueString(),
+		USERNAME:                    config.Username.ValueString(),
+		PASSWORD:                    config.Password.ValueString(),
+		CONNECTION_URL:              plan.ConnectionUrl.ValueString(),
+		FORESTLIST:                  plan.ForestList.ValueString(),
 		PROVISIONING_URL:            util.StringPointerOrEmpty(plan.ProvisioningUrl),
 		DEFAULT_USER_ROLE:           util.StringPointerOrEmpty(plan.DefaultUserRole),
 		UPDATEUSERJSON:              util.StringPointerOrEmpty(plan.UpdateUserJson),
@@ -417,30 +482,21 @@ func (r *adsiConnectionResource) Create(ctx context.Context, req resource.Create
 		PAM_CONFIG:                  util.StringPointerOrEmpty(plan.PamConfig),
 		MODIFYUSERDATAJSON:          util.StringPointerOrEmpty(plan.ModifyUserDataJson),
 	}
+
 	if plan.VaultConnection.ValueString() != "" {
 		adsiConn.BaseConnector.VaultConnection = util.SafeStringConnector(plan.VaultConnection.ValueString())
 		adsiConn.BaseConnector.VaultConfiguration = util.SafeStringConnector(plan.VaultConfiguration.ValueString())
 		adsiConn.BaseConnector.Saveinvault = util.SafeStringConnector(plan.SaveInVault.ValueString())
 	}
-	adsiConnRequest := openapi.CreateOrUpdateRequest{
-		ADSIConnector: &adsiConn,
-	}
 
-	// Initialize API client
-	apiResp, _, err := apiClient.ConnectionsAPI.CreateOrUpdate(ctx).CreateOrUpdateRequest(adsiConnRequest).Execute()
-	if err != nil {
-		log.Printf("[ERROR] Failed to create API resource. Error: %v", err)
-		resp.Diagnostics.AddError("API Create Failed", fmt.Sprintf("Error: %v", err))
-		return
-	}
-	if apiResp != nil && *apiResp.ErrorCode != "0" {
-		log.Printf("[ERROR]: Error in creating ADSI connection resource. Errorcode: %v, Message: %v", *apiResp.ErrorCode, *apiResp.Msg)
-		resp.Diagnostics.AddError("Creation of ADSI connection failed", *apiResp.Msg)
-		return
-	}
+	return adsiConn
+}
 
+func (r *AdsiConnectionResource) UpdateModelFromCreateResponse(plan *ADSIConnectorResourceModel, apiResp *openapi.CreateOrUpdateResponse) {
 	plan.ID = types.StringValue(fmt.Sprintf("%d", *apiResp.ConnectionKey))
 	plan.ConnectionKey = types.Int64Value(int64(*apiResp.ConnectionKey))
+
+	// Update all optional fields to maintain state
 	plan.Description = util.SafeStringDatasource(plan.Description.ValueStringPointer())
 	plan.DefaultSavRoles = util.SafeStringDatasource(plan.DefaultSavRoles.ValueStringPointer())
 	plan.EmailTemplate = util.SafeStringDatasource(plan.EmailTemplate.ValueStringPointer())
@@ -480,44 +536,57 @@ func (r *adsiConnectionResource) Create(ctx context.Context, req resource.Create
 	plan.RemoveServiceAccountJson = util.SafeStringDatasource(plan.RemoveServiceAccountJson.ValueStringPointer())
 	plan.PamConfig = util.SafeStringDatasource(plan.PamConfig.ValueStringPointer())
 	plan.ModifyUserDataJson = util.SafeStringDatasource(plan.ModifyUserDataJson.ValueStringPointer())
+
 	plan.Msg = types.StringValue(util.SafeDeref(apiResp.Msg))
 	plan.ErrorCode = types.StringValue(util.SafeDeref(apiResp.ErrorCode))
-	resp.Diagnostics.Append(resp.State.Set(ctx, &plan)...)
 }
 
-func (r *adsiConnectionResource) Read(ctx context.Context, req resource.ReadRequest, resp *resource.ReadResponse) {
-	var state ADSIConnectorResourceModel
+func (r *AdsiConnectionResource) ReadADSIConnection(ctx context.Context, connectionName string) (*openapi.GetConnectionDetailsResponse, error) {
+	opCtx := errorsutil.CreateOperationContext(errorsutil.ConnectorTypeADSI, "read", connectionName)
 
-	resp.Diagnostics.Append(req.State.Get(ctx, &state)...)
-	if resp.Diagnostics.HasError() {
-		return
-	}
+	// Create logging context (separate from API context)
+	logCtx := opCtx.AddContextToLogger(ctx)
 
-	// Configure API client
-	cfg := openapi.NewConfiguration()
-	apiBaseURL := strings.TrimPrefix(strings.TrimPrefix(r.client.APIBaseURL(), "https://"), "http://")
-	cfg.Host = apiBaseURL
-	cfg.Scheme = "https"
-	cfg.AddDefaultHeader("Authorization", "Bearer "+r.token)
-	cfg.HTTPClient = http.DefaultClient
+	opCtx.LogOperationStart(logCtx, "Starting ADSI connection read operation")
 
-	apiClient := openapi.NewAPIClient(cfg)
-	reqParams := openapi.GetConnectionDetailsRequest{}
-	reqParams.SetConnectionname(state.ConnectionName.ValueString())
-	apiResp, _, err := apiClient.ConnectionsAPI.GetConnectionDetails(ctx).GetConnectionDetailsRequest(reqParams).Execute()
+	// Use the factory to create connection operations
+	connectionOps := r.connectionFactory.CreateConnectionOperations(r.client.APIBaseURL(), r.token)
+
+	// Execute read operation through interface - use original context for API calls
+	apiResp, _, err := connectionOps.GetConnectionDetails(ctx, connectionName)
 	if err != nil {
-		log.Printf("Problem with the get function in read block")
-		resp.Diagnostics.AddError("API Read Failed In Read Block", fmt.Sprintf("Error: %v", err))
-		return
-	}
-	if apiResp != nil && apiResp.ADSIConnectionResponse != nil && *apiResp.ADSIConnectionResponse.Errorcode != 0 {
-		log.Printf("[ERROR]: Error in reading ADSI connection resource. Errorcode: %v, Message: %v", *apiResp.ADSIConnectionResponse.Errorcode, *apiResp.ADSIConnectionResponse.Msg)
-		resp.Diagnostics.AddError("Reading of ADSI connection resource failed", *apiResp.ADSIConnectionResponse.Msg)
-		return
+		errorCode := adsiErrorCodes.ReadFailed()
+		opCtx.LogOperationError(logCtx, "Failed to read ADSI connection", errorCode, err)
+		return nil, errorsutil.CreateStandardError(errorsutil.ConnectorTypeADSI, errorCode, "read", connectionName, err)
 	}
 
+	if apiResp != nil && apiResp.ADSIConnectionResponse != nil && *apiResp.ADSIConnectionResponse.Errorcode != 0 {
+		apiErr := fmt.Errorf("API returned error code %d: %s", *apiResp.ADSIConnectionResponse.Errorcode, errorsutil.SanitizeMessage(apiResp.ADSIConnectionResponse.Msg))
+		errorCode := adsiErrorCodes.APIError()
+		opCtx.LogOperationError(ctx, "ADSI connection read failed with API error", errorCode, apiErr,
+			map[string]interface{}{
+				"api_error_code": *apiResp.ADSIConnectionResponse.Errorcode,
+				"message":        errorsutil.SanitizeMessage(apiResp.ADSIConnectionResponse.Msg),
+			})
+		return nil, errorsutil.CreateStandardError(errorsutil.ConnectorTypeADSI, errorCode, "read", connectionName, apiErr)
+	}
+
+	opCtx.LogOperationEnd(logCtx, "ADSI connection read completed successfully",
+		map[string]interface{}{"connection_key": func() interface{} {
+			if apiResp.ADSIConnectionResponse != nil && apiResp.ADSIConnectionResponse.Connectionkey != nil {
+				return *apiResp.ADSIConnectionResponse.Connectionkey
+			}
+			return "unknown"
+		}()})
+
+	return apiResp, nil
+}
+
+func (r *AdsiConnectionResource) UpdateModelFromReadResponse(state *ADSIConnectorResourceModel, apiResp *openapi.GetConnectionDetailsResponse) {
 	state.ConnectionKey = types.Int64Value(int64(*apiResp.ADSIConnectionResponse.Connectionkey))
 	state.ID = types.StringValue(fmt.Sprintf("%d", *apiResp.ADSIConnectionResponse.Connectionkey))
+
+	// Update all fields from API response
 	state.ConnectionName = util.SafeStringDatasource(apiResp.ADSIConnectionResponse.Connectionname)
 	state.Description = util.SafeStringDatasource(apiResp.ADSIConnectionResponse.Description)
 	state.DefaultSavRoles = util.SafeStringDatasource(apiResp.ADSIConnectionResponse.Defaultsavroles)
@@ -562,6 +631,7 @@ func (r *adsiConnectionResource) Read(ctx context.Context, req resource.ReadRequ
 	state.ObjectFilter = util.SafeStringDatasource(apiResp.ADSIConnectionResponse.Connectionattributes.OBJECTFILTER)
 	state.UpdateAccountJson = util.SafeStringDatasource(apiResp.ADSIConnectionResponse.Connectionattributes.UPDATEACCOUNTJSON)
 	state.RemoveAccountJson = util.SafeStringDatasource(apiResp.ADSIConnectionResponse.Connectionattributes.REMOVEACCOUNTJSON)
+
 	apiMessage := util.SafeDeref(apiResp.ADSIConnectionResponse.Msg)
 	if apiMessage == "success" {
 		state.Msg = types.StringValue("Connection Successful")
@@ -569,200 +639,292 @@ func (r *adsiConnectionResource) Read(ctx context.Context, req resource.ReadRequ
 		state.Msg = types.StringValue(apiMessage)
 	}
 	state.ErrorCode = util.Int32PtrToTFString(apiResp.ADSIConnectionResponse.Errorcode)
-	stateDiagnostics := resp.State.Set(ctx, &state)
-	resp.Diagnostics.Append(stateDiagnostics...)
-	if resp.Diagnostics.HasError() {
-		return
-	}
 }
 
-func (r *adsiConnectionResource) Update(ctx context.Context, req resource.UpdateRequest, resp *resource.UpdateResponse) {
-	var plan, state, config ADSIConnectorResourceModel
-	// Extract state from request
-	resp.Diagnostics.Append(req.State.Get(ctx, &state)...)
-	if resp.Diagnostics.HasError() {
-		return
-	}
-	// Extract plan from request
-	resp.Diagnostics.Append(req.Plan.Get(ctx, &plan)...)
-	if resp.Diagnostics.HasError() {
-		return
-	}
-	//Extract config from request
-	resp.Diagnostics.Append(req.Config.Get(ctx, &config)...)
-	if resp.Diagnostics.HasError() {
-		return
-	}
-	if plan.ConnectionName.ValueString() != state.ConnectionName.ValueString() {
-		resp.Diagnostics.AddError("Error", "Connection name cannot be updated")
-		log.Printf("[ERROR]: Connection name cannot be updated")
-		return
-	}
-	cfg := openapi.NewConfiguration()
-	apiBaseURL := strings.TrimPrefix(strings.TrimPrefix(r.client.APIBaseURL(), "https://"), "http://")
-	cfg.Host = apiBaseURL
-	cfg.Scheme = "https"
-	cfg.AddDefaultHeader("Authorization", "Bearer "+r.token)
+func (r *AdsiConnectionResource) UpdateADSIConnection(ctx context.Context, plan *ADSIConnectorResourceModel, config *ADSIConnectorResourceModel) (*openapi.CreateOrUpdateResponse, error) {
+	connectionName := plan.ConnectionName.ValueString()
+	opCtx := errorsutil.CreateOperationContext(errorsutil.ConnectorTypeADSI, "update", connectionName)
 
-	cfg.HTTPClient = http.DefaultClient
-	if plan.EntitlementAttribute.IsNull() || plan.EntitlementAttribute.IsUnknown() {
-		plan.EntitlementAttribute = types.StringValue("memberOf")
-	}
-	adsiConn := openapi.ADSIConnector{
-		BaseConnector: openapi.BaseConnector{
-			//required values
-			Connectiontype: "ADSI",
-			ConnectionName: plan.ConnectionName.ValueString(),
-			//optional values
-			Description:     util.StringPointerOrEmpty(plan.Description),
-			Defaultsavroles: util.StringPointerOrEmpty(plan.DefaultSavRoles),
-			EmailTemplate:   util.StringPointerOrEmpty(plan.EmailTemplate),
-		},
-		//required values
-		URL:            plan.URL.ValueString(),
-		USERNAME:       config.Username.ValueString(),
-		PASSWORD:       config.Password.ValueString(),
-		CONNECTION_URL: plan.ConnectionUrl.ValueString(),
-		FORESTLIST:     plan.ForestList.ValueString(),
-		//optional values
-		PROVISIONING_URL:            util.StringPointerOrEmpty(plan.ProvisioningUrl),
-		DEFAULT_USER_ROLE:           util.StringPointerOrEmpty(plan.DefaultUserRole),
-		UPDATEUSERJSON:              util.StringPointerOrEmpty(plan.UpdateUserJson),
-		ENDPOINTS_FILTER:            util.StringPointerOrEmpty(plan.EndpointsFilter),
-		SEARCHFILTER:                util.StringPointerOrEmpty(plan.SearchFilter),
-		OBJECTFILTER:                util.StringPointerOrEmpty(plan.ObjectFilter),
-		ACCOUNT_ATTRIBUTE:           util.StringPointerOrEmpty(plan.AccountAttribute),
-		STATUS_THRESHOLD_CONFIG:     util.StringPointerOrEmpty(plan.StatusThresholdConfig),
-		ENTITLEMENT_ATTRIBUTE:       util.StringPointerOrEmpty(plan.EntitlementAttribute),
-		USER_ATTRIBUTE:              util.StringPointerOrEmpty(plan.UserAttribute),
-		GroupSearchBaseDN:           util.StringPointerOrEmpty(plan.GroupSearchBaseDN),
-		CHECKFORUNIQUE:              util.StringPointerOrEmpty(plan.CheckForUnique),
-		STATUSKEYJSON:               util.StringPointerOrEmpty(plan.StatusKeyJson),
-		GroupImportMapping:          util.StringPointerOrEmpty(plan.GroupImportMapping),
-		ImportNestedMembership:      util.StringPointerOrEmpty(plan.ImportNestedMembership),
-		PAGE_SIZE:                   util.StringPointerOrEmpty(plan.PageSize),
-		ACCOUNTNAMERULE:             util.StringPointerOrEmpty(plan.AccountNameRule),
-		CREATEACCOUNTJSON:           util.StringPointerOrEmpty(plan.CreateAccountJson),
-		UPDATEACCOUNTJSON:           util.StringPointerOrEmpty(plan.UpdateAccountJson),
-		ENABLEACCOUNTJSON:           util.StringPointerOrEmpty(plan.EnableAccountJson),
-		DISABLEACCOUNTJSON:          util.StringPointerOrEmpty(plan.DisableAccountJson),
-		REMOVEACCOUNTJSON:           util.StringPointerOrEmpty(plan.RemoveAccountJson),
-		ADDACCESSJSON:               util.StringPointerOrEmpty(plan.AddAccessJson),
-		REMOVEACCESSJSON:            util.StringPointerOrEmpty(plan.RemoveAccessJson),
-		RESETANDCHANGEPASSWRDJSON:   util.StringPointerOrEmpty(plan.ResetAndChangePasswrdJson),
-		CREATEGROUPJSON:             util.StringPointerOrEmpty(plan.CreateGroupJson),
-		UPDATEGROUPJSON:             util.StringPointerOrEmpty(plan.UpdateGroupJson),
-		REMOVEGROUPJSON:             util.StringPointerOrEmpty(plan.RemoveGroupJson),
-		ADDACCESSENTITLEMENTJSON:    util.StringPointerOrEmpty(plan.AddAccessEntitlementJson),
-		CUSTOMCONFIGJSON:            util.StringPointerOrEmpty(plan.CustomConfigJson),
-		REMOVEACCESSENTITLEMENTJSON: util.StringPointerOrEmpty(plan.RemoveAccessEntitlementJson),
-		CREATESERVICEACCOUNTJSON:    util.StringPointerOrEmpty(plan.CreateServiceAccountJson),
-		UPDATESERVICEACCOUNTJSON:    util.StringPointerOrEmpty(plan.UpdateServiceAccountJson),
-		REMOVESERVICEACCOUNTJSON:    util.StringPointerOrEmpty(plan.RemoveServiceAccountJson),
-		PAM_CONFIG:                  util.StringPointerOrEmpty(plan.PamConfig),
-		MODIFYUSERDATAJSON:          util.StringPointerOrEmpty(plan.ModifyUserDataJson),
-	}
-	if plan.VaultConnection.ValueString() != "" {
-		adsiConn.BaseConnector.VaultConnection = util.SafeStringConnector(plan.VaultConnection.ValueString())
-		adsiConn.BaseConnector.VaultConfiguration = util.SafeStringConnector(plan.VaultConfiguration.ValueString())
-		adsiConn.BaseConnector.Saveinvault = util.SafeStringConnector(plan.SaveInVault.ValueString())
-	} else {
+	// Create logging context (separate from API context)
+	logCtx := opCtx.AddContextToLogger(ctx)
+
+	opCtx.LogOperationStart(logCtx, "Starting ADSI connection update")
+
+	// Use the factory to create connection operations
+	connectionOps := r.connectionFactory.CreateConnectionOperations(r.client.APIBaseURL(), r.token)
+
+	// Build ADSI connection update request
+	tflog.Debug(logCtx, "Building ADSI connection update request")
+
+	adsiConn := r.BuildADSIConnector(plan, config)
+	if plan.VaultConnection.ValueString() == "" {
 		emptyStr := ""
 		adsiConn.BaseConnector.VaultConnection = &emptyStr
 		adsiConn.BaseConnector.VaultConfiguration = &emptyStr
 		adsiConn.BaseConnector.Saveinvault = &emptyStr
 	}
-	adsiConnRequest := openapi.CreateOrUpdateRequest{
+
+	updateReq := openapi.CreateOrUpdateRequest{
 		ADSIConnector: &adsiConn,
 	}
 
-	// Initialize API client
-	apiClient := openapi.NewAPIClient(cfg)
-	apiResp, _, err := apiClient.ConnectionsAPI.CreateOrUpdate(ctx).CreateOrUpdateRequest(adsiConnRequest).Execute()
+	// Execute update operation through interface
+	tflog.Debug(logCtx, "Executing update operation")
+
+	// Use original context for API calls to maintain test compatibility
+	apiResp, _, err := connectionOps.CreateOrUpdateConnection(ctx, updateReq)
 	if err != nil {
-		log.Printf("Problem with the update function")
-		resp.Diagnostics.AddError("API Update Failed", fmt.Sprintf("Error: %v", err))
-		return
+		errorCode := adsiErrorCodes.UpdateFailed()
+		opCtx.LogOperationError(logCtx, "Failed to update ADSI connection", errorCode, err)
+		return nil, errorsutil.CreateStandardError(errorsutil.ConnectorTypeADSI, errorCode, "update", connectionName, err)
 	}
+
 	if apiResp != nil && *apiResp.ErrorCode != "0" {
-		log.Printf("[ERROR]: Error in updating ADSI connection. Errorcode: %v, Message: %v", *apiResp.ErrorCode, *apiResp.Msg)
-		resp.Diagnostics.AddError("Updating of ADSI connection failed", *apiResp.Msg)
-		return
+		apiErr := fmt.Errorf("API returned error code %s: %s", *apiResp.ErrorCode, errorsutil.SanitizeMessage(apiResp.Msg))
+		errorCode := adsiErrorCodes.APIError()
+		opCtx.LogOperationError(logCtx, "ADSI connection update failed with API error", errorCode, apiErr,
+			map[string]interface{}{
+				"api_error_code": *apiResp.ErrorCode,
+				"message":        errorsutil.SanitizeMessage(apiResp.Msg),
+			})
+		return nil, errorsutil.CreateStandardError(errorsutil.ConnectorTypeADSI, errorCode, "update", connectionName, apiErr)
 	}
 
-	reqParams := openapi.GetConnectionDetailsRequest{}
+	opCtx.LogOperationEnd(logCtx, "ADSI connection updated successfully",
+		map[string]interface{}{"connection_key": func() interface{} {
+			if apiResp.ConnectionKey != nil {
+				return *apiResp.ConnectionKey
+			}
+			return "unknown"
+		}()})
 
-	reqParams.SetConnectionname(plan.ConnectionName.ValueString())
-	getResp, _, err := apiClient.ConnectionsAPI.GetConnectionDetails(ctx).GetConnectionDetailsRequest(reqParams).Execute()
-	if err != nil {
-		log.Printf("Problem with the get function in update block")
-		resp.Diagnostics.AddError("API Read Failed In Update Block", fmt.Sprintf("Error: %v", err))
-		return
-	}
-	if getResp != nil && getResp.ADSIConnectionResponse != nil && *getResp.ADSIConnectionResponse.Errorcode != 0 {
-		log.Printf("[ERROR]: Error in reading ADSI connection after updation. Errorcode: %v, Message: %v", *getResp.ADSIConnectionResponse.Errorcode, *getResp.ADSIConnectionResponse.Msg)
-		resp.Diagnostics.AddError("Reading after updation of ADSI connection failed", *getResp.ADSIConnectionResponse.Msg)
-		return
-	}
-
-	plan.ConnectionKey = types.Int64Value(int64(*getResp.ADSIConnectionResponse.Connectionkey))
-	plan.ID = types.StringValue(fmt.Sprintf("%d", *getResp.ADSIConnectionResponse.Connectionkey))
-	plan.ConnectionName = util.SafeStringDatasource(getResp.ADSIConnectionResponse.Connectionname)
-	plan.Description = util.SafeStringDatasource(getResp.ADSIConnectionResponse.Description)
-	plan.DefaultSavRoles = util.SafeStringDatasource(getResp.ADSIConnectionResponse.Defaultsavroles)
-	plan.EmailTemplate = util.SafeStringDatasource(getResp.ADSIConnectionResponse.Emailtemplate)
-	plan.ImportNestedMembership = util.SafeStringDatasource(getResp.ADSIConnectionResponse.Connectionattributes.ImportNestedMembership)
-	plan.CreateAccountJson = util.SafeStringDatasource(getResp.ADSIConnectionResponse.Connectionattributes.CREATEACCOUNTJSON)
-	plan.EndpointsFilter = util.SafeStringDatasource(getResp.ADSIConnectionResponse.Connectionattributes.ENDPOINTS_FILTER)
-	plan.DisableAccountJson = util.SafeStringDatasource(getResp.ADSIConnectionResponse.Connectionattributes.DISABLEACCOUNTJSON)
-	plan.RemoveAccessEntitlementJson = util.SafeStringDatasource(getResp.ADSIConnectionResponse.Connectionattributes.REMOVEACCESSENTITLEMENTJSON)
-	plan.GroupSearchBaseDN = util.SafeStringDatasource(getResp.ADSIConnectionResponse.Connectionattributes.GroupSearchBaseDN)
-	plan.StatusKeyJson = util.SafeStringDatasource(getResp.ADSIConnectionResponse.Connectionattributes.STATUSKEYJSON)
-	plan.DefaultUserRole = util.SafeStringDatasource(getResp.ADSIConnectionResponse.Connectionattributes.DEFAULT_USER_ROLE)
-	plan.Username = util.SafeStringDatasource(getResp.ADSIConnectionResponse.Connectionattributes.USERNAME)
-	plan.UpdateServiceAccountJson = util.SafeStringDatasource(getResp.ADSIConnectionResponse.Connectionattributes.UPDATESERVICEACCOUNTJSON)
-	plan.AddAccessJson = util.SafeStringDatasource(getResp.ADSIConnectionResponse.Connectionattributes.ADDACCESSJSON)
-	plan.CreateServiceAccountJson = util.SafeStringDatasource(getResp.ADSIConnectionResponse.Connectionattributes.CREATESERVICEACCOUNTJSON)
-	plan.AccountNameRule = util.SafeStringDatasource(getResp.ADSIConnectionResponse.Connectionattributes.ACCOUNTNAMERULE)
-	plan.ConnectionUrl = util.SafeStringDatasource(getResp.ADSIConnectionResponse.Connectionattributes.CONNECTION_URL)
-	plan.AccountAttribute = util.SafeStringDatasource(getResp.ADSIConnectionResponse.Connectionattributes.ACCOUNT_ATTRIBUTE)
-	plan.PamConfig = util.SafeStringDatasource(getResp.ADSIConnectionResponse.Connectionattributes.PAM_CONFIG)
-	plan.PageSize = util.SafeStringDatasource(getResp.ADSIConnectionResponse.Connectionattributes.PAGE_SIZE)
-	plan.SearchFilter = util.SafeStringDatasource(getResp.ADSIConnectionResponse.Connectionattributes.SEARCHFILTER)
-	plan.UpdateGroupJson = util.SafeStringDatasource(getResp.ADSIConnectionResponse.Connectionattributes.UPDATEGROUPJSON)
-	plan.CreateGroupJson = util.SafeStringDatasource(getResp.ADSIConnectionResponse.Connectionattributes.CREATEGROUPJSON)
-	plan.EntitlementAttribute = util.SafeStringDatasource(getResp.ADSIConnectionResponse.Connectionattributes.ENTITLEMENT_ATTRIBUTE)
-	plan.CheckForUnique = util.SafeStringDatasource(getResp.ADSIConnectionResponse.Connectionattributes.CHECKFORUNIQUE)
-	plan.RemoveServiceAccountJson = util.SafeStringDatasource(getResp.ADSIConnectionResponse.Connectionattributes.REMOVESERVICEACCOUNTJSON)
-	plan.UpdateUserJson = util.SafeStringDatasource(getResp.ADSIConnectionResponse.Connectionattributes.UPDATEUSERJSON)
-	plan.URL = util.SafeStringDatasource(getResp.ADSIConnectionResponse.Connectionattributes.URL)
-	plan.CustomConfigJson = util.SafeStringDatasource(getResp.ADSIConnectionResponse.Connectionattributes.CUSTOMCONFIGJSON)
-	plan.StatusThresholdConfig = util.SafeStringDatasource(getResp.ADSIConnectionResponse.Connectionattributes.STATUS_THRESHOLD_CONFIG)
-	plan.GroupImportMapping = util.SafeStringDatasource(getResp.ADSIConnectionResponse.Connectionattributes.GroupImportMapping)
-	plan.ProvisioningUrl = util.SafeStringDatasource(getResp.ADSIConnectionResponse.Connectionattributes.PROVISIONING_URL)
-	plan.RemoveGroupJson = util.SafeStringDatasource(getResp.ADSIConnectionResponse.Connectionattributes.REMOVEGROUPJSON)
-	plan.RemoveAccessJson = util.SafeStringDatasource(getResp.ADSIConnectionResponse.Connectionattributes.REMOVEACCESSJSON)
-	plan.ResetAndChangePasswrdJson = util.SafeStringDatasource(getResp.ADSIConnectionResponse.Connectionattributes.RESETANDCHANGEPASSWRDJSON)
-	plan.UserAttribute = util.SafeStringDatasource(getResp.ADSIConnectionResponse.Connectionattributes.USER_ATTRIBUTE)
-	plan.AddAccessEntitlementJson = util.SafeStringDatasource(getResp.ADSIConnectionResponse.Connectionattributes.ADDACCESSENTITLEMENTJSON)
-	plan.ModifyUserDataJson = util.SafeStringDatasource(getResp.ADSIConnectionResponse.Connectionattributes.MODIFYUSERDATAJSON)
-	plan.EnableAccountJson = util.SafeStringDatasource(getResp.ADSIConnectionResponse.Connectionattributes.ENABLEACCOUNTJSON)
-	plan.ForestList = util.SafeStringDatasource(getResp.ADSIConnectionResponse.Connectionattributes.FORESTLIST)
-	plan.ObjectFilter = util.SafeStringDatasource(getResp.ADSIConnectionResponse.Connectionattributes.OBJECTFILTER)
-	plan.UpdateAccountJson = util.SafeStringDatasource(getResp.ADSIConnectionResponse.Connectionattributes.UPDATEACCOUNTJSON)
-	plan.RemoveAccountJson = util.SafeStringDatasource(getResp.ADSIConnectionResponse.Connectionattributes.REMOVEACCOUNTJSON)
-	apiMessage := util.SafeDeref(getResp.ADSIConnectionResponse.Msg)
-	if apiMessage == "success" {
-		plan.Msg = types.StringValue("Connection Successful")
-	} else {
-		plan.Msg = types.StringValue(apiMessage)
-	}
-	plan.ErrorCode = util.Int32PtrToTFString(getResp.ADSIConnectionResponse.Errorcode)
-	stateUpdateDiagnostics := resp.State.Set(ctx, plan)
-	resp.Diagnostics.Append(stateUpdateDiagnostics...)
+	return apiResp, nil
 }
 
-func (r *adsiConnectionResource) Delete(ctx context.Context, req resource.DeleteRequest, resp *resource.DeleteResponse) {
+func (r *AdsiConnectionResource) Create(ctx context.Context, req resource.CreateRequest, resp *resource.CreateResponse) {
+	var plan, config ADSIConnectorResourceModel
+
+	opCtx := errorsutil.CreateOperationContext(errorsutil.ConnectorTypeADSI, "terraform_create", "")
+	ctx = opCtx.AddContextToLogger(ctx)
+
+	opCtx.LogOperationStart(ctx, "Starting ADSI connection resource creation")
+
+	// Extract plan from request
+	resp.Diagnostics.Append(req.Plan.Get(ctx, &plan)...)
+	if resp.Diagnostics.HasError() {
+		errorCode := adsiErrorCodes.PlanExtraction()
+		opCtx.LogOperationError(ctx, "Failed to get plan from request", errorCode,
+			fmt.Errorf("plan extraction failed"))
+		resp.Diagnostics.AddError(
+			errorsutil.GetErrorMessage(errorsutil.ErrPlanExtraction),
+			fmt.Sprintf("[%s] Unable to extract Terraform plan from request", errorCode),
+		)
+		return
+	}
+
+	connectionName := plan.ConnectionName.ValueString()
+	// Update operation context with connection name
+	opCtx.ConnectionName = connectionName
+	ctx = opCtx.AddContextToLogger(ctx)
+
+	//Extract config from request
+	resp.Diagnostics.Append(req.Config.Get(ctx, &config)...)
+	if resp.Diagnostics.HasError() {
+		errorCode := adsiErrorCodes.ConfigExtraction()
+		opCtx.LogOperationError(ctx, "Failed to get config from request", errorCode,
+			fmt.Errorf("config extraction failed"))
+		resp.Diagnostics.AddError(
+			errorsutil.GetErrorMessage(errorsutil.ErrConfigExtraction),
+			fmt.Sprintf("[%s] Unable to extract Terraform configuration from request for connection '%s'", errorCode, connectionName),
+		)
+		return
+	}
+
+	// Use interface pattern instead of direct API client creation
+	apiResp, err := r.CreateADSIConnection(ctx, &plan, &config)
+	if err != nil {
+		opCtx.LogOperationError(ctx, "ADSI connection creation failed", "", err)
+		resp.Diagnostics.AddError(
+			"ADSI Connection Creation Failed",
+			err.Error(),
+		)
+		return
+	}
+
+	// Update model from create response
+	r.UpdateModelFromCreateResponse(&plan, apiResp)
+	resp.Diagnostics.Append(resp.State.Set(ctx, &plan)...)
+
+	opCtx.LogOperationEnd(ctx, "ADSI connection resource created successfully",
+		map[string]interface{}{"connection_key": plan.ConnectionKey.ValueInt64()})
+}
+
+func (r *AdsiConnectionResource) Read(ctx context.Context, req resource.ReadRequest, resp *resource.ReadResponse) {
+	var state ADSIConnectorResourceModel
+
+	opCtx := errorsutil.CreateOperationContext(errorsutil.ConnectorTypeADSI, "terraform_read", "")
+	ctx = opCtx.AddContextToLogger(ctx)
+
+	opCtx.LogOperationStart(ctx, "Starting ADSI connection resource read")
+
+	resp.Diagnostics.Append(req.State.Get(ctx, &state)...)
+	if resp.Diagnostics.HasError() {
+		errorCode := adsiErrorCodes.StateExtraction()
+		opCtx.LogOperationError(ctx, "Failed to get state from request", errorCode,
+			fmt.Errorf("state extraction failed"))
+		resp.Diagnostics.AddError(
+			errorsutil.GetErrorMessage(errorsutil.ErrStateExtraction),
+			fmt.Sprintf("[%s] Unable to extract Terraform state from request", errorCode),
+		)
+		return
+	}
+
+	connectionName := state.ConnectionName.ValueString()
+	// Update operation context with connection name
+	opCtx.ConnectionName = connectionName
+	ctx = opCtx.AddContextToLogger(ctx)
+
+	// Use interface pattern instead of direct API client creation
+	apiResp, err := r.ReadADSIConnection(ctx, connectionName)
+	if err != nil {
+		opCtx.LogOperationError(ctx, "ADSI connection read failed", "", err)
+		resp.Diagnostics.AddError(
+			"ADSI Connection Read Failed",
+			err.Error(),
+		)
+		return
+	}
+
+	// Update model from read response
+	r.UpdateModelFromReadResponse(&state, apiResp)
+
+	stateDiagnostics := resp.State.Set(ctx, &state)
+	resp.Diagnostics.Append(stateDiagnostics...)
+	if resp.Diagnostics.HasError() {
+		errorCode := adsiErrorCodes.StateUpdate()
+		opCtx.LogOperationError(ctx, "Failed to set state", errorCode,
+			fmt.Errorf("state update failed"))
+		resp.Diagnostics.AddError(
+			errorsutil.GetErrorMessage(errorsutil.ErrStateUpdate),
+			fmt.Sprintf("[%s] Unable to update Terraform state for connection '%s'", errorCode, connectionName),
+		)
+		return
+	}
+
+	opCtx.LogOperationEnd(ctx, "ADSI connection resource read completed successfully")
+}
+
+func (r *AdsiConnectionResource) Update(ctx context.Context, req resource.UpdateRequest, resp *resource.UpdateResponse) {
+	var plan, state, config ADSIConnectorResourceModel
+
+	opCtx := errorsutil.CreateOperationContext(errorsutil.ConnectorTypeADSI, "terraform_update", "")
+	ctx = opCtx.AddContextToLogger(ctx)
+
+	opCtx.LogOperationStart(ctx, "Starting ADSI connection resource update")
+
+	// Extract state from request
+	resp.Diagnostics.Append(req.State.Get(ctx, &state)...)
+	if resp.Diagnostics.HasError() {
+		errorCode := adsiErrorCodes.StateExtraction()
+		opCtx.LogOperationError(ctx, "Failed to get state from request", errorCode,
+			fmt.Errorf("state extraction failed"))
+		resp.Diagnostics.AddError(
+			errorsutil.GetErrorMessage(errorsutil.ErrStateExtraction),
+			fmt.Sprintf("[%s] Unable to extract Terraform state from request", errorCode),
+		)
+		return
+	}
+
+	// Extract plan from request
+	resp.Diagnostics.Append(req.Plan.Get(ctx, &plan)...)
+	if resp.Diagnostics.HasError() {
+		errorCode := adsiErrorCodes.PlanExtraction()
+		opCtx.LogOperationError(ctx, "Failed to get plan from request", errorCode,
+			fmt.Errorf("plan extraction failed"))
+		resp.Diagnostics.AddError(
+			errorsutil.GetErrorMessage(errorsutil.ErrPlanExtraction),
+			fmt.Sprintf("[%s] Unable to extract Terraform plan from request for connection '%s'", errorCode, state.ConnectionName.ValueString()),
+		)
+		return
+	}
+
+	//Extract config from request
+	resp.Diagnostics.Append(req.Config.Get(ctx, &config)...)
+	if resp.Diagnostics.HasError() {
+		errorCode := adsiErrorCodes.ConfigExtraction()
+		opCtx.LogOperationError(ctx, "Failed to get config from request", errorCode,
+			fmt.Errorf("config extraction failed"))
+		resp.Diagnostics.AddError(
+			errorsutil.GetErrorMessage(errorsutil.ErrConfigExtraction),
+			fmt.Sprintf("[%s] Unable to extract Terraform configuration from request for connection '%s'", errorCode, plan.ConnectionName.ValueString()),
+		)
+		return
+	}
+
+	// Validate that connection name cannot be updated
+	if plan.ConnectionName.ValueString() != state.ConnectionName.ValueString() {
+		errorCode := adsiErrorCodes.NameImmutable()
+		opCtx.LogOperationError(ctx, "Connection name cannot be updated", errorCode,
+			fmt.Errorf("attempted to change connection name from '%s' to '%s'", state.ConnectionName.ValueString(), plan.ConnectionName.ValueString()),
+			map[string]interface{}{
+				"old_name": state.ConnectionName.ValueString(),
+				"new_name": plan.ConnectionName.ValueString(),
+			})
+		resp.Diagnostics.AddError(
+			errorsutil.GetErrorMessage(errorCode),
+			fmt.Sprintf("[%s] Cannot change connection name from '%s' to '%s'", errorCode, state.ConnectionName.ValueString(), plan.ConnectionName.ValueString()),
+		)
+		return
+	}
+
+	connectionName := plan.ConnectionName.ValueString()
+	// Update operation context with connection name
+	opCtx.ConnectionName = connectionName
+	ctx = opCtx.AddContextToLogger(ctx)
+
+	// Use interface pattern instead of direct API client creation
+	_, err := r.UpdateADSIConnection(ctx, &plan, &config)
+	if err != nil {
+		opCtx.LogOperationError(ctx, "ADSI connection update failed", "", err)
+		resp.Diagnostics.AddError(
+			"ADSI Connection Update Failed",
+			err.Error(),
+		)
+		return
+	}
+
+	// Read the updated connection to get the latest state
+	getResp, err := r.ReadADSIConnection(ctx, connectionName)
+	if err != nil {
+		opCtx.LogOperationError(ctx, "Failed to read updated ADSI connection", "", err)
+		resp.Diagnostics.AddError(
+			"ADSI Connection Post-Update Read Failed",
+			err.Error(),
+		)
+		return
+	}
+
+	// Update model from read response
+	r.UpdateModelFromReadResponse(&plan, getResp)
+
+	stateUpdateDiagnostics := resp.State.Set(ctx, plan)
+	resp.Diagnostics.Append(stateUpdateDiagnostics...)
+	if resp.Diagnostics.HasError() {
+		errorCode := adsiErrorCodes.StateUpdate()
+		opCtx.LogOperationError(ctx, "Failed to update state after successful update", errorCode,
+			fmt.Errorf("state update failed"))
+		resp.Diagnostics.AddError(
+			errorsutil.GetErrorMessage(errorsutil.ErrStateUpdate),
+			fmt.Sprintf("[%s] Unable to update Terraform state after successful update for connection '%s'", errorCode, connectionName),
+		)
+		return
+	}
+
+	opCtx.LogOperationEnd(ctx, "ADSI connection resource updated successfully",
+		map[string]interface{}{"connection_key": plan.ConnectionKey.ValueInt64()})
+}
+
+func (r *AdsiConnectionResource) Delete(ctx context.Context, req resource.DeleteRequest, resp *resource.DeleteResponse) {
 	// resp.State.RemoveResource(ctx)
 	if os.Getenv("TF_ACC") == "1" {
 		resp.State.RemoveResource(ctx)
@@ -773,7 +935,18 @@ func (r *adsiConnectionResource) Delete(ctx context.Context, req resource.Delete
 		"Resource deletion is not supported by this provider. Please remove the resource manually if required, or contact your administrator.",
 	)
 }
-func (r *adsiConnectionResource) ImportState(ctx context.Context, req resource.ImportStateRequest, resp *resource.ImportStateResponse) {
-	// Retrieve import ID and save to id attribute
+
+func (r *AdsiConnectionResource) ImportState(ctx context.Context, req resource.ImportStateRequest, resp *resource.ImportStateResponse) {
+	// Importing an ADSI connection resource requires the connection name
+	connectionName := req.ID
+	opCtx := errorsutil.CreateOperationContext(errorsutil.ConnectorTypeADSI, "terraform_import", connectionName)
+	ctx = opCtx.AddContextToLogger(ctx)
+
+	opCtx.LogOperationStart(ctx, "Starting ADSI connection resource import")
+
+	// Retrieve import ID and save to connection_name attribute
 	resource.ImportStatePassthroughID(ctx, path.Root("connection_name"), req, resp)
+
+	opCtx.LogOperationEnd(ctx, "ADSI connection resource import completed successfully",
+		map[string]interface{}{"import_id": connectionName})
 }

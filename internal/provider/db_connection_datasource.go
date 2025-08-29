@@ -18,7 +18,6 @@ import (
 
 	"github.com/hashicorp/terraform-plugin-framework/datasource"
 	"github.com/hashicorp/terraform-plugin-framework/datasource/schema"
-	"github.com/hashicorp/terraform-plugin-framework/resource"
 	"github.com/hashicorp/terraform-plugin-framework/types"
 	s "github.com/saviynt/saviynt-api-go-client"
 
@@ -26,7 +25,7 @@ import (
 )
 
 // Ensure provider defined types fully satisfy framework interfaces.
-var _ resource.ResourceWithImportState = &dbConnectionResource{}
+var _ datasource.DataSource = &dbConnectionsDataSource{}
 
 // DBConnectionsDataSource defines the data source
 type dbConnectionsDataSource struct {

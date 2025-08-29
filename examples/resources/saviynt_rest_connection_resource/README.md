@@ -6,6 +6,6 @@ Use the following operations to perform full lifecycle management of your Rest c
 - **Read** (Retrieve) the connector’s current configuration  
 - **Update** its configuration
 
-[See Saviynt documentation for more details](https://docs.saviyntcloud.com/bundle/EIC-Admin-25/page/Content/Chapter04-Application-Management-and-Onboarding/Onboard-Manage-App-v2022/REST-Application-Settings.htm)
+[See Saviynt documentation for more details](https://docs.saviyntcloud.com/bundle/WebEx-25/page/Content/Using-Classic-Integration-v2022x.htm)
 
 - Simple example [can be found here](./resource.tf).

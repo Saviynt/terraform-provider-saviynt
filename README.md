@@ -24,7 +24,6 @@ New to Terraform? Check out the [official Terraform introduction by HashiCorp](h
 ##  Requirements
 
 - Terraform version `>= 1.11+`
-- Go programming language `>= 1.21+`
 - Saviynt Identity Cloud instance and credentials.
 
 ---
@@ -35,6 +34,8 @@ Following resources are available for management:
 - Security System
 - Endpoint
 - Connections
+- Dynamic Attribute
+- Entitlement Type
 
 Following connectors are available:
 - Active Directory(AD)
@@ -47,6 +48,7 @@ Following connectors are available:
 - Workday
 - Unix
 - Github REST
+- Okta
 
 Ephemeral resources available:
 - [File ephemeral resource](#ephemeral-file-credential-resource)
@@ -63,35 +65,152 @@ Check out the [Latest Saviynt Provider Docs](https://registry.terraform.io/provi
 ### Supported Saviynt Versions by Provider
 | Terraform Provider Version | Supported Saviynt EIC Versions |
 | -------------------------- | ------------------------------ |
+| `v0.2.10`                   | `25.B`, `25.A`, `24.10`        |
+| `v0.2.9`                   | `25.B`, `25.A`, `24.10`        |
 | `v0.2.8`                   | `25.B`, `25.A`, `24.10`        |
 | `v0.2.7`                   | `24.4`                         |
 
----
+--- 
 
 ### Attribute Compatibility by EIC Version
 The table below shows attributes that are supported in newer versions of Saviynt EIC. If using an older version of Saviynt, some attributes may not work.
 Check the table to see which attributes are supported in your version before using them.
 
-| Connector                | Attribute(s) Added                                                                                                    | Present in 25.B | Present in 25.A | Present in 24.10 | Present in 24.4                                                                                        |
-| ------------------------ | --------------------------------------------------------------------------------------------------------------------- | --------------- | --------------- | ---------------- | ------------------------------------------------------------------------------------------------ |
-| **Workday Connector**    | `ORGROLE_IMPORT_PAYLOAD`                                                                          | Yes              | No             | No              | No|
-| **REST Connector**       | `ApplicationDiscoveryJSON`, `CreateEntitlementJSON`, `DeleteEntitlementJSON`, `UpdateEntitlementJSON`         | Yes             | No              | No               | No                                                                              |
-| **DB Connector**         | `CREATEENTITLEMENTJSON`, `DELETEENTITLEMENTJSON`, `ENTITLEMENTEXISTJSON`, `UPDATEENTITLEMENTJSON`             | Yes             | No              | No               | No                                                                              |
-| **GithubREST Connector** | `status_threshold_config`                                                                           | Yes              | Yes              | No               | No                                                                          |
-| **Security System** | `instant_provisioning`                                                                           | Yes              | No              | No               | No                                                                         |
-| **Endpoints** | `mapped_endpoints`, `requestable_role_types.show_on`                                                                           | Yes              | Yes              | Yes               | No                                                                         |
+| Connector                | Attribute(s) Added                                                                                                    | Present in 25.B | Present in 25.A | Present in 24.10 |
+| ------------------------ | --------------------------------------------------------------------------------------------------------------------- | --------------- | --------------- | ---------------- |
+| **Workday Connector**    | `ORGROLE_IMPORT_PAYLOAD`                                                                          | Yes              | No             | No              |
+| **REST Connector**       | `ApplicationDiscoveryJSON`, `CreateEntitlementJSON`, `DeleteEntitlementJSON`, `UpdateEntitlementJSON`         | Yes             | No              | No               |
+| **DB Connector**         | `CREATEENTITLEMENTJSON`, `DELETEENTITLEMENTJSON`, `ENTITLEMENTEXISTJSON`, `UPDATEENTITLEMENTJSON`             | Yes             | No              | No               |
+| **GithubREST Connector** | `status_threshold_config`                                                                           | Yes              | Yes              | No               |
+| **Security System** | `instant_provisioning`                                                                           | Yes              | No              | No               |
+| **Endpoints** | `mapped_endpoints`, `requestable_role_types.show_on`                                                                           | Yes              | Yes              | Yes               |
+| **Entitlement Type** | `enable_entitlement_to_role_sync`                                                                           | Yes              | Yes              | No               |
 
 ---
 
-### Importing Resources
-This provider supports importing existing Saviynt EIC resources using custom IDs. Refer to the table below for the required import ID for each resource type:
+## Importing Existing Resources
 
-| Resource Type        | Import ID   | Example                                                        |
+The Saviynt Terraform provider supports importing existing resources from your Saviynt EIC instance into Terraform state. This allows you to manage existing infrastructure with Terraform without recreating resources.
+
+### Import Methods
+
+There are two ways to import resources:
+
+#### Method 1: Using `terraform import` Command
+
+The traditional approach using the command line:
+
+```bash
+terraform import <resource_type>.<resource_name> <import_id>
+```
+
+**Example:**
+```bash
+terraform import saviynt_security_system_resource.example SYSTEM1
+```
+
+#### Method 2: Using Import Blocks (Recommended)
+
+The modern approach using import blocks in your Terraform configuration. This method also supports automatic configuration generation.
+
+**Step 1:** Add an import block to your `.tf` file:
+```hcl
+import {
+  to = saviynt_security_system_resource.example
+  id = "SYSTEM1"
+}
+```
+
+**Step 2:** Generate configuration automatically:
+```bash
+terraform plan -var-file=dev.tfvars -generate-config-out=generated.tf
+```
+
+This command will:
+- Create a `generated.tf` file with the resource configuration
+- Show you what will be imported
+- Generate all the necessary attributes based on the current state in Saviynt
+
+**Step 3:** Review and customize the generated configuration:
+```bash
+# Review the generated configuration
+cat generated.tf
+
+# Move relevant parts to your main configuration files
+# Remove the import block after successful import
+```
+
+**Step 4:** Apply the import:
+```bash
+terraform apply -var-file=dev.tfvars
+```
+
+### Import ID Reference
+
+Each resource type requires a specific import ID format:
+
+| Resource Type        | Import ID Format   | Example                                                        |
 | -------------------- | ----------------- | -------------------------------------------------------------- |
 | Security System      | `systemname`     | `terraform import saviynt_security_system_resource.example SYSTEM1`     |
 | Endpoint             | `endpoint_name`    | `terraform import saviynt_endpoint_resource.example ENDPOINT1`          |
 | Connection Resources | `connection_name` | `terraform import saviynt_ad_connection_resource.example AD_CONN1`      |
 | Dynamic Attributes   | `endpoint`        | `terraform import saviynt_dynamic_attribute_resource.example ENDPOINT1` |
+| Entitlement Type     | `endpoint_name:entitlement_name` | `terraform import saviynt_entitlement_type_resource.example ENDPOINT1:ENTTYPE1` |
+
+### Example: Complete Import Workflow
+
+**1. Add import block to main.tf:**
+```bash
+cat >> main.tf << EOF
+import {
+  to = saviynt_security_system_resource.prod_system
+  id = "PROD_SYSTEM_01"
+}
+EOF
+```
+
+**2. Generate configuration:**
+```bash
+terraform plan -var-file=prod.tfvars -generate-config-out=generated.tf
+```
+
+**Note:** The config generation command may throw errors if the resource contains sensitive data like required passwords, as Terraform cannot retrieve these values from the API. However, the configuration file will still be generated properly - you'll just need to replace sensitive fields with appropriate values (or use ephemeral resources) before applying.
+
+**3. Review and move configuration:**
+```bash
+cat generated.tf
+# Move relevant parts to your organized .tf files
+```
+
+**4. Remove import block and apply:**
+```bash
+# Edit main.tf to remove the import block
+terraform apply -var-file=prod.tfvars
+```
+
+### Best Practices for Importing
+
+1. **Use Import Blocks**: Prefer import blocks over the `terraform import` command for better workflow and automatic config generation.
+
+2. **Generate Configuration First**: Always use `-generate-config-out` to create initial configuration, then customize as needed.
+
+3. **Review Generated Config**: The generated configuration includes all current attributes. Remove any that you don't want Terraform to manage.
+
+4. **Handle Sensitive Data**: Some attributes (like passwords) won't be imported due to security. You'll need to set these manually or use ephemeral resources.
+
+5. **Test in Non-Production**: Always test imports in a development environment first.
+
+6. **Backup State**: Create a backup of your Terraform state before importing:
+   ```bash
+   cp terraform.tfstate terraform.tfstate.backup
+   ```
+
+### Troubleshooting Import Issues
+
+- **Invalid Import ID**: Ensure you're using the correct format for each resource type
+- **Resource Not Found**: Verify the resource exists in Saviynt with the exact name/ID
+- **Permission Issues**: Ensure your Saviynt user has read access to the resource
+- **State Conflicts**: If importing fails due to existing state, use `terraform state rm` to remove conflicting resources first
 
 ---
 
@@ -520,6 +639,7 @@ The following connectors are supported and can consume credentials provided by t
 - **SAP**: `password`, `prov_password`
 - **Unix**: `username`, `password`, `change_password_json`,  `passphrase`, `ssh_key`, `ssh_pass_through_password`, `ssh_pass_through_sshkey`, `ssh_pass_through_passphrase`
 - **Workday**: `username`, `password`, `client_id`, `client_secret`, `refresh_token`
+- **Okta**: `import_url`, `auth_token`
 
 ### Usage
 
@@ -531,25 +651,6 @@ The ephemeral credential resource reads from a local JSON file structured with t
 
 - Ensure the credential file is secured and not committed to version control.
 - Avoid using this resource in long-lived plans, as it relies on local files that may change or expire.
-
-## Feature: Ephemeral Env Credential Resource
-
-The **Ephemeral Env Credential Resource** is a transient Terraform resource that provides temporary, in-memory credentials to other connector resources by reading values from the environment variables at apply time. This allows secure and flexible provisioning without persisting sensitive data in the Terraform state.
-
-### Supported Connectors
-
-The following connectors are supported and can consume credentials provided by this resource:
-
-- **AD**: `username`, `password`
-- **ADSI**: `username`, `password`
-- **DB**: `username`, `password`, `change_pass_json`
-- **EntraId**: `client_id`, `client_secret`, `access_token`,`azure_mgmt_access_token`, `windows_connector_json`, `change_pass_json`, `connection_json`
-- **Github REST**: `connection_json`, `access_tokens`
-- **REST**: `connection_json`, `change_pass_json`
-- **Salesforce**: `client_id`, `client_secret`, `refresh_token`
-- **SAP**: `password`, `prov_password`
-- **Unix**: `username`, `password`, `change_password_json`,  `passphrase`, `ssh_key`, `ssh_pass_through_password`, `ssh_pass_through_sshkey`, `ssh_pass_through_passphrase`
-- **Workday**: `username`, `password`, `client_id`, `client_secret`, `refresh_token`
 
 ### Usage
 
@@ -641,7 +742,51 @@ The following limitations are present in the latest version of the provider. The
   - **SAP**: `password`, `prov_password`
   - **Unix**: `password`, `passphrase`, `ssh_key`, `ssh_pass_through_password`, `ssh_pass_through_sshkey`, `ssh_pass_through_passphrase`
   - **Workday**: `password`, `client_secret`, `refresh_token`
+  - **Okta**: `auth_token`
 
+### 4. Dynamic Attributes
+- For `saviynt_dynamic_attribute_resource.dynamic_attributes.attribute_type`, the supported values for proper state tracking are:
+  - `NUMBER`
+  - `STRING`
+  - `ENUM`
+  - `BOOLEAN`
+  - `MULTIPLE SELECT FROM LIST`
+  - `MULTIPLE SELECT FROM SQL QUERY`
+  - `SINGLE SELECT FROM SQL QUERY`
+  - `PASSWORD`
+  - `LARGE TEXT`
+  - `CHECK BOX`
+  - `DATE`
+
+### 5. Entitlement Types
+
+- **State management is not supported** for the following attributes:
+  - `start_date_in_revoke_request`
+  - `start_end_date_in_request`
+  - `allow_remove_all_entitlement_in_request`
+
+- For `request_option`, users need to set values using the following mapping:
+  - `"SHOW_BUT_NOTREUESTABLESINGLE"` → `"Request Form NotRequestable Single"`
+  - `"SHOW_BUT_NOTREUESTABLEMULTIPLE"` → `"Request Form NotRequestable Multiple"`
+  - `"NONE"` → `"Request Form None"`
+  - `"SINGLE"` → `"Request Form Single"`
+  - `"MULTIPLE"` → `"Request Form Multiple"`
+  - `"TABLE"` → `"Request Form Table"`
+  - `"FREEFORMTEXT"` → `"Request Form Free From Text"`
+  - `"TABLENOREMOVE"` → `"Request Form Table No Remove"`
+  - `"RADIOBUTN"` → `"Request Form Radio Button"`
+  - `"CHECKBOXN"` → `"Request Form CheckBox"`
+  - `"READONLYTABLE"` → `"Request Form Read Only Table"`
+
+- For `show_ent_type_on`, use the following values:
+  - `"0"` → All requests
+  - `"1"` → Standard Account Requests
+  - `"2"` → Service Account Requests
+
+- For `hierarchy_required`, use the following values:
+  - `"0"` → Not required
+  - `"1"` → Required
+  
 ---
 
 ## Troubleshooting Guide – Breaking Changes, API Errors & Configuration Tips

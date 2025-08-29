@@ -19,6 +19,8 @@ Below are example configurations to help guide you through your Terraform journe
 - [saviynt_sap_connection_resource](./resources/saviynt_sap_connection_resource) For managing SAP connections.
 - [saviynt_unix_connection_resource](./resources/saviynt_unix_connection_resource) For managing Unix connections.
 - [saviynt_workday_connection_resource](./resources/saviynt_workday_connection_resource) For managing Workday connections.
+- [saviynt_dynamic_attribute_resource](./resources/saviynt_dynamic_attribute_resource) Manages lifecycle (create, update, read, delete) of dynamic attribute
+- [saviynt_okta_connection_resource](./resources/saviynt_okta_connection_resource) For managing Okta connections.
 
 ## Supported Data Sources
 
@@ -35,3 +37,5 @@ Below are example configurations to help guide you through your Terraform journe
 - [saviynt_sap_connection_datasource](./data-sources/saviynt_sap_connection_datasource) Retrieves a SAP connection.
 - [saviynt_unix_connection_datasource](./data-sources/saviynt_unix_connection_datasource) Retrieves a Unix connection.
 - [saviynt_workday_connection_datasource](./data-sources/saviynt_workday_connection_datasource) Retrieves a Workday connection.
+- [saviynt_dynamic_attribute_datasource](./data-sources/saviynt_dynamic_attribute_datasource) Retrieves Dynamic attribute.
+- [saviynt_okta_connection_datasource](./data-sources/saviynt_okta_connection_datasource) Retrieves a Okta connection.
