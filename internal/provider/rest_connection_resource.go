@@ -1,39 +1,32 @@
 // Copyright (c) 2025 Saviynt Inc.
 // SPDX-License-Identifier: MPL-2.0
 
-// saviynt_rest_connection_resource manages Rest connectors in the Saviynt Security Manager.
-// The resource implements the full Terraform lifecycle:
-//   - Create: provisions a new Rest connector using the supplied configuration.
-//   - Read: fetches the current connector state from Saviynt to keep Terraform’s state in sync.
-//   - Update: applies any configuration changes to an existing connector.
-//   - Import: brings an existing connector under Terraform management by its name.
 package provider
 
 import (
 	"context"
-	"os"
-
-	// "encoding/json"
 	"fmt"
-	"log"
-	"net/http"
-	"strings"
+	"os"
+	"terraform-provider-Saviynt/internal/client"
 	"terraform-provider-Saviynt/util"
 	connectionsutil "terraform-provider-Saviynt/util/connectionsutil"
+	"terraform-provider-Saviynt/util/errorsutil"
 
 	openapi "github.com/saviynt/saviynt-api-go-client/connections"
-
-	s "github.com/saviynt/saviynt-api-go-client"
 
 	"github.com/hashicorp/terraform-plugin-framework/path"
 	"github.com/hashicorp/terraform-plugin-framework/resource"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema"
 	"github.com/hashicorp/terraform-plugin-framework/types"
+	"github.com/hashicorp/terraform-plugin-log/tflog"
 )
 
-// Ensure provider defined types fully satisfy framework interfaces.
-var _ resource.Resource = &restConnectionResource{}
-var _ resource.ResourceWithImportState = &restConnectionResource{}
+// Ensure provider defined types fully satisfy framework interfaces
+var _ resource.Resource = &RestConnectionResource{}
+var _ resource.ResourceWithImportState = &RestConnectionResource{}
+
+// Initialize error codes for REST Connection operations
+var restErrorCodes = errorsutil.NewConnectorErrorCodes(errorsutil.ConnectorTypeREST)
 
 type RestConnectorResourceModel struct {
 	BaseConnectorResourceModel
@@ -69,16 +62,25 @@ type RestConnectorResourceModel struct {
 	UpdateEntitlementJson    types.String `tfsdk:"update_entitlement_json"`
 }
 
-type restConnectionResource struct {
-	client *s.Client
-	token  string
+type RestConnectionResource struct {
+	client            client.SaviyntClientInterface
+	token             string
+	connectionFactory client.ConnectionFactoryInterface
 }
 
-func NewRestTestConnectionResource() resource.Resource {
-	return &restConnectionResource{}
+func NewRestConnectionResource() resource.Resource {
+	return &RestConnectionResource{
+		connectionFactory: &client.DefaultConnectionFactory{},
+	}
 }
 
-func (r *restConnectionResource) Metadata(ctx context.Context, req resource.MetadataRequest, resp *resource.MetadataResponse) {
+func NewRestConnectionResourceWithFactory(factory client.ConnectionFactoryInterface) resource.Resource {
+	return &RestConnectionResource{
+		connectionFactory: factory,
+	}
+}
+
+func (r *RestConnectionResource) Metadata(ctx context.Context, req resource.MetadataRequest, resp *resource.MetadataResponse) {
 	resp.TypeName = "saviynt_rest_connection_resource"
 }
 
@@ -146,7 +148,7 @@ func RestConnectorResourceSchema() map[string]schema.Attribute {
 		"change_pass_json": schema.StringAttribute{
 			Optional:    true,
 			WriteOnly:   true,
-			Description: "JSON to change a user’s password.",
+			Description: "JSON to change a user's password.",
 		},
 		"remove_account_json": schema.StringAttribute{
 			Optional:    true,
@@ -232,76 +234,136 @@ func RestConnectorResourceSchema() map[string]schema.Attribute {
 	}
 }
 
-func (r *restConnectionResource) Schema(ctx context.Context, req resource.SchemaRequest, resp *resource.SchemaResponse) {
+func (r *RestConnectionResource) Schema(ctx context.Context, req resource.SchemaRequest, resp *resource.SchemaResponse) {
 	resp.Schema = schema.Schema{
 		Description: util.RestConnDescription,
 		Attributes:  connectionsutil.MergeResourceAttributes(BaseConnectorResourceSchema(), RestConnectorResourceSchema()),
 	}
 }
 
-func (r *restConnectionResource) Configure(ctx context.Context, req resource.ConfigureRequest, resp *resource.ConfigureResponse) {
+func (r *RestConnectionResource) Configure(ctx context.Context, req resource.ConfigureRequest, resp *resource.ConfigureResponse) {
+	opCtx := errorsutil.CreateOperationContext(errorsutil.ConnectorTypeREST, "configure", "")
+	ctx = opCtx.AddContextToLogger(ctx)
+
+	opCtx.LogOperationStart(ctx, "Starting REST connection resource configuration")
+
 	// Check if provider data is available.
 	if req.ProviderData == nil {
-		log.Println("ProviderData is nil, returning early.")
+		tflog.Debug(ctx, "ProviderData is nil, returning early")
+		opCtx.LogOperationEnd(ctx, "REST connection resource configuration completed - no provider data")
 		return
 	}
 
 	// Cast provider data to your provider type.
 	prov, ok := req.ProviderData.(*saviyntProvider)
 	if !ok {
-		resp.Diagnostics.AddError("Unexpected Provider Data", "Expected *saviyntProvider")
+		errorCode := restErrorCodes.ProviderConfig()
+		opCtx.LogOperationError(ctx, "Provider configuration failed", errorCode,
+			fmt.Errorf("expected *saviyntProvider, got different type"),
+			map[string]interface{}{"expected_type": "*saviyntProvider"})
+
+		resp.Diagnostics.AddError(
+			errorsutil.GetErrorMessage(errorsutil.ErrProviderConfig),
+			fmt.Sprintf("[%s] Expected *saviyntProvider, got different type", errorCode),
+		)
 		return
 	}
 
-	// Set the client and token from the provider state.
-	r.client = prov.client
+	// Set the client and token from the provider state using interface wrapper.
+	r.client = &client.SaviyntClientWrapper{Client: prov.client}
 	r.token = prov.accessToken
+
+	opCtx.LogOperationEnd(ctx, "REST connection resource configured successfully")
 }
 
-func (r *restConnectionResource) Create(ctx context.Context, req resource.CreateRequest, resp *resource.CreateResponse) {
-	var plan, config RestConnectorResourceModel
-	// Extract plan from request
-	resp.Diagnostics.Append(req.Plan.Get(ctx, &plan)...)
-	if resp.Diagnostics.HasError() {
-		return
-	}
-	//Extract config from request
-	resp.Diagnostics.Append(req.Config.Get(ctx, &config)...)
-	if resp.Diagnostics.HasError() {
-		return
-	}
+// SetClient sets the client for testing purposes
+func (r *RestConnectionResource) SetClient(client client.SaviyntClientInterface) {
+	r.client = client
+}
 
-	cfg := openapi.NewConfiguration()
-	apiBaseURL := strings.TrimPrefix(strings.TrimPrefix(r.client.APIBaseURL(), "https://"), "http://")
-	cfg.Host = apiBaseURL
-	cfg.Scheme = "https"
-	cfg.AddDefaultHeader("Authorization", "Bearer "+r.token)
-	cfg.HTTPClient = http.DefaultClient
-	apiClient := openapi.NewAPIClient(cfg)
-	reqParams := openapi.GetConnectionDetailsRequest{}
-	reqParams.SetConnectionname(plan.ConnectionName.ValueString())
-	existingResource, _, _ := apiClient.ConnectionsAPI.GetConnectionDetails(ctx).GetConnectionDetailsRequest(reqParams).Execute()
+// SetToken sets the token for testing purposes
+func (r *RestConnectionResource) SetToken(token string) {
+	r.token = token
+}
+
+func (r *RestConnectionResource) CreateRESTConnection(ctx context.Context, plan *RestConnectorResourceModel, config *RestConnectorResourceModel) (*openapi.CreateOrUpdateResponse, error) {
+	connectionName := plan.ConnectionName.ValueString()
+	opCtx := errorsutil.CreateOperationContext(errorsutil.ConnectorTypeREST, "create", connectionName)
+
+	// Create logging context (separate from API context)
+	logCtx := opCtx.AddContextToLogger(ctx)
+
+	opCtx.LogOperationStart(logCtx, "Starting REST connection creation")
+
+	// Use the factory to create connection operations
+	connectionOps := r.connectionFactory.CreateConnectionOperations(r.client.APIBaseURL(), r.token)
+
+	// Check if connection already exists (idempotency check)
+	tflog.Debug(logCtx, "Checking if connection already exists")
+
+	// Use original context for API calls to maintain test compatibility
+	existingResource, _, _ := connectionOps.GetConnectionDetails(ctx, connectionName)
 	if existingResource != nil &&
 		existingResource.RESTConnectionResponse != nil &&
 		existingResource.RESTConnectionResponse.Errorcode != nil &&
 		*existingResource.RESTConnectionResponse.Errorcode == 0 {
-		log.Printf("[ERROR] Connection name already exists. Please import or use a different name")
-		resp.Diagnostics.AddError("API Create Failed", "Connection name already exists. Please import or use a different name")
-		return
+
+		errorCode := restErrorCodes.DuplicateName()
+		opCtx.LogOperationError(ctx, "Connection name already exists. Please import or use a different name", errorCode,
+			fmt.Errorf("duplicate connection name"))
+		return nil, errorsutil.CreateStandardError(errorsutil.ConnectorTypeREST, errorCode, "create", connectionName, nil)
 	}
-	log.Print("Debug the config connection json", config.ConnectionJSON)
+
+	// Build REST connection create request
+	tflog.Debug(ctx, "Building REST connection create request")
+
+	restConn := r.BuildRESTConnector(plan, config)
+	restConnRequest := openapi.CreateOrUpdateRequest{
+		RESTConnector: &restConn,
+	}
+
+	// Execute create operation through interface
+	tflog.Debug(ctx, "Executing create operation")
+
+	apiResp, _, err := connectionOps.CreateOrUpdateConnection(ctx, restConnRequest)
+	if err != nil {
+		errorCode := restErrorCodes.CreateFailed()
+		opCtx.LogOperationError(ctx, "Failed to create REST connection", errorCode, err)
+		return nil, errorsutil.CreateStandardError(errorsutil.ConnectorTypeREST, errorCode, "create", connectionName, err)
+	}
+
+	if apiResp != nil && *apiResp.ErrorCode != "0" {
+		apiErr := fmt.Errorf("API returned error code %s: %s", *apiResp.ErrorCode, errorsutil.SanitizeMessage(apiResp.Msg))
+		errorCode := restErrorCodes.APIError()
+		opCtx.LogOperationError(ctx, "REST connection creation failed with API error", errorCode, apiErr,
+			map[string]interface{}{
+				"api_error_code": *apiResp.ErrorCode,
+				"message":        errorsutil.SanitizeMessage(apiResp.Msg),
+			})
+		return nil, errorsutil.CreateStandardError(errorsutil.ConnectorTypeREST, errorCode, "create", connectionName, apiErr)
+	}
+
+	opCtx.LogOperationEnd(logCtx, "REST connection created successfully",
+		map[string]interface{}{"connection_key": func() interface{} {
+			if apiResp.ConnectionKey != nil {
+				return *apiResp.ConnectionKey
+			}
+			return "unknown"
+		}()})
+
+	return apiResp, nil
+}
+
+func (r *RestConnectionResource) BuildRESTConnector(plan *RestConnectorResourceModel, config *RestConnectorResourceModel) openapi.RESTConnector {
 	restConn := openapi.RESTConnector{
 		BaseConnector: openapi.BaseConnector{
 			//required fields
 			Connectiontype: "REST",
 			ConnectionName: plan.ConnectionName.ValueString(),
 			//optional fields
-			Description:        util.StringPointerOrEmpty(plan.Description),
-			Defaultsavroles:    util.StringPointerOrEmpty(plan.DefaultSavRoles),
-			EmailTemplate:      util.StringPointerOrEmpty(plan.EmailTemplate),
-			VaultConnection:    util.StringPointerOrEmpty(plan.VaultConnection),
-			VaultConfiguration: util.StringPointerOrEmpty(plan.VaultConfiguration),
-			Saveinvault:        util.StringPointerOrEmpty(plan.SaveInVault),
+			Description:     util.StringPointerOrEmpty(plan.Description),
+			Defaultsavroles: util.StringPointerOrEmpty(plan.DefaultSavRoles),
+			EmailTemplate:   util.StringPointerOrEmpty(plan.EmailTemplate),
 		},
 		//optional fields
 		ConnectionJSON:          util.StringPointerOrEmpty(config.ConnectionJSON),
@@ -334,25 +396,21 @@ func (r *restConnectionResource) Create(ctx context.Context, req resource.Create
 		DeleteEntitlementJSON:    util.StringPointerOrEmpty(plan.DeleteEntitlementJson),
 		UpdateEntitlementJSON:    util.StringPointerOrEmpty(plan.UpdateEntitlementJson),
 	}
-	restConnRequest := openapi.CreateOrUpdateRequest{
-		RESTConnector: &restConn,
-	}
-	log.Print("[DEBUG] Creating REST connection with request: ", restConn.ConnectionJSON)
-	// Initialize API client
-	apiResp, _, err := apiClient.ConnectionsAPI.CreateOrUpdate(ctx).CreateOrUpdateRequest(restConnRequest).Execute()
-	if err != nil {
-		log.Printf("[ERROR] Failed to create API resource. Error: %v", err)
-		resp.Diagnostics.AddError("API Create Failed", fmt.Sprintf("Error: %v", err))
-		return
-	}
-	if apiResp != nil && *apiResp.ErrorCode != "0" {
-		log.Printf("[ERROR]: Error in creating REST connection resource. Errorcode: %v, Message: %v", *apiResp.ErrorCode, *apiResp.Msg)
-		resp.Diagnostics.AddError("Creation of REST connection failed", *apiResp.Msg)
-		return
+
+	if plan.VaultConnection.ValueString() != "" {
+		restConn.BaseConnector.VaultConnection = util.SafeStringConnector(plan.VaultConnection.ValueString())
+		restConn.BaseConnector.VaultConfiguration = util.SafeStringConnector(plan.VaultConfiguration.ValueString())
+		restConn.BaseConnector.Saveinvault = util.SafeStringConnector(plan.SaveInVault.ValueString())
 	}
 
+	return restConn
+}
+
+func (r *RestConnectionResource) UpdateModelFromCreateResponse(plan *RestConnectorResourceModel, apiResp *openapi.CreateOrUpdateResponse) {
 	plan.ID = types.StringValue(fmt.Sprintf("%d", *apiResp.ConnectionKey))
 	plan.ConnectionKey = types.Int64Value(int64(*apiResp.ConnectionKey))
+
+	// Update all optional fields to maintain state
 	plan.Description = util.SafeStringDatasource(plan.Description.ValueStringPointer())
 	plan.DefaultSavRoles = util.SafeStringDatasource(plan.DefaultSavRoles.ValueStringPointer())
 	plan.EmailTemplate = util.SafeStringDatasource(plan.EmailTemplate.ValueStringPointer())
@@ -384,44 +442,57 @@ func (r *restConnectionResource) Create(ctx context.Context, req resource.Create
 	plan.CreateEntitlementJson = util.SafeStringDatasource(plan.CreateEntitlementJson.ValueStringPointer())
 	plan.DeleteEntitlementJson = util.SafeStringDatasource(plan.DeleteEntitlementJson.ValueStringPointer())
 	plan.UpdateEntitlementJson = util.SafeStringDatasource(plan.UpdateEntitlementJson.ValueStringPointer())
+
 	plan.Msg = types.StringValue(util.SafeDeref(apiResp.Msg))
 	plan.ErrorCode = types.StringValue(util.SafeDeref(apiResp.ErrorCode))
-	resp.Diagnostics.Append(resp.State.Set(ctx, &plan)...)
 }
 
-func (r *restConnectionResource) Read(ctx context.Context, req resource.ReadRequest, resp *resource.ReadResponse) {
-	var state RestConnectorResourceModel
+func (r *RestConnectionResource) ReadRESTConnection(ctx context.Context, connectionName string) (*openapi.GetConnectionDetailsResponse, error) {
+	opCtx := errorsutil.CreateOperationContext(errorsutil.ConnectorTypeREST, "read", connectionName)
 
-	resp.Diagnostics.Append(req.State.Get(ctx, &state)...)
-	if resp.Diagnostics.HasError() {
-		return
-	}
-	// Configure API client
-	cfg := openapi.NewConfiguration()
-	apiBaseURL := strings.TrimPrefix(strings.TrimPrefix(r.client.APIBaseURL(), "https://"), "http://")
-	cfg.Host = apiBaseURL
-	cfg.Scheme = "https"
-	cfg.AddDefaultHeader("Authorization", "Bearer "+r.token)
-	cfg.HTTPClient = http.DefaultClient
+	// Create logging context (separate from API context)
+	logCtx := opCtx.AddContextToLogger(ctx)
 
-	apiClient := openapi.NewAPIClient(cfg)
-	reqParams := openapi.GetConnectionDetailsRequest{}
+	opCtx.LogOperationStart(logCtx, "Starting REST connection read operation")
 
-	reqParams.SetConnectionname(state.ConnectionName.ValueString())
-	apiResp, _, err := apiClient.ConnectionsAPI.GetConnectionDetails(ctx).GetConnectionDetailsRequest(reqParams).Execute()
+	// Use the factory to create connection operations
+	connectionOps := r.connectionFactory.CreateConnectionOperations(r.client.APIBaseURL(), r.token)
+
+	// Execute read operation through interface - use original context for API calls
+	apiResp, _, err := connectionOps.GetConnectionDetails(ctx, connectionName)
 	if err != nil {
-		log.Printf("Problem with the get function in read block")
-		resp.Diagnostics.AddError("API Read Failed", fmt.Sprintf("Error: %v", err))
-		return
-	}
-	if apiResp != nil && apiResp.RESTConnectionResponse != nil && *apiResp.RESTConnectionResponse.Errorcode != 0 {
-		log.Printf("[ERROR]: Error in reading REST connection. Errorcode: %v, Message: %v", *apiResp.RESTConnectionResponse.Errorcode, *apiResp.RESTConnectionResponse.Msg)
-		resp.Diagnostics.AddError("Reading REST connection failed", *apiResp.RESTConnectionResponse.Msg)
-		return
+		errorCode := restErrorCodes.ReadFailed()
+		opCtx.LogOperationError(logCtx, "Failed to read REST connection", errorCode, err)
+		return nil, errorsutil.CreateStandardError(errorsutil.ConnectorTypeREST, errorCode, "read", connectionName, err)
 	}
 
+	if apiResp != nil && apiResp.RESTConnectionResponse != nil && *apiResp.RESTConnectionResponse.Errorcode != 0 {
+		apiErr := fmt.Errorf("API returned error code %d: %s", *apiResp.RESTConnectionResponse.Errorcode, errorsutil.SanitizeMessage(apiResp.RESTConnectionResponse.Msg))
+		errorCode := restErrorCodes.APIError()
+		opCtx.LogOperationError(ctx, "REST connection read failed with API error", errorCode, apiErr,
+			map[string]interface{}{
+				"api_error_code": *apiResp.RESTConnectionResponse.Errorcode,
+				"message":        errorsutil.SanitizeMessage(apiResp.RESTConnectionResponse.Msg),
+			})
+		return nil, errorsutil.CreateStandardError(errorsutil.ConnectorTypeREST, errorCode, "read", connectionName, apiErr)
+	}
+
+	opCtx.LogOperationEnd(logCtx, "REST connection read completed successfully",
+		map[string]interface{}{"connection_key": func() interface{} {
+			if apiResp.RESTConnectionResponse != nil && apiResp.RESTConnectionResponse.Connectionkey != nil {
+				return *apiResp.RESTConnectionResponse.Connectionkey
+			}
+			return "unknown"
+		}()})
+
+	return apiResp, nil
+}
+
+func (r *RestConnectionResource) UpdateModelFromReadResponse(state *RestConnectorResourceModel, apiResp *openapi.GetConnectionDetailsResponse) {
 	state.ConnectionKey = types.Int64Value(int64(*apiResp.RESTConnectionResponse.Connectionkey))
 	state.ID = types.StringValue(fmt.Sprintf("%d", *apiResp.RESTConnectionResponse.Connectionkey))
+
+	// Update all fields from API response
 	state.ConnectionName = util.SafeStringDatasource(apiResp.RESTConnectionResponse.Connectionname)
 	state.Description = util.SafeStringDatasource(apiResp.RESTConnectionResponse.Description)
 	state.DefaultSavRoles = util.SafeStringDatasource(apiResp.RESTConnectionResponse.Defaultsavroles)
@@ -454,6 +525,7 @@ func (r *restConnectionResource) Read(ctx context.Context, req resource.ReadRequ
 	state.CreateEntitlementJson = util.SafeStringDatasource(apiResp.RESTConnectionResponse.Connectionattributes.CreateEntitlementJSON)
 	state.DeleteEntitlementJson = util.SafeStringDatasource(apiResp.RESTConnectionResponse.Connectionattributes.DeleteEntitlementJSON)
 	state.UpdateEntitlementJson = util.SafeStringDatasource(apiResp.RESTConnectionResponse.Connectionattributes.UpdateEntitlementJSON)
+
 	apiMessage := util.SafeDeref(apiResp.RESTConnectionResponse.Msg)
 	if apiMessage == "success" {
 		state.Msg = types.StringValue("Connection Successful")
@@ -461,167 +533,292 @@ func (r *restConnectionResource) Read(ctx context.Context, req resource.ReadRequ
 		state.Msg = types.StringValue(apiMessage)
 	}
 	state.ErrorCode = util.Int32PtrToTFString(apiResp.RESTConnectionResponse.Errorcode)
-	stateDiagnostics := resp.State.Set(ctx, &state)
-	resp.Diagnostics.Append(stateDiagnostics...)
-	if resp.Diagnostics.HasError() {
-		return
-	}
 }
-func (r *restConnectionResource) Update(ctx context.Context, req resource.UpdateRequest, resp *resource.UpdateResponse) {
-	var plan, state, config RestConnectorResourceModel
-	// Extract state from request
-	resp.Diagnostics.Append(req.State.Get(ctx, &state)...)
-	if resp.Diagnostics.HasError() {
-		return
-	}
-	// Extract plan from request
-	resp.Diagnostics.Append(req.Plan.Get(ctx, &plan)...)
-	if resp.Diagnostics.HasError() {
-		return
-	}
-	//Extract config from request
-	resp.Diagnostics.Append(req.Config.Get(ctx, &config)...)
-	if resp.Diagnostics.HasError() {
-		return
-	}
-	if plan.ConnectionName.ValueString() != state.ConnectionName.ValueString() {
-		resp.Diagnostics.AddError("Error", "Connection name cannot be updated")
-		log.Printf("[ERROR]: Connection name cannot be updated")
-		return
+
+func (r *RestConnectionResource) UpdateRESTConnection(ctx context.Context, plan *RestConnectorResourceModel, config *RestConnectorResourceModel) (*openapi.CreateOrUpdateResponse, error) {
+	connectionName := plan.ConnectionName.ValueString()
+	opCtx := errorsutil.CreateOperationContext(errorsutil.ConnectorTypeREST, "update", connectionName)
+
+	// Create logging context (separate from API context)
+	logCtx := opCtx.AddContextToLogger(ctx)
+
+	opCtx.LogOperationStart(logCtx, "Starting REST connection update")
+
+	// Use the factory to create connection operations
+	connectionOps := r.connectionFactory.CreateConnectionOperations(r.client.APIBaseURL(), r.token)
+
+	// Build REST connection update request
+	tflog.Debug(logCtx, "Building REST connection update request")
+
+	restConn := r.BuildRESTConnector(plan, config)
+	if plan.VaultConnection.ValueString() == "" {
+		emptyStr := ""
+		restConn.BaseConnector.VaultConnection = &emptyStr
+		restConn.BaseConnector.VaultConfiguration = &emptyStr
+		restConn.BaseConnector.Saveinvault = &emptyStr
 	}
 
-	cfg := openapi.NewConfiguration()
-	apiBaseURL := strings.TrimPrefix(strings.TrimPrefix(r.client.APIBaseURL(), "https://"), "http://")
-	cfg.Host = apiBaseURL
-	cfg.Scheme = "https"
-	cfg.AddDefaultHeader("Authorization", "Bearer "+r.token)
-
-	cfg.HTTPClient = http.DefaultClient
-
-	restConn := openapi.RESTConnector{
-		BaseConnector: openapi.BaseConnector{
-			//required fields
-			Connectiontype: "REST",
-			ConnectionName: plan.ConnectionName.ValueString(),
-			//optional fields
-			Description:        util.StringPointerOrEmpty(plan.Description),
-			Defaultsavroles:    util.StringPointerOrEmpty(plan.DefaultSavRoles),
-			EmailTemplate:      util.StringPointerOrEmpty(plan.EmailTemplate),
-			VaultConnection:    util.StringPointerOrEmpty(plan.VaultConnection),
-			VaultConfiguration: util.StringPointerOrEmpty(plan.VaultConfiguration),
-			Saveinvault:        util.StringPointerOrEmpty(plan.SaveInVault),
-		},
-		//optional fields
-		ConnectionJSON:          util.StringPointerOrEmpty(config.ConnectionJSON),
-		ImportUserJSON:          util.StringPointerOrEmpty(plan.ImportUserJson),
-		ImportAccountEntJSON:    util.StringPointerOrEmpty(plan.ImportAccountEntJson),
-		STATUS_THRESHOLD_CONFIG: util.StringPointerOrEmpty(plan.StatusThresholdConfig),
-		CreateAccountJSON:       util.StringPointerOrEmpty(plan.CreateAccountJson),
-		UpdateAccountJSON:       util.StringPointerOrEmpty(plan.UpdateAccountJson),
-		EnableAccountJSON:       util.StringPointerOrEmpty(plan.EnableAccountJson),
-		DisableAccountJSON:      util.StringPointerOrEmpty(plan.DisableAccountJson),
-		AddAccessJSON:           util.StringPointerOrEmpty(plan.AddAccessJson),
-		RemoveAccessJSON:        util.StringPointerOrEmpty(plan.RemoveAccessJson),
-		UpdateUserJSON:          util.StringPointerOrEmpty(plan.UpdateUserJson),
-		ChangePassJSON:          util.StringPointerOrEmpty(config.ChangePassJson),
-		RemoveAccountJSON:       util.StringPointerOrEmpty(plan.RemoveAccountJson),
-		TicketStatusJSON:        util.StringPointerOrEmpty(plan.TicketStatusJson),
-		CreateTicketJSON:        util.StringPointerOrEmpty(plan.CreateTicketJson),
-		ENDPOINTS_FILTER:        util.StringPointerOrEmpty(plan.EndpointsFilter),
-		PasswdPolicyJSON:        util.StringPointerOrEmpty(plan.PasswdPolicyJson),
-		ConfigJSON:              util.StringPointerOrEmpty(plan.ConfigJSON),
-		AddFFIDAccessJSON:       util.StringPointerOrEmpty(plan.AddFFIDAccessJson),
-		RemoveFFIDAccessJSON:    util.StringPointerOrEmpty(plan.RemoveFFIDAccessJson),
-		MODIFYUSERDATAJSON:      util.StringPointerOrEmpty(plan.ModifyUserdataJson),
-		SendOtpJSON:             util.StringPointerOrEmpty(plan.SendOtpJson),
-		ValidateOtpJSON:         util.StringPointerOrEmpty(plan.ValidateOtpJson),
-		PAM_CONFIG:              util.StringPointerOrEmpty(plan.PamConfig),
-		//TER-176
-		ApplicationDiscoveryJSON: util.StringPointerOrEmpty(plan.ApplicationDiscoveryJson),
-		CreateEntitlementJSON:    util.StringPointerOrEmpty(plan.CreateEntitlementJson),
-		DeleteEntitlementJSON:    util.StringPointerOrEmpty(plan.DeleteEntitlementJson),
-		UpdateEntitlementJSON:    util.StringPointerOrEmpty(plan.UpdateEntitlementJson),
-	}
 	restConnRequest := openapi.CreateOrUpdateRequest{
 		RESTConnector: &restConn,
 	}
 
-	// Initialize API client
-	apiClient := openapi.NewAPIClient(cfg)
+	// Execute update operation through interface
+	tflog.Debug(logCtx, "Executing update operation")
 
-	apiResp, _, err := apiClient.ConnectionsAPI.CreateOrUpdate(ctx).CreateOrUpdateRequest(restConnRequest).Execute()
+	// Use original context for API calls to maintain test compatibility
+	apiResp, _, err := connectionOps.CreateOrUpdateConnection(ctx, restConnRequest)
 	if err != nil {
-		log.Printf("Problem with the update function")
-		resp.Diagnostics.AddError("API Update Failed", fmt.Sprintf("Error: %v", err))
-		return
+		errorCode := restErrorCodes.UpdateFailed()
+		opCtx.LogOperationError(logCtx, "Failed to update REST connection", errorCode, err)
+		return nil, errorsutil.CreateStandardError(errorsutil.ConnectorTypeREST, errorCode, "update", connectionName, err)
 	}
+
 	if apiResp != nil && *apiResp.ErrorCode != "0" {
-		log.Printf("[ERROR]: Error in updating REST connection resource. Errorcode: %v, Message: %v", *apiResp.ErrorCode, *apiResp.Msg)
-		resp.Diagnostics.AddError("Updation of REST connection failed", *apiResp.Msg)
-		return
+		apiErr := fmt.Errorf("API returned error code %s: %s", *apiResp.ErrorCode, errorsutil.SanitizeMessage(apiResp.Msg))
+		errorCode := restErrorCodes.APIError()
+		opCtx.LogOperationError(logCtx, "REST connection update failed with API error", errorCode, apiErr,
+			map[string]interface{}{
+				"api_error_code": *apiResp.ErrorCode,
+				"message":        errorsutil.SanitizeMessage(apiResp.Msg),
+			})
+		return nil, errorsutil.CreateStandardError(errorsutil.ConnectorTypeREST, errorCode, "update", connectionName, apiErr)
 	}
 
-	reqParams := openapi.GetConnectionDetailsRequest{}
+	opCtx.LogOperationEnd(logCtx, "REST connection updated successfully",
+		map[string]interface{}{"connection_key": func() interface{} {
+			if apiResp.ConnectionKey != nil {
+				return *apiResp.ConnectionKey
+			}
+			return "unknown"
+		}()})
 
-	reqParams.SetConnectionname(plan.ConnectionName.ValueString())
-	getResp, _, err := apiClient.ConnectionsAPI.GetConnectionDetails(ctx).GetConnectionDetailsRequest(reqParams).Execute()
-	if err != nil {
-		log.Printf("Problem with the get function in update block")
-		resp.Diagnostics.AddError("API Read Failed", fmt.Sprintf("Error: %v", err))
-		return
-	}
-	if getResp != nil && getResp.RESTConnectionResponse != nil && *getResp.RESTConnectionResponse.Errorcode != 0 {
-		log.Printf("[ERROR]: Error in reading REST connection after updation. Errorcode: %v, Message: %v", *getResp.RESTConnectionResponse.Errorcode, *getResp.RESTConnectionResponse.Msg)
-		resp.Diagnostics.AddError("Reading REST connection after updation failed", *getResp.RESTConnectionResponse.Msg)
-		return
-	}
-
-	plan.ConnectionKey = types.Int64Value(int64(*getResp.RESTConnectionResponse.Connectionkey))
-	plan.ID = types.StringValue(fmt.Sprintf("%d", *getResp.RESTConnectionResponse.Connectionkey))
-	plan.ConnectionName = util.SafeStringDatasource(getResp.RESTConnectionResponse.Connectionname)
-	plan.Description = util.SafeStringDatasource(getResp.RESTConnectionResponse.Description)
-	plan.DefaultSavRoles = util.SafeStringDatasource(getResp.RESTConnectionResponse.Defaultsavroles)
-	plan.EmailTemplate = util.SafeStringDatasource(getResp.RESTConnectionResponse.Emailtemplate)
-	plan.ImportUserJson = util.SafeStringDatasource(getResp.RESTConnectionResponse.Connectionattributes.ImportUserJSON)
-	plan.ImportAccountEntJson = util.SafeStringDatasource(getResp.RESTConnectionResponse.Connectionattributes.ImportAccountEntJSON)
-	plan.StatusThresholdConfig = util.SafeStringDatasource(getResp.RESTConnectionResponse.Connectionattributes.STATUS_THRESHOLD_CONFIG)
-	plan.CreateAccountJson = util.SafeStringDatasource(getResp.RESTConnectionResponse.Connectionattributes.CreateAccountJSON)
-	plan.UpdateAccountJson = util.SafeStringDatasource(getResp.RESTConnectionResponse.Connectionattributes.UpdateAccountJSON)
-	plan.EnableAccountJson = util.SafeStringDatasource(getResp.RESTConnectionResponse.Connectionattributes.EnableAccountJSON)
-	plan.DisableAccountJson = util.SafeStringDatasource(getResp.RESTConnectionResponse.Connectionattributes.DisableAccountJSON)
-	plan.AddAccessJson = util.SafeStringDatasource(getResp.RESTConnectionResponse.Connectionattributes.AddAccessJSON)
-	plan.RemoveAccessJson = util.SafeStringDatasource(getResp.RESTConnectionResponse.Connectionattributes.RemoveAccessJSON)
-	plan.UpdateUserJson = util.SafeStringDatasource(getResp.RESTConnectionResponse.Connectionattributes.UpdateUserJSON)
-	plan.ChangePassJson = util.SafeStringDatasource(getResp.RESTConnectionResponse.Connectionattributes.ChangePassJSON)
-	plan.RemoveAccountJson = util.SafeStringDatasource(getResp.RESTConnectionResponse.Connectionattributes.RemoveAccountJSON)
-	plan.TicketStatusJson = util.SafeStringDatasource(getResp.RESTConnectionResponse.Connectionattributes.TicketStatusJSON)
-	plan.CreateTicketJson = util.SafeStringDatasource(getResp.RESTConnectionResponse.Connectionattributes.CreateTicketJSON)
-	plan.EndpointsFilter = util.SafeStringDatasource(getResp.RESTConnectionResponse.Connectionattributes.ENDPOINTS_FILTER)
-	plan.PasswdPolicyJson = util.SafeStringDatasource(getResp.RESTConnectionResponse.Connectionattributes.PasswdPolicyJSON)
-	plan.ConfigJSON = util.SafeStringDatasource(getResp.RESTConnectionResponse.Connectionattributes.ConfigJSON)
-	plan.AddFFIDAccessJson = util.SafeStringDatasource(getResp.RESTConnectionResponse.Connectionattributes.AddFFIDAccessJSON)
-	plan.RemoveFFIDAccessJson = util.SafeStringDatasource(getResp.RESTConnectionResponse.Connectionattributes.RemoveFFIDAccessJSON)
-	plan.ModifyUserdataJson = util.SafeStringDatasource(getResp.RESTConnectionResponse.Connectionattributes.MODIFYUSERDATAJSON)
-	plan.SendOtpJson = util.SafeStringDatasource(getResp.RESTConnectionResponse.Connectionattributes.SendOtpJSON)
-	plan.ValidateOtpJson = util.SafeStringDatasource(getResp.RESTConnectionResponse.Connectionattributes.ValidateOtpJSON)
-	plan.PamConfig = util.SafeStringDatasource(getResp.RESTConnectionResponse.Connectionattributes.PAM_CONFIG)
-	//TER-176
-	plan.ApplicationDiscoveryJson = util.SafeStringDatasource(getResp.RESTConnectionResponse.Connectionattributes.ApplicationDiscoveryJSON)
-	plan.CreateEntitlementJson = util.SafeStringDatasource(getResp.RESTConnectionResponse.Connectionattributes.CreateEntitlementJSON)
-	plan.DeleteEntitlementJson = util.SafeStringDatasource(getResp.RESTConnectionResponse.Connectionattributes.DeleteEntitlementJSON)
-	plan.UpdateEntitlementJson = util.SafeStringDatasource(getResp.RESTConnectionResponse.Connectionattributes.UpdateEntitlementJSON)
-	apiMessage := util.SafeDeref(getResp.RESTConnectionResponse.Msg)
-	if apiMessage == "success" {
-		plan.Msg = types.StringValue("Connection Successful")
-	} else {
-		plan.Msg = types.StringValue(apiMessage)
-	}
-	plan.ErrorCode = util.Int32PtrToTFString(getResp.RESTConnectionResponse.Errorcode)
-	stateUpdateDiagnostics := resp.State.Set(ctx, plan)
-	resp.Diagnostics.Append(stateUpdateDiagnostics...)
+	return apiResp, nil
 }
 
-func (r *restConnectionResource) Delete(ctx context.Context, req resource.DeleteRequest, resp *resource.DeleteResponse) {
+func (r *RestConnectionResource) Create(ctx context.Context, req resource.CreateRequest, resp *resource.CreateResponse) {
+	var plan, config RestConnectorResourceModel
+
+	opCtx := errorsutil.CreateOperationContext(errorsutil.ConnectorTypeREST, "terraform_create", "")
+	ctx = opCtx.AddContextToLogger(ctx)
+
+	opCtx.LogOperationStart(ctx, "Starting REST connection resource creation")
+
+	// Extract plan from request
+	resp.Diagnostics.Append(req.Plan.Get(ctx, &plan)...)
+	if resp.Diagnostics.HasError() {
+		errorCode := restErrorCodes.PlanExtraction()
+		opCtx.LogOperationError(ctx, "Failed to get plan from request", errorCode,
+			fmt.Errorf("plan extraction failed"))
+		resp.Diagnostics.AddError(
+			errorsutil.GetErrorMessage(errorsutil.ErrPlanExtraction),
+			fmt.Sprintf("[%s] Unable to extract Terraform plan from request", errorCode),
+		)
+		return
+	}
+
+	connectionName := plan.ConnectionName.ValueString()
+	// Update operation context with connection name
+	opCtx.ConnectionName = connectionName
+	ctx = opCtx.AddContextToLogger(ctx)
+
+	//Extract config from request
+	resp.Diagnostics.Append(req.Config.Get(ctx, &config)...)
+	if resp.Diagnostics.HasError() {
+		errorCode := restErrorCodes.ConfigExtraction()
+		opCtx.LogOperationError(ctx, "Failed to get config from request", errorCode,
+			fmt.Errorf("config extraction failed"))
+		resp.Diagnostics.AddError(
+			errorsutil.GetErrorMessage(errorsutil.ErrConfigExtraction),
+			fmt.Sprintf("[%s] Unable to extract Terraform configuration from request for connection '%s'", errorCode, connectionName),
+		)
+		return
+	}
+
+	// Use interface pattern instead of direct API client creation
+	apiResp, err := r.CreateRESTConnection(ctx, &plan, &config)
+	if err != nil {
+		opCtx.LogOperationError(ctx, "REST connection creation failed", "", err)
+		resp.Diagnostics.AddError(
+			"REST Connection Creation Failed",
+			err.Error(),
+		)
+		return
+	}
+
+	// Update model from create response
+	r.UpdateModelFromCreateResponse(&plan, apiResp)
+	resp.Diagnostics.Append(resp.State.Set(ctx, &plan)...)
+
+	opCtx.LogOperationEnd(ctx, "REST connection resource created successfully",
+		map[string]interface{}{"connection_key": plan.ConnectionKey.ValueInt64()})
+}
+
+func (r *RestConnectionResource) Read(ctx context.Context, req resource.ReadRequest, resp *resource.ReadResponse) {
+	var state RestConnectorResourceModel
+
+	opCtx := errorsutil.CreateOperationContext(errorsutil.ConnectorTypeREST, "terraform_read", "")
+	ctx = opCtx.AddContextToLogger(ctx)
+
+	opCtx.LogOperationStart(ctx, "Starting REST connection resource read")
+
+	resp.Diagnostics.Append(req.State.Get(ctx, &state)...)
+	if resp.Diagnostics.HasError() {
+		errorCode := restErrorCodes.StateExtraction()
+		opCtx.LogOperationError(ctx, "Failed to get state from request", errorCode,
+			fmt.Errorf("state extraction failed"))
+		resp.Diagnostics.AddError(
+			errorsutil.GetErrorMessage(errorsutil.ErrStateExtraction),
+			fmt.Sprintf("[%s] Unable to extract Terraform state from request", errorCode),
+		)
+		return
+	}
+
+	connectionName := state.ConnectionName.ValueString()
+	// Update operation context with connection name
+	opCtx.ConnectionName = connectionName
+	ctx = opCtx.AddContextToLogger(ctx)
+
+	// Use interface pattern instead of direct API client creation
+	apiResp, err := r.ReadRESTConnection(ctx, connectionName)
+	if err != nil {
+		opCtx.LogOperationError(ctx, "REST connection read failed", "", err)
+		resp.Diagnostics.AddError(
+			"REST Connection Read Failed",
+			err.Error(),
+		)
+		return
+	}
+
+	// Update model from read response
+	r.UpdateModelFromReadResponse(&state, apiResp)
+
+	stateDiagnostics := resp.State.Set(ctx, &state)
+	resp.Diagnostics.Append(stateDiagnostics...)
+	if resp.Diagnostics.HasError() {
+		errorCode := restErrorCodes.StateUpdate()
+		opCtx.LogOperationError(ctx, "Failed to set state", errorCode,
+			fmt.Errorf("state update failed"))
+		resp.Diagnostics.AddError(
+			errorsutil.GetErrorMessage(errorsutil.ErrStateUpdate),
+			fmt.Sprintf("[%s] Unable to update Terraform state for connection '%s'", errorCode, connectionName),
+		)
+		return
+	}
+
+	opCtx.LogOperationEnd(ctx, "REST connection resource read completed successfully")
+}
+
+func (r *RestConnectionResource) Update(ctx context.Context, req resource.UpdateRequest, resp *resource.UpdateResponse) {
+	var plan, state, config RestConnectorResourceModel
+
+	opCtx := errorsutil.CreateOperationContext(errorsutil.ConnectorTypeREST, "terraform_update", "")
+	ctx = opCtx.AddContextToLogger(ctx)
+
+	opCtx.LogOperationStart(ctx, "Starting REST connection resource update")
+
+	// Extract state from request
+	resp.Diagnostics.Append(req.State.Get(ctx, &state)...)
+	if resp.Diagnostics.HasError() {
+		errorCode := restErrorCodes.StateExtraction()
+		opCtx.LogOperationError(ctx, "Failed to get state from request", errorCode,
+			fmt.Errorf("state extraction failed"))
+		resp.Diagnostics.AddError(
+			errorsutil.GetErrorMessage(errorsutil.ErrStateExtraction),
+			fmt.Sprintf("[%s] Unable to extract Terraform state from request", errorCode),
+		)
+		return
+	}
+
+	// Extract plan from request
+	resp.Diagnostics.Append(req.Plan.Get(ctx, &plan)...)
+	if resp.Diagnostics.HasError() {
+		errorCode := restErrorCodes.PlanExtraction()
+		opCtx.LogOperationError(ctx, "Failed to get plan from request", errorCode,
+			fmt.Errorf("plan extraction failed"))
+		resp.Diagnostics.AddError(
+			errorsutil.GetErrorMessage(errorsutil.ErrPlanExtraction),
+			fmt.Sprintf("[%s] Unable to extract Terraform plan from request for connection '%s'", errorCode, state.ConnectionName.ValueString()),
+		)
+		return
+	}
+
+	//Extract config from request
+	resp.Diagnostics.Append(req.Config.Get(ctx, &config)...)
+	if resp.Diagnostics.HasError() {
+		errorCode := restErrorCodes.ConfigExtraction()
+		opCtx.LogOperationError(ctx, "Failed to get config from request", errorCode,
+			fmt.Errorf("config extraction failed"))
+		resp.Diagnostics.AddError(
+			errorsutil.GetErrorMessage(errorsutil.ErrConfigExtraction),
+			fmt.Sprintf("[%s] Unable to extract Terraform configuration from request for connection '%s'", errorCode, plan.ConnectionName.ValueString()),
+		)
+		return
+	}
+
+	// Validate that connection name cannot be updated
+	if plan.ConnectionName.ValueString() != state.ConnectionName.ValueString() {
+		errorCode := restErrorCodes.NameImmutable()
+		opCtx.LogOperationError(ctx, "Connection name cannot be updated", errorCode,
+			fmt.Errorf("attempted to change connection name from '%s' to '%s'", state.ConnectionName.ValueString(), plan.ConnectionName.ValueString()),
+			map[string]interface{}{
+				"old_name": state.ConnectionName.ValueString(),
+				"new_name": plan.ConnectionName.ValueString(),
+			})
+		resp.Diagnostics.AddError(
+			errorsutil.GetErrorMessage(errorCode),
+			fmt.Sprintf("[%s] Cannot change connection name from '%s' to '%s'", errorCode, state.ConnectionName.ValueString(), plan.ConnectionName.ValueString()),
+		)
+		return
+	}
+
+	connectionName := plan.ConnectionName.ValueString()
+	// Update operation context with connection name
+	opCtx.ConnectionName = connectionName
+	ctx = opCtx.AddContextToLogger(ctx)
+
+	// Use interface pattern instead of direct API client creation
+	_, err := r.UpdateRESTConnection(ctx, &plan, &config)
+	if err != nil {
+		opCtx.LogOperationError(ctx, "REST connection update failed", "", err)
+		resp.Diagnostics.AddError(
+			"REST Connection Update Failed",
+			err.Error(),
+		)
+		return
+	}
+
+	// Read the updated connection to get the latest state
+	getResp, err := r.ReadRESTConnection(ctx, connectionName)
+	if err != nil {
+		opCtx.LogOperationError(ctx, "Failed to read updated REST connection", "", err)
+		resp.Diagnostics.AddError(
+			"REST Connection Post-Update Read Failed",
+			err.Error(),
+		)
+		return
+	}
+
+	// Update model from read response
+	r.UpdateModelFromReadResponse(&plan, getResp)
+
+	stateUpdateDiagnostics := resp.State.Set(ctx, plan)
+	resp.Diagnostics.Append(stateUpdateDiagnostics...)
+	if resp.Diagnostics.HasError() {
+		errorCode := restErrorCodes.StateUpdate()
+		opCtx.LogOperationError(ctx, "Failed to update state after successful update", errorCode,
+			fmt.Errorf("state update failed"))
+		resp.Diagnostics.AddError(
+			errorsutil.GetErrorMessage(errorsutil.ErrStateUpdate),
+			fmt.Sprintf("[%s] Unable to update Terraform state after successful update for connection '%s'", errorCode, connectionName),
+		)
+		return
+	}
+
+	opCtx.LogOperationEnd(ctx, "REST connection resource updated successfully",
+		map[string]interface{}{"connection_key": plan.ConnectionKey.ValueInt64()})
+}
+
+func (r *RestConnectionResource) Delete(ctx context.Context, req resource.DeleteRequest, resp *resource.DeleteResponse) {
 	// resp.State.RemoveResource(ctx)
 	if os.Getenv("TF_ACC") == "1" {
 		resp.State.RemoveResource(ctx)
@@ -632,7 +829,18 @@ func (r *restConnectionResource) Delete(ctx context.Context, req resource.Delete
 		"Resource deletion is not supported by this provider. Please remove the resource manually if required, or contact your administrator.",
 	)
 }
-func (r *restConnectionResource) ImportState(ctx context.Context, req resource.ImportStateRequest, resp *resource.ImportStateResponse) {
-	// Retrieve import ID and save to id attribute
+
+func (r *RestConnectionResource) ImportState(ctx context.Context, req resource.ImportStateRequest, resp *resource.ImportStateResponse) {
+	// Importing a REST connection resource requires the connection name
+	connectionName := req.ID
+	opCtx := errorsutil.CreateOperationContext(errorsutil.ConnectorTypeREST, "terraform_import", connectionName)
+	ctx = opCtx.AddContextToLogger(ctx)
+
+	opCtx.LogOperationStart(ctx, "Starting REST connection resource import")
+
+	// Retrieve import ID and save to connection_name attribute
 	resource.ImportStatePassthroughID(ctx, path.Root("connection_name"), req, resp)
+
+	opCtx.LogOperationEnd(ctx, "REST connection resource import completed successfully",
+		map[string]interface{}{"import_id": connectionName})
 }

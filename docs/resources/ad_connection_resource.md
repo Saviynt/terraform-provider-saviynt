@@ -342,7 +342,7 @@ resource "saviynt_ad_connection_resource" "example" {
 - `url` (String) LDAP or target system URL. Example: "ldap://uscentral.com:8972/"
 - `user_attribute` (String) Mapping for LDAP user to EIC user attribute. Example: '["USERNAME::sAMAccountName#String", ...]'
 - `username` (String) System admin username.
-- `vault_configuration` (String) JSON string specifying vault configuration. Example: '{"path":"/secrets/data/kv-dev-intgn1/-AD_Credential","keyMapping":{"PASSWORD":"AD_PASSWORD~#~None"}}'
+- `vault_configuration` (String) JSON string specifying vault configuration.
 - `vault_connection` (String) Specifies the type of vault connection being used (e.g., 'Hashicorp'). Example: "Hashicorp"
 
 ### Read-Only

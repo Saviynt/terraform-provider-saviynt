@@ -12,22 +12,27 @@ package provider
 import (
 	"context"
 	"fmt"
-	"log"
-	"net/http"
 	"os"
-	"strings"
+	"terraform-provider-Saviynt/internal/client"
 	"terraform-provider-Saviynt/util"
 	connectionsutil "terraform-provider-Saviynt/util/connectionsutil"
+	"terraform-provider-Saviynt/util/errorsutil"
 
 	openapi "github.com/saviynt/saviynt-api-go-client/connections"
-
-	s "github.com/saviynt/saviynt-api-go-client"
 
 	"github.com/hashicorp/terraform-plugin-framework/path"
 	"github.com/hashicorp/terraform-plugin-framework/resource"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema"
 	"github.com/hashicorp/terraform-plugin-framework/types"
+	"github.com/hashicorp/terraform-plugin-log/tflog"
 )
+
+// Ensure provider defined types fully satisfy framework interfaces.
+var _ resource.Resource = &DBConnectionResource{}
+var _ resource.ResourceWithImportState = &DBConnectionResource{}
+
+// Initialize error codes for DB Connection operations
+var dbErrorCodes = errorsutil.NewConnectorErrorCodes(errorsutil.ConnectorTypeDB)
 
 type DBConnectorResourceModel struct {
 	BaseConnectorResourceModel
@@ -69,16 +74,25 @@ type DBConnectorResourceModel struct {
 	UpdateEntitlementJson types.String `tfsdk:"update_entitlement_json"`
 }
 
-type dbConnectionResource struct {
-	client *s.Client
-	token  string
+type DBConnectionResource struct {
+	client            client.SaviyntClientInterface
+	token             string
+	connectionFactory client.ConnectionFactoryInterface
 }
 
-func NewDBTestConnectionResource() resource.Resource {
-	return &dbConnectionResource{}
+func NewDBConnectionResource() resource.Resource {
+	return &DBConnectionResource{
+		connectionFactory: &client.DefaultConnectionFactory{},
+	}
 }
 
-func (r *dbConnectionResource) Metadata(ctx context.Context, req resource.MetadataRequest, resp *resource.MetadataResponse) {
+func NewDBConnectionResourceWithFactory(factory client.ConnectionFactoryInterface) resource.Resource {
+	return &DBConnectionResource{
+		connectionFactory: factory,
+	}
+}
+
+func (r *DBConnectionResource) Metadata(ctx context.Context, req resource.MetadataRequest, resp *resource.MetadataResponse) {
 	resp.TypeName = "saviynt_db_connection_resource"
 }
 
@@ -260,135 +274,253 @@ func DBConnectorResourceSchema() map[string]schema.Attribute {
 	}
 }
 
-func (r *dbConnectionResource) Schema(ctx context.Context, req resource.SchemaRequest, resp *resource.SchemaResponse) {
+func (r *DBConnectionResource) Schema(ctx context.Context, req resource.SchemaRequest, resp *resource.SchemaResponse) {
 	resp.Schema = schema.Schema{
 		Description: util.DBConnDescription,
 		Attributes:  connectionsutil.MergeResourceAttributes(BaseConnectorResourceSchema(), DBConnectorResourceSchema()),
 	}
 }
 
-func (r *dbConnectionResource) Configure(ctx context.Context, req resource.ConfigureRequest, resp *resource.ConfigureResponse) {
+func (r *DBConnectionResource) Configure(ctx context.Context, req resource.ConfigureRequest, resp *resource.ConfigureResponse) {
+	opCtx := errorsutil.CreateOperationContext(errorsutil.ConnectorTypeDB, "configure", "")
+	ctx = opCtx.AddContextToLogger(ctx)
+
+	opCtx.LogOperationStart(ctx, "Starting DB connection resource configuration")
+
 	// Check if provider data is available.
 	if req.ProviderData == nil {
-		log.Println("ProviderData is nil, returning early.")
+		tflog.Debug(ctx, "ProviderData is nil, returning early")
+		opCtx.LogOperationEnd(ctx, "DB connection resource configuration completed - no provider data")
 		return
 	}
 
 	// Cast provider data to your provider type.
 	prov, ok := req.ProviderData.(*saviyntProvider)
 	if !ok {
-		resp.Diagnostics.AddError("Unexpected Provider Data", "Expected *saviyntProvider")
+		errorCode := dbErrorCodes.ProviderConfig()
+		opCtx.LogOperationError(ctx, "Provider configuration failed", errorCode,
+			fmt.Errorf("expected *saviyntProvider, got different type"),
+			map[string]interface{}{"expected_type": "*saviyntProvider"})
+
+		resp.Diagnostics.AddError(
+			errorsutil.GetErrorMessage(errorsutil.ErrProviderConfig),
+			fmt.Sprintf("[%s] Expected *saviyntProvider, got different type", errorCode),
+		)
 		return
 	}
 
 	// Set the client and token from the provider state.
-	r.client = prov.client
+	r.client = &client.SaviyntClientWrapper{Client: prov.client}
 	r.token = prov.accessToken
+
+	opCtx.LogOperationEnd(ctx, "DB connection resource configuration completed successfully")
 }
 
-func (r *dbConnectionResource) Create(ctx context.Context, req resource.CreateRequest, resp *resource.CreateResponse) {
+// SetClient sets the client for testing purposes
+func (r *DBConnectionResource) SetClient(client client.SaviyntClientInterface) {
+	r.client = client
+}
+
+// SetToken sets the token for testing purposes
+func (r *DBConnectionResource) SetToken(token string) {
+	r.token = token
+}
+
+func (r *DBConnectionResource) Create(ctx context.Context, req resource.CreateRequest, resp *resource.CreateResponse) {
 	var plan, config DBConnectorResourceModel
+
+	opCtx := errorsutil.CreateOperationContext(errorsutil.ConnectorTypeDB, "terraform_create", "")
+	ctx = opCtx.AddContextToLogger(ctx)
+
+	opCtx.LogOperationStart(ctx, "Starting DB connection resource creation")
+
 	// Extract plan from request
 	resp.Diagnostics.Append(req.Plan.Get(ctx, &plan)...)
 	if resp.Diagnostics.HasError() {
+		errorCode := dbErrorCodes.PlanExtraction()
+		opCtx.LogOperationError(ctx, "Failed to get plan from request", errorCode,
+			fmt.Errorf("plan extraction failed"))
+		resp.Diagnostics.AddError(
+			errorsutil.GetErrorMessage(errorsutil.ErrPlanExtraction),
+			fmt.Sprintf("[%s] Unable to extract Terraform plan from request", errorCode),
+		)
 		return
 	}
-	// Extract config from request
+
+	connectionName := plan.ConnectionName.ValueString()
+	opCtx.ConnectionName = connectionName
+
+	//Extract config from request
 	resp.Diagnostics.Append(req.Config.Get(ctx, &config)...)
 	if resp.Diagnostics.HasError() {
+		errorCode := dbErrorCodes.ConfigExtraction()
+		opCtx.LogOperationError(ctx, "Failed to get config from request", errorCode,
+			fmt.Errorf("config extraction failed"))
+		resp.Diagnostics.AddError(
+			errorsutil.GetErrorMessage(errorsutil.ErrConfigExtraction),
+			fmt.Sprintf("[%s] Unable to extract Terraform configuration from request for connection '%s'", errorCode, connectionName),
+		)
 		return
 	}
-	cfg := openapi.NewConfiguration()
-	apiBaseURL := strings.TrimPrefix(strings.TrimPrefix(r.client.APIBaseURL(), "https://"), "http://")
-	cfg.Host = apiBaseURL
-	cfg.Scheme = "https"
-	cfg.AddDefaultHeader("Authorization", "Bearer "+r.token)
-	cfg.HTTPClient = http.DefaultClient
-	apiClient := openapi.NewAPIClient(cfg)
-	reqParams := openapi.GetConnectionDetailsRequest{}
-	reqParams.SetConnectionname(plan.ConnectionName.ValueString())
-	existingResource, _, _ := apiClient.ConnectionsAPI.GetConnectionDetails(ctx).GetConnectionDetailsRequest(reqParams).Execute()
+
+	// Use interface pattern instead of direct API client creation
+	apiResp, err := r.CreateDBConnection(ctx, &plan, &config)
+	if err != nil {
+		opCtx.LogOperationError(ctx, "DB connection creation failed", "", err)
+		resp.Diagnostics.AddError(
+			"DB Connection Creation Failed",
+			err.Error(),
+		)
+		return
+	}
+
+	r.UpdateModelFromCreateResponse(&plan, apiResp)
+
+	diags := resp.State.Set(ctx, plan)
+	resp.Diagnostics.Append(diags...)
+
+	opCtx.LogOperationEnd(ctx, "DB connection resource creation completed successfully",
+		map[string]interface{}{"connection_name": connectionName})
+}
+
+// CreateDBConnection creates a new DB connection
+func (r *DBConnectionResource) CreateDBConnection(ctx context.Context, plan *DBConnectorResourceModel, config *DBConnectorResourceModel) (*openapi.CreateOrUpdateResponse, error) {
+	connectionName := plan.ConnectionName.ValueString()
+	opCtx := errorsutil.CreateOperationContext(errorsutil.ConnectorTypeDB, "create", connectionName)
+
+	// Create logging context (separate from API context)
+	logCtx := opCtx.AddContextToLogger(ctx)
+
+	opCtx.LogOperationStart(logCtx, "Starting DB connection creation",
+		map[string]interface{}{"connection_name": connectionName})
+
+	// Use the factory to create connection operations
+	connectionOps := r.connectionFactory.CreateConnectionOperations(r.client.APIBaseURL(), r.token)
+
+	// Check if connection already exists (idempotency check)
+	existingResource, _, _ := connectionOps.GetConnectionDetails(ctx, connectionName)
 	if existingResource != nil &&
 		existingResource.DBConnectionResponse != nil &&
 		existingResource.DBConnectionResponse.Errorcode != nil &&
 		*existingResource.DBConnectionResponse.Errorcode == 0 {
-		log.Printf("[ERROR] Connection name already exists. Please import or use a different name")
-		resp.Diagnostics.AddError("API Create Failed", "Connection name already exists. Please import or use a different name")
-		return
+
+		errorCode := dbErrorCodes.DuplicateName()
+		opCtx.LogOperationError(ctx, "Connection name already exists.Please import or use a different name", errorCode,
+			fmt.Errorf("duplicate connection name"))
+		return nil, errorsutil.CreateStandardError(errorsutil.ConnectorTypeDB, errorCode, "create", connectionName, nil)
 	}
 
-	dbConn := openapi.DBConnector{
+	// Build DB connector request
+	dbConn := r.BuildDBConnector(plan, config)
+	dbConnRequest := openapi.CreateOrUpdateRequest{
+		DBConnector: &dbConn,
+	}
+
+	opCtx.LogOperationStart(logCtx, "Executing DB connection create API call")
+
+	// Execute create operation through interface - use original context for API calls
+	apiResp, _, err := connectionOps.CreateOrUpdateConnection(ctx, dbConnRequest)
+	if err != nil {
+		errorCode := dbErrorCodes.CreateFailed()
+		opCtx.LogOperationError(logCtx, "Failed to create DB connection", errorCode, err)
+		return nil, errorsutil.CreateStandardError(errorsutil.ConnectorTypeDB, errorCode, "create", connectionName, err)
+	}
+
+	if apiResp != nil && *apiResp.ErrorCode != "0" {
+		apiErr := fmt.Errorf("API returned error code %s: %s", *apiResp.ErrorCode, errorsutil.SanitizeMessage(apiResp.Msg))
+		errorCode := dbErrorCodes.APIError()
+		opCtx.LogOperationError(ctx, "DB connection creation failed with API error", errorCode, apiErr,
+			map[string]interface{}{
+				"api_error_code": *apiResp.ErrorCode,
+				"message":        errorsutil.SanitizeMessage(apiResp.Msg),
+			})
+		return nil, errorsutil.CreateStandardError(errorsutil.ConnectorTypeDB, errorCode, "create", connectionName, apiErr)
+	}
+
+	opCtx.LogOperationEnd(logCtx, "DB connection created successfully",
+		map[string]interface{}{
+			"connection_name": connectionName,
+			"connection_key":  apiResp.ConnectionKey,
+		})
+
+	return apiResp, nil
+}
+
+// BuildDBConnector builds the DB connector object
+func (r *DBConnectionResource) BuildDBConnector(plan *DBConnectorResourceModel, config *DBConnectorResourceModel) openapi.DBConnector {
+	connector := openapi.DBConnector{
 		BaseConnector: openapi.BaseConnector{
-			//required field
-			Connectiontype: "DB",
-			ConnectionName: plan.ConnectionName.ValueString(),
-			//optional field
+			Connectiontype:  "DB",
+			ConnectionName:  plan.ConnectionName.ValueString(),
 			Description:     util.StringPointerOrEmpty(plan.Description),
 			Defaultsavroles: util.StringPointerOrEmpty(plan.DefaultSavRoles),
 			EmailTemplate:   util.StringPointerOrEmpty(plan.EmailTemplate),
 		},
-		//required field
+		// Required fields
 		URL:        plan.URL.ValueString(),
 		USERNAME:   config.Username.ValueString(),
 		PASSWORD:   config.Password.ValueString(),
 		DRIVERNAME: plan.DriverName.ValueString(),
-		//optional field
-		CONNECTIONPROPERTIES:    util.StringPointerOrEmpty(plan.ConnectionProperties),
-		PASSWORD_MIN_LENGTH:     util.StringPointerOrEmpty(plan.PasswordMinLength),
-		PASSWORD_MAX_LENGTH:     util.StringPointerOrEmpty(plan.PasswordMaxLength),
-		PASSWORD_NOOFCAPSALPHA:  util.StringPointerOrEmpty(plan.PasswordNoOfCapsAlpha),
-		PASSWORD_NOOFDIGITS:     util.StringPointerOrEmpty(plan.PasswordNoOfDigits),
-		PASSWORD_NOOFSPLCHARS:   util.StringPointerOrEmpty(plan.PasswordNoOfSplChars),
-		CREATEACCOUNTJSON:       util.StringPointerOrEmpty(plan.CreateAccountJson),
-		UPDATEACCOUNTJSON:       util.StringPointerOrEmpty(plan.UpdateAccountJson),
-		GRANTACCESSJSON:         util.StringPointerOrEmpty(plan.GrantAccessJson),
-		REVOKEACCESSJSON:        util.StringPointerOrEmpty(plan.RevokeAccessJson),
-		CHANGEPASSJSON:          util.StringPointerOrEmpty(config.ChangePassJson),
-		DELETEACCOUNTJSON:       util.StringPointerOrEmpty(plan.DeleteAccountJson),
-		ENABLEACCOUNTJSON:       util.StringPointerOrEmpty(plan.EnableAccountJson),
-		DISABLEACCOUNTJSON:      util.StringPointerOrEmpty(plan.DisableAccountJson),
-		ACCOUNTEXISTSJSON:       util.StringPointerOrEmpty(plan.AccountExistsJson),
-		UPDATEUSERJSON:          util.StringPointerOrEmpty(plan.UpdateUserJson),
-		ACCOUNTSIMPORT:          util.StringPointerOrEmpty(plan.AccountsImport),
-		ENTITLEMENTVALUEIMPORT:  util.StringPointerOrEmpty(plan.EntitlementValueImport),
-		ROLEOWNERIMPORT:         util.StringPointerOrEmpty(plan.RoleOwnerImport),
-		ROLESIMPORT:             util.StringPointerOrEmpty(plan.RolesImport),
-		SYSTEMIMPORT:            util.StringPointerOrEmpty(plan.SystemImport),
-		USERIMPORT:              util.StringPointerOrEmpty(plan.UserImport),
-		MODIFYUSERDATAJSON:      util.StringPointerOrEmpty(plan.ModifyUserDataJson),
+
+		// Optional configuration fields
+		CONNECTIONPROPERTIES:   util.StringPointerOrEmpty(plan.ConnectionProperties),
+		PASSWORD_MIN_LENGTH:    util.StringPointerOrEmpty(plan.PasswordMinLength),
+		PASSWORD_MAX_LENGTH:    util.StringPointerOrEmpty(plan.PasswordMaxLength),
+		PASSWORD_NOOFCAPSALPHA: util.StringPointerOrEmpty(plan.PasswordNoOfCapsAlpha),
+		PASSWORD_NOOFDIGITS:    util.StringPointerOrEmpty(plan.PasswordNoOfDigits),
+		PASSWORD_NOOFSPLCHARS:  util.StringPointerOrEmpty(plan.PasswordNoOfSplChars),
+
+		// Account management JSON configurations
+		CREATEACCOUNTJSON:  util.StringPointerOrEmpty(plan.CreateAccountJson),
+		UPDATEACCOUNTJSON:  util.StringPointerOrEmpty(plan.UpdateAccountJson),
+		GRANTACCESSJSON:    util.StringPointerOrEmpty(plan.GrantAccessJson),
+		REVOKEACCESSJSON:   util.StringPointerOrEmpty(plan.RevokeAccessJson),
+		CHANGEPASSJSON:     util.StringPointerOrEmpty(config.ChangePassJson),
+		DELETEACCOUNTJSON:  util.StringPointerOrEmpty(plan.DeleteAccountJson),
+		ENABLEACCOUNTJSON:  util.StringPointerOrEmpty(plan.EnableAccountJson),
+		DISABLEACCOUNTJSON: util.StringPointerOrEmpty(plan.DisableAccountJson),
+		ACCOUNTEXISTSJSON:  util.StringPointerOrEmpty(plan.AccountExistsJson),
+		UPDATEUSERJSON:     util.StringPointerOrEmpty(plan.UpdateUserJson),
+		MODIFYUSERDATAJSON: util.StringPointerOrEmpty(plan.ModifyUserDataJson),
+
+		// Import configurations
+		ACCOUNTSIMPORT:         util.StringPointerOrEmpty(plan.AccountsImport),
+		ENTITLEMENTVALUEIMPORT: util.StringPointerOrEmpty(plan.EntitlementValueImport),
+		ROLEOWNERIMPORT:        util.StringPointerOrEmpty(plan.RoleOwnerImport),
+		ROLESIMPORT:            util.StringPointerOrEmpty(plan.RolesImport),
+		SYSTEMIMPORT:           util.StringPointerOrEmpty(plan.SystemImport),
+		USERIMPORT:             util.StringPointerOrEmpty(plan.UserImport),
+
+		// Additional configurations
 		STATUS_THRESHOLD_CONFIG: util.StringPointerOrEmpty(plan.StatusThresholdConfig),
 		MAX_PAGINATION_SIZE:     util.StringPointerOrEmpty(plan.MaxPaginationSize),
 		CLI_COMMAND_JSON:        util.StringPointerOrEmpty(plan.CliCommandJson),
-		//TER-176
+
+		// Entitlement management (TER-176)
 		CREATEENTITLEMENTJSON: util.StringPointerOrEmpty(plan.CreateEntitlementJson),
 		DELETEENTITLEMENTJSON: util.StringPointerOrEmpty(plan.DeleteEntitlementJson),
 		ENTITLEMENTEXISTJSON:  util.StringPointerOrEmpty(plan.EntitlementExistJson),
 		UPDATEENTITLEMENTJSON: util.StringPointerOrEmpty(plan.UpdateEntitlementJson),
 	}
+
+	// Handle vault configuration
 	if plan.VaultConnection.ValueString() != "" {
-		dbConn.BaseConnector.VaultConnection = util.SafeStringConnector(plan.VaultConnection.ValueString())
-		dbConn.BaseConnector.VaultConfiguration = util.SafeStringConnector(plan.VaultConfiguration.ValueString())
-		dbConn.BaseConnector.Saveinvault = util.SafeStringConnector(plan.SaveInVault.ValueString())
-	}
-	dbConnRequest := openapi.CreateOrUpdateRequest{
-		DBConnector: &dbConn,
+		connector.BaseConnector.VaultConnection = util.SafeStringConnector(plan.VaultConnection.ValueString())
+		connector.BaseConnector.VaultConfiguration = util.SafeStringConnector(plan.VaultConfiguration.ValueString())
+		connector.BaseConnector.Saveinvault = util.SafeStringConnector(plan.SaveInVault.ValueString())
 	}
 
-	// Initialize API client
-	apiResp, _, err := apiClient.ConnectionsAPI.CreateOrUpdate(ctx).CreateOrUpdateRequest(dbConnRequest).Execute()
-	if err != nil {
-		log.Printf("[ERROR] Failed to create API resource. Error: %v", err)
-		resp.Diagnostics.AddError("API Create Failed", fmt.Sprintf("Error: %v", err))
-		return
-	}
-	if apiResp != nil && *apiResp.ErrorCode != "0" {
-		log.Printf("[ERROR]: Error in creating DB connection resource. Errorcode: %v, Message: %v", *apiResp.ErrorCode, *apiResp.Msg)
-		resp.Diagnostics.AddError("Creation of DB connection failed", *apiResp.Msg)
-		return
-	}
+	return connector
+}
 
+// UpdateModelFromCreateResponse updates the model from create response
+func (r *DBConnectionResource) UpdateModelFromCreateResponse(plan *DBConnectorResourceModel, apiResp *openapi.CreateOrUpdateResponse) {
 	plan.ID = types.StringValue(fmt.Sprintf("%d", *apiResp.ConnectionKey))
 	plan.ConnectionKey = types.Int64Value(int64(*apiResp.ConnectionKey))
+	plan.ErrorCode = types.StringValue(util.SafeDeref(apiResp.ErrorCode))
+	plan.Msg = types.StringValue(util.SafeDeref(apiResp.Msg))
+
+	// Set computed values for optional fields
 	plan.Description = util.SafeStringDatasource(plan.Description.ValueStringPointer())
 	plan.DefaultSavRoles = util.SafeStringDatasource(plan.DefaultSavRoles.ValueStringPointer())
 	plan.EmailTemplate = util.SafeStringDatasource(plan.EmailTemplate.ValueStringPointer())
@@ -407,285 +539,363 @@ func (r *dbConnectionResource) Create(ctx context.Context, req resource.CreateRe
 	plan.DisableAccountJson = util.SafeStringDatasource(plan.DisableAccountJson.ValueStringPointer())
 	plan.AccountExistsJson = util.SafeStringDatasource(plan.AccountExistsJson.ValueStringPointer())
 	plan.UpdateUserJson = util.SafeStringDatasource(plan.UpdateUserJson.ValueStringPointer())
+	plan.ModifyUserDataJson = util.SafeStringDatasource(plan.ModifyUserDataJson.ValueStringPointer())
 	plan.AccountsImport = util.SafeStringDatasource(plan.AccountsImport.ValueStringPointer())
 	plan.EntitlementValueImport = util.SafeStringDatasource(plan.EntitlementValueImport.ValueStringPointer())
 	plan.RoleOwnerImport = util.SafeStringDatasource(plan.RoleOwnerImport.ValueStringPointer())
 	plan.RolesImport = util.SafeStringDatasource(plan.RolesImport.ValueStringPointer())
 	plan.SystemImport = util.SafeStringDatasource(plan.SystemImport.ValueStringPointer())
 	plan.UserImport = util.SafeStringDatasource(plan.UserImport.ValueStringPointer())
-	plan.ModifyUserDataJson = util.SafeStringDatasource(plan.ModifyUserDataJson.ValueStringPointer())
 	plan.StatusThresholdConfig = util.SafeStringDatasource(plan.StatusThresholdConfig.ValueStringPointer())
 	plan.MaxPaginationSize = util.SafeStringDatasource(plan.MaxPaginationSize.ValueStringPointer())
 	plan.CliCommandJson = util.SafeStringDatasource(plan.CliCommandJson.ValueStringPointer())
-	//TER-176
 	plan.CreateEntitlementJson = util.SafeStringDatasource(plan.CreateEntitlementJson.ValueStringPointer())
 	plan.DeleteEntitlementJson = util.SafeStringDatasource(plan.DeleteEntitlementJson.ValueStringPointer())
 	plan.EntitlementExistJson = util.SafeStringDatasource(plan.EntitlementExistJson.ValueStringPointer())
 	plan.UpdateEntitlementJson = util.SafeStringDatasource(plan.UpdateEntitlementJson.ValueStringPointer())
-	plan.Msg = types.StringValue(util.SafeDeref(apiResp.Msg))
-	plan.ErrorCode = types.StringValue(util.SafeDeref(apiResp.ErrorCode))
-	resp.Diagnostics.Append(resp.State.Set(ctx, &plan)...)
 }
 
-func (r *dbConnectionResource) Read(ctx context.Context, req resource.ReadRequest, resp *resource.ReadResponse) {
+func (r *DBConnectionResource) Read(ctx context.Context, req resource.ReadRequest, resp *resource.ReadResponse) {
 	var state DBConnectorResourceModel
+
+	opCtx := errorsutil.CreateOperationContext(errorsutil.ConnectorTypeDB, "terraform_read", "")
+	ctx = opCtx.AddContextToLogger(ctx)
+
+	opCtx.LogOperationStart(ctx, "Starting DB connection resource read")
 
 	resp.Diagnostics.Append(req.State.Get(ctx, &state)...)
 	if resp.Diagnostics.HasError() {
+		errorCode := dbErrorCodes.StateExtraction()
+		opCtx.LogOperationError(ctx, "Failed to get state from request", errorCode,
+			fmt.Errorf("state extraction failed"))
+		resp.Diagnostics.AddError(
+			errorsutil.GetErrorMessage(errorsutil.ErrStateExtraction),
+			fmt.Sprintf("[%s] Unable to extract Terraform state from request", errorCode),
+		)
 		return
 	}
 
-	// Configure API client
-	cfg := openapi.NewConfiguration()
-	apiBaseURL := strings.TrimPrefix(strings.TrimPrefix(r.client.APIBaseURL(), "https://"), "http://")
-	cfg.Host = apiBaseURL
-	cfg.Scheme = "https"
-	cfg.AddDefaultHeader("Authorization", "Bearer "+r.token)
-	cfg.HTTPClient = http.DefaultClient
+	connectionName := state.ConnectionName.ValueString()
+	opCtx.ConnectionName = connectionName
 
-	apiClient := openapi.NewAPIClient(cfg)
-	reqParams := openapi.GetConnectionDetailsRequest{}
-	reqParams.SetConnectionname(state.ConnectionName.ValueString())
-	apiResp, _, err := apiClient.ConnectionsAPI.GetConnectionDetails(ctx).GetConnectionDetailsRequest(reqParams).Execute()
+	opCtx.LogOperationStart(ctx, "Reading DB connection details",
+		map[string]interface{}{"connection_name": connectionName})
+
+	// Use interface pattern instead of direct API client creation
+	apiResp, err := r.ReadDBConnection(ctx, connectionName)
 	if err != nil {
-		log.Printf("Problem with the get function in read block")
-		resp.Diagnostics.AddError("API Read Failed In Read Block", fmt.Sprintf("Error: %v", err))
-		return
-	}
-	if apiResp != nil && apiResp.DBConnectionResponse != nil && *apiResp.DBConnectionResponse.Errorcode != 0 {
-		log.Printf("[ERROR]: Error in reading DB connection resource. Errorcode: %v, Message: %v", *apiResp.DBConnectionResponse.Errorcode, *apiResp.DBConnectionResponse.Msg)
-		resp.Diagnostics.AddError("Read DB connection resource failed", *apiResp.DBConnectionResponse.Msg)
+		opCtx.LogOperationError(ctx, "DB connection read failed", "", err)
+		resp.Diagnostics.AddError(
+			"DB Connection Read Failed",
+			err.Error(),
+		)
 		return
 	}
 
-	state.ConnectionKey = types.Int64Value(int64(*apiResp.DBConnectionResponse.Connectionkey))
-	state.ID = types.StringValue(fmt.Sprintf("%d", *apiResp.DBConnectionResponse.Connectionkey))
-	state.ConnectionName = util.SafeStringDatasource(apiResp.DBConnectionResponse.Connectionname)
-	state.ConnectionKey = util.SafeInt64(apiResp.DBConnectionResponse.Connectionkey)
-	state.Description = util.SafeStringDatasource(apiResp.DBConnectionResponse.Description)
-	state.DefaultSavRoles = util.SafeStringDatasource(apiResp.DBConnectionResponse.Defaultsavroles)
-	state.EmailTemplate = util.SafeStringDatasource(apiResp.DBConnectionResponse.Emailtemplate)
-	state.PasswordMinLength = util.SafeStringDatasource(apiResp.DBConnectionResponse.Connectionattributes.PASSWORD_MIN_LENGTH)
-	state.AccountExistsJson = util.SafeStringDatasource(apiResp.DBConnectionResponse.Connectionattributes.ACCOUNTEXISTSJSON)
-	state.RolesImport = util.SafeStringDatasource(apiResp.DBConnectionResponse.Connectionattributes.ROLESIMPORT)
-	state.RoleOwnerImport = util.SafeStringDatasource(apiResp.DBConnectionResponse.Connectionattributes.ROLEOWNERIMPORT)
-	state.CreateAccountJson = util.SafeStringDatasource(apiResp.DBConnectionResponse.Connectionattributes.CREATEACCOUNTJSON)
-	state.UserImport = util.SafeStringDatasource(apiResp.DBConnectionResponse.Connectionattributes.USERIMPORT)
-	state.DisableAccountJson = util.SafeStringDatasource(apiResp.DBConnectionResponse.Connectionattributes.DISABLEACCOUNTJSON)
-	state.EntitlementValueImport = util.SafeStringDatasource(apiResp.DBConnectionResponse.Connectionattributes.ENTITLEMENTVALUEIMPORT)
-	state.UpdateUserJson = util.SafeStringDatasource(apiResp.DBConnectionResponse.Connectionattributes.UPDATEUSERJSON)
-	state.PasswordNoOfSplChars = util.SafeStringDatasource(apiResp.DBConnectionResponse.Connectionattributes.PASSWORD_NOOFSPLCHARS)
-	state.RevokeAccessJson = util.SafeStringDatasource(apiResp.DBConnectionResponse.Connectionattributes.REVOKEACCESSJSON)
-	state.URL = util.SafeStringDatasource(apiResp.DBConnectionResponse.Connectionattributes.URL)
-	state.SystemImport = util.SafeStringDatasource(apiResp.DBConnectionResponse.Connectionattributes.SYSTEMIMPORT)
-	state.DriverName = util.SafeStringDatasource(apiResp.DBConnectionResponse.Connectionattributes.DRIVERNAME)
-	state.DeleteAccountJson = util.SafeStringDatasource(apiResp.DBConnectionResponse.Connectionattributes.DELETEACCOUNTJSON)
-	state.StatusThresholdConfig = util.SafeStringDatasource(apiResp.DBConnectionResponse.Connectionattributes.STATUS_THRESHOLD_CONFIG)
-	state.Username = util.SafeStringDatasource(apiResp.DBConnectionResponse.Connectionattributes.USERNAME)
-	state.PasswordNoOfCapsAlpha = util.SafeStringDatasource(apiResp.DBConnectionResponse.Connectionattributes.PASSWORD_NOOFCAPSALPHA)
-	state.PasswordNoOfDigits = util.SafeStringDatasource(apiResp.DBConnectionResponse.Connectionattributes.PASSWORD_NOOFDIGITS)
-	state.ConnectionProperties = util.SafeStringDatasource(apiResp.DBConnectionResponse.Connectionattributes.CONNECTIONPROPERTIES)
-	state.ModifyUserDataJson = util.SafeStringDatasource(apiResp.DBConnectionResponse.Connectionattributes.MODIFYUSERDATAJSON)
-	state.AccountsImport = util.SafeStringDatasource(apiResp.DBConnectionResponse.Connectionattributes.ACCOUNTSIMPORT)
-	state.EnableAccountJson = util.SafeStringDatasource(apiResp.DBConnectionResponse.Connectionattributes.ENABLEACCOUNTJSON)
-	state.PasswordMaxLength = util.SafeStringDatasource(apiResp.DBConnectionResponse.Connectionattributes.PASSWORD_MAX_LENGTH)
-	state.MaxPaginationSize = util.SafeStringDatasource(apiResp.DBConnectionResponse.Connectionattributes.MAX_PAGINATION_SIZE)
-	state.UpdateAccountJson = util.SafeStringDatasource(apiResp.DBConnectionResponse.Connectionattributes.UPDATEACCOUNTJSON)
-	state.GrantAccessJson = util.SafeStringDatasource(apiResp.DBConnectionResponse.Connectionattributes.GRANTACCESSJSON)
-	state.CliCommandJson = util.SafeStringDatasource(apiResp.DBConnectionResponse.Connectionattributes.CLI_COMMAND_JSON)
-	//TER-176
-	state.CreateEntitlementJson = util.SafeStringDatasource(apiResp.DBConnectionResponse.Connectionattributes.CREATEENTITLEMENTJSON)
-	state.DeleteEntitlementJson = util.SafeStringDatasource(apiResp.DBConnectionResponse.Connectionattributes.DELETEENTITLEMENTJSON)
-	state.EntitlementExistJson = util.SafeStringDatasource(apiResp.DBConnectionResponse.Connectionattributes.ENTITLEMENTEXISTJSON)
-	state.UpdateEntitlementJson = util.SafeStringDatasource(apiResp.DBConnectionResponse.Connectionattributes.UPDATEENTITLEMENTJSON)
-	apiMessage := util.SafeDeref(apiResp.DBConnectionResponse.Msg)
+	r.UpdateModelFromReadResponse(&state, apiResp)
+
+	stateDiagnostics := resp.State.Set(ctx, &state)
+	resp.Diagnostics.Append(stateDiagnostics...)
+	if resp.Diagnostics.HasError() {
+		errorCode := dbErrorCodes.StateUpdate()
+		opCtx.LogOperationError(ctx, "Failed to set state", errorCode,
+			fmt.Errorf("state update failed"))
+		resp.Diagnostics.AddError(
+			errorsutil.GetErrorMessage(errorsutil.ErrStateUpdate),
+			fmt.Sprintf("[%s] Unable to update Terraform state for connection '%s'", errorCode, connectionName),
+		)
+		return
+	}
+
+	opCtx.LogOperationEnd(ctx, "DB connection resource read completed successfully",
+		map[string]interface{}{"connection_name": connectionName})
+}
+
+// ReadDBConnection reads a DB connection
+func (r *DBConnectionResource) ReadDBConnection(ctx context.Context, connectionName string) (*openapi.GetConnectionDetailsResponse, error) {
+	opCtx := errorsutil.CreateOperationContext(errorsutil.ConnectorTypeDB, "read", connectionName)
+
+	// Create logging context (separate from API context)
+	logCtx := opCtx.AddContextToLogger(ctx)
+
+	opCtx.LogOperationStart(logCtx, "Starting DB connection read",
+		map[string]interface{}{"connection_name": connectionName})
+
+	// Use the factory to create connection operations
+	connectionOps := r.connectionFactory.CreateConnectionOperations(r.client.APIBaseURL(), r.token)
+
+	// Execute read operation through interface - use original context for API calls
+	apiResp, _, err := connectionOps.GetConnectionDetails(ctx, connectionName)
+	if err != nil {
+		errorCode := dbErrorCodes.ReadFailed()
+		opCtx.LogOperationError(logCtx, "Failed to read DB connection", errorCode, err)
+		return nil, errorsutil.CreateStandardError(errorsutil.ConnectorTypeDB, errorCode, "read", connectionName, err)
+	}
+
+	if apiResp != nil && apiResp.DBConnectionResponse != nil && *apiResp.DBConnectionResponse.Errorcode != 0 {
+		apiErr := fmt.Errorf("API returned error code %d: %s", *apiResp.DBConnectionResponse.Errorcode, errorsutil.SanitizeMessage(apiResp.DBConnectionResponse.Msg))
+		errorCode := dbErrorCodes.APIError()
+		opCtx.LogOperationError(ctx, "DB connection read failed with API error", errorCode, apiErr,
+			map[string]interface{}{
+				"api_error_code": *apiResp.DBConnectionResponse.Errorcode,
+				"message":        errorsutil.SanitizeMessage(apiResp.DBConnectionResponse.Msg),
+			})
+		return nil, errorsutil.CreateStandardError(errorsutil.ConnectorTypeDB, errorCode, "read", connectionName, apiErr)
+	}
+
+	opCtx.LogOperationEnd(logCtx, "DB connection read completed successfully",
+		map[string]interface{}{
+			"connection_name": connectionName,
+			"connection_key":  apiResp.DBConnectionResponse.Connectionkey,
+		})
+
+	return apiResp, nil
+}
+
+// UpdateModelFromReadResponse updates the model from read response
+func (r *DBConnectionResource) UpdateModelFromReadResponse(state *DBConnectorResourceModel, apiResp *openapi.GetConnectionDetailsResponse) {
+	if apiResp.DBConnectionResponse == nil {
+		return
+	}
+
+	dbResp := apiResp.DBConnectionResponse
+
+	// Update base connector fields
+	state.ID = types.StringValue(fmt.Sprintf("%d", *dbResp.Connectionkey))
+	state.ConnectionKey = types.Int64Value(int64(*dbResp.Connectionkey))
+	state.ConnectionName = util.SafeStringDatasource(dbResp.Connectionname)
+	state.Description = util.SafeStringDatasource(dbResp.Description)
+	state.DefaultSavRoles = util.SafeStringDatasource(dbResp.Defaultsavroles)
+	state.EmailTemplate = util.SafeStringDatasource(dbResp.Emailtemplate)
+
+	// Update DB-specific fields from connection attributes
+	if dbResp.Connectionattributes != nil {
+		attrs := dbResp.Connectionattributes
+
+		// Required fields
+		state.URL = util.SafeStringDatasource(attrs.URL)
+		state.Username = util.SafeStringDatasource(attrs.USERNAME)
+		state.DriverName = util.SafeStringDatasource(attrs.DRIVERNAME)
+
+		// Optional configuration fields
+		state.ConnectionProperties = util.SafeStringDatasource(attrs.CONNECTIONPROPERTIES)
+		state.PasswordMinLength = util.SafeStringDatasource(attrs.PASSWORD_MIN_LENGTH)
+		state.PasswordMaxLength = util.SafeStringDatasource(attrs.PASSWORD_MAX_LENGTH)
+		state.PasswordNoOfCapsAlpha = util.SafeStringDatasource(attrs.PASSWORD_NOOFCAPSALPHA)
+		state.PasswordNoOfDigits = util.SafeStringDatasource(attrs.PASSWORD_NOOFDIGITS)
+		state.PasswordNoOfSplChars = util.SafeStringDatasource(attrs.PASSWORD_NOOFSPLCHARS)
+
+		// Account management JSON configurations
+		state.CreateAccountJson = util.SafeStringDatasource(attrs.CREATEACCOUNTJSON)
+		state.UpdateAccountJson = util.SafeStringDatasource(attrs.UPDATEACCOUNTJSON)
+		state.GrantAccessJson = util.SafeStringDatasource(attrs.GRANTACCESSJSON)
+		state.RevokeAccessJson = util.SafeStringDatasource(attrs.REVOKEACCESSJSON)
+		state.DeleteAccountJson = util.SafeStringDatasource(attrs.DELETEACCOUNTJSON)
+		state.EnableAccountJson = util.SafeStringDatasource(attrs.ENABLEACCOUNTJSON)
+		state.DisableAccountJson = util.SafeStringDatasource(attrs.DISABLEACCOUNTJSON)
+		state.AccountExistsJson = util.SafeStringDatasource(attrs.ACCOUNTEXISTSJSON)
+		state.UpdateUserJson = util.SafeStringDatasource(attrs.UPDATEUSERJSON)
+		state.ModifyUserDataJson = util.SafeStringDatasource(attrs.MODIFYUSERDATAJSON)
+
+		// Import configurations
+		state.AccountsImport = util.SafeStringDatasource(attrs.ACCOUNTSIMPORT)
+		state.EntitlementValueImport = util.SafeStringDatasource(attrs.ENTITLEMENTVALUEIMPORT)
+		state.RoleOwnerImport = util.SafeStringDatasource(attrs.ROLEOWNERIMPORT)
+		state.RolesImport = util.SafeStringDatasource(attrs.ROLESIMPORT)
+		state.SystemImport = util.SafeStringDatasource(attrs.SYSTEMIMPORT)
+		state.UserImport = util.SafeStringDatasource(attrs.USERIMPORT)
+
+		// Additional configurations
+		state.StatusThresholdConfig = util.SafeStringDatasource(attrs.STATUS_THRESHOLD_CONFIG)
+		state.MaxPaginationSize = util.SafeStringDatasource(attrs.MAX_PAGINATION_SIZE)
+		state.CliCommandJson = util.SafeStringDatasource(attrs.CLI_COMMAND_JSON)
+
+		// Entitlement management (TER-176)
+		state.CreateEntitlementJson = util.SafeStringDatasource(attrs.CREATEENTITLEMENTJSON)
+		state.DeleteEntitlementJson = util.SafeStringDatasource(attrs.DELETEENTITLEMENTJSON)
+		state.EntitlementExistJson = util.SafeStringDatasource(attrs.ENTITLEMENTEXISTJSON)
+		state.UpdateEntitlementJson = util.SafeStringDatasource(attrs.UPDATEENTITLEMENTJSON)
+	}
+
+	// Update response message and error code
+	apiMessage := util.SafeDeref(dbResp.Msg)
 	if apiMessage == "success" {
 		state.Msg = types.StringValue("Connection Successful")
 	} else {
 		state.Msg = types.StringValue(apiMessage)
 	}
-	state.ErrorCode = util.Int32PtrToTFString(apiResp.DBConnectionResponse.Errorcode)
-	stateDiagnostics := resp.State.Set(ctx, &state)
-	resp.Diagnostics.Append(stateDiagnostics...)
-	if resp.Diagnostics.HasError() {
-		return
-	}
+	state.ErrorCode = util.Int32PtrToTFString(dbResp.Errorcode)
 }
 
-func (r *dbConnectionResource) Update(ctx context.Context, req resource.UpdateRequest, resp *resource.UpdateResponse) {
+func (r *DBConnectionResource) Update(ctx context.Context, req resource.UpdateRequest, resp *resource.UpdateResponse) {
 	var plan, state, config DBConnectorResourceModel
+
+	opCtx := errorsutil.CreateOperationContext(errorsutil.ConnectorTypeDB, "terraform_update", "")
+	ctx = opCtx.AddContextToLogger(ctx)
+
+	opCtx.LogOperationStart(ctx, "Starting DB connection resource update")
+
 	// Extract state from request
 	resp.Diagnostics.Append(req.State.Get(ctx, &state)...)
 	if resp.Diagnostics.HasError() {
+		errorCode := dbErrorCodes.StateExtraction()
+		opCtx.LogOperationError(ctx, "Failed to get state from request", errorCode,
+			fmt.Errorf("state extraction failed"))
+		resp.Diagnostics.AddError(
+			errorsutil.GetErrorMessage(errorsutil.ErrStateExtraction),
+			fmt.Sprintf("[%s] Unable to extract Terraform state from request", errorCode),
+		)
 		return
 	}
+
+	connectionName := state.ConnectionName.ValueString()
+	opCtx.ConnectionName = connectionName
+
 	// Extract plan from request
 	resp.Diagnostics.Append(req.Plan.Get(ctx, &plan)...)
 	if resp.Diagnostics.HasError() {
+		errorCode := dbErrorCodes.PlanExtraction()
+		opCtx.LogOperationError(ctx, "Failed to get plan from request", errorCode,
+			fmt.Errorf("plan extraction failed"))
+		resp.Diagnostics.AddError(
+			errorsutil.GetErrorMessage(errorsutil.ErrPlanExtraction),
+			fmt.Sprintf("[%s] Unable to extract Terraform plan from request for connection '%s'", errorCode, state.ConnectionName.ValueString()),
+		)
 		return
 	}
-	// Extract config from request
+
+	//Extract config from request
 	resp.Diagnostics.Append(req.Config.Get(ctx, &config)...)
 	if resp.Diagnostics.HasError() {
+		errorCode := dbErrorCodes.ConfigExtraction()
+		opCtx.LogOperationError(ctx, "Failed to get config from request", errorCode,
+			fmt.Errorf("config extraction failed"))
+		resp.Diagnostics.AddError(
+			errorsutil.GetErrorMessage(errorsutil.ErrConfigExtraction),
+			fmt.Sprintf("[%s] Unable to extract Terraform configuration from request for connection '%s'", errorCode, plan.ConnectionName.ValueString()),
+		)
 		return
 	}
-	// Configure API client
-	cfg := openapi.NewConfiguration()
-	apiBaseURL := strings.TrimPrefix(strings.TrimPrefix(r.client.APIBaseURL(), "https://"), "http://")
-	cfg.Host = apiBaseURL
-	cfg.Scheme = "https"
-	cfg.AddDefaultHeader("Authorization", "Bearer "+r.token)
+
+	// Validate that connection name cannot be updated
 	if plan.ConnectionName.ValueString() != state.ConnectionName.ValueString() {
-		resp.Diagnostics.AddError("Error", "Connection name cannot be updated")
-		log.Printf("[ERROR]: Connection name cannot be updated")
+		errorCode := dbErrorCodes.NameImmutable()
+		opCtx.LogOperationError(ctx, "Connection name cannot be updated", errorCode,
+			fmt.Errorf("attempted to change connection name from '%s' to '%s'", state.ConnectionName.ValueString(), plan.ConnectionName.ValueString()),
+			map[string]interface{}{
+				"old_name": state.ConnectionName.ValueString(),
+				"new_name": plan.ConnectionName.ValueString(),
+			})
+		resp.Diagnostics.AddError(
+			errorsutil.GetErrorMessage(errorCode),
+			fmt.Sprintf("[%s] Cannot change connection name from '%s' to '%s'", errorCode, state.ConnectionName.ValueString(), plan.ConnectionName.ValueString()),
+		)
 		return
 	}
 
-	cfg.HTTPClient = http.DefaultClient
+	opCtx.LogOperationStart(ctx, "Executing DB connection update",
+		map[string]interface{}{"connection_name": connectionName})
 
-	dbConn := openapi.DBConnector{
-		BaseConnector: openapi.BaseConnector{
-			//required field
-			Connectiontype: "DB",
-			ConnectionName: plan.ConnectionName.ValueString(),
-			//optional field
-			Description:     util.StringPointerOrEmpty(plan.Description),
-			Defaultsavroles: util.StringPointerOrEmpty(plan.DefaultSavRoles),
-			EmailTemplate:   util.StringPointerOrEmpty(plan.EmailTemplate),
-		},
-		//required field
-		URL:        plan.URL.ValueString(),
-		USERNAME:   config.Username.ValueString(),
-		PASSWORD:   config.Password.ValueString(),
-		DRIVERNAME: plan.DriverName.ValueString(),
-		//optional field
-		CONNECTIONPROPERTIES:    util.StringPointerOrEmpty(plan.ConnectionProperties),
-		PASSWORD_MIN_LENGTH:     util.StringPointerOrEmpty(plan.PasswordMinLength),
-		PASSWORD_MAX_LENGTH:     util.StringPointerOrEmpty(plan.PasswordMaxLength),
-		PASSWORD_NOOFCAPSALPHA:  util.StringPointerOrEmpty(plan.PasswordNoOfCapsAlpha),
-		PASSWORD_NOOFDIGITS:     util.StringPointerOrEmpty(plan.PasswordNoOfDigits),
-		PASSWORD_NOOFSPLCHARS:   util.StringPointerOrEmpty(plan.PasswordNoOfSplChars),
-		CREATEACCOUNTJSON:       util.StringPointerOrEmpty(plan.CreateAccountJson),
-		UPDATEACCOUNTJSON:       util.StringPointerOrEmpty(plan.UpdateAccountJson),
-		GRANTACCESSJSON:         util.StringPointerOrEmpty(plan.GrantAccessJson),
-		REVOKEACCESSJSON:        util.StringPointerOrEmpty(plan.RevokeAccessJson),
-		CHANGEPASSJSON:          util.StringPointerOrEmpty(config.ChangePassJson),
-		DELETEACCOUNTJSON:       util.StringPointerOrEmpty(plan.DeleteAccountJson),
-		ENABLEACCOUNTJSON:       util.StringPointerOrEmpty(plan.EnableAccountJson),
-		DISABLEACCOUNTJSON:      util.StringPointerOrEmpty(plan.DisableAccountJson),
-		ACCOUNTEXISTSJSON:       util.StringPointerOrEmpty(plan.AccountExistsJson),
-		UPDATEUSERJSON:          util.StringPointerOrEmpty(plan.UpdateUserJson),
-		ACCOUNTSIMPORT:          util.StringPointerOrEmpty(plan.AccountsImport),
-		ENTITLEMENTVALUEIMPORT:  util.StringPointerOrEmpty(plan.EntitlementValueImport),
-		ROLEOWNERIMPORT:         util.StringPointerOrEmpty(plan.RoleOwnerImport),
-		ROLESIMPORT:             util.StringPointerOrEmpty(plan.RolesImport),
-		SYSTEMIMPORT:            util.StringPointerOrEmpty(plan.SystemImport),
-		USERIMPORT:              util.StringPointerOrEmpty(plan.UserImport),
-		MODIFYUSERDATAJSON:      util.StringPointerOrEmpty(plan.ModifyUserDataJson),
-		STATUS_THRESHOLD_CONFIG: util.StringPointerOrEmpty(plan.StatusThresholdConfig),
-		MAX_PAGINATION_SIZE:     util.StringPointerOrEmpty(plan.MaxPaginationSize),
-		CLI_COMMAND_JSON:        util.StringPointerOrEmpty(plan.CliCommandJson),
-		//TER-176
-		CREATEENTITLEMENTJSON: util.StringPointerOrEmpty(plan.CreateEntitlementJson),
-		DELETEENTITLEMENTJSON: util.StringPointerOrEmpty(plan.DeleteEntitlementJson),
-		ENTITLEMENTEXISTJSON:  util.StringPointerOrEmpty(plan.EntitlementExistJson),
-		UPDATEENTITLEMENTJSON: util.StringPointerOrEmpty(plan.UpdateEntitlementJson),
+	// Use interface pattern instead of direct API client creation
+	_, err := r.UpdateDBConnection(ctx, &plan, &config)
+	if err != nil {
+		opCtx.LogOperationError(ctx, "DB connection update failed", "", err)
+		resp.Diagnostics.AddError(
+			"DB Connection Update Failed",
+			err.Error(),
+		)
+		return
 	}
-	if plan.VaultConnection.ValueString() != "" {
-		dbConn.BaseConnector.VaultConnection = util.SafeStringConnector(plan.VaultConnection.ValueString())
-		dbConn.BaseConnector.VaultConfiguration = util.SafeStringConnector(plan.VaultConfiguration.ValueString())
-		dbConn.BaseConnector.Saveinvault = util.SafeStringConnector(plan.SaveInVault.ValueString())
-	} else {
+
+	// Read the updated connection to get the latest state
+	getResp, err := r.ReadDBConnection(ctx, connectionName)
+	if err != nil {
+		opCtx.LogOperationError(ctx, "Failed to read updated DB connection", "", err)
+		resp.Diagnostics.AddError(
+			"DB Connection Post-Update Read Failed",
+			err.Error(),
+		)
+		return
+	}
+
+	r.UpdateModelFromReadResponse(&plan, getResp)
+
+	stateUpdateDiagnostics := resp.State.Set(ctx, plan)
+	resp.Diagnostics.Append(stateUpdateDiagnostics...)
+	if resp.Diagnostics.HasError() {
+		errorCode := dbErrorCodes.StateUpdate()
+		opCtx.LogOperationError(ctx, "Failed to update state after successful update", errorCode,
+			fmt.Errorf("state update failed"))
+		resp.Diagnostics.AddError(
+			errorsutil.GetErrorMessage(errorsutil.ErrStateUpdate),
+			fmt.Sprintf("[%s] Unable to update Terraform state after successful update for connection '%s'", errorCode, connectionName),
+		)
+		return
+	}
+
+	opCtx.LogOperationEnd(ctx, "DB connection resource update completed successfully",
+		map[string]interface{}{"connection_name": connectionName})
+}
+
+// UpdateDBConnection updates a DB connection
+func (r *DBConnectionResource) UpdateDBConnection(ctx context.Context, plan *DBConnectorResourceModel, config *DBConnectorResourceModel) (*openapi.CreateOrUpdateResponse, error) {
+	connectionName := plan.ConnectionName.ValueString()
+	opCtx := errorsutil.CreateOperationContext(errorsutil.ConnectorTypeDB, "update", connectionName)
+
+	// Create logging context (separate from API context)
+	logCtx := opCtx.AddContextToLogger(ctx)
+
+	opCtx.LogOperationStart(logCtx, "Starting DB connection update",
+		map[string]interface{}{"connection_name": connectionName})
+
+	// Use the factory to create connection operations
+	connectionOps := r.connectionFactory.CreateConnectionOperations(r.client.APIBaseURL(), r.token)
+
+	// Build DB connector request
+	dbConn := r.BuildDBConnector(plan, config)
+
+	if plan.VaultConnection.ValueString() == "" {
 		emptyStr := ""
 		dbConn.BaseConnector.VaultConnection = &emptyStr
 		dbConn.BaseConnector.VaultConfiguration = &emptyStr
 		dbConn.BaseConnector.Saveinvault = &emptyStr
 	}
+
 	dbConnRequest := openapi.CreateOrUpdateRequest{
 		DBConnector: &dbConn,
 	}
 
-	// Initialize API client
-	apiClient := openapi.NewAPIClient(cfg)
-	apiResp, _, err := apiClient.ConnectionsAPI.CreateOrUpdate(ctx).CreateOrUpdateRequest(dbConnRequest).Execute()
+	opCtx.LogOperationStart(logCtx, "Executing DB connection update API call")
+
+	// Use original context for API calls to maintain test compatibility
+	apiResp, _, err := connectionOps.CreateOrUpdateConnection(ctx, dbConnRequest)
 	if err != nil {
-		log.Printf("Problem with the update function")
-		resp.Diagnostics.AddError("API Update Failed", fmt.Sprintf("Error: %v", err))
-		return
+		errorCode := dbErrorCodes.UpdateFailed()
+		opCtx.LogOperationError(logCtx, "Failed to update DB connection", errorCode, err)
+		return nil, errorsutil.CreateStandardError(errorsutil.ConnectorTypeDB, errorCode, "update", connectionName, err)
 	}
+
 	if apiResp != nil && *apiResp.ErrorCode != "0" {
-		log.Printf("[ERROR]: Error in updating DB connection. Errorcode: %v, Message: %v", *apiResp.ErrorCode, *apiResp.Msg)
-		resp.Diagnostics.AddError("Updation of DB connection failed", *apiResp.Msg)
-		return
+		apiErr := fmt.Errorf("API returned error code %s: %s", *apiResp.ErrorCode, errorsutil.SanitizeMessage(apiResp.Msg))
+		errorCode := dbErrorCodes.APIError()
+		opCtx.LogOperationError(logCtx, "DB connection update failed with API error", errorCode, apiErr,
+			map[string]interface{}{
+				"api_error_code": *apiResp.ErrorCode,
+				"message":        errorsutil.SanitizeMessage(apiResp.Msg),
+			})
+		return nil, errorsutil.CreateStandardError(errorsutil.ConnectorTypeDB, errorCode, "update", connectionName, apiErr)
 	}
 
-	reqParams := openapi.GetConnectionDetailsRequest{}
+	opCtx.LogOperationEnd(logCtx, "DB connection updated successfully",
+		map[string]interface{}{
+			"connection_name": connectionName,
+			"connection_key":  apiResp.ConnectionKey,
+		})
 
-	reqParams.SetConnectionname(plan.ConnectionName.ValueString())
-	getResp, _, err := apiClient.ConnectionsAPI.GetConnectionDetails(ctx).GetConnectionDetailsRequest(reqParams).Execute()
-	if err != nil {
-		log.Printf("Problem with the get function in update block")
-		resp.Diagnostics.AddError("API Read Failed In Update Block", fmt.Sprintf("Error: %v", err))
-		return
-	}
-	if getResp != nil && getResp.DBConnectionResponse != nil && *getResp.DBConnectionResponse.Errorcode != 0 {
-		log.Printf("[ERROR]: Error in reading DB connection after updation. Errorcode: %v, Message: %v", *getResp.DBConnectionResponse.Errorcode, *getResp.DBConnectionResponse.Msg)
-		resp.Diagnostics.AddError("Read DB connection after updation failed", *getResp.DBConnectionResponse.Msg)
-		return
-	}
-
-	plan.ConnectionKey = types.Int64Value(int64(*getResp.DBConnectionResponse.Connectionkey))
-	plan.ID = types.StringValue(fmt.Sprintf("%d", *getResp.DBConnectionResponse.Connectionkey))
-	plan.ConnectionName = util.SafeStringDatasource(getResp.DBConnectionResponse.Connectionname)
-	plan.ConnectionKey = util.SafeInt64(getResp.DBConnectionResponse.Connectionkey)
-	plan.Description = util.SafeStringDatasource(getResp.DBConnectionResponse.Description)
-	plan.DefaultSavRoles = util.SafeStringDatasource(getResp.DBConnectionResponse.Defaultsavroles)
-	plan.EmailTemplate = util.SafeStringDatasource(getResp.DBConnectionResponse.Emailtemplate)
-	plan.PasswordMinLength = util.SafeStringDatasource(getResp.DBConnectionResponse.Connectionattributes.PASSWORD_MIN_LENGTH)
-	plan.AccountExistsJson = util.SafeStringDatasource(getResp.DBConnectionResponse.Connectionattributes.ACCOUNTEXISTSJSON)
-	plan.RolesImport = util.SafeStringDatasource(getResp.DBConnectionResponse.Connectionattributes.ROLESIMPORT)
-	plan.RoleOwnerImport = util.SafeStringDatasource(getResp.DBConnectionResponse.Connectionattributes.ROLEOWNERIMPORT)
-	plan.CreateAccountJson = util.SafeStringDatasource(getResp.DBConnectionResponse.Connectionattributes.CREATEACCOUNTJSON)
-	plan.UserImport = util.SafeStringDatasource(getResp.DBConnectionResponse.Connectionattributes.USERIMPORT)
-	plan.DisableAccountJson = util.SafeStringDatasource(getResp.DBConnectionResponse.Connectionattributes.DISABLEACCOUNTJSON)
-	plan.EntitlementValueImport = util.SafeStringDatasource(getResp.DBConnectionResponse.Connectionattributes.ENTITLEMENTVALUEIMPORT)
-	plan.UpdateUserJson = util.SafeStringDatasource(getResp.DBConnectionResponse.Connectionattributes.UPDATEUSERJSON)
-	plan.PasswordNoOfSplChars = util.SafeStringDatasource(getResp.DBConnectionResponse.Connectionattributes.PASSWORD_NOOFSPLCHARS)
-	plan.RevokeAccessJson = util.SafeStringDatasource(getResp.DBConnectionResponse.Connectionattributes.REVOKEACCESSJSON)
-	plan.URL = util.SafeStringDatasource(getResp.DBConnectionResponse.Connectionattributes.URL)
-	plan.SystemImport = util.SafeStringDatasource(getResp.DBConnectionResponse.Connectionattributes.SYSTEMIMPORT)
-	plan.DriverName = util.SafeStringDatasource(getResp.DBConnectionResponse.Connectionattributes.DRIVERNAME)
-	plan.DeleteAccountJson = util.SafeStringDatasource(getResp.DBConnectionResponse.Connectionattributes.DELETEACCOUNTJSON)
-	plan.StatusThresholdConfig = util.SafeStringDatasource(getResp.DBConnectionResponse.Connectionattributes.STATUS_THRESHOLD_CONFIG)
-	plan.Username = util.SafeStringDatasource(getResp.DBConnectionResponse.Connectionattributes.USERNAME)
-	plan.PasswordNoOfCapsAlpha = util.SafeStringDatasource(getResp.DBConnectionResponse.Connectionattributes.PASSWORD_NOOFCAPSALPHA)
-	plan.PasswordNoOfDigits = util.SafeStringDatasource(getResp.DBConnectionResponse.Connectionattributes.PASSWORD_NOOFDIGITS)
-	plan.ConnectionProperties = util.SafeStringDatasource(getResp.DBConnectionResponse.Connectionattributes.CONNECTIONPROPERTIES)
-	plan.ModifyUserDataJson = util.SafeStringDatasource(getResp.DBConnectionResponse.Connectionattributes.MODIFYUSERDATAJSON)
-	plan.AccountsImport = util.SafeStringDatasource(getResp.DBConnectionResponse.Connectionattributes.ACCOUNTSIMPORT)
-	plan.EnableAccountJson = util.SafeStringDatasource(getResp.DBConnectionResponse.Connectionattributes.ENABLEACCOUNTJSON)
-	plan.PasswordMaxLength = util.SafeStringDatasource(getResp.DBConnectionResponse.Connectionattributes.PASSWORD_MAX_LENGTH)
-	plan.MaxPaginationSize = util.SafeStringDatasource(getResp.DBConnectionResponse.Connectionattributes.MAX_PAGINATION_SIZE)
-	plan.UpdateAccountJson = util.SafeStringDatasource(getResp.DBConnectionResponse.Connectionattributes.UPDATEACCOUNTJSON)
-	plan.GrantAccessJson = util.SafeStringDatasource(getResp.DBConnectionResponse.Connectionattributes.GRANTACCESSJSON)
-	plan.CliCommandJson = util.SafeStringDatasource(getResp.DBConnectionResponse.Connectionattributes.CLI_COMMAND_JSON)
-	//TER-176
-	plan.CreateEntitlementJson = util.SafeStringDatasource(getResp.DBConnectionResponse.Connectionattributes.CREATEENTITLEMENTJSON)
-	plan.DeleteEntitlementJson = util.SafeStringDatasource(getResp.DBConnectionResponse.Connectionattributes.DELETEENTITLEMENTJSON)
-	plan.EntitlementExistJson = util.SafeStringDatasource(getResp.DBConnectionResponse.Connectionattributes.ENTITLEMENTEXISTJSON)
-	plan.UpdateEntitlementJson = util.SafeStringDatasource(getResp.DBConnectionResponse.Connectionattributes.UPDATEENTITLEMENTJSON)
-	apiMessage := util.SafeDeref(getResp.DBConnectionResponse.Msg)
-	if apiMessage == "success" {
-		plan.Msg = types.StringValue("Connection Successful")
-	} else {
-		plan.Msg = types.StringValue(apiMessage)
-	}
-	plan.ErrorCode = util.Int32PtrToTFString(getResp.DBConnectionResponse.Errorcode)
-	stateUpdateDiagnostics := resp.State.Set(ctx, plan)
-	resp.Diagnostics.Append(stateUpdateDiagnostics...)
+	return apiResp, nil
 }
 
-func (r *dbConnectionResource) Delete(ctx context.Context, req resource.DeleteRequest, resp *resource.DeleteResponse) {
+func (r *DBConnectionResource) Delete(ctx context.Context, req resource.DeleteRequest, resp *resource.DeleteResponse) {
 	// resp.State.RemoveResource(ctx)
 	if os.Getenv("TF_ACC") == "1" {
 		resp.State.RemoveResource(ctx)
@@ -697,7 +907,17 @@ func (r *dbConnectionResource) Delete(ctx context.Context, req resource.DeleteRe
 	)
 }
 
-func (r *dbConnectionResource) ImportState(ctx context.Context, req resource.ImportStateRequest, resp *resource.ImportStateResponse) {
+func (r *DBConnectionResource) ImportState(ctx context.Context, req resource.ImportStateRequest, resp *resource.ImportStateResponse) {
+	// Importing a DB connection resource requires the connection name
+	connectionName := req.ID
+	opCtx := errorsutil.CreateOperationContext(errorsutil.ConnectorTypeDB, "terraform_import", connectionName)
+	ctx = opCtx.AddContextToLogger(ctx)
+
+	opCtx.LogOperationStart(ctx, "Starting DB connection resource import")
+
 	// Retrieve import ID and save to id attribute
 	resource.ImportStatePassthroughID(ctx, path.Root("connection_name"), req, resp)
+
+	opCtx.LogOperationEnd(ctx, "DB connection resource import completed successfully",
+		map[string]interface{}{"connection_name": connectionName})
 }

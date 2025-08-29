@@ -444,7 +444,7 @@ resource "saviynt_workday_connection_resource" "soap" {
 - `userattributejson` (String) Specifies which job-related attributes are stored as user attributes.
 - `username` (String) Username for SOAP authentication.
 - `users_last_import_time` (String) Property for USERS_LAST_IMPORT_TIME.
-- `vault_configuration` (String) JSON string specifying vault configuration. Example: '{"path":"/secrets/data/kv-dev-intgn1/-AD_Credential","keyMapping":{"PASSWORD":"AD_PASSWORD~#~None"}}'
+- `vault_configuration` (String) JSON string specifying vault configuration.
 - `vault_connection` (String) Specifies the type of vault connection being used (e.g., 'Hashicorp'). Example: "Hashicorp"
 - `x509_cert` (String, Sensitive) Certificate for x509-based SOAP authentication.
 - `x509_key` (String, Sensitive) Private key for x509-based SOAP authentication.

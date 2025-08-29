@@ -505,7 +505,7 @@ resource "saviynt_github_rest_connection_resource" "example" {
 - `organization_list` (String) Property for ORGANIZATION_LIST
 - `save_in_vault` (String) Flag indicating whether the encrypted attribute should be saved in the configured vault. Example: "false"
 - `status_threshold_config` (String) Property for STATUS_THRESHOLD_CONFIG
-- `vault_configuration` (String) JSON string specifying vault configuration. Example: '{"path":"/secrets/data/kv-dev-intgn1/-AD_Credential","keyMapping":{"PASSWORD":"AD_PASSWORD~#~None"}}'
+- `vault_configuration` (String) JSON string specifying vault configuration.
 - `vault_connection` (String) Specifies the type of vault connection being used (e.g., 'Hashicorp'). Example: "Hashicorp"
 
 ### Read-Only

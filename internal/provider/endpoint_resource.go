@@ -15,9 +15,9 @@ import (
 	"encoding/json"
 	"fmt"
 	"log"
-	"net/http"
 	"os"
 	"strings"
+	"terraform-provider-Saviynt/internal/client"
 	"terraform-provider-Saviynt/util"
 	"terraform-provider-Saviynt/util/endpointsutil"
 
@@ -28,7 +28,6 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema"
 
 	"github.com/hashicorp/terraform-plugin-framework/types"
-	s "github.com/saviynt/saviynt-api-go-client"
 
 	openapi "github.com/saviynt/saviynt-api-go-client/endpoints"
 )
@@ -180,9 +179,10 @@ type EndpointResourceModel struct {
 	ErrorCode                    types.String `tfsdk:"error_code"`
 }
 
-type endpointResource struct {
-	client *s.Client
-	token  string
+type EndpointResource struct {
+	client          client.SaviyntClientInterface
+	token           string
+	endpointFactory client.EndpointFactoryInterface
 }
 
 type RequestableRoleType struct {
@@ -208,14 +208,22 @@ type MappedEndpoint struct {
 }
 
 func NewEndpointResource() resource.Resource {
-	return &endpointResource{}
+	return &EndpointResource{
+		endpointFactory: &client.DefaultEndpointFactory{},
+	}
+
+}
+func NewEndpointResourceWithFactory(factory client.EndpointFactoryInterface) resource.Resource {
+	return &EndpointResource{
+		endpointFactory: factory,
+	}
 }
 
-func (r *endpointResource) Metadata(ctx context.Context, req resource.MetadataRequest, resp *resource.MetadataResponse) {
+func (r *EndpointResource) Metadata(ctx context.Context, req resource.MetadataRequest, resp *resource.MetadataResponse) {
 	resp.TypeName = "saviynt_endpoint_resource"
 }
 
-func (r *endpointResource) Schema(ctx context.Context, req resource.SchemaRequest, resp *resource.SchemaResponse) {
+func (r *EndpointResource) Schema(ctx context.Context, req resource.SchemaRequest, resp *resource.SchemaResponse) {
 	resp.Schema = schema.Schema{
 		Description: util.EndpointDescription,
 		Attributes: map[string]schema.Attribute{
@@ -457,7 +465,7 @@ func (r *endpointResource) Schema(ctx context.Context, req resource.SchemaReques
 	}
 }
 
-func (r *endpointResource) Configure(ctx context.Context, req resource.ConfigureRequest, resp *resource.ConfigureResponse) {
+func (r *EndpointResource) Configure(ctx context.Context, req resource.ConfigureRequest, resp *resource.ConfigureResponse) {
 	// Check if provider data is available.
 	if req.ProviderData == nil {
 		log.Println("ProviderData is nil, returning early.")
@@ -472,197 +480,523 @@ func (r *endpointResource) Configure(ctx context.Context, req resource.Configure
 	}
 
 	// Set the client and token from the provider state.
-	r.client = prov.client
+	r.client = &client.SaviyntClientWrapper{Client: prov.client}
 	r.token = prov.accessToken
 }
 
-func (r *endpointResource) Create(ctx context.Context, req resource.CreateRequest, resp *resource.CreateResponse) {
+// SetClient sets the client for testing purposes
+func (r *EndpointResource) SetClient(client client.SaviyntClientInterface) {
+	r.client = client
+}
+
+// SetToken sets the token for testing purposes
+func (r *EndpointResource) SetToken(token string) {
+	r.token = token
+}
+
+func (r *EndpointResource) Create(ctx context.Context, req resource.CreateRequest, resp *resource.CreateResponse) {
 	var plan EndpointResourceModel
 
 	planGetDiagnostics := req.Plan.Get(ctx, &plan)
 	resp.Diagnostics.Append(planGetDiagnostics...)
 	if resp.Diagnostics.HasError() {
+		log.Printf("[ERROR]: Failed to get plan in Create Block: %v", resp.Diagnostics)
 		return
 	}
 
-	cfg := openapi.NewConfiguration()
-	apiBaseURL := strings.TrimPrefix(strings.TrimPrefix(r.client.APIBaseURL(), "https://"), "http://")
-	cfg.Host = apiBaseURL
-	cfg.Scheme = "https"
-	cfg.AddDefaultHeader("Authorization", "Bearer "+r.token)
-	cfg.HTTPClient = http.DefaultClient
-
-	apiClient := openapi.NewAPIClient(cfg)
-
-	reqParams := openapi.GetEndpointsRequest{}
-	reqParams.SetEndpointname(plan.EndpointName.ValueString())
-	existingResource, _, err := apiClient.EndpointsAPI.GetEndpoints(ctx).GetEndpointsRequest(reqParams).Execute()
+	// Use interface pattern instead of direct API client creation
+	apiResp, err := r.CreateEndpoint(ctx, &plan)
 	if err != nil {
-		log.Printf("Problem with the get function in Create block")
-		resp.Diagnostics.AddError("API Read Failed In Create Block", fmt.Sprintf("Error: %v", err))
+		resp.Diagnostics.AddError("API Create Failed In Create Block", err.Error())
 		return
 	}
 
-	if existingResource != nil &&
-		len(existingResource.Endpoints) != 0 &&
-		*existingResource.ErrorCode == "0" {
-		log.Printf("[ERROR] Endpoint name already exists. Please import or use a different name")
-		resp.Diagnostics.AddError("Endpoint name already exists", "Please import or use a different name")
+	// Use unified method to set fields after CREATE operation
+	r.UpdateModelFromCreateResponse(&plan, apiResp)
+	resp.Diagnostics.Append(resp.State.Set(ctx, &plan)...)
+	if resp.Diagnostics.HasError() {
+		log.Printf("[ERROR]: Failed to set state in Create Block: %v", resp.Diagnostics)
+		return
+	}
+}
+
+func (r *EndpointResource) Read(ctx context.Context, req resource.ReadRequest, resp *resource.ReadResponse) {
+	var state EndpointResourceModel
+	resp.Diagnostics.Append(req.State.Get(ctx, &state)...)
+	if resp.Diagnostics.HasError() {
+		log.Printf("[ERROR] Failed to get state in Read Block: %v", resp.Diagnostics)
 		return
 	}
 
-	if plan.CreateEntTaskforRemoveAcc.IsNull() || plan.CreateEntTaskforRemoveAcc.IsUnknown() || plan.CreateEntTaskforRemoveAcc.ValueString() == "" {
-		plan.CreateEntTaskforRemoveAcc = types.StringValue("false")
-	}
-	createReq := openapi.CreateEndpointRequest{
-		Endpointname:                            plan.EndpointName.ValueString(),
-		DisplayName:                             plan.DisplayName.ValueString(),
-		Securitysystem:                          plan.SecuritySystem.ValueString(),
-		Description:                             util.StringPointerOrEmpty(plan.Description),
-		OwnerType:                               util.StringPointerOrEmpty(plan.OwnerType),
-		Owner:                                   util.StringPointerOrEmpty(plan.Owner),
-		ResourceOwnerType:                       util.StringPointerOrEmpty(plan.ResourceOwnerType),
-		ResourceOwner:                           util.StringPointerOrEmpty(plan.ResourceOwner),
-		Accessquery:                             util.StringPointerOrEmpty(plan.AccessQuery),
-		EnableCopyAccess:                        util.StringPointerOrEmpty(plan.EnableCopyAccess),
-		DisableNewAccountRequestIfAccountExists: util.StringPointerOrEmpty(plan.DisableNewAccountRequestIfAccountExists),
-		DisableRemoveAccount:                    util.StringPointerOrEmpty(plan.DisableRemoveAccount),
-		DisableModifyAccount:                    util.StringPointerOrEmpty(plan.DisableModifyAccount),
-		UserAccountCorrelationRule:              util.StringPointerOrEmpty(plan.UserAccountCorrelationRule),
-		CreateEntTaskforRemoveAcc:               util.StringPointerOrEmpty(plan.CreateEntTaskforRemoveAcc),
-		Outofbandaction:                         util.StringPointerOrEmpty(plan.OutOfBandAction),
-		Connectionconfig:                        util.StringPointerOrEmpty(plan.ConnectionConfig),
-		Requestable:                             util.BoolPointerOrEmpty(plan.Requestable),
-		ParentAccountPattern:                    util.StringPointerOrEmpty(plan.ParentAccountPattern),
-		ServiceAccountNameRule:                  util.StringPointerOrEmpty(plan.ServiceAccountNameRule),
-		ServiceAccountAccessQuery:               util.StringPointerOrEmpty(plan.ServiceAccountAccessQuery),
-		BlockInflightRequest:                    util.StringPointerOrEmpty(plan.BlockInflightRequest),
-		AccountNameRule:                         util.StringPointerOrEmpty(plan.AccountNameRule),
-		AllowChangePasswordSqlquery:             util.StringPointerOrEmpty(plan.AllowChangePasswordSQLQuery),
-		AccountNameValidatorRegex:               util.StringPointerOrEmpty(plan.AccountNameValidatorRegex),
-		PrimaryAccountType:                      util.StringPointerOrEmpty(plan.PrimaryAccountType),
-		AccountTypeNoPasswordChange:             util.StringPointerOrEmpty(plan.AccountTypeNoPasswordChange),
-		ChangePasswordAccessQuery:               util.StringPointerOrEmpty(plan.ChangePasswordAccessQuery),
-		StatusConfig:                            util.StringPointerOrEmpty(plan.StatusConfig),
-		PluginConfigs:                           util.StringPointerOrEmpty(plan.PluginConfigs),
-		EndpointConfig:                          util.StringPointerOrEmpty(plan.EndpointConfig),
-		AllowRemoveAllRoleOnRequest:             util.BoolPointerOrEmpty(plan.AllowRemoveAllRoleOnRequest),
-		Customproperty1:                         util.StringPointerOrEmpty(plan.CustomProperty1),
-		Customproperty2:                         util.StringPointerOrEmpty(plan.CustomProperty2),
-		Customproperty3:                         util.StringPointerOrEmpty(plan.CustomProperty3),
-		Customproperty4:                         util.StringPointerOrEmpty(plan.CustomProperty4),
-		Customproperty5:                         util.StringPointerOrEmpty(plan.CustomProperty5),
-		Customproperty6:                         util.StringPointerOrEmpty(plan.CustomProperty6),
-		Customproperty7:                         util.StringPointerOrEmpty(plan.CustomProperty7),
-		Customproperty8:                         util.StringPointerOrEmpty(plan.CustomProperty8),
-		Customproperty9:                         util.StringPointerOrEmpty(plan.CustomProperty9),
-		Customproperty10:                        util.StringPointerOrEmpty(plan.CustomProperty10),
-		Customproperty11:                        util.StringPointerOrEmpty(plan.CustomProperty11),
-		Customproperty12:                        util.StringPointerOrEmpty(plan.CustomProperty12),
-		Customproperty13:                        util.StringPointerOrEmpty(plan.CustomProperty13),
-		Customproperty14:                        util.StringPointerOrEmpty(plan.CustomProperty14),
-		Customproperty15:                        util.StringPointerOrEmpty(plan.CustomProperty15),
-		Customproperty16:                        util.StringPointerOrEmpty(plan.CustomProperty16),
-		Customproperty17:                        util.StringPointerOrEmpty(plan.CustomProperty17),
-		Customproperty18:                        util.StringPointerOrEmpty(plan.CustomProperty18),
-		Customproperty19:                        util.StringPointerOrEmpty(plan.CustomProperty19),
-		Customproperty20:                        util.StringPointerOrEmpty(plan.CustomProperty20),
-		Customproperty21:                        util.StringPointerOrEmpty(plan.CustomProperty21),
-		Customproperty22:                        util.StringPointerOrEmpty(plan.CustomProperty22),
-		Customproperty23:                        util.StringPointerOrEmpty(plan.CustomProperty23),
-		Customproperty24:                        util.StringPointerOrEmpty(plan.CustomProperty24),
-		Customproperty25:                        util.StringPointerOrEmpty(plan.CustomProperty25),
-		Customproperty26:                        util.StringPointerOrEmpty(plan.CustomProperty26),
-		Customproperty27:                        util.StringPointerOrEmpty(plan.CustomProperty27),
-		Customproperty28:                        util.StringPointerOrEmpty(plan.CustomProperty28),
-		Customproperty29:                        util.StringPointerOrEmpty(plan.CustomProperty29),
-		Customproperty30:                        util.StringPointerOrEmpty(plan.CustomProperty30),
-		Customproperty31:                        util.StringPointerOrEmpty(plan.CustomProperty31),
-		Customproperty32:                        util.StringPointerOrEmpty(plan.CustomProperty32),
-		Customproperty33:                        util.StringPointerOrEmpty(plan.CustomProperty33),
-		Customproperty34:                        util.StringPointerOrEmpty(plan.CustomProperty34),
-		Customproperty35:                        util.StringPointerOrEmpty(plan.CustomProperty35),
-		Customproperty36:                        util.StringPointerOrEmpty(plan.CustomProperty36),
-		Customproperty37:                        util.StringPointerOrEmpty(plan.CustomProperty37),
-		Customproperty38:                        util.StringPointerOrEmpty(plan.CustomProperty38),
-		Customproperty39:                        util.StringPointerOrEmpty(plan.CustomProperty39),
-		Customproperty40:                        util.StringPointerOrEmpty(plan.CustomProperty40),
-		Customproperty41:                        util.StringPointerOrEmpty(plan.CustomProperty41),
-		Customproperty42:                        util.StringPointerOrEmpty(plan.CustomProperty42),
-		Customproperty43:                        util.StringPointerOrEmpty(plan.CustomProperty43),
-		Customproperty44:                        util.StringPointerOrEmpty(plan.CustomProperty44),
-		Customproperty45:                        util.StringPointerOrEmpty(plan.CustomProperty45),
-		Customproperty1Label:                    util.StringPointerOrEmpty(plan.AccountCustomProperty1Label),
-		Customproperty2Label:                    util.StringPointerOrEmpty(plan.AccountCustomProperty2Label),
-		Customproperty3Label:                    util.StringPointerOrEmpty(plan.AccountCustomProperty3Label),
-		Customproperty4Label:                    util.StringPointerOrEmpty(plan.AccountCustomProperty4Label),
-		Customproperty5Label:                    util.StringPointerOrEmpty(plan.AccountCustomProperty5Label),
-		Customproperty6Label:                    util.StringPointerOrEmpty(plan.AccountCustomProperty6Label),
-		Customproperty7Label:                    util.StringPointerOrEmpty(plan.AccountCustomProperty7Label),
-		Customproperty8Label:                    util.StringPointerOrEmpty(plan.AccountCustomProperty8Label),
-		Customproperty9Label:                    util.StringPointerOrEmpty(plan.AccountCustomProperty9Label),
-		Customproperty10Label:                   util.StringPointerOrEmpty(plan.AccountCustomProperty10Label),
-		Customproperty11Label:                   util.StringPointerOrEmpty(plan.AccountCustomProperty11Label),
-		Customproperty12Label:                   util.StringPointerOrEmpty(plan.AccountCustomProperty12Label),
-		Customproperty13Label:                   util.StringPointerOrEmpty(plan.AccountCustomProperty13Label),
-		Customproperty14Label:                   util.StringPointerOrEmpty(plan.AccountCustomProperty14Label),
-		Customproperty15Label:                   util.StringPointerOrEmpty(plan.AccountCustomProperty15Label),
-		Customproperty16Label:                   util.StringPointerOrEmpty(plan.AccountCustomProperty16Label),
-		Customproperty17Label:                   util.StringPointerOrEmpty(plan.AccountCustomProperty17Label),
-		Customproperty18Label:                   util.StringPointerOrEmpty(plan.AccountCustomProperty18Label),
-		Customproperty19Label:                   util.StringPointerOrEmpty(plan.AccountCustomProperty19Label),
-		Customproperty20Label:                   util.StringPointerOrEmpty(plan.AccountCustomProperty20Label),
-		Customproperty21Label:                   util.StringPointerOrEmpty(plan.AccountCustomProperty21Label),
-		Customproperty22Label:                   util.StringPointerOrEmpty(plan.AccountCustomProperty22Label),
-		Customproperty23Label:                   util.StringPointerOrEmpty(plan.AccountCustomProperty23Label),
-		Customproperty24Label:                   util.StringPointerOrEmpty(plan.AccountCustomProperty24Label),
-		Customproperty25Label:                   util.StringPointerOrEmpty(plan.AccountCustomProperty25Label),
-		Customproperty26Label:                   util.StringPointerOrEmpty(plan.AccountCustomProperty26Label),
-		Customproperty27Label:                   util.StringPointerOrEmpty(plan.AccountCustomProperty27Label),
-		Customproperty28Label:                   util.StringPointerOrEmpty(plan.AccountCustomProperty28Label),
-		Customproperty29Label:                   util.StringPointerOrEmpty(plan.AccountCustomProperty29Label),
-		Customproperty30Label:                   util.StringPointerOrEmpty(plan.AccountCustomProperty30Label),
-		Customproperty31Label:                   util.StringPointerOrEmpty(plan.CustomProperty31Label),
-		Customproperty32Label:                   util.StringPointerOrEmpty(plan.CustomProperty32Label),
-		Customproperty33Label:                   util.StringPointerOrEmpty(plan.CustomProperty33Label),
-		Customproperty34Label:                   util.StringPointerOrEmpty(plan.CustomProperty34Label),
-		Customproperty35Label:                   util.StringPointerOrEmpty(plan.CustomProperty35Label),
-		Customproperty36Label:                   util.StringPointerOrEmpty(plan.CustomProperty36Label),
-		Customproperty37Label:                   util.StringPointerOrEmpty(plan.CustomProperty37Label),
-		Customproperty38Label:                   util.StringPointerOrEmpty(plan.CustomProperty38Label),
-		Customproperty39Label:                   util.StringPointerOrEmpty(plan.CustomProperty39Label),
-		Customproperty40Label:                   util.StringPointerOrEmpty(plan.CustomProperty40Label),
-		Customproperty41Label:                   util.StringPointerOrEmpty(plan.CustomProperty41Label),
-		Customproperty42Label:                   util.StringPointerOrEmpty(plan.CustomProperty42Label),
-		Customproperty43Label:                   util.StringPointerOrEmpty(plan.CustomProperty43Label),
-		Customproperty44Label:                   util.StringPointerOrEmpty(plan.CustomProperty44Label),
-		Customproperty45Label:                   util.StringPointerOrEmpty(plan.CustomProperty45Label),
-		Customproperty46Label:                   util.StringPointerOrEmpty(plan.CustomProperty46Label),
-		Customproperty47Label:                   util.StringPointerOrEmpty(plan.CustomProperty47Label),
-		Customproperty48Label:                   util.StringPointerOrEmpty(plan.CustomProperty48Label),
-		Customproperty49Label:                   util.StringPointerOrEmpty(plan.CustomProperty49Label),
-		Customproperty50Label:                   util.StringPointerOrEmpty(plan.CustomProperty50Label),
-		Customproperty51Label:                   util.StringPointerOrEmpty(plan.CustomProperty51Label),
-		Customproperty52Label:                   util.StringPointerOrEmpty(plan.CustomProperty52Label),
-		Customproperty53Label:                   util.StringPointerOrEmpty(plan.CustomProperty53Label),
-		Customproperty54Label:                   util.StringPointerOrEmpty(plan.CustomProperty54Label),
-		Customproperty55Label:                   util.StringPointerOrEmpty(plan.CustomProperty55Label),
-		Customproperty56Label:                   util.StringPointerOrEmpty(plan.CustomProperty56Label),
-		Customproperty57Label:                   util.StringPointerOrEmpty(plan.CustomProperty57Label),
-		Customproperty58Label:                   util.StringPointerOrEmpty(plan.CustomProperty58Label),
-		Customproperty59Label:                   util.StringPointerOrEmpty(plan.CustomProperty59Label),
-		Customproperty60Label:                   util.StringPointerOrEmpty(plan.CustomProperty60Label),
+	// Use interface pattern for read operation
+	apiResp, err := r.GetEndpoints(ctx, &state)
+	if err != nil {
+		log.Printf("[ERROR] Failed to get endpoints in Read Block: %v", err)
+		resp.Diagnostics.AddError("API Read Failed In Read Block", err.Error())
+		return
 	}
 
-	var emailTemplates []openapi.CreateEndpointRequestEmailTemplateInner
-	var diags diag.Diagnostics
-	var tfEmailTemplates []EmailTemplate
+	// Update model from read response
+	r.SetEndpointFields(&state, apiResp, &resp.Diagnostics)
+	resp.Diagnostics.Append(resp.State.Set(ctx, &state)...)
+	if resp.Diagnostics.HasError() {
+		log.Printf("[ERROR] Failed to set state in Read Block: %v", resp.Diagnostics)
+		return
+	}
 
-	// Convert from Terraform types to Go struct (allowing unknown values)
-	diags = plan.EmailTemplates.ElementsAs(ctx, &tfEmailTemplates, true)
+}
+
+func (r *EndpointResource) Update(ctx context.Context, req resource.UpdateRequest, resp *resource.UpdateResponse) {
+	var plan EndpointResourceModel
+	var state EndpointResourceModel
+
+	// Get current state and plan
+	resp.Diagnostics.Append(req.State.Get(ctx, &state)...)
+	if resp.Diagnostics.HasError() {
+		log.Printf("[ERROR]: Failed to get state in Update Block: %v", resp.Diagnostics)
+		return
+	}
+
+	resp.Diagnostics.Append(req.Plan.Get(ctx, &plan)...)
+	if resp.Diagnostics.HasError() {
+		log.Printf("[ERROR]: Failed to get plan in Update Block: %v", resp.Diagnostics)
+		return
+	}
+
+	// Validate endpoint name cannot be changed
+	if plan.EndpointName.ValueString() != state.EndpointName.ValueString() {
+		log.Printf("[ERROR]: Endpoint name cannot be updated from %s to %s", state.EndpointName.ValueString(), plan.EndpointName.ValueString())
+		resp.Diagnostics.AddError("Error", "Endpoint name cannot be updated")
+		return
+	}
+
+	// Use the factory to create endpoint operations
+	endpointOps := r.endpointFactory.CreateEndpointOperations(r.client.APIBaseURL(), r.token)
+
+	// Build UPDATE request using existing helper function with proper diagnostics
+	updateReq := r.BuildEndpointRequest(ctx, &plan, &resp.Diagnostics, false).(openapi.UpdateEndpointRequest)
+	if resp.Diagnostics.HasError() {
+		log.Printf("[ERROR]: Failed to build update request in Update Block: %v", resp.Diagnostics)
+		return
+	}
+
+	// Handle mapped endpoints with proper diagnostics
+	mappedEndpoints, diags := r.BuildMappedEndpointsForUpdateWithDiags(ctx, &plan)
 	resp.Diagnostics.Append(diags...)
 	if resp.Diagnostics.HasError() {
+		log.Printf("[ERROR]: Failed to build mapped endpoints in Update Block: %v", resp.Diagnostics)
 		return
+	}
+	if len(mappedEndpoints) > 0 {
+		updateReq.MappedEndpoints = mappedEndpoints
+	}
+
+	// Handle requestable role types with proper diagnostics
+	requestableRoleTypes, diags := r.BuildRequestableRoleTypesForUpdateWithDiags(ctx, &plan)
+	resp.Diagnostics.Append(diags...)
+	if resp.Diagnostics.HasError() {
+		log.Printf("[ERROR]: Failed to build requestable role types in Update Block: %v", resp.Diagnostics)
+		return
+	}
+	if len(requestableRoleTypes) > 0 {
+		updateReq.RequestableRoleType = requestableRoleTypes
+	}
+
+	// Execute the update
+	apiResp, _, err := endpointOps.UpdateEndpoint(ctx, updateReq)
+	if err != nil {
+		log.Printf("[ERROR]: Problem with update function in Update Block. Error: %v", err)
+		resp.Diagnostics.AddError("API Update Failed In Update Block", fmt.Sprintf("Error: %v", err))
+		return
+	}
+
+	// Check API response
+	if apiResp != nil && apiResp.ErrorCode != nil && *apiResp.ErrorCode != "0" {
+		log.Printf("[ERROR]: Error Updating Endpoint: %v, Error code: %v", *apiResp.Msg, *apiResp.ErrorCode)
+		resp.Diagnostics.AddError("Error Updating Endpoint In Update Block", fmt.Sprintf("Error: %v, Error code: %v", *apiResp.Msg, *apiResp.ErrorCode))
+		return
+	}
+
+	// Refresh state after update
+	apiResp2, err := r.GetEndpoints(ctx, &plan)
+	if err != nil {
+		resp.Diagnostics.AddError("API Read Failed After Update In Update Block", err.Error())
+		return
+	}
+
+	// Update model from read response
+	r.SetEndpointFields(&plan, apiResp2, &resp.Diagnostics)
+	resp.Diagnostics.Append(resp.State.Set(ctx, &plan)...)
+}
+
+func (r *EndpointResource) Delete(ctx context.Context, req resource.DeleteRequest, resp *resource.DeleteResponse) {
+	// resp.State.RemoveResource(ctx)
+	if os.Getenv("TF_ACC") == "1" {
+		resp.State.RemoveResource(ctx)
+		return
+	}
+	resp.Diagnostics.AddError(
+		"Delete Not Supported",
+		"Resource deletion is not supported by this provider. Please remove the resource manually if required, or contact your administrator.",
+	)
+}
+
+func (r *EndpointResource) ImportState(ctx context.Context, req resource.ImportStateRequest, resp *resource.ImportStateResponse) {
+	// Retrieve import ID and save to id attribute
+	resource.ImportStatePassthroughID(ctx, path.Root("endpoint_name"), req, resp)
+}
+
+// BuildEndpointRequest builds either CREATE or UPDATE request based on isCreate parameter
+func (r *EndpointResource) BuildEndpointRequest(ctx context.Context, plan *EndpointResourceModel, diagnostics *diag.Diagnostics, isCreate bool) interface{} {
+	if isCreate {
+		// CREATE request with specific method patterns
+		createReq := openapi.CreateEndpointRequest{
+			// Core fields - CREATE uses ValueString() for required fields
+			Endpointname:   plan.EndpointName.ValueString(),
+			DisplayName:    plan.DisplayName.ValueString(),
+			Securitysystem: plan.SecuritySystem.ValueString(),
+
+			// Optional fields - CREATE uses util.StringPointerOrEmpty()
+			Description:                             util.StringPointerOrEmpty(plan.Description),
+			OwnerType:                               util.StringPointerOrEmpty(plan.OwnerType),
+			Owner:                                   util.StringPointerOrEmpty(plan.Owner),
+			ResourceOwnerType:                       util.StringPointerOrEmpty(plan.ResourceOwnerType),
+			ResourceOwner:                           util.StringPointerOrEmpty(plan.ResourceOwner),
+			Accessquery:                             util.StringPointerOrEmpty(plan.AccessQuery),
+			EnableCopyAccess:                        util.StringPointerOrEmpty(plan.EnableCopyAccess),
+			DisableNewAccountRequestIfAccountExists: util.StringPointerOrEmpty(plan.DisableNewAccountRequestIfAccountExists),
+			DisableRemoveAccount:                    util.StringPointerOrEmpty(plan.DisableRemoveAccount),
+			DisableModifyAccount:                    util.StringPointerOrEmpty(plan.DisableModifyAccount),
+			UserAccountCorrelationRule:              util.StringPointerOrEmpty(plan.UserAccountCorrelationRule),
+			CreateEntTaskforRemoveAcc:               util.StringPointerOrEmpty(plan.CreateEntTaskforRemoveAcc),
+			Outofbandaction:                         util.StringPointerOrEmpty(plan.OutOfBandAction),
+			Connectionconfig:                        util.StringPointerOrEmpty(plan.ConnectionConfig),
+			ParentAccountPattern:                    util.StringPointerOrEmpty(plan.ParentAccountPattern),
+			ServiceAccountNameRule:                  util.StringPointerOrEmpty(plan.ServiceAccountNameRule),
+			ServiceAccountAccessQuery:               util.StringPointerOrEmpty(plan.ServiceAccountAccessQuery),
+			BlockInflightRequest:                    util.StringPointerOrEmpty(plan.BlockInflightRequest),
+			AccountNameRule:                         util.StringPointerOrEmpty(plan.AccountNameRule),
+			AllowChangePasswordSqlquery:             util.StringPointerOrEmpty(plan.AllowChangePasswordSQLQuery),
+			AccountNameValidatorRegex:               util.StringPointerOrEmpty(plan.AccountNameValidatorRegex),
+			PrimaryAccountType:                      util.StringPointerOrEmpty(plan.PrimaryAccountType),
+			AccountTypeNoPasswordChange:             util.StringPointerOrEmpty(plan.AccountTypeNoPasswordChange),
+			ChangePasswordAccessQuery:               util.StringPointerOrEmpty(plan.ChangePasswordAccessQuery),
+			StatusConfig:                            util.StringPointerOrEmpty(plan.StatusConfig),
+			PluginConfigs:                           util.StringPointerOrEmpty(plan.PluginConfigs),
+			EndpointConfig:                          util.StringPointerOrEmpty(plan.EndpointConfig),
+
+			// Boolean fields - CREATE uses util.BoolPointerOrEmpty()
+			Requestable:                 util.BoolPointerOrEmpty(plan.Requestable),
+			AllowRemoveAllRoleOnRequest: util.BoolPointerOrEmpty(plan.AllowRemoveAllRoleOnRequest),
+		}
+
+		// Add custom properties and labels for CREATE
+		r.SetCustomProperties(&createReq, nil, plan, isCreate)
+		r.SetCustomPropertyLabels(&createReq, nil, plan, isCreate)
+
+		// Add email templates (unified logic)
+		emailTemplates := r.BuildEmailTemplates(ctx, plan, diagnostics)
+		if len(emailTemplates) > 0 {
+			createReq.Taskemailtemplates = emailTemplates
+		}
+
+		return createReq
+	} else {
+		// UPDATE request with specific method patterns
+		updateReq := openapi.UpdateEndpointRequest{
+			// Core field - UPDATE uses ValueString() for endpoint name (required)
+			Endpointname: plan.EndpointName.ValueString(),
+			// Optional fields
+			PrimaryAccountType:                      plan.PrimaryAccountType.ValueStringPointer(),
+			AccountTypeNoPasswordChange:             plan.AccountTypeNoPasswordChange.ValueStringPointer(),
+			DisplayName:                             plan.DisplayName.ValueStringPointer(),
+			Securitysystem:                          plan.SecuritySystem.ValueStringPointer(),
+			Description:                             plan.Description.ValueStringPointer(),
+			OwnerType:                               plan.OwnerType.ValueStringPointer(),
+			Owner:                                   plan.Owner.ValueStringPointer(),
+			ResourceOwnerType:                       plan.ResourceOwnerType.ValueStringPointer(),
+			ResourceOwner:                           plan.ResourceOwner.ValueStringPointer(),
+			Accessquery:                             plan.AccessQuery.ValueStringPointer(),
+			EnableCopyAccess:                        plan.EnableCopyAccess.ValueStringPointer(),
+			CreateEntTaskforRemoveAcc:               plan.CreateEntTaskforRemoveAcc.ValueStringPointer(),
+			DisableNewAccountRequestIfAccountExists: plan.DisableNewAccountRequestIfAccountExists.ValueStringPointer(),
+			DisableRemoveAccount:                    plan.DisableRemoveAccount.ValueStringPointer(),
+			DisableModifyAccount:                    plan.DisableModifyAccount.ValueStringPointer(),
+			UserAccountCorrelationRule:              plan.UserAccountCorrelationRule.ValueStringPointer(),
+			Connectionconfig:                        plan.ConnectionConfig.ValueStringPointer(),
+			BlockInflightRequest:                    plan.BlockInflightRequest.ValueStringPointer(),
+			Outofbandaction:                         plan.OutOfBandAction.ValueStringPointer(),
+			AccountNameRule:                         plan.AccountNameRule.ValueStringPointer(),
+			AllowChangePasswordSqlquery:             plan.AllowChangePasswordSQLQuery.ValueStringPointer(),
+			ParentAccountPattern:                    plan.ParentAccountPattern.ValueStringPointer(),
+			ServiceAccountNameRule:                  plan.ServiceAccountNameRule.ValueStringPointer(),
+			ServiceAccountAccessQuery:               plan.ServiceAccountAccessQuery.ValueStringPointer(),
+			ChangePasswordAccessQuery:               plan.ChangePasswordAccessQuery.ValueStringPointer(),
+			AccountNameValidatorRegex:               plan.AccountNameValidatorRegex.ValueStringPointer(),
+			StatusConfig:                            plan.StatusConfig.ValueStringPointer(),
+			PluginConfigs:                           plan.PluginConfigs.ValueStringPointer(),
+			EndpointConfig:                          plan.EndpointConfig.ValueStringPointer(),
+
+			// Boolean fields - UPDATE uses ValueBoolPointer()
+			Requestable:                 plan.Requestable.ValueBoolPointer(),
+			AllowRemoveAllRoleOnRequest: plan.AllowRemoveAllRoleOnRequest.ValueBoolPointer(),
+		}
+
+		// Add custom properties and labels for UPDATE
+		r.SetCustomProperties(nil, &updateReq, plan, isCreate)
+		r.SetCustomPropertyLabels(nil, &updateReq, plan, isCreate)
+
+		// Add email templates (unified logic)
+		emailTemplates := r.BuildEmailTemplates(ctx, plan, diagnostics)
+		if len(emailTemplates) > 0 {
+			updateReq.Taskemailtemplates = emailTemplates
+		}
+
+		return updateReq
+	}
+}
+
+// SetCustomProperties sets custom properties 1-45 in either CREATE or UPDATE request
+func (r *EndpointResource) SetCustomProperties(createReq *openapi.CreateEndpointRequest, updateReq *openapi.UpdateEndpointRequest, plan *EndpointResourceModel, isCreate bool) {
+	// Custom properties use the same method (util.StringPointerOrEmpty) for both CREATE and UPDATE
+	if isCreate {
+		createReq.Customproperty1 = util.StringPointerOrEmpty(plan.CustomProperty1)
+		createReq.Customproperty2 = util.StringPointerOrEmpty(plan.CustomProperty2)
+		createReq.Customproperty3 = util.StringPointerOrEmpty(plan.CustomProperty3)
+		createReq.Customproperty4 = util.StringPointerOrEmpty(plan.CustomProperty4)
+		createReq.Customproperty5 = util.StringPointerOrEmpty(plan.CustomProperty5)
+		createReq.Customproperty6 = util.StringPointerOrEmpty(plan.CustomProperty6)
+		createReq.Customproperty7 = util.StringPointerOrEmpty(plan.CustomProperty7)
+		createReq.Customproperty8 = util.StringPointerOrEmpty(plan.CustomProperty8)
+		createReq.Customproperty9 = util.StringPointerOrEmpty(plan.CustomProperty9)
+		createReq.Customproperty10 = util.StringPointerOrEmpty(plan.CustomProperty10)
+		createReq.Customproperty11 = util.StringPointerOrEmpty(plan.CustomProperty11)
+		createReq.Customproperty12 = util.StringPointerOrEmpty(plan.CustomProperty12)
+		createReq.Customproperty13 = util.StringPointerOrEmpty(plan.CustomProperty13)
+		createReq.Customproperty14 = util.StringPointerOrEmpty(plan.CustomProperty14)
+		createReq.Customproperty15 = util.StringPointerOrEmpty(plan.CustomProperty15)
+		createReq.Customproperty16 = util.StringPointerOrEmpty(plan.CustomProperty16)
+		createReq.Customproperty17 = util.StringPointerOrEmpty(plan.CustomProperty17)
+		createReq.Customproperty18 = util.StringPointerOrEmpty(plan.CustomProperty18)
+		createReq.Customproperty19 = util.StringPointerOrEmpty(plan.CustomProperty19)
+		createReq.Customproperty20 = util.StringPointerOrEmpty(plan.CustomProperty20)
+		createReq.Customproperty21 = util.StringPointerOrEmpty(plan.CustomProperty21)
+		createReq.Customproperty22 = util.StringPointerOrEmpty(plan.CustomProperty22)
+		createReq.Customproperty23 = util.StringPointerOrEmpty(plan.CustomProperty23)
+		createReq.Customproperty24 = util.StringPointerOrEmpty(plan.CustomProperty24)
+		createReq.Customproperty25 = util.StringPointerOrEmpty(plan.CustomProperty25)
+		createReq.Customproperty26 = util.StringPointerOrEmpty(plan.CustomProperty26)
+		createReq.Customproperty27 = util.StringPointerOrEmpty(plan.CustomProperty27)
+		createReq.Customproperty28 = util.StringPointerOrEmpty(plan.CustomProperty28)
+		createReq.Customproperty29 = util.StringPointerOrEmpty(plan.CustomProperty29)
+		createReq.Customproperty30 = util.StringPointerOrEmpty(plan.CustomProperty30)
+		createReq.Customproperty31 = util.StringPointerOrEmpty(plan.CustomProperty31)
+		createReq.Customproperty32 = util.StringPointerOrEmpty(plan.CustomProperty32)
+		createReq.Customproperty33 = util.StringPointerOrEmpty(plan.CustomProperty33)
+		createReq.Customproperty34 = util.StringPointerOrEmpty(plan.CustomProperty34)
+		createReq.Customproperty35 = util.StringPointerOrEmpty(plan.CustomProperty35)
+		createReq.Customproperty36 = util.StringPointerOrEmpty(plan.CustomProperty36)
+		createReq.Customproperty37 = util.StringPointerOrEmpty(plan.CustomProperty37)
+		createReq.Customproperty38 = util.StringPointerOrEmpty(plan.CustomProperty38)
+		createReq.Customproperty39 = util.StringPointerOrEmpty(plan.CustomProperty39)
+		createReq.Customproperty40 = util.StringPointerOrEmpty(plan.CustomProperty40)
+		createReq.Customproperty41 = util.StringPointerOrEmpty(plan.CustomProperty41)
+		createReq.Customproperty42 = util.StringPointerOrEmpty(plan.CustomProperty42)
+		createReq.Customproperty43 = util.StringPointerOrEmpty(plan.CustomProperty43)
+		createReq.Customproperty44 = util.StringPointerOrEmpty(plan.CustomProperty44)
+		createReq.Customproperty45 = util.StringPointerOrEmpty(plan.CustomProperty45)
+	} else {
+		updateReq.Customproperty1 = util.StringPointerOrEmpty(plan.CustomProperty1)
+		updateReq.Customproperty2 = util.StringPointerOrEmpty(plan.CustomProperty2)
+		updateReq.Customproperty3 = util.StringPointerOrEmpty(plan.CustomProperty3)
+		updateReq.Customproperty4 = util.StringPointerOrEmpty(plan.CustomProperty4)
+		updateReq.Customproperty5 = util.StringPointerOrEmpty(plan.CustomProperty5)
+		updateReq.Customproperty6 = util.StringPointerOrEmpty(plan.CustomProperty6)
+		updateReq.Customproperty7 = util.StringPointerOrEmpty(plan.CustomProperty7)
+		updateReq.Customproperty8 = util.StringPointerOrEmpty(plan.CustomProperty8)
+		updateReq.Customproperty9 = util.StringPointerOrEmpty(plan.CustomProperty9)
+		updateReq.Customproperty10 = util.StringPointerOrEmpty(plan.CustomProperty10)
+		updateReq.Customproperty11 = util.StringPointerOrEmpty(plan.CustomProperty11)
+		updateReq.Customproperty12 = util.StringPointerOrEmpty(plan.CustomProperty12)
+		updateReq.Customproperty13 = util.StringPointerOrEmpty(plan.CustomProperty13)
+		updateReq.Customproperty14 = util.StringPointerOrEmpty(plan.CustomProperty14)
+		updateReq.Customproperty15 = util.StringPointerOrEmpty(plan.CustomProperty15)
+		updateReq.Customproperty16 = util.StringPointerOrEmpty(plan.CustomProperty16)
+		updateReq.Customproperty17 = util.StringPointerOrEmpty(plan.CustomProperty17)
+		updateReq.Customproperty18 = util.StringPointerOrEmpty(plan.CustomProperty18)
+		updateReq.Customproperty19 = util.StringPointerOrEmpty(plan.CustomProperty19)
+		updateReq.Customproperty20 = util.StringPointerOrEmpty(plan.CustomProperty20)
+		updateReq.Customproperty21 = util.StringPointerOrEmpty(plan.CustomProperty21)
+		updateReq.Customproperty22 = util.StringPointerOrEmpty(plan.CustomProperty22)
+		updateReq.Customproperty23 = util.StringPointerOrEmpty(plan.CustomProperty23)
+		updateReq.Customproperty24 = util.StringPointerOrEmpty(plan.CustomProperty24)
+		updateReq.Customproperty25 = util.StringPointerOrEmpty(plan.CustomProperty25)
+		updateReq.Customproperty26 = util.StringPointerOrEmpty(plan.CustomProperty26)
+		updateReq.Customproperty27 = util.StringPointerOrEmpty(plan.CustomProperty27)
+		updateReq.Customproperty28 = util.StringPointerOrEmpty(plan.CustomProperty28)
+		updateReq.Customproperty29 = util.StringPointerOrEmpty(plan.CustomProperty29)
+		updateReq.Customproperty30 = util.StringPointerOrEmpty(plan.CustomProperty30)
+		updateReq.Customproperty31 = util.StringPointerOrEmpty(plan.CustomProperty31)
+		updateReq.Customproperty32 = util.StringPointerOrEmpty(plan.CustomProperty32)
+		updateReq.Customproperty33 = util.StringPointerOrEmpty(plan.CustomProperty33)
+		updateReq.Customproperty34 = util.StringPointerOrEmpty(plan.CustomProperty34)
+		updateReq.Customproperty35 = util.StringPointerOrEmpty(plan.CustomProperty35)
+		updateReq.Customproperty36 = util.StringPointerOrEmpty(plan.CustomProperty36)
+		updateReq.Customproperty37 = util.StringPointerOrEmpty(plan.CustomProperty37)
+		updateReq.Customproperty38 = util.StringPointerOrEmpty(plan.CustomProperty38)
+		updateReq.Customproperty39 = util.StringPointerOrEmpty(plan.CustomProperty39)
+		updateReq.Customproperty40 = util.StringPointerOrEmpty(plan.CustomProperty40)
+		updateReq.Customproperty41 = util.StringPointerOrEmpty(plan.CustomProperty41)
+		updateReq.Customproperty42 = util.StringPointerOrEmpty(plan.CustomProperty42)
+		updateReq.Customproperty43 = util.StringPointerOrEmpty(plan.CustomProperty43)
+		updateReq.Customproperty44 = util.StringPointerOrEmpty(plan.CustomProperty44)
+		updateReq.Customproperty45 = util.StringPointerOrEmpty(plan.CustomProperty45)
+	}
+}
+
+// SetCustomPropertyLabels sets custom property labels 1-60 in either CREATE or UPDATE request
+func (r *EndpointResource) SetCustomPropertyLabels(createReq *openapi.CreateEndpointRequest, updateReq *openapi.UpdateEndpointRequest, plan *EndpointResourceModel, isCreate bool) {
+	// Custom property labels use the same method (util.StringPointerOrEmpty) for both CREATE and UPDATE
+	if isCreate {
+		// Labels 1-30 use AccountCustomProperty pattern
+		createReq.Customproperty1Label = util.StringPointerOrEmpty(plan.AccountCustomProperty1Label)
+		createReq.Customproperty2Label = util.StringPointerOrEmpty(plan.AccountCustomProperty2Label)
+		createReq.Customproperty3Label = util.StringPointerOrEmpty(plan.AccountCustomProperty3Label)
+		createReq.Customproperty4Label = util.StringPointerOrEmpty(plan.AccountCustomProperty4Label)
+		createReq.Customproperty5Label = util.StringPointerOrEmpty(plan.AccountCustomProperty5Label)
+		createReq.Customproperty6Label = util.StringPointerOrEmpty(plan.AccountCustomProperty6Label)
+		createReq.Customproperty7Label = util.StringPointerOrEmpty(plan.AccountCustomProperty7Label)
+		createReq.Customproperty8Label = util.StringPointerOrEmpty(plan.AccountCustomProperty8Label)
+		createReq.Customproperty9Label = util.StringPointerOrEmpty(plan.AccountCustomProperty9Label)
+		createReq.Customproperty10Label = util.StringPointerOrEmpty(plan.AccountCustomProperty10Label)
+		createReq.Customproperty11Label = util.StringPointerOrEmpty(plan.AccountCustomProperty11Label)
+		createReq.Customproperty12Label = util.StringPointerOrEmpty(plan.AccountCustomProperty12Label)
+		createReq.Customproperty13Label = util.StringPointerOrEmpty(plan.AccountCustomProperty13Label)
+		createReq.Customproperty14Label = util.StringPointerOrEmpty(plan.AccountCustomProperty14Label)
+		createReq.Customproperty15Label = util.StringPointerOrEmpty(plan.AccountCustomProperty15Label)
+		createReq.Customproperty16Label = util.StringPointerOrEmpty(plan.AccountCustomProperty16Label)
+		createReq.Customproperty17Label = util.StringPointerOrEmpty(plan.AccountCustomProperty17Label)
+		createReq.Customproperty18Label = util.StringPointerOrEmpty(plan.AccountCustomProperty18Label)
+		createReq.Customproperty19Label = util.StringPointerOrEmpty(plan.AccountCustomProperty19Label)
+		createReq.Customproperty20Label = util.StringPointerOrEmpty(plan.AccountCustomProperty20Label)
+		createReq.Customproperty21Label = util.StringPointerOrEmpty(plan.AccountCustomProperty21Label)
+		createReq.Customproperty22Label = util.StringPointerOrEmpty(plan.AccountCustomProperty22Label)
+		createReq.Customproperty23Label = util.StringPointerOrEmpty(plan.AccountCustomProperty23Label)
+		createReq.Customproperty24Label = util.StringPointerOrEmpty(plan.AccountCustomProperty24Label)
+		createReq.Customproperty25Label = util.StringPointerOrEmpty(plan.AccountCustomProperty25Label)
+		createReq.Customproperty26Label = util.StringPointerOrEmpty(plan.AccountCustomProperty26Label)
+		createReq.Customproperty27Label = util.StringPointerOrEmpty(plan.AccountCustomProperty27Label)
+		createReq.Customproperty28Label = util.StringPointerOrEmpty(plan.AccountCustomProperty28Label)
+		createReq.Customproperty29Label = util.StringPointerOrEmpty(plan.AccountCustomProperty29Label)
+		createReq.Customproperty30Label = util.StringPointerOrEmpty(plan.AccountCustomProperty30Label)
+
+		// Labels 31-60 use CustomProperty pattern
+		createReq.Customproperty31Label = util.StringPointerOrEmpty(plan.CustomProperty31Label)
+		createReq.Customproperty32Label = util.StringPointerOrEmpty(plan.CustomProperty32Label)
+		createReq.Customproperty33Label = util.StringPointerOrEmpty(plan.CustomProperty33Label)
+		createReq.Customproperty34Label = util.StringPointerOrEmpty(plan.CustomProperty34Label)
+		createReq.Customproperty35Label = util.StringPointerOrEmpty(plan.CustomProperty35Label)
+		createReq.Customproperty36Label = util.StringPointerOrEmpty(plan.CustomProperty36Label)
+		createReq.Customproperty37Label = util.StringPointerOrEmpty(plan.CustomProperty37Label)
+		createReq.Customproperty38Label = util.StringPointerOrEmpty(plan.CustomProperty38Label)
+		createReq.Customproperty39Label = util.StringPointerOrEmpty(plan.CustomProperty39Label)
+		createReq.Customproperty40Label = util.StringPointerOrEmpty(plan.CustomProperty40Label)
+		createReq.Customproperty41Label = util.StringPointerOrEmpty(plan.CustomProperty41Label)
+		createReq.Customproperty42Label = util.StringPointerOrEmpty(plan.CustomProperty42Label)
+		createReq.Customproperty43Label = util.StringPointerOrEmpty(plan.CustomProperty43Label)
+		createReq.Customproperty44Label = util.StringPointerOrEmpty(plan.CustomProperty44Label)
+		createReq.Customproperty45Label = util.StringPointerOrEmpty(plan.CustomProperty45Label)
+		createReq.Customproperty46Label = util.StringPointerOrEmpty(plan.CustomProperty46Label)
+		createReq.Customproperty47Label = util.StringPointerOrEmpty(plan.CustomProperty47Label)
+		createReq.Customproperty48Label = util.StringPointerOrEmpty(plan.CustomProperty48Label)
+		createReq.Customproperty49Label = util.StringPointerOrEmpty(plan.CustomProperty49Label)
+		createReq.Customproperty50Label = util.StringPointerOrEmpty(plan.CustomProperty50Label)
+		createReq.Customproperty51Label = util.StringPointerOrEmpty(plan.CustomProperty51Label)
+		createReq.Customproperty52Label = util.StringPointerOrEmpty(plan.CustomProperty52Label)
+		createReq.Customproperty53Label = util.StringPointerOrEmpty(plan.CustomProperty53Label)
+		createReq.Customproperty54Label = util.StringPointerOrEmpty(plan.CustomProperty54Label)
+		createReq.Customproperty55Label = util.StringPointerOrEmpty(plan.CustomProperty55Label)
+		createReq.Customproperty56Label = util.StringPointerOrEmpty(plan.CustomProperty56Label)
+		createReq.Customproperty57Label = util.StringPointerOrEmpty(plan.CustomProperty57Label)
+		createReq.Customproperty58Label = util.StringPointerOrEmpty(plan.CustomProperty58Label)
+		createReq.Customproperty59Label = util.StringPointerOrEmpty(plan.CustomProperty59Label)
+		createReq.Customproperty60Label = util.StringPointerOrEmpty(plan.CustomProperty60Label)
+	} else {
+		// Same assignments for UPDATE request
+		updateReq.Customproperty1Label = util.StringPointerOrEmpty(plan.AccountCustomProperty1Label)
+		updateReq.Customproperty2Label = util.StringPointerOrEmpty(plan.AccountCustomProperty2Label)
+		updateReq.Customproperty3Label = util.StringPointerOrEmpty(plan.AccountCustomProperty3Label)
+		updateReq.Customproperty4Label = util.StringPointerOrEmpty(plan.AccountCustomProperty4Label)
+		updateReq.Customproperty5Label = util.StringPointerOrEmpty(plan.AccountCustomProperty5Label)
+		updateReq.Customproperty6Label = util.StringPointerOrEmpty(plan.AccountCustomProperty6Label)
+		updateReq.Customproperty7Label = util.StringPointerOrEmpty(plan.AccountCustomProperty7Label)
+		updateReq.Customproperty8Label = util.StringPointerOrEmpty(plan.AccountCustomProperty8Label)
+		updateReq.Customproperty9Label = util.StringPointerOrEmpty(plan.AccountCustomProperty9Label)
+		updateReq.Customproperty10Label = util.StringPointerOrEmpty(plan.AccountCustomProperty10Label)
+		updateReq.Customproperty11Label = util.StringPointerOrEmpty(plan.AccountCustomProperty11Label)
+		updateReq.Customproperty12Label = util.StringPointerOrEmpty(plan.AccountCustomProperty12Label)
+		updateReq.Customproperty13Label = util.StringPointerOrEmpty(plan.AccountCustomProperty13Label)
+		updateReq.Customproperty14Label = util.StringPointerOrEmpty(plan.AccountCustomProperty14Label)
+		updateReq.Customproperty15Label = util.StringPointerOrEmpty(plan.AccountCustomProperty15Label)
+		updateReq.Customproperty16Label = util.StringPointerOrEmpty(plan.AccountCustomProperty16Label)
+		updateReq.Customproperty17Label = util.StringPointerOrEmpty(plan.AccountCustomProperty17Label)
+		updateReq.Customproperty18Label = util.StringPointerOrEmpty(plan.AccountCustomProperty18Label)
+		updateReq.Customproperty19Label = util.StringPointerOrEmpty(plan.AccountCustomProperty19Label)
+		updateReq.Customproperty20Label = util.StringPointerOrEmpty(plan.AccountCustomProperty20Label)
+		updateReq.Customproperty21Label = util.StringPointerOrEmpty(plan.AccountCustomProperty21Label)
+		updateReq.Customproperty22Label = util.StringPointerOrEmpty(plan.AccountCustomProperty22Label)
+		updateReq.Customproperty23Label = util.StringPointerOrEmpty(plan.AccountCustomProperty23Label)
+		updateReq.Customproperty24Label = util.StringPointerOrEmpty(plan.AccountCustomProperty24Label)
+		updateReq.Customproperty25Label = util.StringPointerOrEmpty(plan.AccountCustomProperty25Label)
+		updateReq.Customproperty26Label = util.StringPointerOrEmpty(plan.AccountCustomProperty26Label)
+		updateReq.Customproperty27Label = util.StringPointerOrEmpty(plan.AccountCustomProperty27Label)
+		updateReq.Customproperty28Label = util.StringPointerOrEmpty(plan.AccountCustomProperty28Label)
+		updateReq.Customproperty29Label = util.StringPointerOrEmpty(plan.AccountCustomProperty29Label)
+		updateReq.Customproperty30Label = util.StringPointerOrEmpty(plan.AccountCustomProperty30Label)
+
+		// Labels 31-60 use CustomProperty pattern
+		updateReq.Customproperty31Label = util.StringPointerOrEmpty(plan.CustomProperty31Label)
+		updateReq.Customproperty32Label = util.StringPointerOrEmpty(plan.CustomProperty32Label)
+		updateReq.Customproperty33Label = util.StringPointerOrEmpty(plan.CustomProperty33Label)
+		updateReq.Customproperty34Label = util.StringPointerOrEmpty(plan.CustomProperty34Label)
+		updateReq.Customproperty35Label = util.StringPointerOrEmpty(plan.CustomProperty35Label)
+		updateReq.Customproperty36Label = util.StringPointerOrEmpty(plan.CustomProperty36Label)
+		updateReq.Customproperty37Label = util.StringPointerOrEmpty(plan.CustomProperty37Label)
+		updateReq.Customproperty38Label = util.StringPointerOrEmpty(plan.CustomProperty38Label)
+		updateReq.Customproperty39Label = util.StringPointerOrEmpty(plan.CustomProperty39Label)
+		updateReq.Customproperty40Label = util.StringPointerOrEmpty(plan.CustomProperty40Label)
+		updateReq.Customproperty41Label = util.StringPointerOrEmpty(plan.CustomProperty41Label)
+		updateReq.Customproperty42Label = util.StringPointerOrEmpty(plan.CustomProperty42Label)
+		updateReq.Customproperty43Label = util.StringPointerOrEmpty(plan.CustomProperty43Label)
+		updateReq.Customproperty44Label = util.StringPointerOrEmpty(plan.CustomProperty44Label)
+		updateReq.Customproperty45Label = util.StringPointerOrEmpty(plan.CustomProperty45Label)
+		updateReq.Customproperty46Label = util.StringPointerOrEmpty(plan.CustomProperty46Label)
+		updateReq.Customproperty47Label = util.StringPointerOrEmpty(plan.CustomProperty47Label)
+		updateReq.Customproperty48Label = util.StringPointerOrEmpty(plan.CustomProperty48Label)
+		updateReq.Customproperty49Label = util.StringPointerOrEmpty(plan.CustomProperty49Label)
+		updateReq.Customproperty50Label = util.StringPointerOrEmpty(plan.CustomProperty50Label)
+		updateReq.Customproperty51Label = util.StringPointerOrEmpty(plan.CustomProperty51Label)
+		updateReq.Customproperty52Label = util.StringPointerOrEmpty(plan.CustomProperty52Label)
+		updateReq.Customproperty53Label = util.StringPointerOrEmpty(plan.CustomProperty53Label)
+		updateReq.Customproperty54Label = util.StringPointerOrEmpty(plan.CustomProperty54Label)
+		updateReq.Customproperty55Label = util.StringPointerOrEmpty(plan.CustomProperty55Label)
+		updateReq.Customproperty56Label = util.StringPointerOrEmpty(plan.CustomProperty56Label)
+		updateReq.Customproperty57Label = util.StringPointerOrEmpty(plan.CustomProperty57Label)
+		updateReq.Customproperty58Label = util.StringPointerOrEmpty(plan.CustomProperty58Label)
+		updateReq.Customproperty59Label = util.StringPointerOrEmpty(plan.CustomProperty59Label)
+		updateReq.Customproperty60Label = util.StringPointerOrEmpty(plan.CustomProperty60Label)
+	}
+}
+
+// BuildEmailTemplates builds email templates for both CREATE and UPDATE operations
+func (r *EndpointResource) BuildEmailTemplates(ctx context.Context, plan *EndpointResourceModel, diagnostics *diag.Diagnostics) []openapi.CreateEndpointRequestEmailTemplateInner {
+	var emailTemplates []openapi.CreateEndpointRequestEmailTemplateInner
+	var tfEmailTemplates []EmailTemplate
+
+	diags := plan.EmailTemplates.ElementsAs(ctx, &tfEmailTemplates, true)
+	diagnostics.Append(diags...)
+	if diagnostics.HasError() {
+		return emailTemplates
 	}
 
 	for _, tfTemplate := range tfEmailTemplates {
@@ -687,33 +1021,702 @@ func (r *endpointResource) Create(ctx context.Context, req resource.CreateReques
 		emailTemplates = append(emailTemplates, emailTemplate)
 	}
 
-	if len(emailTemplates) > 0 {
-		createReq.Taskemailtemplates = emailTemplates
+	return emailTemplates
+}
+
+// SetEndpointFields sets endpoint fields for both READ (state) and UPDATE (plan) operations
+func (r *EndpointResource) SetEndpointFields(target *EndpointResourceModel, readResp *openapi.GetEndpoints200Response, diagnostics *diag.Diagnostics) {
+	endpoint := readResp.Endpoints[0]
+
+	target.ID = types.StringValue("endpoint-" + *endpoint.Endpointname)
+	target.DisplayName = util.SafeString(endpoint.DisplayName)
+	target.SecuritySystem = util.SafeString(endpoint.Securitysystem)
+	target.Description = util.SafeString(endpoint.Description)
+	target.OwnerType = util.SafeString(util.StringPtr(endpointsutil.TranslateValue(util.SafeDeref(endpoint.OwnerType), endpointsutil.OwnerTypeMap)))
+	target.ResourceOwnerType = util.SafeString(util.StringPtr(endpointsutil.TranslateValue(util.SafeDeref(endpoint.Requestownertype), endpointsutil.OwnerTypeMap)))
+	target.PrimaryAccountType = util.SafeString(endpoint.PrimaryAccountType)
+	target.AccountTypeNoPasswordChange = util.SafeString(endpoint.AccountTypeNoPasswordChange)
+	target.ServiceAccountNameRule = util.SafeString(endpoint.ServiceAccountNameRule)
+	target.AccountNameValidatorRegex = util.SafeString(endpoint.AccountNameValidatorRegex)
+	target.AllowChangePasswordSQLQuery = util.SafeString(endpoint.AllowChangePasswordSqlquery)
+	target.ParentAccountPattern = util.SafeString(endpoint.ParentAccountPattern)
+	target.EndpointName = util.SafeString(endpoint.Endpointname)
+	target.AccessQuery = util.SafeString(endpoint.Accessquery)
+	target.DisplayName = util.SafeString(endpoint.DisplayName)
+	// Handle boolean fields with proper null checks
+	if endpoint.Requestable != nil {
+		if *endpoint.Requestable == "true" {
+			target.Requestable = types.BoolValue(true)
+		} else {
+			target.Requestable = types.BoolValue(false)
+		}
+	} else {
+		target.Requestable = types.BoolNull()
 	}
 
-	apiResp, httpResp, err := apiClient.EndpointsAPI.
-		CreateEndpoint(ctx).
-		CreateEndpointRequest(createReq).
-		Execute()
+	if endpoint.AllowRemoveAllRoleOnRequest != nil {
+		if *endpoint.AllowRemoveAllRoleOnRequest == "true" {
+			target.AllowRemoveAllRoleOnRequest = types.BoolValue(true)
+		} else {
+			target.AllowRemoveAllRoleOnRequest = types.BoolValue(false)
+		}
+	} else {
+		target.AllowRemoveAllRoleOnRequest = types.BoolNull()
+	}
 
-	if err != nil {
-		log.Printf("Error Creating Endpoint: %v, HTTP Response: %v", err, httpResp)
-		resp.Diagnostics.AddError(
-			"Error Creating Endpoint",
-			fmt.Sprintf("Error creating endpoint: %s", err),
+	// Handle ConnectionConfig with JSON normalization
+	if endpoint.ConnectionconfigAsJson != nil {
+		normalized, err := endpointsutil.NormalizeJSON(*endpoint.ConnectionconfigAsJson)
+		if err != nil {
+			target.ConnectionConfig = types.StringNull()
+		} else {
+			target.ConnectionConfig = types.StringValue(normalized)
+		}
+	} else {
+		target.ConnectionConfig = types.StringNull()
+	}
+
+	target.AccountNameRule = util.SafeString(endpoint.AccountNameRule)
+	target.ChangePasswordAccessQuery = util.SafeString(endpoint.ChangePasswordAccessQuery)
+	target.PluginConfigs = util.SafeString(endpoint.PluginConfigs)
+	target.CreateEntTaskforRemoveAcc = util.SafeString(endpoint.CreateEntTaskforRemoveAcc)
+	target.EnableCopyAccess = util.SafeString(endpoint.EnableCopyAccess)
+	target.EndpointConfig = util.SafeString(endpoint.EndpointConfig)
+	target.ServiceAccountAccessQuery = util.SafeString(endpoint.ServiceAccountAccessQuery)
+	target.UserAccountCorrelationRule = util.SafeString(endpoint.UserAccountCorrelationRule)
+	target.StatusConfig = util.SafeString(endpoint.StatusConfig)
+	if endpoint.Disableaccountrequest != nil {
+		disableAccountRequestStr := *endpoint.Disableaccountrequest
+
+		var disableAccountRequestMap map[string]string
+
+		err := json.Unmarshal([]byte(disableAccountRequestStr), &disableAccountRequestMap)
+		if err != nil {
+			log.Printf("Error parsing disableaccountrequest JSON: %v", err)
+		} else {
+			target.DisableNewAccountRequestIfAccountExists = types.StringValue(endpointsutil.NormalizeToStringBool(disableAccountRequestMap["DISABLENEWACCOUNT"]))
+			target.DisableRemoveAccount = types.StringValue(endpointsutil.NormalizeToStringBool(disableAccountRequestMap["DISABLEREMOVEACCOUNT"]))
+			target.DisableModifyAccount = types.StringValue(endpointsutil.NormalizeToStringBool(disableAccountRequestMap["DISABLEMODIFYACCOUNT"]))
+			target.BlockInflightRequest = types.StringValue(endpointsutil.NormalizeToStringBool(disableAccountRequestMap["BLOCKINFLIGHTREQUEST"]))
+		}
+	}
+	// Set custom properties 1-45
+	r.SetCustomPropertiesFromAPI(target, &endpoint)
+
+	// Set custom property labels 1-60
+	r.SetCustomPropertyLabelsFromAPI(target, &endpoint)
+
+	// Process complex fields - Email Templates
+	target.EmailTemplates = r.BuildEmailTemplatesFromAPI(&endpoint, diagnostics)
+
+	// Process complex fields - Requestable Role Types
+	target.RequestableRoleTypes = r.BuildRequestableRoleTypesFromAPI(&endpoint, diagnostics)
+
+	// Set response message fields
+	msgValue := util.SafeDeref(readResp.Message)
+	target.Msg = util.SafeString(&msgValue)
+	target.ErrorCode = util.SafeString(readResp.ErrorCode)
+
+}
+
+// SetCustomPropertiesFromAPI sets custom properties 1-45 from API response
+func (r *EndpointResource) SetCustomPropertiesFromAPI(target *EndpointResourceModel, apiResponse *openapi.GetEndpoints200ResponseEndpointsInner) {
+	target.CustomProperty1 = util.SafeString(apiResponse.CustomProperty1)
+	target.CustomProperty2 = util.SafeString(apiResponse.CustomProperty2)
+	target.CustomProperty3 = util.SafeString(apiResponse.CustomProperty3)
+	target.CustomProperty4 = util.SafeString(apiResponse.CustomProperty4)
+	target.CustomProperty5 = util.SafeString(apiResponse.CustomProperty5)
+	target.CustomProperty6 = util.SafeString(apiResponse.CustomProperty6)
+	target.CustomProperty7 = util.SafeString(apiResponse.CustomProperty7)
+	target.CustomProperty8 = util.SafeString(apiResponse.CustomProperty8)
+	target.CustomProperty9 = util.SafeString(apiResponse.CustomProperty9)
+	target.CustomProperty10 = util.SafeString(apiResponse.CustomProperty10)
+	target.CustomProperty11 = util.SafeString(apiResponse.CustomProperty11)
+	target.CustomProperty12 = util.SafeString(apiResponse.CustomProperty12)
+	target.CustomProperty13 = util.SafeString(apiResponse.CustomProperty13)
+	target.CustomProperty14 = util.SafeString(apiResponse.CustomProperty14)
+	target.CustomProperty15 = util.SafeString(apiResponse.CustomProperty15)
+	target.CustomProperty16 = util.SafeString(apiResponse.CustomProperty16)
+	target.CustomProperty17 = util.SafeString(apiResponse.CustomProperty17)
+	target.CustomProperty18 = util.SafeString(apiResponse.CustomProperty18)
+	target.CustomProperty19 = util.SafeString(apiResponse.CustomProperty19)
+	target.CustomProperty20 = util.SafeString(apiResponse.CustomProperty20)
+	target.CustomProperty21 = util.SafeString(apiResponse.CustomProperty21)
+	target.CustomProperty22 = util.SafeString(apiResponse.CustomProperty22)
+	target.CustomProperty23 = util.SafeString(apiResponse.CustomProperty23)
+	target.CustomProperty24 = util.SafeString(apiResponse.CustomProperty24)
+	target.CustomProperty25 = util.SafeString(apiResponse.CustomProperty25)
+	target.CustomProperty26 = util.SafeString(apiResponse.CustomProperty26)
+	target.CustomProperty27 = util.SafeString(apiResponse.CustomProperty27)
+	target.CustomProperty28 = util.SafeString(apiResponse.CustomProperty28)
+	target.CustomProperty29 = util.SafeString(apiResponse.CustomProperty29)
+	target.CustomProperty30 = util.SafeString(apiResponse.CustomProperty30)
+	target.CustomProperty31 = util.SafeString(apiResponse.Customproperty31)
+	target.CustomProperty32 = util.SafeString(apiResponse.Customproperty32)
+	target.CustomProperty33 = util.SafeString(apiResponse.Customproperty33)
+	target.CustomProperty34 = util.SafeString(apiResponse.Customproperty34)
+	target.CustomProperty35 = util.SafeString(apiResponse.Customproperty35)
+	target.CustomProperty36 = util.SafeString(apiResponse.Customproperty36)
+	target.CustomProperty37 = util.SafeString(apiResponse.Customproperty37)
+	target.CustomProperty38 = util.SafeString(apiResponse.Customproperty38)
+	target.CustomProperty39 = util.SafeString(apiResponse.Customproperty39)
+	target.CustomProperty40 = util.SafeString(apiResponse.Customproperty40)
+	target.CustomProperty41 = util.SafeString(apiResponse.Customproperty41)
+	target.CustomProperty42 = util.SafeString(apiResponse.Customproperty42)
+	target.CustomProperty43 = util.SafeString(apiResponse.Customproperty43)
+	target.CustomProperty44 = util.SafeString(apiResponse.Customproperty44)
+	target.CustomProperty45 = util.SafeString(apiResponse.Customproperty45)
+}
+
+// SetCustomPropertyLabelsFromAPI sets custom property labels 1-60 from API response
+func (r *EndpointResource) SetCustomPropertyLabelsFromAPI(target *EndpointResourceModel, apiResponse *openapi.GetEndpoints200ResponseEndpointsInner) {
+	// Labels 1-30 use AccountCustomProperty pattern
+	target.AccountCustomProperty1Label = util.SafeString(apiResponse.AccountCustomProperty1Label)
+	target.AccountCustomProperty2Label = util.SafeString(apiResponse.AccountCustomProperty2Label)
+	target.AccountCustomProperty3Label = util.SafeString(apiResponse.AccountCustomProperty3Label)
+	target.AccountCustomProperty4Label = util.SafeString(apiResponse.AccountCustomProperty4Label)
+	target.AccountCustomProperty5Label = util.SafeString(apiResponse.AccountCustomProperty5Label)
+	target.AccountCustomProperty6Label = util.SafeString(apiResponse.AccountCustomProperty6Label)
+	target.AccountCustomProperty7Label = util.SafeString(apiResponse.AccountCustomProperty7Label)
+	target.AccountCustomProperty8Label = util.SafeString(apiResponse.AccountCustomProperty8Label)
+	target.AccountCustomProperty9Label = util.SafeString(apiResponse.AccountCustomProperty9Label)
+	target.AccountCustomProperty10Label = util.SafeString(apiResponse.AccountCustomProperty10Label)
+	target.AccountCustomProperty11Label = util.SafeString(apiResponse.AccountCustomProperty11Label)
+	target.AccountCustomProperty12Label = util.SafeString(apiResponse.AccountCustomProperty12Label)
+	target.AccountCustomProperty13Label = util.SafeString(apiResponse.AccountCustomProperty13Label)
+	target.AccountCustomProperty14Label = util.SafeString(apiResponse.AccountCustomProperty14Label)
+	target.AccountCustomProperty15Label = util.SafeString(apiResponse.AccountCustomProperty15Label)
+	target.AccountCustomProperty16Label = util.SafeString(apiResponse.AccountCustomProperty16Label)
+	target.AccountCustomProperty17Label = util.SafeString(apiResponse.AccountCustomProperty17Label)
+	target.AccountCustomProperty18Label = util.SafeString(apiResponse.AccountCustomProperty18Label)
+	target.AccountCustomProperty19Label = util.SafeString(apiResponse.AccountCustomProperty19Label)
+	target.AccountCustomProperty20Label = util.SafeString(apiResponse.AccountCustomProperty20Label)
+	target.AccountCustomProperty21Label = util.SafeString(apiResponse.AccountCustomProperty21Label)
+	target.AccountCustomProperty22Label = util.SafeString(apiResponse.AccountCustomProperty22Label)
+	target.AccountCustomProperty23Label = util.SafeString(apiResponse.AccountCustomProperty23Label)
+	target.AccountCustomProperty24Label = util.SafeString(apiResponse.AccountCustomProperty24Label)
+	target.AccountCustomProperty25Label = util.SafeString(apiResponse.AccountCustomProperty25Label)
+	target.AccountCustomProperty26Label = util.SafeString(apiResponse.AccountCustomProperty26Label)
+	target.AccountCustomProperty27Label = util.SafeString(apiResponse.AccountCustomProperty27Label)
+	target.AccountCustomProperty28Label = util.SafeString(apiResponse.AccountCustomProperty28Label)
+	target.AccountCustomProperty29Label = util.SafeString(apiResponse.AccountCustomProperty29Label)
+	target.AccountCustomProperty30Label = util.SafeString(apiResponse.AccountCustomProperty30Label)
+
+	// Labels 31-60 use CustomProperty pattern
+	target.CustomProperty31Label = util.SafeString(apiResponse.Customproperty31Label)
+	target.CustomProperty32Label = util.SafeString(apiResponse.Customproperty32Label)
+	target.CustomProperty33Label = util.SafeString(apiResponse.Customproperty33Label)
+	target.CustomProperty34Label = util.SafeString(apiResponse.Customproperty34Label)
+	target.CustomProperty35Label = util.SafeString(apiResponse.Customproperty35Label)
+	target.CustomProperty36Label = util.SafeString(apiResponse.Customproperty36Label)
+	target.CustomProperty37Label = util.SafeString(apiResponse.Customproperty37Label)
+	target.CustomProperty38Label = util.SafeString(apiResponse.Customproperty38Label)
+	target.CustomProperty39Label = util.SafeString(apiResponse.Customproperty39Label)
+	target.CustomProperty40Label = util.SafeString(apiResponse.Customproperty40Label)
+	target.CustomProperty41Label = util.SafeString(apiResponse.Customproperty41Label)
+	target.CustomProperty42Label = util.SafeString(apiResponse.Customproperty42Label)
+	target.CustomProperty43Label = util.SafeString(apiResponse.Customproperty43Label)
+	target.CustomProperty44Label = util.SafeString(apiResponse.Customproperty44Label)
+	target.CustomProperty45Label = util.SafeString(apiResponse.Customproperty45Label)
+	target.CustomProperty46Label = util.SafeString(apiResponse.Customproperty46Label)
+	target.CustomProperty47Label = util.SafeString(apiResponse.Customproperty47Label)
+	target.CustomProperty48Label = util.SafeString(apiResponse.Customproperty48Label)
+	target.CustomProperty49Label = util.SafeString(apiResponse.Customproperty49Label)
+	target.CustomProperty50Label = util.SafeString(apiResponse.Customproperty50Label)
+	target.CustomProperty51Label = util.SafeString(apiResponse.Customproperty51Label)
+	target.CustomProperty52Label = util.SafeString(apiResponse.Customproperty52Label)
+	target.CustomProperty53Label = util.SafeString(apiResponse.Customproperty53Label)
+	target.CustomProperty54Label = util.SafeString(apiResponse.Customproperty54Label)
+	target.CustomProperty55Label = util.SafeString(apiResponse.Customproperty55Label)
+	target.CustomProperty56Label = util.SafeString(apiResponse.Customproperty56Label)
+	target.CustomProperty57Label = util.SafeString(apiResponse.Customproperty57Label)
+	target.CustomProperty58Label = util.SafeString(apiResponse.Customproperty58Label)
+	target.CustomProperty59Label = util.SafeString(apiResponse.Customproperty59Label)
+	target.CustomProperty60Label = util.SafeString(apiResponse.Customproperty60Label)
+}
+
+// BuildEmailTemplatesFromAPI processes email templates from API response
+func (r *EndpointResource) BuildEmailTemplatesFromAPI(endpoint *openapi.GetEndpoints200ResponseEndpointsInner, diagnostics *diag.Diagnostics) types.List {
+	if endpoint.Taskemailtemplates == nil || *endpoint.Taskemailtemplates == "" {
+		return types.ListNull(types.ObjectType{
+			AttrTypes: map[string]attr.Type{
+				"email_template_type": types.StringType,
+				"task_type":           types.StringType,
+				"email_template":      types.StringType,
+			},
+		})
+	}
+
+	taskEmailTemplatesStr := *endpoint.Taskemailtemplates
+	type ApiEmailTemplate struct {
+		EmailTemplateType string `json:"emailTemplateType"`
+		TaskType          string `json:"taskType"`
+		EmailTemplate     string `json:"emailTemplate"`
+	}
+
+	var apiTemplates []ApiEmailTemplate
+	if err := json.Unmarshal([]byte(taskEmailTemplatesStr), &apiTemplates); err != nil {
+		diagnostics.AddError(
+			"Client Error",
+			fmt.Sprintf("Failed to parse taskemailtemplates JSON In buildEmailTemplatesFromAPI Block: %s", err),
 		)
-		return
+		return types.ListNull(types.ObjectType{
+			AttrTypes: map[string]attr.Type{
+				"email_template_type": types.StringType,
+				"task_type":           types.StringType,
+				"email_template":      types.StringType,
+			},
+		})
+	}
+
+	emailTemplateObjects := make([]attr.Value, 0, len(apiTemplates))
+	for _, t := range apiTemplates {
+		obj, diags := types.ObjectValue(
+			map[string]attr.Type{
+				"email_template_type": types.StringType,
+				"task_type":           types.StringType,
+				"email_template":      types.StringType,
+			},
+			map[string]attr.Value{
+				"email_template_type": types.StringValue(t.EmailTemplateType),
+				"task_type":           types.StringValue(t.TaskType),
+				"email_template":      types.StringValue(t.EmailTemplate),
+			},
+		)
+		if diags.HasError() {
+			diagnostics.Append(diags...)
+			continue
+		}
+		emailTemplateObjects = append(emailTemplateObjects, obj)
+	}
+
+	listVal, diags := types.ListValue(
+		types.ObjectType{
+			AttrTypes: map[string]attr.Type{
+				"email_template_type": types.StringType,
+				"task_type":           types.StringType,
+				"email_template":      types.StringType,
+			},
+		},
+		emailTemplateObjects,
+	)
+	if diags.HasError() {
+		diagnostics.Append(diags...)
+		return types.ListNull(types.ObjectType{
+			AttrTypes: map[string]attr.Type{
+				"email_template_type": types.StringType,
+				"task_type":           types.StringType,
+				"email_template":      types.StringType,
+			},
+		})
+	}
+	return listVal
+}
+
+// BuildRequestableRoleTypesFromAPI processes requestable role types from API response
+func (r *EndpointResource) BuildRequestableRoleTypesFromAPI(endpoint *openapi.GetEndpoints200ResponseEndpointsInner, diagnostics *diag.Diagnostics) types.List {
+	if endpoint.RoleTypeAsJson == nil || *endpoint.RoleTypeAsJson == "" {
+		return types.ListNull(types.ObjectType{
+			AttrTypes: map[string]attr.Type{
+				"role_type":       types.StringType,
+				"request_option":  types.StringType,
+				"required":        types.BoolType,
+				"requested_query": types.StringType,
+				"selected_query":  types.StringType,
+				"show_on":         types.StringType,
+			},
+		})
+	}
+
+	roleTypeJsonStr := *endpoint.RoleTypeAsJson
+	var roleTypeMap map[string]string
+	if err := json.Unmarshal([]byte(roleTypeJsonStr), &roleTypeMap); err != nil {
+		diagnostics.AddError(
+			"Client Error",
+			fmt.Sprintf("Failed to parse RoleTypeAsJson outer JSON In buildRequestableRoleTypesFromAPI Block: %s", err),
+		)
+		return types.ListNull(types.ObjectType{
+			AttrTypes: map[string]attr.Type{
+				"role_type":       types.StringType,
+				"request_option":  types.StringType,
+				"required":        types.BoolType,
+				"requested_query": types.StringType,
+				"selected_query":  types.StringType,
+				"show_on":         types.StringType,
+			},
+		})
+	}
+
+	roleTypeObjects := make([]attr.Value, 0, len(roleTypeMap))
+
+	for roleType, roleData := range roleTypeMap {
+		parts := strings.Split(roleData, "__")
+
+		get := func(i int) string {
+			if i < len(parts) {
+				return parts[i]
+			}
+			return ""
+		}
+
+		obj, diags := types.ObjectValue(
+			map[string]attr.Type{
+				"role_type":       types.StringType,
+				"request_option":  types.StringType,
+				"required":        types.BoolType,
+				"requested_query": types.StringType,
+				"selected_query":  types.StringType,
+				"show_on":         types.StringType,
+			},
+			map[string]attr.Value{
+				"role_type":       types.StringValue(endpointsutil.TranslateValue(roleType, endpointsutil.RoleTypeMap)),
+				"request_option":  types.StringValue(endpointsutil.TranslateValue(get(0), endpointsutil.RequestOptionMap)),
+				"required":        types.BoolValue(get(1) == "1"),
+				"requested_query": types.StringValue(get(2)),
+				"selected_query":  types.StringValue(get(3)),
+				"show_on":         types.StringValue(endpointsutil.TranslateValue(get(4), endpointsutil.ShowOnMap)),
+			},
+		)
+		if diags.HasError() {
+			diagnostics.Append(diags...)
+			continue
+		}
+		roleTypeObjects = append(roleTypeObjects, obj)
+	}
+
+	listVal, diags := types.ListValue(
+		types.ObjectType{
+			AttrTypes: map[string]attr.Type{
+				"role_type":       types.StringType,
+				"request_option":  types.StringType,
+				"required":        types.BoolType,
+				"requested_query": types.StringType,
+				"selected_query":  types.StringType,
+				"show_on":         types.StringType,
+			},
+		},
+		roleTypeObjects,
+	)
+	if diags.HasError() {
+		diagnostics.Append(diags...)
+		return types.ListNull(types.ObjectType{
+			AttrTypes: map[string]attr.Type{
+				"role_type":       types.StringType,
+				"request_option":  types.StringType,
+				"required":        types.BoolType,
+				"requested_query": types.StringType,
+				"selected_query":  types.StringType,
+				"show_on":         types.StringType,
+			},
+		})
+	}
+	return listVal
+}
+
+// CreateEndpoint - Interface method for endpoint creation following Endpoint pattern
+func (r *EndpointResource) CreateEndpoint(ctx context.Context, plan *EndpointResourceModel) (*openapi.UpdateEndpoint200Response, error) {
+	// Use the factory to create endpoint operations
+	endpointOps := r.endpointFactory.CreateEndpointOperations(r.client.APIBaseURL(), r.token)
+
+	// Check if endpoint already exists (idempotency check)
+	endpointName := plan.EndpointName.ValueString()
+	getReq := openapi.GetEndpointsRequest{}
+	getReq.SetEndpointname(endpointName)
+
+	existingResource, _, _ := endpointOps.GetEndpoints(ctx, getReq)
+	if existingResource != nil &&
+		existingResource.Endpoints != nil &&
+		len(existingResource.Endpoints) > 0 &&
+		*existingResource.ErrorCode == "0" {
+		log.Printf("[ERROR]: Endpoint with name '%s' already exists. Skipping creation In CreateEndpoint Block.", endpointName)
+		return nil, fmt.Errorf("Endpoint with name '%s' already exists In CreateEndpoint Block", endpointName)
+	}
+
+	// Create local diagnostics for proper error handling
+	var localDiags diag.Diagnostics
+
+	// Build create request using unified helper function with proper diagnostics
+	createReq := r.BuildEndpointRequest(ctx, plan, &localDiags, true).(openapi.CreateEndpointRequest)
+
+	// Check if there were any diagnostics errors during request building
+	if localDiags.HasError() {
+		log.Printf("[ERROR]: Failed to build create request In CreateEndpoint Block: %v", localDiags.Errors())
+		return nil, fmt.Errorf("Failed to build create request In CreateEndpoint Block: %v", localDiags.Errors())
+	}
+
+	// Execute create operation through interface
+	apiResp, _, err := endpointOps.CreateEndpoint(ctx, createReq)
+	if err != nil {
+		log.Printf("[ERROR]: Error Creating Endpoint In CreateEndpoint Block: %v", err)
+		return nil, fmt.Errorf("Error Creating Endpoint In CreateEndpoint Block: %w", err)
+	}
+
+	if apiResp != nil && *apiResp.ErrorCode != "0" {
+		log.Printf("[ERROR]:API error In CreateEndpoint Block: %s", *apiResp.Msg)
+		return nil, fmt.Errorf("API error In CreateEndpoint Block: %s", *apiResp.Msg)
+	}
+	return apiResp, nil
+}
+
+// GetEndpoints - Interface method for endpoint creation following Endpoint pattern
+func (r *EndpointResource) GetEndpoints(ctx context.Context, plan *EndpointResourceModel) (*openapi.GetEndpoints200Response, error) {
+	// Use the factory to create endpoint operations
+	endpointOps := r.endpointFactory.CreateEndpointOperations(r.client.APIBaseURL(), r.token)
+	endpointName := plan.EndpointName.ValueString()
+	apiReq := openapi.GetEndpointsRequest{}
+	apiReq.SetEndpointname(endpointName)
+	apiResp, _, err := endpointOps.GetEndpoints(ctx, apiReq)
+	if err != nil {
+		log.Printf("Problem with the get function in GetEndpoints block. Error: %v", err)
+		return nil, fmt.Errorf("API Read Failed In GetEndpoints Block: %w", err)
 	}
 	if apiResp != nil && *apiResp.ErrorCode != "0" {
-		log.Printf("Error Creating Endpoint: %v, Error code: %v", *apiResp.Msg, *apiResp.ErrorCode)
-		resp.Diagnostics.AddError(
-			"Error Creating Endpoint",
-			fmt.Sprintf("Error: %v, Error code: %v", *apiResp.Msg, *apiResp.ErrorCode),
-		)
-		return
+		log.Printf("Error Reading Endpoint In GetEndpoints Block: %v, Error code: %v", *apiResp.Message, *apiResp.ErrorCode)
+		return nil, fmt.Errorf("Reading of Endpoint resource failed In GetEndpoints Block: %s,", *apiResp.Message)
+	}
+	if len(apiResp.Endpoints) == 0 {
+		return nil, fmt.Errorf("Client Error: API returned empty endpoints list")
+	}
+	return apiResp, nil
+}
+
+// UpdateEndpoint - Clean business logic method for endpoint updates following clean pattern
+func (r *EndpointResource) UpdateEndpoint(ctx context.Context, plan *EndpointResourceModel) error {
+	// Use the factory to create endpoint operations
+	endpointOps := r.endpointFactory.CreateEndpointOperations(r.client.APIBaseURL(), r.token)
+
+	// Build UPDATE request using existing helper function with proper diagnostics
+	var localDiags diag.Diagnostics
+	updateReq := r.BuildEndpointRequest(ctx, plan, &localDiags, false).(openapi.UpdateEndpointRequest)
+	if localDiags.HasError() {
+		return fmt.Errorf("failed to build endpoint request In UpdateEndpoint Block: %v", localDiags.Errors())
 	}
 
+	// Handle mapped endpoints
+	mappedEndpoints, err := r.BuildMappedEndpointsForUpdate(ctx, plan)
+	if err != nil {
+		return fmt.Errorf("failed to build mapped endpoints In UpdateEndpoint Block: %w", err)
+	}
+	if len(mappedEndpoints) > 0 {
+		updateReq.MappedEndpoints = mappedEndpoints
+	}
+
+	// Handle requestable role types
+	requestableRoleTypes, err := r.BuildRequestableRoleTypesForUpdate(ctx, plan)
+	if err != nil {
+		return fmt.Errorf("failed to build requestable role types In UpdateEndpoint Block: %w", err)
+	}
+	if len(requestableRoleTypes) > 0 {
+		updateReq.RequestableRoleType = requestableRoleTypes
+	}
+
+	// Execute the update
+	apiResp, _, err := endpointOps.UpdateEndpoint(ctx, updateReq)
+	if err != nil {
+		log.Printf("[ERROR]: Problem with update function in UpdateEndpoint block. Error: %v", err)
+		return fmt.Errorf("API Update Failed In UpdateEndpoint Block: %w", err)
+	}
+
+	// Check API response
+	if apiResp != nil && apiResp.ErrorCode != nil && *apiResp.ErrorCode != "0" {
+		log.Printf("[ERROR]: Error Updating Endpoint In UpdateEndpoint Block: %v, Error code: %v", *apiResp.Msg, *apiResp.ErrorCode)
+		return fmt.Errorf("Update of Endpoint resource failed In UpdateEndpoint Block: %s", *apiResp.Msg)
+	}
+
+	return nil
+}
+
+// BuildMappedEndpointsForUpdate - Helper method to build mapped endpoints
+func (r *EndpointResource) BuildMappedEndpointsForUpdate(ctx context.Context, plan *EndpointResourceModel) ([]openapi.UpdateEndpointRequestMappedEndpointsInner, error) {
+	var mappedEndpoints []openapi.UpdateEndpointRequestMappedEndpointsInner
+	var tfMappedEndpoints []MappedEndpoint
+
+	diags := plan.MappedEndpoints.ElementsAs(ctx, &tfMappedEndpoints, true)
+	if diags.HasError() {
+		return nil, fmt.Errorf("failed to parse mapped endpoints")
+	}
+
+	for _, tfTemplate := range tfMappedEndpoints {
+		// Skip if all fields are unknown
+		if tfTemplate.SecuritySystem.IsUnknown() &&
+			tfTemplate.Endpoint.IsUnknown() &&
+			tfTemplate.Requestable.IsUnknown() &&
+			tfTemplate.Operation.IsUnknown() {
+			continue
+		}
+
+		mappedEndpoint := openapi.UpdateEndpointRequestMappedEndpointsInner{}
+
+		if !tfTemplate.SecuritySystem.IsNull() {
+			mappedEndpoint.Securitysystem = tfTemplate.SecuritySystem.ValueStringPointer()
+		}
+		if !tfTemplate.Endpoint.IsNull() {
+			mappedEndpoint.Endpoint = tfTemplate.Endpoint.ValueStringPointer()
+		}
+		if !tfTemplate.Requestable.IsNull() {
+			mappedEndpoint.Requestable = tfTemplate.Requestable.ValueStringPointer()
+		}
+		if !tfTemplate.Operation.IsNull() {
+			mappedEndpoint.Operation = tfTemplate.Operation.ValueStringPointer()
+		}
+
+		mappedEndpoints = append(mappedEndpoints, mappedEndpoint)
+	}
+
+	return mappedEndpoints, nil
+}
+
+// BuildRequestableRoleTypesForUpdate - Helper method to build requestable role types
+func (r *EndpointResource) BuildRequestableRoleTypesForUpdate(ctx context.Context, plan *EndpointResourceModel) ([]openapi.UpdateEndpointRequestRequestableRoleTypeInner, error) {
+	var requestableRoleTypes []openapi.UpdateEndpointRequestRequestableRoleTypeInner
+	var tfRequestableRoleTypes []RequestableRoleType
+
+	diags := plan.RequestableRoleTypes.ElementsAs(ctx, &tfRequestableRoleTypes, true)
+	if diags.HasError() {
+		return nil, fmt.Errorf("failed to parse requestable role types In buildRequestableRoleTypesForUpdate Block: %v", diags.Errors())
+	}
+
+	for _, tfTemplate := range tfRequestableRoleTypes {
+		// Skip if all fields are unknown
+		if tfTemplate.RoleType.IsUnknown() &&
+			tfTemplate.RequestOption.IsUnknown() &&
+			tfTemplate.RequestedQuery.IsUnknown() &&
+			tfTemplate.Required.IsUnknown() &&
+			tfTemplate.SelectedQuery.IsUnknown() &&
+			tfTemplate.ShowOn.IsUnknown() {
+			continue
+		}
+
+		requestableRoleType := openapi.UpdateEndpointRequestRequestableRoleTypeInner{}
+
+		if !tfTemplate.RoleType.IsNull() {
+			requestableRoleType.RoleType = tfTemplate.RoleType.ValueStringPointer()
+		}
+		if !tfTemplate.RequestOption.IsNull() {
+			requestableRoleType.RequestOption = tfTemplate.RequestOption.ValueStringPointer()
+		}
+		if !tfTemplate.RequestedQuery.IsNull() {
+			requestableRoleType.RequestedQuery = tfTemplate.RequestedQuery.ValueStringPointer()
+		}
+		if !tfTemplate.Required.IsNull() {
+			requestableRoleType.Required = tfTemplate.Required.ValueBoolPointer()
+		}
+		if !tfTemplate.SelectedQuery.IsNull() {
+			requestableRoleType.SelectedQuery = tfTemplate.SelectedQuery.ValueStringPointer()
+		}
+		if !tfTemplate.ShowOn.IsNull() {
+			requestableRoleType.ShowOn = tfTemplate.ShowOn.ValueStringPointer()
+		}
+
+		requestableRoleTypes = append(requestableRoleTypes, requestableRoleType)
+	}
+
+	return requestableRoleTypes, nil
+}
+
+// BuildMappedEndpointsForUpdateWithDiags - Helper method that returns diagnostics instead of errors
+func (r *EndpointResource) BuildMappedEndpointsForUpdateWithDiags(ctx context.Context, plan *EndpointResourceModel) ([]openapi.UpdateEndpointRequestMappedEndpointsInner, diag.Diagnostics) {
+	var mappedEndpoints []openapi.UpdateEndpointRequestMappedEndpointsInner
+	var tfMappedEndpoints []MappedEndpoint
+	var diags diag.Diagnostics
+
+	elementDiags := plan.MappedEndpoints.ElementsAs(ctx, &tfMappedEndpoints, true)
+	diags.Append(elementDiags...)
+	if diags.HasError() {
+		log.Printf("[ERROR]: Failed to parse mapped endpoints In buildMappedEndpointsForUpdateWithDiags Block: %v", diags.Errors())
+		return nil, diags
+	}
+
+	for _, tfTemplate := range tfMappedEndpoints {
+		// Skip if all fields are unknown
+		if tfTemplate.SecuritySystem.IsUnknown() &&
+			tfTemplate.Endpoint.IsUnknown() &&
+			tfTemplate.Requestable.IsUnknown() &&
+			tfTemplate.Operation.IsUnknown() {
+			continue
+		}
+
+		mappedEndpoint := openapi.UpdateEndpointRequestMappedEndpointsInner{}
+
+		if !tfTemplate.SecuritySystem.IsNull() {
+			mappedEndpoint.Securitysystem = tfTemplate.SecuritySystem.ValueStringPointer()
+		}
+		if !tfTemplate.Endpoint.IsNull() {
+			mappedEndpoint.Endpoint = tfTemplate.Endpoint.ValueStringPointer()
+		}
+		if !tfTemplate.Requestable.IsNull() {
+			mappedEndpoint.Requestable = tfTemplate.Requestable.ValueStringPointer()
+		}
+		if !tfTemplate.Operation.IsNull() {
+			mappedEndpoint.Operation = tfTemplate.Operation.ValueStringPointer()
+		}
+
+		mappedEndpoints = append(mappedEndpoints, mappedEndpoint)
+	}
+
+	return mappedEndpoints, diags
+}
+
+// BuildRequestableRoleTypesForUpdateWithDiags - Helper method that returns diagnostics instead of errors
+func (r *EndpointResource) BuildRequestableRoleTypesForUpdateWithDiags(ctx context.Context, plan *EndpointResourceModel) ([]openapi.UpdateEndpointRequestRequestableRoleTypeInner, diag.Diagnostics) {
+	var requestableRoleTypes []openapi.UpdateEndpointRequestRequestableRoleTypeInner
+	var tfRequestableRoleTypes []RequestableRoleType
+	var diags diag.Diagnostics
+
+	elementDiags := plan.RequestableRoleTypes.ElementsAs(ctx, &tfRequestableRoleTypes, true)
+	diags.Append(elementDiags...)
+	if diags.HasError() {
+		log.Printf("[ERROR]: Failed to parse requestable role types In buildRequestableRoleTypesForUpdateWithDiags Block: %v", diags.Errors())
+		return nil, diags
+	}
+
+	for _, tfTemplate := range tfRequestableRoleTypes {
+		// Skip if all fields are unknown
+		if tfTemplate.RoleType.IsUnknown() &&
+			tfTemplate.RequestOption.IsUnknown() &&
+			tfTemplate.RequestedQuery.IsUnknown() &&
+			tfTemplate.Required.IsUnknown() &&
+			tfTemplate.SelectedQuery.IsUnknown() &&
+			tfTemplate.ShowOn.IsUnknown() {
+			continue
+		}
+
+		requestableRoleType := openapi.UpdateEndpointRequestRequestableRoleTypeInner{}
+
+		if !tfTemplate.RoleType.IsNull() {
+			requestableRoleType.RoleType = tfTemplate.RoleType.ValueStringPointer()
+		}
+		if !tfTemplate.RequestOption.IsNull() {
+			requestableRoleType.RequestOption = tfTemplate.RequestOption.ValueStringPointer()
+		}
+		if !tfTemplate.RequestedQuery.IsNull() {
+			requestableRoleType.RequestedQuery = tfTemplate.RequestedQuery.ValueStringPointer()
+		}
+		if !tfTemplate.Required.IsNull() {
+			requestableRoleType.Required = tfTemplate.Required.ValueBoolPointer()
+		}
+		if !tfTemplate.SelectedQuery.IsNull() {
+			requestableRoleType.SelectedQuery = tfTemplate.SelectedQuery.ValueStringPointer()
+		}
+		if !tfTemplate.ShowOn.IsNull() {
+			requestableRoleType.ShowOn = tfTemplate.ShowOn.ValueStringPointer()
+		}
+
+		requestableRoleTypes = append(requestableRoleTypes, requestableRoleType)
+	}
+
+	return requestableRoleTypes, diags
+}
+
+// UpdateModelFromCreateResponse - Extracted state management logic for CREATE operations
+func (r *EndpointResource) UpdateModelFromCreateResponse(plan *EndpointResourceModel, apiResp *openapi.UpdateEndpoint200Response) {
+	// Set the resource ID
 	plan.ID = types.StringValue("endpoint-" + plan.EndpointName.ValueString())
+
+	// Set default values for computed fields
+	if plan.CreateEntTaskforRemoveAcc.IsNull() || plan.CreateEntTaskforRemoveAcc.IsUnknown() || plan.CreateEntTaskforRemoveAcc.ValueString() == "" {
+		plan.CreateEntTaskforRemoveAcc = types.StringValue("false")
+	}
 	if plan.EnableCopyAccess.IsNull() || plan.EnableCopyAccess.IsUnknown() || plan.EnableCopyAccess.ValueString() == "" {
 		plan.EnableCopyAccess = types.StringValue("false")
 	}
@@ -740,6 +1743,7 @@ func (r *endpointResource) Create(ctx context.Context, req resource.CreateReques
 		plan.DisableNewAccountRequestIfAccountExists = types.StringValue("false")
 	}
 
+	// Set default empty lists for complex fields
 	if plan.EmailTemplates.IsNull() || plan.EmailTemplates.IsUnknown() {
 		plan.EmailTemplates = types.ListValueMust(types.ObjectType{
 			AttrTypes: map[string]attr.Type{
@@ -747,9 +1751,7 @@ func (r *endpointResource) Create(ctx context.Context, req resource.CreateReques
 				"task_type":           types.StringType,
 				"email_template":      types.StringType,
 			},
-		},
-			[]attr.Value{},
-		)
+		}, []attr.Value{})
 	}
 	if plan.RequestableRoleTypes.IsNull() || plan.RequestableRoleTypes.IsUnknown() {
 		plan.RequestableRoleTypes = types.ListValueMust(types.ObjectType{
@@ -761,11 +1763,10 @@ func (r *endpointResource) Create(ctx context.Context, req resource.CreateReques
 				"selected_query":  types.StringType,
 				"show_on":         types.StringType,
 			},
-		},
-			[]attr.Value{},
-		)
+		}, []attr.Value{})
 	}
 
+	// Update all optional fields to maintain state (following SecuritySystem pattern)
 	plan.Description = util.SafeString(plan.Description.ValueStringPointer())
 	plan.OwnerType = util.SafeStringDatasource(util.StringPtr(endpointsutil.TranslateValue(util.SafeStringValue(plan.OwnerType), endpointsutil.OwnerTypeMap)))
 	plan.ResourceOwnerType = util.SafeStringDatasource(util.StringPtr(endpointsutil.TranslateValue(util.SafeStringValue(plan.ResourceOwnerType), endpointsutil.OwnerTypeMap)))
@@ -895,1081 +1896,7 @@ func (r *endpointResource) Create(ctx context.Context, req resource.CreateReques
 	plan.CustomProperty58Label = util.SafeString(plan.CustomProperty58Label.ValueStringPointer())
 	plan.CustomProperty59Label = util.SafeString(plan.CustomProperty59Label.ValueStringPointer())
 	plan.CustomProperty60Label = util.SafeString(plan.CustomProperty60Label.ValueStringPointer())
-
-	msgValue := util.SafeDeref(apiResp.Msg)
-	errorCodeValue := util.SafeDeref(apiResp.ErrorCode)
-	plan.Msg = types.StringValue(msgValue)
-	plan.ErrorCode = types.StringValue(errorCodeValue)
-
-	stateCreateDiagnostics := resp.State.Set(ctx, plan)
-	resp.Diagnostics.Append(stateCreateDiagnostics...)
-}
-
-func (r *endpointResource) Read(ctx context.Context, req resource.ReadRequest, resp *resource.ReadResponse) {
-	var state EndpointResourceModel
-
-	resp.Diagnostics.Append(req.State.Get(ctx, &state)...)
-	if resp.Diagnostics.HasError() {
-		return
-	}
-
-	cfg := openapi.NewConfiguration()
-	apiBaseURL := strings.TrimPrefix(strings.TrimPrefix(r.client.APIBaseURL(), "https://"), "http://")
-	cfg.Host = apiBaseURL
-	cfg.Scheme = "https"
-	cfg.AddDefaultHeader("Authorization", "Bearer "+r.token)
-	cfg.HTTPClient = http.DefaultClient
-
-	apiClient := openapi.NewAPIClient(cfg)
-	reqParams := openapi.GetEndpointsRequest{}
-	reqParams.SetEndpointname(state.EndpointName.ValueString())
-	readResp, _, err := apiClient.EndpointsAPI.GetEndpoints(ctx).GetEndpointsRequest(reqParams).Execute()
-	if err != nil {
-		log.Printf("Problem with the get function in read block")
-		resp.Diagnostics.AddError("API Read Failed In Read Block", fmt.Sprintf("Error: %s", err))
-		return
-	}
-	if readResp != nil && *readResp.ErrorCode != "0" {
-		log.Printf("Error Reading Endpoint: %v, Error code: %v", *readResp.Message, *readResp.ErrorCode)
-		resp.Diagnostics.AddError(
-			"Error Reading Endpoint",
-			fmt.Sprintf("Error: %v, Error code: %v", *readResp.Message, *readResp.ErrorCode),
-		)
-		return
-	}
-	if len(readResp.Endpoints) == 0 {
-		resp.Diagnostics.AddError(
-			"Client Error",
-			"API returned empty endpoints list",
-		)
-		return
-	}
-
-	state.ID = types.StringValue("endpoint-" + *readResp.Endpoints[0].Endpointname)
-	state.DisplayName = util.SafeString(readResp.Endpoints[0].DisplayName)
-	state.SecuritySystem = util.SafeString(readResp.Endpoints[0].Securitysystem)
-	state.Description = util.SafeString(readResp.Endpoints[0].Description)
-	state.OwnerType = util.SafeString(util.StringPtr(endpointsutil.TranslateValue(util.SafeDeref(readResp.Endpoints[0].OwnerType), endpointsutil.OwnerTypeMap)))
-	state.ResourceOwnerType = util.SafeString(util.StringPtr(endpointsutil.TranslateValue(util.SafeDeref(readResp.Endpoints[0].Requestownertype), endpointsutil.OwnerTypeMap)))
-	state.PrimaryAccountType = util.SafeString(readResp.Endpoints[0].PrimaryAccountType)
-	state.AccountTypeNoPasswordChange = util.SafeString(readResp.Endpoints[0].AccountTypeNoPasswordChange)
-	state.ServiceAccountNameRule = util.SafeString(readResp.Endpoints[0].ServiceAccountNameRule)
-	state.AccountNameValidatorRegex = util.SafeString(readResp.Endpoints[0].AccountNameValidatorRegex)
-	state.AllowChangePasswordSQLQuery = util.SafeString(readResp.Endpoints[0].AllowChangePasswordSqlquery)
-	state.ParentAccountPattern = util.SafeString(readResp.Endpoints[0].ParentAccountPattern)
-	state.SecuritySystem = util.SafeString(readResp.Endpoints[0].Securitysystem)
-	state.EndpointName = util.SafeString(readResp.Endpoints[0].Endpointname)
-	state.AccessQuery = util.SafeString(readResp.Endpoints[0].Accessquery)
-	state.DisplayName = util.SafeString(readResp.Endpoints[0].DisplayName)
-	if readResp.Endpoints[0].Requestable != nil {
-		if *readResp.Endpoints[0].Requestable == "true" {
-			state.Requestable = types.BoolValue(true)
-		} else {
-			state.Requestable = types.BoolValue(false)
-		}
-	} else {
-		state.Requestable = types.BoolNull()
-	}
-	if readResp.Endpoints[0].AllowRemoveAllRoleOnRequest != nil {
-		if *readResp.Endpoints[0].AllowRemoveAllRoleOnRequest == "true" {
-			state.AllowRemoveAllRoleOnRequest = types.BoolValue(true)
-		} else {
-			state.AllowRemoveAllRoleOnRequest = types.BoolValue(false)
-		}
-	} else {
-		state.AllowRemoveAllRoleOnRequest = types.BoolNull()
-	}
-	if readResp.Endpoints[0].ConnectionconfigAsJson != nil {
-		normalized, err := endpointsutil.NormalizeJSON(*readResp.Endpoints[0].ConnectionconfigAsJson)
-		if err != nil {
-			state.ConnectionConfig = types.StringNull()
-		} else {
-			state.ConnectionConfig = util.SafeString(&normalized)
-		}
-	} else {
-		state.ConnectionConfig = types.StringNull()
-	}
-	state.AccountNameRule = util.SafeString(readResp.Endpoints[0].AccountNameRule)
-	state.ChangePasswordAccessQuery = util.SafeString(readResp.Endpoints[0].ChangePasswordAccessQuery)
-	state.PluginConfigs = util.SafeString(readResp.Endpoints[0].PluginConfigs)
-	state.CreateEntTaskforRemoveAcc = util.SafeString(readResp.Endpoints[0].CreateEntTaskforRemoveAcc)
-	state.EnableCopyAccess = util.SafeString(readResp.Endpoints[0].EnableCopyAccess)
-	state.EndpointConfig = util.SafeString(readResp.Endpoints[0].EndpointConfig)
-	state.ServiceAccountAccessQuery = util.SafeString(readResp.Endpoints[0].ServiceAccountAccessQuery)
-	state.UserAccountCorrelationRule = util.SafeString(readResp.Endpoints[0].UserAccountCorrelationRule)
-	state.StatusConfig = util.SafeString(readResp.Endpoints[0].StatusConfig)
-	state.CustomProperty1 = util.SafeString(readResp.Endpoints[0].CustomProperty1)
-	state.CustomProperty2 = util.SafeString(readResp.Endpoints[0].CustomProperty2)
-	state.CustomProperty3 = util.SafeString(readResp.Endpoints[0].CustomProperty3)
-	state.CustomProperty4 = util.SafeString(readResp.Endpoints[0].CustomProperty4)
-	state.CustomProperty5 = util.SafeString(readResp.Endpoints[0].CustomProperty5)
-	state.CustomProperty6 = util.SafeString(readResp.Endpoints[0].CustomProperty6)
-	state.CustomProperty7 = util.SafeString(readResp.Endpoints[0].CustomProperty7)
-	state.CustomProperty8 = util.SafeString(readResp.Endpoints[0].CustomProperty8)
-	state.CustomProperty9 = util.SafeString(readResp.Endpoints[0].CustomProperty9)
-	state.CustomProperty10 = util.SafeString(readResp.Endpoints[0].CustomProperty10)
-	state.CustomProperty11 = util.SafeString(readResp.Endpoints[0].CustomProperty11)
-	state.CustomProperty12 = util.SafeString(readResp.Endpoints[0].CustomProperty12)
-	state.CustomProperty13 = util.SafeString(readResp.Endpoints[0].CustomProperty13)
-	state.CustomProperty14 = util.SafeString(readResp.Endpoints[0].CustomProperty14)
-	state.CustomProperty15 = util.SafeString(readResp.Endpoints[0].CustomProperty15)
-	state.CustomProperty16 = util.SafeString(readResp.Endpoints[0].CustomProperty16)
-	state.CustomProperty17 = util.SafeString(readResp.Endpoints[0].CustomProperty17)
-	state.CustomProperty18 = util.SafeString(readResp.Endpoints[0].CustomProperty18)
-	state.CustomProperty19 = util.SafeString(readResp.Endpoints[0].CustomProperty19)
-	state.CustomProperty20 = util.SafeString(readResp.Endpoints[0].CustomProperty20)
-	state.CustomProperty21 = util.SafeString(readResp.Endpoints[0].CustomProperty21)
-	state.CustomProperty22 = util.SafeString(readResp.Endpoints[0].CustomProperty22)
-	state.CustomProperty23 = util.SafeString(readResp.Endpoints[0].CustomProperty23)
-	state.CustomProperty24 = util.SafeString(readResp.Endpoints[0].CustomProperty24)
-	state.CustomProperty25 = util.SafeString(readResp.Endpoints[0].CustomProperty25)
-	state.CustomProperty26 = util.SafeString(readResp.Endpoints[0].CustomProperty26)
-	state.CustomProperty27 = util.SafeString(readResp.Endpoints[0].CustomProperty27)
-	state.CustomProperty28 = util.SafeString(readResp.Endpoints[0].CustomProperty28)
-	state.CustomProperty29 = util.SafeString(readResp.Endpoints[0].CustomProperty29)
-	state.CustomProperty30 = util.SafeString(readResp.Endpoints[0].CustomProperty30)
-	state.CustomProperty31 = util.SafeString(readResp.Endpoints[0].Customproperty31)
-	state.CustomProperty32 = util.SafeString(readResp.Endpoints[0].Customproperty32)
-	state.CustomProperty33 = util.SafeString(readResp.Endpoints[0].Customproperty33)
-	state.CustomProperty34 = util.SafeString(readResp.Endpoints[0].Customproperty34)
-	state.CustomProperty35 = util.SafeString(readResp.Endpoints[0].Customproperty35)
-	state.CustomProperty36 = util.SafeString(readResp.Endpoints[0].Customproperty36)
-	state.CustomProperty37 = util.SafeString(readResp.Endpoints[0].Customproperty37)
-	state.CustomProperty38 = util.SafeString(readResp.Endpoints[0].Customproperty38)
-	state.CustomProperty39 = util.SafeString(readResp.Endpoints[0].Customproperty39)
-	state.CustomProperty40 = util.SafeString(readResp.Endpoints[0].Customproperty40)
-	state.CustomProperty41 = util.SafeString(readResp.Endpoints[0].Customproperty41)
-	state.CustomProperty42 = util.SafeString(readResp.Endpoints[0].Customproperty42)
-	state.CustomProperty43 = util.SafeString(readResp.Endpoints[0].Customproperty43)
-	state.CustomProperty44 = util.SafeString(readResp.Endpoints[0].Customproperty44)
-	state.CustomProperty45 = util.SafeString(readResp.Endpoints[0].Customproperty45)
-	state.AccountCustomProperty1Label = util.SafeString(readResp.Endpoints[0].AccountCustomProperty1Label)
-	state.AccountCustomProperty2Label = util.SafeString(readResp.Endpoints[0].AccountCustomProperty2Label)
-	state.AccountCustomProperty3Label = util.SafeString(readResp.Endpoints[0].AccountCustomProperty3Label)
-	state.AccountCustomProperty4Label = util.SafeString(readResp.Endpoints[0].AccountCustomProperty4Label)
-	state.AccountCustomProperty5Label = util.SafeString(readResp.Endpoints[0].AccountCustomProperty5Label)
-	state.AccountCustomProperty6Label = util.SafeString(readResp.Endpoints[0].AccountCustomProperty6Label)
-	state.AccountCustomProperty7Label = util.SafeString(readResp.Endpoints[0].AccountCustomProperty7Label)
-	state.AccountCustomProperty8Label = util.SafeString(readResp.Endpoints[0].AccountCustomProperty8Label)
-	state.AccountCustomProperty9Label = util.SafeString(readResp.Endpoints[0].AccountCustomProperty9Label)
-	state.AccountCustomProperty10Label = util.SafeString(readResp.Endpoints[0].AccountCustomProperty10Label)
-	state.AccountCustomProperty11Label = util.SafeString(readResp.Endpoints[0].AccountCustomProperty11Label)
-	state.AccountCustomProperty12Label = util.SafeString(readResp.Endpoints[0].AccountCustomProperty12Label)
-	state.AccountCustomProperty13Label = util.SafeString(readResp.Endpoints[0].AccountCustomProperty13Label)
-	state.AccountCustomProperty14Label = util.SafeString(readResp.Endpoints[0].AccountCustomProperty14Label)
-	state.AccountCustomProperty15Label = util.SafeString(readResp.Endpoints[0].AccountCustomProperty15Label)
-	state.AccountCustomProperty16Label = util.SafeString(readResp.Endpoints[0].AccountCustomProperty16Label)
-	state.AccountCustomProperty17Label = util.SafeString(readResp.Endpoints[0].AccountCustomProperty17Label)
-	state.AccountCustomProperty18Label = util.SafeString(readResp.Endpoints[0].AccountCustomProperty18Label)
-	state.AccountCustomProperty19Label = util.SafeString(readResp.Endpoints[0].AccountCustomProperty19Label)
-	state.AccountCustomProperty20Label = util.SafeString(readResp.Endpoints[0].AccountCustomProperty20Label)
-	state.AccountCustomProperty21Label = util.SafeString(readResp.Endpoints[0].AccountCustomProperty21Label)
-	state.AccountCustomProperty22Label = util.SafeString(readResp.Endpoints[0].AccountCustomProperty22Label)
-	state.AccountCustomProperty23Label = util.SafeString(readResp.Endpoints[0].AccountCustomProperty23Label)
-	state.AccountCustomProperty24Label = util.SafeString(readResp.Endpoints[0].AccountCustomProperty24Label)
-	state.AccountCustomProperty25Label = util.SafeString(readResp.Endpoints[0].AccountCustomProperty25Label)
-	state.AccountCustomProperty26Label = util.SafeString(readResp.Endpoints[0].AccountCustomProperty26Label)
-	state.AccountCustomProperty27Label = util.SafeString(readResp.Endpoints[0].AccountCustomProperty27Label)
-	state.AccountCustomProperty28Label = util.SafeString(readResp.Endpoints[0].AccountCustomProperty28Label)
-	state.AccountCustomProperty29Label = util.SafeString(readResp.Endpoints[0].AccountCustomProperty29Label)
-	state.AccountCustomProperty30Label = util.SafeString(readResp.Endpoints[0].AccountCustomProperty30Label)
-	state.CustomProperty31Label = util.SafeString(readResp.Endpoints[0].Customproperty31Label)
-	state.CustomProperty32Label = util.SafeString(readResp.Endpoints[0].Customproperty32Label)
-	state.CustomProperty33Label = util.SafeString(readResp.Endpoints[0].Customproperty33Label)
-	state.CustomProperty34Label = util.SafeString(readResp.Endpoints[0].Customproperty34Label)
-	state.CustomProperty35Label = util.SafeString(readResp.Endpoints[0].Customproperty35Label)
-	state.CustomProperty36Label = util.SafeString(readResp.Endpoints[0].Customproperty36Label)
-	state.CustomProperty37Label = util.SafeString(readResp.Endpoints[0].Customproperty37Label)
-	state.CustomProperty38Label = util.SafeString(readResp.Endpoints[0].Customproperty38Label)
-	state.CustomProperty39Label = util.SafeString(readResp.Endpoints[0].Customproperty39Label)
-	state.CustomProperty40Label = util.SafeString(readResp.Endpoints[0].Customproperty40Label)
-	state.CustomProperty41Label = util.SafeString(readResp.Endpoints[0].Customproperty41Label)
-	state.CustomProperty42Label = util.SafeString(readResp.Endpoints[0].Customproperty42Label)
-	state.CustomProperty43Label = util.SafeString(readResp.Endpoints[0].Customproperty43Label)
-	state.CustomProperty44Label = util.SafeString(readResp.Endpoints[0].Customproperty44Label)
-	state.CustomProperty45Label = util.SafeString(readResp.Endpoints[0].Customproperty45Label)
-	state.CustomProperty46Label = util.SafeString(readResp.Endpoints[0].Customproperty46Label)
-	state.CustomProperty47Label = util.SafeString(readResp.Endpoints[0].Customproperty47Label)
-	state.CustomProperty48Label = util.SafeString(readResp.Endpoints[0].Customproperty48Label)
-	state.CustomProperty49Label = util.SafeString(readResp.Endpoints[0].Customproperty49Label)
-	state.CustomProperty50Label = util.SafeString(readResp.Endpoints[0].Customproperty50Label)
-	state.CustomProperty51Label = util.SafeString(readResp.Endpoints[0].Customproperty51Label)
-	state.CustomProperty52Label = util.SafeString(readResp.Endpoints[0].Customproperty52Label)
-	state.CustomProperty53Label = util.SafeString(readResp.Endpoints[0].Customproperty53Label)
-	state.CustomProperty54Label = util.SafeString(readResp.Endpoints[0].Customproperty54Label)
-	state.CustomProperty55Label = util.SafeString(readResp.Endpoints[0].Customproperty55Label)
-	state.CustomProperty56Label = util.SafeString(readResp.Endpoints[0].Customproperty56Label)
-	state.CustomProperty57Label = util.SafeString(readResp.Endpoints[0].Customproperty57Label)
-	state.CustomProperty58Label = util.SafeString(readResp.Endpoints[0].Customproperty58Label)
-	state.CustomProperty59Label = util.SafeString(readResp.Endpoints[0].Customproperty59Label)
-	state.CustomProperty60Label = util.SafeString(readResp.Endpoints[0].Customproperty60Label)
-
-	var stateEmailTemplates types.List
-
-	if readResp.Endpoints[0].Taskemailtemplates == nil || *readResp.Endpoints[0].Taskemailtemplates == "" {
-		stateEmailTemplates = types.ListNull(types.ObjectType{
-			AttrTypes: map[string]attr.Type{
-				"email_template_type": types.StringType,
-				"task_type":           types.StringType,
-				"email_template":      types.StringType,
-			},
-		})
-	} else {
-		taskEmailTemplatesStr := *readResp.Endpoints[0].Taskemailtemplates
-		type ApiEmailTemplate struct {
-			EmailTemplateType string `json:"emailTemplateType"`
-			TaskType          string `json:"taskType"`
-			EmailTemplate     string `json:"emailTemplate"`
-		}
-
-		var apiTemplates []ApiEmailTemplate
-		if err := json.Unmarshal([]byte(taskEmailTemplatesStr), &apiTemplates); err != nil {
-			resp.Diagnostics.AddError(
-				"Client Error",
-				fmt.Sprintf("Failed to parse taskemailtemplates JSON: %s", err),
-			)
-			return
-		}
-
-		emailTemplateObjects := make([]attr.Value, 0, len(apiTemplates))
-		for _, t := range apiTemplates {
-			obj, diags := types.ObjectValue(
-				map[string]attr.Type{
-					"email_template_type": types.StringType,
-					"task_type":           types.StringType,
-					"email_template":      types.StringType,
-				},
-				map[string]attr.Value{
-					"email_template_type": types.StringValue(t.EmailTemplateType),
-					"task_type":           types.StringValue(t.TaskType),
-					"email_template":      types.StringValue(t.EmailTemplate),
-				},
-			)
-			if diags.HasError() {
-				resp.Diagnostics.Append(diags...)
-				continue
-			}
-			emailTemplateObjects = append(emailTemplateObjects, obj)
-		}
-
-		listVal, diags := types.ListValue(
-			types.ObjectType{
-				AttrTypes: map[string]attr.Type{
-					"email_template_type": types.StringType,
-					"task_type":           types.StringType,
-					"email_template":      types.StringType,
-				},
-			},
-			emailTemplateObjects,
-		)
-		if diags.HasError() {
-			resp.Diagnostics.Append(diags...)
-			return
-		}
-		stateEmailTemplates = listVal
-	}
-
-	state.EmailTemplates = stateEmailTemplates
-
-	var stateRequestableRoleTypes types.List
-
-	if readResp.Endpoints[0].RoleTypeAsJson == nil || *readResp.Endpoints[0].RoleTypeAsJson == "" {
-		stateRequestableRoleTypes = types.ListNull(types.ObjectType{
-			AttrTypes: map[string]attr.Type{
-				"role_type":       types.StringType,
-				"request_option":  types.StringType,
-				"required":        types.BoolType,
-				"requested_query": types.StringType,
-				"selected_query":  types.StringType,
-				"show_on":         types.StringType,
-			},
-		})
-	} else {
-		roleTypeJsonStr := *readResp.Endpoints[0].RoleTypeAsJson
-		var roleTypeMap map[string]string
-		if err := json.Unmarshal([]byte(roleTypeJsonStr), &roleTypeMap); err != nil {
-			resp.Diagnostics.AddError(
-				"Client Error",
-				fmt.Sprintf("Failed to parse RoleTypeAsJson outer JSON: %s", err),
-			)
-			return
-		}
-
-		roleTypeObjects := make([]attr.Value, 0, len(roleTypeMap))
-		fmt.Println("Role type objects: ", roleTypeObjects)
-
-		for roleType, roleData := range roleTypeMap {
-			parts := strings.Split(roleData, "__")
-
-			get := func(i int) string {
-				if i < len(parts) {
-					return parts[i]
-				}
-				return ""
-			}
-
-			obj, diags := types.ObjectValue(
-				map[string]attr.Type{
-					"role_type":       types.StringType,
-					"request_option":  types.StringType,
-					"required":        types.BoolType,
-					"requested_query": types.StringType,
-					"selected_query":  types.StringType,
-					"show_on":         types.StringType,
-				},
-				map[string]attr.Value{
-					"role_type":       types.StringValue(endpointsutil.TranslateValue(roleType, endpointsutil.RoleTypeMap)),
-					"request_option":  types.StringValue(endpointsutil.TranslateValue(get(0), endpointsutil.RequestOptionMap)),
-					"required":        types.BoolValue(get(1) == "1"),
-					"requested_query": types.StringValue(get(2)),
-					"selected_query":  types.StringValue(get(3)),
-					"show_on":         types.StringValue(endpointsutil.TranslateValue(get(4), endpointsutil.ShowOnMap)),
-				},
-			)
-			if diags.HasError() {
-				resp.Diagnostics.Append(diags...)
-				continue
-			}
-			roleTypeObjects = append(roleTypeObjects, obj)
-		}
-
-		listVal, diags := types.ListValue(
-			types.ObjectType{
-				AttrTypes: map[string]attr.Type{
-					"role_type":       types.StringType,
-					"request_option":  types.StringType,
-					"required":        types.BoolType,
-					"requested_query": types.StringType,
-					"selected_query":  types.StringType,
-					"show_on":         types.StringType,
-				},
-			},
-			roleTypeObjects,
-		)
-		if diags.HasError() {
-			resp.Diagnostics.Append(diags...)
-			return
-		}
-		stateRequestableRoleTypes = listVal
-	}
-
-	state.RequestableRoleTypes = stateRequestableRoleTypes
-
-	if readResp.Endpoints[0].Disableaccountrequest != nil {
-		disableAccountRequestStr := *readResp.Endpoints[0].Disableaccountrequest
-		var disableAccountRequestMap map[string]string
-
-		err := json.Unmarshal([]byte(disableAccountRequestStr), &disableAccountRequestMap)
-		if err != nil {
-			log.Printf("Error parsing disableaccountrequest JSON: %v", err)
-		} else {
-			state.DisableNewAccountRequestIfAccountExists = types.StringValue(endpointsutil.NormalizeToStringBool(disableAccountRequestMap["DISABLENEWACCOUNT"]))
-			state.DisableRemoveAccount = types.StringValue(endpointsutil.NormalizeToStringBool(disableAccountRequestMap["DISABLEREMOVEACCOUNT"]))
-			state.DisableModifyAccount = types.StringValue(endpointsutil.NormalizeToStringBool(disableAccountRequestMap["DISABLEMODIFYACCOUNT"]))
-			state.BlockInflightRequest = types.StringValue(endpointsutil.NormalizeToStringBool(disableAccountRequestMap["BLOCKINFLIGHTREQUEST"]))
-
-		}
-	}
-
-	msgValue := util.SafeDeref(readResp.Message)
-	state.Msg = util.SafeString(&msgValue)
-	state.ErrorCode = util.SafeString(readResp.ErrorCode)
-	stateDiagnostics := resp.State.Set(ctx, &state)
-	resp.Diagnostics.Append(stateDiagnostics...)
-
-	if resp.Diagnostics.HasError() {
-		return
-	}
-}
-
-func (r *endpointResource) Update(ctx context.Context, req resource.UpdateRequest, resp *resource.UpdateResponse) {
-	var plan EndpointResourceModel
-	var state EndpointResourceModel
-
-	resp.Diagnostics.Append(req.State.Get(ctx, &state)...)
-	if resp.Diagnostics.HasError() {
-		return
-	}
-
-	planGetDiagnostics := req.Plan.Get(ctx, &plan)
-	resp.Diagnostics.Append(planGetDiagnostics...)
-	if resp.Diagnostics.HasError() {
-		return
-	}
-
-	if plan.EndpointName.ValueString() != state.EndpointName.ValueString() {
-		resp.Diagnostics.AddError("Error", "Endpoint name cannot be updated")
-		log.Printf("[ERROR]: Endpoint name cannot be updated")
-		return
-	}
-
-	cfg := openapi.NewConfiguration()
-	apiBaseURL := strings.TrimPrefix(strings.TrimPrefix(r.client.APIBaseURL(), "https://"), "http://")
-	cfg.Host = apiBaseURL
-	cfg.Scheme = "https"
-	cfg.AddDefaultHeader("Authorization", "Bearer "+r.token)
-	cfg.HTTPClient = http.DefaultClient
-
-	apiClient := openapi.NewAPIClient(cfg)
-
-	updateReq := openapi.UpdateEndpointRequest{
-		Endpointname:                            plan.EndpointName.ValueString(),
-		PrimaryAccountType:                      plan.PrimaryAccountType.ValueStringPointer(),
-		AccountTypeNoPasswordChange:             plan.AccountTypeNoPasswordChange.ValueStringPointer(),
-		DisplayName:                             plan.DisplayName.ValueStringPointer(),
-		Securitysystem:                          plan.SecuritySystem.ValueStringPointer(),
-		Description:                             plan.Description.ValueStringPointer(),
-		OwnerType:                               plan.OwnerType.ValueStringPointer(),
-		Owner:                                   plan.Owner.ValueStringPointer(),
-		ResourceOwnerType:                       plan.ResourceOwnerType.ValueStringPointer(),
-		ResourceOwner:                           plan.ResourceOwner.ValueStringPointer(),
-		Accessquery:                             plan.AccessQuery.ValueStringPointer(),
-		EnableCopyAccess:                        plan.EnableCopyAccess.ValueStringPointer(),
-		CreateEntTaskforRemoveAcc:               plan.CreateEntTaskforRemoveAcc.ValueStringPointer(),
-		DisableNewAccountRequestIfAccountExists: plan.DisableNewAccountRequestIfAccountExists.ValueStringPointer(),
-		DisableRemoveAccount:                    plan.DisableRemoveAccount.ValueStringPointer(),
-		DisableModifyAccount:                    plan.DisableModifyAccount.ValueStringPointer(),
-		UserAccountCorrelationRule:              plan.UserAccountCorrelationRule.ValueStringPointer(),
-		Connectionconfig:                        plan.ConnectionConfig.ValueStringPointer(),
-		BlockInflightRequest:                    plan.BlockInflightRequest.ValueStringPointer(),
-		Outofbandaction:                         plan.OutOfBandAction.ValueStringPointer(),
-		AccountNameRule:                         plan.AccountNameRule.ValueStringPointer(),
-		AllowChangePasswordSqlquery:             plan.AllowChangePasswordSQLQuery.ValueStringPointer(),
-		Requestable:                             plan.Requestable.ValueBoolPointer(),
-		ParentAccountPattern:                    plan.ParentAccountPattern.ValueStringPointer(),
-		ServiceAccountNameRule:                  plan.ServiceAccountNameRule.ValueStringPointer(),
-		ServiceAccountAccessQuery:               plan.ServiceAccountAccessQuery.ValueStringPointer(),
-		ChangePasswordAccessQuery:               plan.ChangePasswordAccessQuery.ValueStringPointer(),
-		AccountNameValidatorRegex:               plan.AccountNameValidatorRegex.ValueStringPointer(),
-		StatusConfig:                            plan.StatusConfig.ValueStringPointer(),
-		PluginConfigs:                           plan.PluginConfigs.ValueStringPointer(),
-		EndpointConfig:                          plan.EndpointConfig.ValueStringPointer(),
-		AllowRemoveAllRoleOnRequest:             plan.AllowRemoveAllRoleOnRequest.ValueBoolPointer(),
-		Customproperty1:                         util.StringPointerOrEmpty(plan.CustomProperty1),
-		Customproperty2:                         util.StringPointerOrEmpty(plan.CustomProperty2),
-		Customproperty3:                         util.StringPointerOrEmpty(plan.CustomProperty3),
-		Customproperty4:                         util.StringPointerOrEmpty(plan.CustomProperty4),
-		Customproperty5:                         util.StringPointerOrEmpty(plan.CustomProperty5),
-		Customproperty6:                         util.StringPointerOrEmpty(plan.CustomProperty6),
-		Customproperty7:                         util.StringPointerOrEmpty(plan.CustomProperty7),
-		Customproperty8:                         util.StringPointerOrEmpty(plan.CustomProperty8),
-		Customproperty9:                         util.StringPointerOrEmpty(plan.CustomProperty9),
-		Customproperty10:                        util.StringPointerOrEmpty(plan.CustomProperty10),
-		Customproperty11:                        util.StringPointerOrEmpty(plan.CustomProperty11),
-		Customproperty12:                        util.StringPointerOrEmpty(plan.CustomProperty12),
-		Customproperty13:                        util.StringPointerOrEmpty(plan.CustomProperty13),
-		Customproperty14:                        util.StringPointerOrEmpty(plan.CustomProperty14),
-		Customproperty15:                        util.StringPointerOrEmpty(plan.CustomProperty15),
-		Customproperty16:                        util.StringPointerOrEmpty(plan.CustomProperty16),
-		Customproperty17:                        util.StringPointerOrEmpty(plan.CustomProperty17),
-		Customproperty18:                        util.StringPointerOrEmpty(plan.CustomProperty18),
-		Customproperty19:                        util.StringPointerOrEmpty(plan.CustomProperty19),
-		Customproperty20:                        util.StringPointerOrEmpty(plan.CustomProperty20),
-		Customproperty21:                        util.StringPointerOrEmpty(plan.CustomProperty21),
-		Customproperty22:                        util.StringPointerOrEmpty(plan.CustomProperty22),
-		Customproperty23:                        util.StringPointerOrEmpty(plan.CustomProperty23),
-		Customproperty24:                        util.StringPointerOrEmpty(plan.CustomProperty24),
-		Customproperty25:                        util.StringPointerOrEmpty(plan.CustomProperty25),
-		Customproperty26:                        util.StringPointerOrEmpty(plan.CustomProperty26),
-		Customproperty27:                        util.StringPointerOrEmpty(plan.CustomProperty27),
-		Customproperty28:                        util.StringPointerOrEmpty(plan.CustomProperty28),
-		Customproperty29:                        util.StringPointerOrEmpty(plan.CustomProperty29),
-		Customproperty30:                        util.StringPointerOrEmpty(plan.CustomProperty30),
-		Customproperty31:                        util.StringPointerOrEmpty(plan.CustomProperty31),
-		Customproperty32:                        util.StringPointerOrEmpty(plan.CustomProperty32),
-		Customproperty33:                        util.StringPointerOrEmpty(plan.CustomProperty33),
-		Customproperty34:                        util.StringPointerOrEmpty(plan.CustomProperty34),
-		Customproperty35:                        util.StringPointerOrEmpty(plan.CustomProperty35),
-		Customproperty36:                        util.StringPointerOrEmpty(plan.CustomProperty36),
-		Customproperty37:                        util.StringPointerOrEmpty(plan.CustomProperty37),
-		Customproperty38:                        util.StringPointerOrEmpty(plan.CustomProperty38),
-		Customproperty39:                        util.StringPointerOrEmpty(plan.CustomProperty39),
-		Customproperty40:                        util.StringPointerOrEmpty(plan.CustomProperty40),
-		Customproperty41:                        util.StringPointerOrEmpty(plan.CustomProperty41),
-		Customproperty42:                        util.StringPointerOrEmpty(plan.CustomProperty42),
-		Customproperty43:                        util.StringPointerOrEmpty(plan.CustomProperty43),
-		Customproperty44:                        util.StringPointerOrEmpty(plan.CustomProperty44),
-		Customproperty45:                        util.StringPointerOrEmpty(plan.CustomProperty45),
-		Customproperty1Label:                    util.StringPointerOrEmpty(plan.AccountCustomProperty1Label),
-		Customproperty2Label:                    util.StringPointerOrEmpty(plan.AccountCustomProperty2Label),
-		Customproperty3Label:                    util.StringPointerOrEmpty(plan.AccountCustomProperty3Label),
-		Customproperty4Label:                    util.StringPointerOrEmpty(plan.AccountCustomProperty4Label),
-		Customproperty5Label:                    util.StringPointerOrEmpty(plan.AccountCustomProperty5Label),
-		Customproperty6Label:                    util.StringPointerOrEmpty(plan.AccountCustomProperty6Label),
-		Customproperty7Label:                    util.StringPointerOrEmpty(plan.AccountCustomProperty7Label),
-		Customproperty8Label:                    util.StringPointerOrEmpty(plan.AccountCustomProperty8Label),
-		Customproperty9Label:                    util.StringPointerOrEmpty(plan.AccountCustomProperty9Label),
-		Customproperty10Label:                   util.StringPointerOrEmpty(plan.AccountCustomProperty10Label),
-		Customproperty11Label:                   util.StringPointerOrEmpty(plan.AccountCustomProperty11Label),
-		Customproperty12Label:                   util.StringPointerOrEmpty(plan.AccountCustomProperty12Label),
-		Customproperty13Label:                   util.StringPointerOrEmpty(plan.AccountCustomProperty13Label),
-		Customproperty14Label:                   util.StringPointerOrEmpty(plan.AccountCustomProperty14Label),
-		Customproperty15Label:                   util.StringPointerOrEmpty(plan.AccountCustomProperty15Label),
-		Customproperty16Label:                   util.StringPointerOrEmpty(plan.AccountCustomProperty16Label),
-		Customproperty17Label:                   util.StringPointerOrEmpty(plan.AccountCustomProperty17Label),
-		Customproperty18Label:                   util.StringPointerOrEmpty(plan.AccountCustomProperty18Label),
-		Customproperty19Label:                   util.StringPointerOrEmpty(plan.AccountCustomProperty19Label),
-		Customproperty20Label:                   util.StringPointerOrEmpty(plan.AccountCustomProperty20Label),
-		Customproperty21Label:                   util.StringPointerOrEmpty(plan.AccountCustomProperty21Label),
-		Customproperty22Label:                   util.StringPointerOrEmpty(plan.AccountCustomProperty22Label),
-		Customproperty23Label:                   util.StringPointerOrEmpty(plan.AccountCustomProperty23Label),
-		Customproperty24Label:                   util.StringPointerOrEmpty(plan.AccountCustomProperty24Label),
-		Customproperty25Label:                   util.StringPointerOrEmpty(plan.AccountCustomProperty25Label),
-		Customproperty26Label:                   util.StringPointerOrEmpty(plan.AccountCustomProperty26Label),
-		Customproperty27Label:                   util.StringPointerOrEmpty(plan.AccountCustomProperty27Label),
-		Customproperty28Label:                   util.StringPointerOrEmpty(plan.AccountCustomProperty28Label),
-		Customproperty29Label:                   util.StringPointerOrEmpty(plan.AccountCustomProperty29Label),
-		Customproperty30Label:                   util.StringPointerOrEmpty(plan.AccountCustomProperty30Label),
-		Customproperty31Label:                   util.StringPointerOrEmpty(plan.CustomProperty31Label),
-		Customproperty32Label:                   util.StringPointerOrEmpty(plan.CustomProperty32Label),
-		Customproperty33Label:                   util.StringPointerOrEmpty(plan.CustomProperty33Label),
-		Customproperty34Label:                   util.StringPointerOrEmpty(plan.CustomProperty34Label),
-		Customproperty35Label:                   util.StringPointerOrEmpty(plan.CustomProperty35Label),
-		Customproperty36Label:                   util.StringPointerOrEmpty(plan.CustomProperty36Label),
-		Customproperty37Label:                   util.StringPointerOrEmpty(plan.CustomProperty37Label),
-		Customproperty38Label:                   util.StringPointerOrEmpty(plan.CustomProperty38Label),
-		Customproperty39Label:                   util.StringPointerOrEmpty(plan.CustomProperty39Label),
-		Customproperty40Label:                   util.StringPointerOrEmpty(plan.CustomProperty40Label),
-		Customproperty41Label:                   util.StringPointerOrEmpty(plan.CustomProperty41Label),
-		Customproperty42Label:                   util.StringPointerOrEmpty(plan.CustomProperty42Label),
-		Customproperty43Label:                   util.StringPointerOrEmpty(plan.CustomProperty43Label),
-		Customproperty44Label:                   util.StringPointerOrEmpty(plan.CustomProperty44Label),
-		Customproperty45Label:                   util.StringPointerOrEmpty(plan.CustomProperty45Label),
-		Customproperty46Label:                   util.StringPointerOrEmpty(plan.CustomProperty46Label),
-		Customproperty47Label:                   util.StringPointerOrEmpty(plan.CustomProperty47Label),
-		Customproperty48Label:                   util.StringPointerOrEmpty(plan.CustomProperty48Label),
-		Customproperty49Label:                   util.StringPointerOrEmpty(plan.CustomProperty49Label),
-		Customproperty50Label:                   util.StringPointerOrEmpty(plan.CustomProperty50Label),
-		Customproperty51Label:                   util.StringPointerOrEmpty(plan.CustomProperty51Label),
-		Customproperty52Label:                   util.StringPointerOrEmpty(plan.CustomProperty52Label),
-		Customproperty53Label:                   util.StringPointerOrEmpty(plan.CustomProperty53Label),
-		Customproperty54Label:                   util.StringPointerOrEmpty(plan.CustomProperty54Label),
-		Customproperty55Label:                   util.StringPointerOrEmpty(plan.CustomProperty55Label),
-		Customproperty56Label:                   util.StringPointerOrEmpty(plan.CustomProperty56Label),
-		Customproperty57Label:                   util.StringPointerOrEmpty(plan.CustomProperty57Label),
-		Customproperty58Label:                   util.StringPointerOrEmpty(plan.CustomProperty58Label),
-		Customproperty59Label:                   util.StringPointerOrEmpty(plan.CustomProperty59Label),
-		Customproperty60Label:                   util.StringPointerOrEmpty(plan.CustomProperty60Label),
-	}
-
-	var mappedEndpoints []openapi.UpdateEndpointRequestMappedEndpointsInner
-	var diags diag.Diagnostics
-	var tfMappedEndpoints []MappedEndpoint
-
-	diags = plan.MappedEndpoints.ElementsAs(ctx, &tfMappedEndpoints, true)
-	resp.Diagnostics.Append(diags...)
-	if resp.Diagnostics.HasError() {
-		return
-	}
-
-	for _, tfTemplate := range tfMappedEndpoints {
-		if tfTemplate.SecuritySystem.IsUnknown() &&
-			tfTemplate.Endpoint.IsUnknown() &&
-			tfTemplate.Requestable.IsUnknown() &&
-			tfTemplate.Operation.IsUnknown() {
-			continue
-		}
-
-		mappedEndpoint := openapi.UpdateEndpointRequestMappedEndpointsInner{}
-
-		if !tfTemplate.SecuritySystem.IsNull() {
-			mappedEndpoint.Securitysystem = tfTemplate.SecuritySystem.ValueStringPointer()
-		}
-		if !tfTemplate.Endpoint.IsNull() {
-			mappedEndpoint.Endpoint = tfTemplate.Endpoint.ValueStringPointer()
-		}
-		if !tfTemplate.Requestable.IsNull() {
-			mappedEndpoint.Requestable = tfTemplate.Requestable.ValueStringPointer()
-		}
-		if !tfTemplate.Operation.IsNull() {
-			mappedEndpoint.Operation = tfTemplate.Operation.ValueStringPointer()
-		}
-
-		mappedEndpoints = append(mappedEndpoints, mappedEndpoint)
-	}
-
-	if len(mappedEndpoints) > 0 {
-		updateReq.MappedEndpoints = mappedEndpoints
-	}
-
-	var emailTemplates []openapi.CreateEndpointRequestEmailTemplateInner
-	var tfEmailTemplates []EmailTemplate
-
-	diags = plan.EmailTemplates.ElementsAs(ctx, &tfEmailTemplates, true)
-	resp.Diagnostics.Append(diags...)
-	if resp.Diagnostics.HasError() {
-		return
-	}
-
-	for _, tfTemplate := range tfEmailTemplates {
-		if tfTemplate.EmailTemplateType.IsUnknown() &&
-			tfTemplate.TaskType.IsUnknown() &&
-			tfTemplate.EmailTemplate.IsUnknown() {
-			continue
-		}
-
-		emailTemplate := openapi.CreateEndpointRequestEmailTemplateInner{}
-
-		if !tfTemplate.EmailTemplateType.IsNull() {
-			emailTemplate.EmailTemplateType = tfTemplate.EmailTemplateType.ValueStringPointer()
-		}
-		if !tfTemplate.TaskType.IsNull() {
-			emailTemplate.TaskType = tfTemplate.TaskType.ValueStringPointer()
-		}
-		if !tfTemplate.EmailTemplate.IsNull() {
-			emailTemplate.EmailTemplate = tfTemplate.EmailTemplate.ValueStringPointer()
-		}
-
-		emailTemplates = append(emailTemplates, emailTemplate)
-	}
-
-	if len(emailTemplates) > 0 {
-		updateReq.Taskemailtemplates = emailTemplates
-	}
-
-	var requestableRoleTypes []openapi.UpdateEndpointRequestRequestableRoleTypeInner
-	var tfRequestableRoleTypes []RequestableRoleType
-
-	diags = plan.RequestableRoleTypes.ElementsAs(ctx, &tfRequestableRoleTypes, true)
-	resp.Diagnostics.Append(diags...)
-	if resp.Diagnostics.HasError() {
-		return
-	}
-
-	for _, tfTemplate := range tfRequestableRoleTypes {
-		if tfTemplate.RoleType.IsUnknown() &&
-			tfTemplate.RequestOption.IsUnknown() &&
-			tfTemplate.RequestedQuery.IsUnknown() &&
-			tfTemplate.Required.IsUnknown() &&
-			tfTemplate.SelectedQuery.IsUnknown() &&
-			tfTemplate.ShowOn.IsUnknown() {
-			continue
-		}
-
-		requestableRoleType := openapi.UpdateEndpointRequestRequestableRoleTypeInner{}
-
-		if !tfTemplate.RoleType.IsNull() {
-			requestableRoleType.RoleType = tfTemplate.RoleType.ValueStringPointer()
-		}
-		if !tfTemplate.RequestOption.IsNull() {
-			requestableRoleType.RequestOption = tfTemplate.RequestOption.ValueStringPointer()
-		}
-		if !tfTemplate.RequestedQuery.IsNull() {
-			requestableRoleType.RequestedQuery = tfTemplate.RequestedQuery.ValueStringPointer()
-		}
-		if !tfTemplate.Required.IsNull() {
-			requestableRoleType.Required = tfTemplate.Required.ValueBoolPointer()
-		}
-		if !tfTemplate.SelectedQuery.IsNull() {
-			requestableRoleType.SelectedQuery = tfTemplate.SelectedQuery.ValueStringPointer()
-		}
-		if !tfTemplate.ShowOn.IsNull() {
-			requestableRoleType.ShowOn = tfTemplate.ShowOn.ValueStringPointer()
-		}
-
-		requestableRoleTypes = append(requestableRoleTypes, requestableRoleType)
-	}
-
-	if len(requestableRoleTypes) > 0 {
-		updateReq.RequestableRoleType = requestableRoleTypes
-	}
-
-	apiResp, httpResp, err := apiClient.EndpointsAPI.
-		UpdateEndpoint(ctx).
-		UpdateEndpointRequest(updateReq).
-		Execute()
-	log.Printf("createaccountenc:update %v", plan.CreateEntTaskforRemoveAcc.ValueString())
-	if err != nil {
-		log.Printf("Error Updating Endpoint: %v, HTTP Response: %v", err, httpResp)
-		resp.Diagnostics.AddError(
-			"Error Updating Endpoint",
-			fmt.Sprintf("Error updating endpoints: %v", err),
-		)
-		return
-	}
-	if apiResp != nil && *apiResp.ErrorCode != "0" {
-		log.Printf("Error Updating Endpoint: %v, Error code: %v", *apiResp.Msg, *apiResp.ErrorCode)
-		resp.Diagnostics.AddError(
-			"Error Updating Endpoint",
-			fmt.Sprintf("Error: %v, Error code: %v", *apiResp.Msg, *apiResp.ErrorCode),
-		)
-		return
-	}
-
-	reqParams := openapi.GetEndpointsRequest{}
-	reqParams.SetEndpointname(state.EndpointName.ValueString())
-	readResp, _, err := apiClient.EndpointsAPI.GetEndpoints(ctx).GetEndpointsRequest(reqParams).Execute()
-	if err != nil {
-		log.Printf("Problem with the get function in update block")
-		resp.Diagnostics.AddError("API Read Failed after updation of endpoint", fmt.Sprintf("Error: %v", err))
-		return
-	}
-	if readResp != nil && *readResp.ErrorCode != "0" {
-		log.Printf("Error Reading Endpoint after updation: %v, Error code: %v", *readResp.Message, *readResp.ErrorCode)
-		resp.Diagnostics.AddError(
-			"Error Reading endpoint after updation",
-			fmt.Sprintf("Error: %v, Error code: %v", *readResp.Message, *readResp.ErrorCode),
-		)
-		return
-	}
-
-	log.Printf("createaccountenc:read %v", *readResp.Endpoints[0].CreateEntTaskforRemoveAcc)
-
-	plan.ID = types.StringValue("endpoint-" + *readResp.Endpoints[0].Endpointname)
-	plan.DisplayName = util.SafeString(readResp.Endpoints[0].DisplayName)
-	plan.SecuritySystem = util.SafeString(readResp.Endpoints[0].Securitysystem)
-	plan.Description = util.SafeString(readResp.Endpoints[0].Description)
-	plan.OwnerType = util.SafeString(util.StringPtr(endpointsutil.TranslateValue(util.SafeDeref(readResp.Endpoints[0].OwnerType), endpointsutil.OwnerTypeMap)))
-	plan.ResourceOwnerType = util.SafeString(util.StringPtr(endpointsutil.TranslateValue(util.SafeDeref(readResp.Endpoints[0].Requestownertype), endpointsutil.OwnerTypeMap)))
-	plan.PrimaryAccountType = util.SafeString(readResp.Endpoints[0].PrimaryAccountType)
-	plan.AccountTypeNoPasswordChange = util.SafeString(readResp.Endpoints[0].AccountTypeNoPasswordChange)
-	plan.ServiceAccountNameRule = util.SafeString(readResp.Endpoints[0].ServiceAccountNameRule)
-	plan.AccountNameValidatorRegex = util.SafeString(readResp.Endpoints[0].AccountNameValidatorRegex)
-	plan.AllowChangePasswordSQLQuery = util.SafeString(readResp.Endpoints[0].AllowChangePasswordSqlquery)
-	plan.ParentAccountPattern = util.SafeString(readResp.Endpoints[0].ParentAccountPattern)
-	plan.SecuritySystem = util.SafeString(readResp.Endpoints[0].Securitysystem)
-	plan.EndpointName = util.SafeString(readResp.Endpoints[0].Endpointname)
-	plan.AccessQuery = util.SafeString(readResp.Endpoints[0].Accessquery)
-	plan.DisplayName = util.SafeString(readResp.Endpoints[0].DisplayName)
-	if readResp.Endpoints[0].Requestable != nil {
-		if *readResp.Endpoints[0].Requestable == "true" {
-			plan.Requestable = types.BoolValue(true)
-		} else {
-			plan.Requestable = types.BoolValue(false)
-		}
-	} else {
-		plan.Requestable = types.BoolNull()
-	}
-	if readResp.Endpoints[0].AllowRemoveAllRoleOnRequest != nil {
-		if *readResp.Endpoints[0].AllowRemoveAllRoleOnRequest == "true" {
-			plan.AllowRemoveAllRoleOnRequest = types.BoolValue(true)
-		} else {
-			plan.AllowRemoveAllRoleOnRequest = types.BoolValue(false)
-		}
-	} else {
-		plan.AllowRemoveAllRoleOnRequest = types.BoolNull()
-	}
-	if readResp.Endpoints[0].ConnectionconfigAsJson != nil {
-		normalized, err := endpointsutil.NormalizeJSON(*readResp.Endpoints[0].ConnectionconfigAsJson)
-		if err != nil {
-			plan.ConnectionConfig = types.StringNull()
-		} else {
-			plan.ConnectionConfig = util.SafeString(&normalized)
-		}
-	} else {
-		plan.ConnectionConfig = types.StringNull()
-	}
-	plan.AccountNameRule = util.SafeString(readResp.Endpoints[0].AccountNameRule)
-	plan.ChangePasswordAccessQuery = util.SafeString(readResp.Endpoints[0].ChangePasswordAccessQuery)
-
-	plan.PluginConfigs = util.SafeString(readResp.Endpoints[0].PluginConfigs)
-
-	plan.CreateEntTaskforRemoveAcc = util.SafeString(readResp.Endpoints[0].CreateEntTaskforRemoveAcc)
-	plan.EnableCopyAccess = util.SafeString(readResp.Endpoints[0].EnableCopyAccess)
-	plan.EndpointConfig = util.SafeString(readResp.Endpoints[0].EndpointConfig)
-	plan.ServiceAccountAccessQuery = util.SafeString(readResp.Endpoints[0].ServiceAccountAccessQuery)
-	plan.UserAccountCorrelationRule = util.SafeString(readResp.Endpoints[0].UserAccountCorrelationRule)
-	plan.StatusConfig = util.SafeString(readResp.Endpoints[0].StatusConfig)
-
-	plan.CustomProperty1 = util.SafeString(readResp.Endpoints[0].CustomProperty1)
-	plan.CustomProperty2 = util.SafeString(readResp.Endpoints[0].CustomProperty2)
-	plan.CustomProperty3 = util.SafeString(readResp.Endpoints[0].CustomProperty3)
-	plan.CustomProperty4 = util.SafeString(readResp.Endpoints[0].CustomProperty4)
-	plan.CustomProperty5 = util.SafeString(readResp.Endpoints[0].CustomProperty5)
-	plan.CustomProperty6 = util.SafeString(readResp.Endpoints[0].CustomProperty6)
-	plan.CustomProperty7 = util.SafeString(readResp.Endpoints[0].CustomProperty7)
-	plan.CustomProperty8 = util.SafeString(readResp.Endpoints[0].CustomProperty8)
-	plan.CustomProperty9 = util.SafeString(readResp.Endpoints[0].CustomProperty9)
-	plan.CustomProperty10 = util.SafeString(readResp.Endpoints[0].CustomProperty10)
-	plan.CustomProperty11 = util.SafeString(readResp.Endpoints[0].CustomProperty11)
-	plan.CustomProperty12 = util.SafeString(readResp.Endpoints[0].CustomProperty12)
-	plan.CustomProperty13 = util.SafeString(readResp.Endpoints[0].CustomProperty13)
-	plan.CustomProperty14 = util.SafeString(readResp.Endpoints[0].CustomProperty14)
-	plan.CustomProperty15 = util.SafeString(readResp.Endpoints[0].CustomProperty15)
-	plan.CustomProperty16 = util.SafeString(readResp.Endpoints[0].CustomProperty16)
-	plan.CustomProperty17 = util.SafeString(readResp.Endpoints[0].CustomProperty17)
-	plan.CustomProperty18 = util.SafeString(readResp.Endpoints[0].CustomProperty18)
-	plan.CustomProperty19 = util.SafeString(readResp.Endpoints[0].CustomProperty19)
-	plan.CustomProperty20 = util.SafeString(readResp.Endpoints[0].CustomProperty20)
-	plan.CustomProperty21 = util.SafeString(readResp.Endpoints[0].CustomProperty21)
-	plan.CustomProperty22 = util.SafeString(readResp.Endpoints[0].CustomProperty22)
-	plan.CustomProperty23 = util.SafeString(readResp.Endpoints[0].CustomProperty23)
-	plan.CustomProperty24 = util.SafeString(readResp.Endpoints[0].CustomProperty24)
-	plan.CustomProperty25 = util.SafeString(readResp.Endpoints[0].CustomProperty25)
-	plan.CustomProperty26 = util.SafeString(readResp.Endpoints[0].CustomProperty26)
-	plan.CustomProperty27 = util.SafeString(readResp.Endpoints[0].CustomProperty27)
-	plan.CustomProperty28 = util.SafeString(readResp.Endpoints[0].CustomProperty28)
-	plan.CustomProperty29 = util.SafeString(readResp.Endpoints[0].CustomProperty29)
-	plan.CustomProperty30 = util.SafeString(readResp.Endpoints[0].CustomProperty30)
-	plan.CustomProperty31 = util.SafeString(readResp.Endpoints[0].Customproperty31)
-	plan.CustomProperty32 = util.SafeString(readResp.Endpoints[0].Customproperty32)
-	plan.CustomProperty33 = util.SafeString(readResp.Endpoints[0].Customproperty33)
-	plan.CustomProperty34 = util.SafeString(readResp.Endpoints[0].Customproperty34)
-	plan.CustomProperty35 = util.SafeString(readResp.Endpoints[0].Customproperty35)
-	plan.CustomProperty36 = util.SafeString(readResp.Endpoints[0].Customproperty36)
-	plan.CustomProperty37 = util.SafeString(readResp.Endpoints[0].Customproperty37)
-	plan.CustomProperty38 = util.SafeString(readResp.Endpoints[0].Customproperty38)
-	plan.CustomProperty39 = util.SafeString(readResp.Endpoints[0].Customproperty39)
-	plan.CustomProperty40 = util.SafeString(readResp.Endpoints[0].Customproperty40)
-	plan.CustomProperty41 = util.SafeString(readResp.Endpoints[0].Customproperty41)
-	plan.CustomProperty42 = util.SafeString(readResp.Endpoints[0].Customproperty42)
-	plan.CustomProperty43 = util.SafeString(readResp.Endpoints[0].Customproperty43)
-	plan.CustomProperty44 = util.SafeString(readResp.Endpoints[0].Customproperty44)
-	plan.CustomProperty45 = util.SafeString(readResp.Endpoints[0].Customproperty45)
-
-	plan.AccountCustomProperty1Label = util.SafeString(readResp.Endpoints[0].AccountCustomProperty1Label)
-	plan.AccountCustomProperty2Label = util.SafeString(readResp.Endpoints[0].AccountCustomProperty2Label)
-	plan.AccountCustomProperty3Label = util.SafeString(readResp.Endpoints[0].AccountCustomProperty3Label)
-	plan.AccountCustomProperty4Label = util.SafeString(readResp.Endpoints[0].AccountCustomProperty4Label)
-	plan.AccountCustomProperty5Label = util.SafeString(readResp.Endpoints[0].AccountCustomProperty5Label)
-	plan.AccountCustomProperty6Label = util.SafeString(readResp.Endpoints[0].AccountCustomProperty6Label)
-	plan.AccountCustomProperty7Label = util.SafeString(readResp.Endpoints[0].AccountCustomProperty7Label)
-	plan.AccountCustomProperty8Label = util.SafeString(readResp.Endpoints[0].AccountCustomProperty8Label)
-	plan.AccountCustomProperty9Label = util.SafeString(readResp.Endpoints[0].AccountCustomProperty9Label)
-	plan.AccountCustomProperty10Label = util.SafeString(readResp.Endpoints[0].AccountCustomProperty10Label)
-	plan.AccountCustomProperty11Label = util.SafeString(readResp.Endpoints[0].AccountCustomProperty11Label)
-	plan.AccountCustomProperty12Label = util.SafeString(readResp.Endpoints[0].AccountCustomProperty12Label)
-	plan.AccountCustomProperty13Label = util.SafeString(readResp.Endpoints[0].AccountCustomProperty13Label)
-	plan.AccountCustomProperty14Label = util.SafeString(readResp.Endpoints[0].AccountCustomProperty14Label)
-	plan.AccountCustomProperty15Label = util.SafeString(readResp.Endpoints[0].AccountCustomProperty15Label)
-	plan.AccountCustomProperty16Label = util.SafeString(readResp.Endpoints[0].AccountCustomProperty16Label)
-	plan.AccountCustomProperty17Label = util.SafeString(readResp.Endpoints[0].AccountCustomProperty17Label)
-	plan.AccountCustomProperty18Label = util.SafeString(readResp.Endpoints[0].AccountCustomProperty18Label)
-	plan.AccountCustomProperty19Label = util.SafeString(readResp.Endpoints[0].AccountCustomProperty19Label)
-	plan.AccountCustomProperty20Label = util.SafeString(readResp.Endpoints[0].AccountCustomProperty20Label)
-	plan.AccountCustomProperty21Label = util.SafeString(readResp.Endpoints[0].AccountCustomProperty21Label)
-	plan.AccountCustomProperty22Label = util.SafeString(readResp.Endpoints[0].AccountCustomProperty22Label)
-	plan.AccountCustomProperty23Label = util.SafeString(readResp.Endpoints[0].AccountCustomProperty23Label)
-	plan.AccountCustomProperty24Label = util.SafeString(readResp.Endpoints[0].AccountCustomProperty24Label)
-	plan.AccountCustomProperty25Label = util.SafeString(readResp.Endpoints[0].AccountCustomProperty25Label)
-	plan.AccountCustomProperty26Label = util.SafeString(readResp.Endpoints[0].AccountCustomProperty26Label)
-	plan.AccountCustomProperty27Label = util.SafeString(readResp.Endpoints[0].AccountCustomProperty27Label)
-	plan.AccountCustomProperty28Label = util.SafeString(readResp.Endpoints[0].AccountCustomProperty28Label)
-	plan.AccountCustomProperty29Label = util.SafeString(readResp.Endpoints[0].AccountCustomProperty29Label)
-	plan.AccountCustomProperty30Label = util.SafeString(readResp.Endpoints[0].AccountCustomProperty30Label)
-
-	plan.CustomProperty31Label = util.SafeString(readResp.Endpoints[0].Customproperty31Label)
-	plan.CustomProperty32Label = util.SafeString(readResp.Endpoints[0].Customproperty32Label)
-	plan.CustomProperty33Label = util.SafeString(readResp.Endpoints[0].Customproperty33Label)
-	plan.CustomProperty34Label = util.SafeString(readResp.Endpoints[0].Customproperty34Label)
-	plan.CustomProperty35Label = util.SafeString(readResp.Endpoints[0].Customproperty35Label)
-	plan.CustomProperty36Label = util.SafeString(readResp.Endpoints[0].Customproperty36Label)
-	plan.CustomProperty37Label = util.SafeString(readResp.Endpoints[0].Customproperty37Label)
-	plan.CustomProperty38Label = util.SafeString(readResp.Endpoints[0].Customproperty38Label)
-	plan.CustomProperty39Label = util.SafeString(readResp.Endpoints[0].Customproperty39Label)
-	plan.CustomProperty40Label = util.SafeString(readResp.Endpoints[0].Customproperty40Label)
-	plan.CustomProperty41Label = util.SafeString(readResp.Endpoints[0].Customproperty41Label)
-	plan.CustomProperty42Label = util.SafeString(readResp.Endpoints[0].Customproperty42Label)
-	plan.CustomProperty43Label = util.SafeString(readResp.Endpoints[0].Customproperty43Label)
-	plan.CustomProperty44Label = util.SafeString(readResp.Endpoints[0].Customproperty44Label)
-	plan.CustomProperty45Label = util.SafeString(readResp.Endpoints[0].Customproperty45Label)
-	plan.CustomProperty46Label = util.SafeString(readResp.Endpoints[0].Customproperty46Label)
-	plan.CustomProperty47Label = util.SafeString(readResp.Endpoints[0].Customproperty47Label)
-	plan.CustomProperty48Label = util.SafeString(readResp.Endpoints[0].Customproperty48Label)
-	plan.CustomProperty49Label = util.SafeString(readResp.Endpoints[0].Customproperty49Label)
-	plan.CustomProperty50Label = util.SafeString(readResp.Endpoints[0].Customproperty50Label)
-	plan.CustomProperty51Label = util.SafeString(readResp.Endpoints[0].Customproperty51Label)
-	plan.CustomProperty52Label = util.SafeString(readResp.Endpoints[0].Customproperty52Label)
-	plan.CustomProperty53Label = util.SafeString(readResp.Endpoints[0].Customproperty53Label)
-	plan.CustomProperty54Label = util.SafeString(readResp.Endpoints[0].Customproperty54Label)
-	plan.CustomProperty55Label = util.SafeString(readResp.Endpoints[0].Customproperty55Label)
-	plan.CustomProperty56Label = util.SafeString(readResp.Endpoints[0].Customproperty56Label)
-	plan.CustomProperty57Label = util.SafeString(readResp.Endpoints[0].Customproperty57Label)
-	plan.CustomProperty58Label = util.SafeString(readResp.Endpoints[0].Customproperty58Label)
-	plan.CustomProperty59Label = util.SafeString(readResp.Endpoints[0].Customproperty59Label)
-	plan.CustomProperty60Label = util.SafeString(readResp.Endpoints[0].Customproperty60Label)
-
-	var planEmailTemplates types.List
-
-	if readResp.Endpoints[0].Taskemailtemplates == nil || *readResp.Endpoints[0].Taskemailtemplates == "" {
-		planEmailTemplates = types.ListNull(types.ObjectType{
-			AttrTypes: map[string]attr.Type{
-				"email_template_type": types.StringType,
-				"task_type":           types.StringType,
-				"email_template":      types.StringType,
-			},
-		})
-	} else {
-		taskEmailTemplatesStr := *readResp.Endpoints[0].Taskemailtemplates
-		type ApiEmailTemplate struct {
-			EmailTemplateType string `json:"emailTemplateType"`
-			TaskType          string `json:"taskType"`
-			EmailTemplate     string `json:"emailTemplate"`
-		}
-
-		var apiTemplates []ApiEmailTemplate
-		if err := json.Unmarshal([]byte(taskEmailTemplatesStr), &apiTemplates); err != nil {
-			resp.Diagnostics.AddError(
-				"Client Error",
-				fmt.Sprintf("Failed to parse taskemailtemplates JSON: %s", err),
-			)
-			return
-		}
-		log.Println("Task email templat: ", apiTemplates)
-
-		emailTemplateObjects := make([]attr.Value, 0, len(apiTemplates))
-		for _, t := range apiTemplates {
-			obj, diags := types.ObjectValue(
-				map[string]attr.Type{
-					"email_template_type": types.StringType,
-					"task_type":           types.StringType,
-					"email_template":      types.StringType,
-				},
-				map[string]attr.Value{
-					"email_template_type": types.StringValue(t.EmailTemplateType),
-					"task_type":           types.StringValue(t.TaskType),
-					"email_template":      types.StringValue(t.EmailTemplate),
-				},
-			)
-			if diags.HasError() {
-				resp.Diagnostics.Append(diags...)
-				continue
-			}
-			emailTemplateObjects = append(emailTemplateObjects, obj)
-		}
-
-		listVal, diags := types.ListValue(
-			types.ObjectType{
-				AttrTypes: map[string]attr.Type{
-					"email_template_type": types.StringType,
-					"task_type":           types.StringType,
-					"email_template":      types.StringType,
-				},
-			},
-			emailTemplateObjects,
-		)
-		if diags.HasError() {
-			resp.Diagnostics.Append(diags...)
-			return
-		}
-		planEmailTemplates = listVal
-	}
-
-	plan.EmailTemplates = planEmailTemplates
-
-	var planRequestableRoleTypes types.List
-
-	if readResp.Endpoints[0].RoleTypeAsJson == nil || *readResp.Endpoints[0].RoleTypeAsJson == "" {
-		planRequestableRoleTypes = types.ListNull(types.ObjectType{
-			AttrTypes: map[string]attr.Type{
-				"role_type":       types.StringType,
-				"request_option":  types.StringType,
-				"required":        types.BoolType,
-				"requested_query": types.StringType,
-				"selected_query":  types.StringType,
-				"show_on":         types.StringType,
-			},
-		})
-	} else {
-		roleTypeJsonStr := *readResp.Endpoints[0].RoleTypeAsJson
-		var roleTypeMap map[string]string
-		if err := json.Unmarshal([]byte(roleTypeJsonStr), &roleTypeMap); err != nil {
-			resp.Diagnostics.AddError(
-				"Client Error",
-				fmt.Sprintf("Failed to parse RoleTypeAsJson outer JSON: %s", err),
-			)
-			return
-		}
-
-		roleTypeObjects := make([]attr.Value, 0, len(roleTypeMap))
-
-		for roleType, roleData := range roleTypeMap {
-			parts := strings.Split(roleData, "__")
-
-			get := func(i int) string {
-				if i < len(parts) {
-					return parts[i]
-				}
-				return ""
-			}
-
-			obj, diags := types.ObjectValue(
-				map[string]attr.Type{
-					"role_type":       types.StringType,
-					"request_option":  types.StringType,
-					"required":        types.BoolType,
-					"requested_query": types.StringType,
-					"selected_query":  types.StringType,
-					"show_on":         types.StringType,
-				},
-				map[string]attr.Value{
-					"role_type":       types.StringValue(endpointsutil.TranslateValue(roleType, endpointsutil.RoleTypeMap)),
-					"request_option":  types.StringValue(endpointsutil.TranslateValue(parts[0], endpointsutil.RequestOptionMap)),
-					"required":        types.BoolValue(get(1) == "1"),
-					"requested_query": types.StringValue(get(2)),
-					"selected_query":  types.StringValue(get(3)),
-					"show_on":         types.StringValue(endpointsutil.TranslateValue(get(4), endpointsutil.ShowOnMap)),
-				},
-			)
-			if diags.HasError() {
-				resp.Diagnostics.Append(diags...)
-				continue
-			}
-			roleTypeObjects = append(roleTypeObjects, obj)
-		}
-
-		listVal, diags := types.ListValue(
-			types.ObjectType{
-				AttrTypes: map[string]attr.Type{
-					"role_type":       types.StringType,
-					"request_option":  types.StringType,
-					"required":        types.BoolType,
-					"requested_query": types.StringType,
-					"selected_query":  types.StringType,
-					"show_on":         types.StringType,
-				},
-			},
-			roleTypeObjects,
-		)
-		if diags.HasError() {
-			resp.Diagnostics.Append(diags...)
-			return
-		}
-		planRequestableRoleTypes = listVal
-	}
-
-	plan.RequestableRoleTypes = planRequestableRoleTypes
-
-	if readResp.Endpoints[0].Disableaccountrequest != nil {
-		disableAccountRequestStr := *readResp.Endpoints[0].Disableaccountrequest
-
-		var disableAccountRequestMap map[string]string
-
-		err := json.Unmarshal([]byte(disableAccountRequestStr), &disableAccountRequestMap)
-		if err != nil {
-			log.Printf("Error parsing disableaccountrequest JSON: %v", err)
-		} else {
-			plan.DisableNewAccountRequestIfAccountExists = types.StringValue(endpointsutil.NormalizeToStringBool(disableAccountRequestMap["DISABLENEWACCOUNT"]))
-			plan.DisableRemoveAccount = types.StringValue(endpointsutil.NormalizeToStringBool(disableAccountRequestMap["DISABLEREMOVEACCOUNT"]))
-			plan.DisableModifyAccount = types.StringValue(endpointsutil.NormalizeToStringBool(disableAccountRequestMap["DISABLEMODIFYACCOUNT"]))
-			plan.BlockInflightRequest = types.StringValue(endpointsutil.NormalizeToStringBool(disableAccountRequestMap["BLOCKINFLIGHTREQUEST"]))
-
-		}
-	}
-
-	msgValue := util.SafeDeref(apiResp.Msg)
-	errorCodeValue := util.SafeDeref(apiResp.ErrorCode)
-
-	plan.Msg = types.StringValue(msgValue)
-	plan.ErrorCode = types.StringValue(errorCodeValue)
-
-	stateUpdateDiagnostics := resp.State.Set(ctx, plan)
-	resp.Diagnostics.Append(stateUpdateDiagnostics...)
-}
-
-func (r *endpointResource) Delete(ctx context.Context, req resource.DeleteRequest, resp *resource.DeleteResponse) {
-	// resp.State.RemoveResource(ctx)
-	if os.Getenv("TF_ACC") == "1" {
-		resp.State.RemoveResource(ctx)
-		return
-	}
-	resp.Diagnostics.AddError(
-		"Delete Not Supported",
-		"Resource deletion is not supported by this provider. Please remove the resource manually if required, or contact your administrator.",
-	)
-}
-
-func (r *endpointResource) ImportState(ctx context.Context, req resource.ImportStateRequest, resp *resource.ImportStateResponse) {
-	// Retrieve import ID and save to id attribute
-	resource.ImportStatePassthroughID(ctx, path.Root("endpoint_name"), req, resp)
+	// Set API response fields
+	plan.Msg = types.StringValue(util.SafeDeref(apiResp.Msg))
+	plan.ErrorCode = types.StringValue(util.SafeDeref(apiResp.ErrorCode))
 }

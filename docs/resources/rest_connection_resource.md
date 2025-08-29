@@ -48,7 +48,7 @@ resource "saviynt_rest_connection_resource" "example" {
 - `add_access_json` (String) JSON to add access.
 - `add_ffid_access_json` (String) JSON to add FFID access.
 - `application_discovery_json` (String) The ApplicationDiscoveryJSON attribute is specifically implemented for ServiceNow application discovery, allowing automated discovery and import of applications from ServiceNow instances.
-- `change_pass_json` (String) JSON to change a user’s password.
+- `change_pass_json` (String) JSON to change a user's password.
 - `config_json` (String) General configuration JSON for the REST connector.
 - `connection_json` (String) Dynamic JSON configuration for the connection. Must be a valid JSON object string.
 - `create_account_json` (String) JSON to create an account.
@@ -79,7 +79,7 @@ resource "saviynt_rest_connection_resource" "example" {
 - `update_entitlement_json` (String) The three entitlement JSON attributes (Create, Update, Delete) are part of a comprehensive entitlement management system for REST connectors, with supporting constants and service classes.
 - `update_user_json` (String) JSON to update a user.
 - `validate_otp_json` (String) JSON to validate OTP.
-- `vault_configuration` (String) JSON string specifying vault configuration. Example: '{"path":"/secrets/data/kv-dev-intgn1/-AD_Credential","keyMapping":{"PASSWORD":"AD_PASSWORD~#~None"}}'
+- `vault_configuration` (String) JSON string specifying vault configuration.
 - `vault_connection` (String) Specifies the type of vault connection being used (e.g., 'Hashicorp'). Example: "Hashicorp"
 
 ### Read-Only

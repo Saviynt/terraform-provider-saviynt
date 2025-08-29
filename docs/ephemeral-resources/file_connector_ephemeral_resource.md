@@ -39,6 +39,7 @@ resource "saviynt_ad_connection_resource" "example" {
 ### Read-Only
 
 - `access_token` (String, Sensitive) access_token read from the file.
+- `auth_token` (String, Sensitive) Authentication token read from the file.
 - `azure_mgmt_access_token` (String, Sensitive) azure_mgmt_access_token read from the file.
 - `change_pass_json` (String, Sensitive) change_pass_json read from the file.
 - `client_id` (String, Sensitive) client_id read from the file.

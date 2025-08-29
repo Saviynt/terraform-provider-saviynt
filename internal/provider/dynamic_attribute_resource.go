@@ -17,17 +17,17 @@ import (
 	"log"
 	"net/http"
 	"strings"
+	"terraform-provider-Saviynt/internal/client"
 	"terraform-provider-Saviynt/util"
 	"terraform-provider-Saviynt/util/dynamicattributeutil"
 
 	"github.com/hashicorp/terraform-plugin-framework/attr"
+	"github.com/hashicorp/terraform-plugin-framework/diag"
 	"github.com/hashicorp/terraform-plugin-framework/path"
 	"github.com/hashicorp/terraform-plugin-framework/resource"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema"
 	"github.com/hashicorp/terraform-plugin-framework/schema/validator"
 	"github.com/hashicorp/terraform-plugin-framework/types"
-
-	s "github.com/saviynt/saviynt-api-go-client"
 
 	openapi "github.com/saviynt/saviynt-api-go-client/dynamicattributes"
 	endpoint "github.com/saviynt/saviynt-api-go-client/endpoints"
@@ -69,20 +69,34 @@ type Dynamicattribute struct {
 	// Regex                                           types.String `tfsdk:"regex"`
 }
 
-type dynamicAttributeResource struct {
-	client *s.Client
-	token  string
+type DynamicAttributeResource struct {
+	client                  client.SaviyntClientInterface
+	token                   string
+	username                string
+	dynamicAttributeFactory client.DynamicAttributeFactoryInterface
 }
+
+// Ensure provider defined types fully satisfy framework interfaces
+var _ resource.Resource = &DynamicAttributeResource{}
+var _ resource.ResourceWithImportState = &DynamicAttributeResource{}
 
 func NewDynamicAttributeResource() resource.Resource {
-	return &dynamicAttributeResource{}
+	return &DynamicAttributeResource{
+		dynamicAttributeFactory: &client.DefaultDynamicAttributeFactory{},
+	}
 }
 
-func (r *dynamicAttributeResource) Metadata(ctx context.Context, req resource.MetadataRequest, resp *resource.MetadataResponse) {
+func NewDynamicAttributeResourceWithFactory(factory client.DynamicAttributeFactoryInterface) resource.Resource {
+	return &DynamicAttributeResource{
+		dynamicAttributeFactory: factory,
+	}
+}
+
+func (r *DynamicAttributeResource) Metadata(ctx context.Context, req resource.MetadataRequest, resp *resource.MetadataResponse) {
 	resp.TypeName = "saviynt_dynamic_attribute_resource"
 }
 
-func (r *dynamicAttributeResource) Schema(ctx context.Context, req resource.SchemaRequest, resp *resource.SchemaResponse) {
+func (r *DynamicAttributeResource) Schema(ctx context.Context, req resource.SchemaRequest, resp *resource.SchemaResponse) {
 	resp.Schema = schema.Schema{
 		Description: util.DynamicAttrDescription,
 		Attributes: map[string]schema.Attribute{
@@ -232,52 +246,48 @@ func (r *dynamicAttributeResource) Schema(ctx context.Context, req resource.Sche
 	}
 }
 
-func (r *dynamicAttributeResource) Configure(ctx context.Context, req resource.ConfigureRequest, resp *resource.ConfigureResponse) {
+func (r *DynamicAttributeResource) Configure(ctx context.Context, req resource.ConfigureRequest, resp *resource.ConfigureResponse) {
 	// Check if provider data is available.
 	if req.ProviderData == nil {
-		log.Println("ProviderData is nil, returning early.")
+		log.Println("[DEBUG] DynamicAttribute: ProviderData is nil, returning early.")
 		return
 	}
 
 	// Cast provider data to your provider type.
 	prov, ok := req.ProviderData.(*saviyntProvider)
 	if !ok {
-		log.Println("[ERROR] Provider: Unexpected provider data")
+		log.Printf("[ERROR] DynamicAttribute: Unexpected Provider Data")
 		resp.Diagnostics.AddError("Unexpected Provider Data", "Expected *saviyntProvider")
 		return
 	}
 
 	// Set the client and token from the provider state.
-	r.client = prov.client
+	r.client = &client.SaviyntClientWrapper{Client: prov.client}
 	r.token = prov.accessToken
-	log.Println("[DEBUG] DynamicAttribute: Resource configured successfully")
+	// Store username for import functionality
+	if prov.client.Username != nil {
+		r.username = *prov.client.Username
+	}
+	log.Printf("[DEBUG] DynamicAttribute: Resource configured successfully.")
 }
 
-func (r *dynamicAttributeResource) Create(ctx context.Context, req resource.CreateRequest, resp *resource.CreateResponse) {
-	var plan DynamicAttributeResourceModel
+// SetClient sets the client for testing purposes
+func (r *DynamicAttributeResource) SetClient(client client.SaviyntClientInterface) {
+	r.client = client
+}
 
-	resp.Diagnostics.Append(req.Plan.Get(ctx, &plan)...)
-	if resp.Diagnostics.HasError() {
-		log.Println("[ERROR] DynamicAttribute: Error getting plan data")
-		return
-	}
+// SetToken sets the token for testing purposes
+func (r *DynamicAttributeResource) SetToken(token string) {
+	r.token = token
+}
 
-	cfg := openapi.NewConfiguration()
-	apiBaseURL := strings.TrimPrefix(strings.TrimPrefix(r.client.APIBaseURL(), "https://"), "http://")
-	cfg.Host = apiBaseURL
-	cfg.Scheme = "https"
-	cfg.AddDefaultHeader("Authorization", "Bearer "+r.token)
-	cfg.HTTPClient = http.DefaultClient
-	apiClient := openapi.NewAPIClient(cfg)
+// SetUsername sets the username for testing purposes
+func (r *DynamicAttributeResource) SetUsername(username string) {
+	r.username = username
+}
 
-	// Convert dynamic attributes map to a slice of Dynamicattribute
-	var dynamicAttrMap map[string]Dynamicattribute
-	resp.Diagnostics.Append(plan.DynamicAttributes.ElementsAs(ctx, &dynamicAttrMap, false)...)
-	if resp.Diagnostics.HasError() {
-		log.Println("[ERROR] DynamicAttribute: Failed to process dynamic attributes")
-		return
-	}
-
+// BuildCreateDynamicAttributes builds the dynamic attributes for creation
+func (r *DynamicAttributeResource) BuildCreateDynamicAttributes(dynamicAttrMap map[string]Dynamicattribute) []openapi.CreateDynamicAttributesInner {
 	var dynamicAttrs []openapi.CreateDynamicAttributesInner
 	for _, attr := range dynamicAttrMap {
 		dynamicAttr := openapi.NewCreateDynamicAttributesInner(
@@ -305,6 +315,26 @@ func (r *dynamicAttributeResource) Create(ctx context.Context, req resource.Crea
 		dynamicAttrs = append(dynamicAttrs, *dynamicAttr)
 	}
 
+	return dynamicAttrs
+}
+
+// CreateDynamicAttribute creates dynamic attributes
+func (r *DynamicAttributeResource) CreateDynamicAttribute(ctx context.Context, plan *DynamicAttributeResourceModel) (*openapi.CreateOrUpdateOrDeleteDynamicAttributeResponse, error) {
+	log.Printf("[DEBUG] DynamicAttribute: Starting creation for endpoint: %s ", plan.Endpoint.ValueString())
+
+	dynAttrOps := r.dynamicAttributeFactory.CreateDynamicAttributeOperations(r.client.APIBaseURL(), r.token)
+
+	// Convert dynamic attributes map to a slice of Dynamicattribute
+	var dynamicAttrMap map[string]Dynamicattribute
+	diags := plan.DynamicAttributes.ElementsAs(ctx, &dynamicAttrMap, false)
+	if diags.HasError() {
+		log.Printf("[ERROR] DynamicAttribute: Failed to process dynamic attributes: %v", diags.Errors())
+		return nil, fmt.Errorf("failed to process dynamic attributes: %v", diags.Errors())
+	}
+
+	log.Printf("[DEBUG] DynamicAttribute: Processing %d attributes for creation", len(dynamicAttrMap))
+
+	dynamicAttrs := r.BuildCreateDynamicAttributes(dynamicAttrMap)
 	createReq := openapi.NewCreateDynamicAttributeRequest(
 		plan.Securitysystem.ValueString(),
 		plan.Endpoint.ValueString(),
@@ -312,50 +342,56 @@ func (r *dynamicAttributeResource) Create(ctx context.Context, req resource.Crea
 		dynamicAttrs,
 	)
 
-	log.Println("[DEBUG] DynamicAttribute: Making API call to create dynamic attributes")
-	createResp, httpResp, err := apiClient.DynamicAttributesAPI.
-		CreateDynamicAttribute(ctx).
-		CreateDynamicAttributeRequest(*createReq).
-		Execute()
-
+	// Execute create operation through interface
+	log.Printf("[DEBUG] DynamicAttribute: Making API call to create %d dynamic attributes for endpoint: %s",
+		len(dynamicAttrs), plan.Endpoint.ValueString())
+	createResp, httpResp, err := dynAttrOps.CreateDynamicAttribute(ctx, *createReq)
 	if err != nil {
-		log.Printf("[ERROR] Creating Dynamic attribute: %v, HTTP Response: %v", err, httpResp)
-		resp.Diagnostics.AddError(
-			"Error Creating Dynamic Attribute",
-			fmt.Sprintf("API Error: %v", err),
-		)
-		return
+		log.Printf("[ERROR] DynamicAttribute: Problem with the creating function in CreateDynamicAttribute. Error: %v, HTTP Response: %v", err, httpResp)
+		return nil, fmt.Errorf("API call failed: %w", err)
 	}
 
-	if createResp.Errorcode == nil {
+	if createResp != nil && createResp.Errorcode == nil {
 		log.Println("[ERROR] DynamicAttribute: Unexpected API response - Errorcode is nil")
-		resp.Diagnostics.AddError(
-			"Unexpected API Response",
-			"Errorcode is nil in create response",
-		)
-		return
+		return nil, fmt.Errorf("unexpected API response - Errorcode is nil")
 	}
 
-	var errorMessages []string
+	log.Printf("[INFO] DynamicAttribute: Creation API call completed. Error code: %s", util.SafeDeref(createResp.Errorcode))
 
-	if createResp.Errorcode != nil && *createResp.Errorcode == "1" {
-		plan.ErrorCode = types.StringPointerValue(createResp.Errorcode)
-		plan.Msg = types.StringPointerValue(createResp.Msg)
+	log.Printf("[INFO] Dynamic attributes resource created successfully for endpoint: %s", plan.Endpoint.ValueString())
 
-		if createResp.Securitysystem != nil {
-			errorMessages = append(errorMessages, fmt.Sprintf("securitysystem: %s", *createResp.Securitysystem))
+	return createResp, nil
+}
+
+// ProcessDynamicAttributeErrorResponse processes error response from any dynamic attribute operation
+func (r *DynamicAttributeResource) ProcessDynamicAttributeErrorResponse(plan *DynamicAttributeResourceModel, resp *openapi.CreateOrUpdateOrDeleteDynamicAttributeResponse, operationType string) error {
+	if resp.Errorcode != nil && *resp.Errorcode != "0" && operationType == "update" {
+		return fmt.Errorf("dynamic Attribute Update Failed - Error: %s, Message: %s", *resp.Errorcode, *resp.Msg)
+	}
+
+	if resp.Errorcode != nil && *resp.Errorcode == "1" {
+		var errorMessages []string
+
+		// Only update plan fields if plan is provided (not for delete operations)
+		if plan != nil {
+			plan.ErrorCode = types.StringPointerValue(resp.Errorcode)
+			plan.Msg = types.StringPointerValue(resp.Msg)
 		}
 
-		if createResp.Endpoint != nil {
-			errorMessages = append(errorMessages, fmt.Sprintf("endpoint: %s", *createResp.Endpoint))
+		if resp.Securitysystem != nil {
+			errorMessages = append(errorMessages, fmt.Sprintf("securitysystem: %s", *resp.Securitysystem))
 		}
 
-		if createResp.Updateuser != nil {
-			errorMessages = append(errorMessages, fmt.Sprintf("updateuser: %s", *createResp.Updateuser))
+		if resp.Endpoint != nil {
+			errorMessages = append(errorMessages, fmt.Sprintf("endpoint: %s", *resp.Endpoint))
 		}
 
-		if createResp.Dynamicattributes != nil {
-			rawJSON, err := json.Marshal(createResp.Dynamicattributes)
+		if resp.Updateuser != nil {
+			errorMessages = append(errorMessages, fmt.Sprintf("updateuser: %s", *resp.Updateuser))
+		}
+
+		if resp.Dynamicattributes != nil {
+			rawJSON, err := json.Marshal(resp.Dynamicattributes)
 			if err != nil {
 				log.Printf("Error marshaling dynamicattributes: %v", err)
 			} else {
@@ -380,21 +416,30 @@ func (r *dynamicAttributeResource) Create(ctx context.Context, req resource.Crea
 		}
 
 		fullError := strings.Join(errorMessages, "\n")
-		if strings.Contains(fullError, "attributename already exists") {
+
+		// Add specific message for create operations
+		if operationType == "create" && strings.Contains(fullError, "attributename already exists") {
 			fullError += "\n\nTry importing the resource or use a different name."
 		}
 
-		plan.DynamicAttributesError = types.StringValue(fullError)
-		resp.Diagnostics.AddError("Dynamic Attribute Create Operation Failed", fullError)
-		return
-	} else {
+		// Update plan error field if plan is provided
+		if plan != nil {
+			plan.DynamicAttributesError = types.StringValue(fullError)
+		}
+
+		return fmt.Errorf("Dynamic Attribute %s Operation Failed:\n%s", strings.Title(operationType), fullError)
+	} else if operationType == "create" && plan != nil {
 		plan.DynamicAttributesError = types.StringNull()
 	}
 
+	return nil
+}
+
+// UpdateModelFromCreateResponse updates the model from create response
+func (r *DynamicAttributeResource) UpdateModelFromCreateResponse(plan *DynamicAttributeResourceModel, createResp *openapi.CreateOrUpdateOrDeleteDynamicAttributeResponse, dynamicAttrMap map[string]Dynamicattribute, ctx context.Context) error {
 	// Update the dynamic attributes in state with SafeString handling
 	updatedAttrs := make(map[string]Dynamicattribute)
 	for attrName, attr := range dynamicAttrMap {
-		// attrType := strings.ToLower(attr.Attributetype.ValueString())
 		updatedAttr := Dynamicattribute{
 			Attributename:  util.SafeString(attr.Attributename.ValueStringPointer()),
 			Requesttype:    util.SafeString(attr.Requesttype.ValueStringPointer()),
@@ -406,11 +451,10 @@ func (r *dynamicAttributeResource) Create(ctx context.Context, req resource.Crea
 			Hideoncreate:   util.SafeStringAlt(attr.Hideoncreate.ValueStringPointer(), "false"),
 			Actionstring:   util.SafeString(attr.Actionstring.ValueStringPointer()),
 			Editable:       util.SafeStringAlt(attr.Editable.ValueStringPointer(), "false"),
-			Hideonupdate:   util.SafeStringAlt(attr.Hideoncreate.ValueStringPointer(), "false"),
+			Hideonupdate:   util.SafeStringAlt(attr.Hideonupdate.ValueStringPointer(), "false"),
 			Action_to_perform_when_parent_attribute_changes: util.SafeString(attr.Action_to_perform_when_parent_attribute_changes.ValueStringPointer()),
-			Defaultvalue: util.SafeString(attr.Defaultvalue.ValueStringPointer()),
-			Required:     util.SafeStringAlt(attr.Required.ValueStringPointer(), "false"),
-			// Regex:            util.SafeStringDatasource(attr.Regex.ValueStringPointer()),
+			Defaultvalue:     util.SafeString(attr.Defaultvalue.ValueStringPointer()),
+			Required:         util.SafeStringAlt(attr.Required.ValueStringPointer(), "false"),
 			Showonchild:      util.SafeStringAlt(attr.Showonchild.ValueStringPointer(), "false"),
 			Parentattribute:  util.SafeString(attr.Parentattribute.ValueStringPointer()),
 			Descriptionascsv: util.SafeString(attr.Descriptionascsv.ValueStringPointer()),
@@ -425,7 +469,102 @@ func (r *dynamicAttributeResource) Create(ctx context.Context, req resource.Crea
 	}
 
 	// Convert the updated map back to types.Map
-	updatedMap, diags := types.MapValueFrom(ctx, types.ObjectType{
+	updatedMap, diags := r.ConvertAttributesToTerraformMap(updatedAttrs, ctx)
+	if diags.HasError() {
+		return fmt.Errorf("failed to convert updated attributes to map: %v", diags.Errors())
+	}
+
+	plan.DynamicAttributes = updatedMap
+	plan.ID = types.StringValue("dynamic-attr-" + plan.Endpoint.ValueString())
+	plan.Msg = types.StringValue(util.SafeDeref(createResp.Msg))
+	plan.ErrorCode = types.StringValue(util.SafeDeref(createResp.Errorcode))
+	plan.DynamicAttributesError = types.StringNull()
+	plan.Updateuser = types.StringValue(plan.Updateuser.ValueString())
+
+	return nil
+}
+
+// ProcessReadErrorResponse processes 412 error response from read operation
+func (r *DynamicAttributeResource) ProcessReadErrorResponse(httpResp *http.Response) error {
+	var fetchResp map[string]interface{}
+	if err := json.NewDecoder(httpResp.Body).Decode(&fetchResp); err != nil {
+		return fmt.Errorf("failed to decode error response: %w", err)
+	}
+
+	var errorMessages []string
+
+	// Process securitysystems
+	if secSystems, ok := fetchResp["securitysystems"].([]interface{}); ok {
+		for _, item := range secSystems {
+			if secMap, ok := item.(map[string]interface{}); ok {
+				for key, val := range secMap {
+					errorMessages = append(errorMessages, fmt.Sprintf("securitysystem: %s - %v", key, val))
+				}
+			}
+		}
+	}
+
+	// Process endpoints
+	if endpoints, ok := fetchResp["endpoints"].([]interface{}); ok {
+		for _, item := range endpoints {
+			if epMap, ok := item.(map[string]interface{}); ok {
+				for key, val := range epMap {
+					errorMessages = append(errorMessages, fmt.Sprintf("endpoint: %s - %v", key, val))
+				}
+			}
+		}
+	}
+
+	if requestTypes, ok := fetchResp["requesttype"].([]interface{}); ok {
+		for _, item := range requestTypes {
+			if epMap, ok := item.(map[string]interface{}); ok {
+				for key, val := range epMap {
+					errorMessages = append(errorMessages, fmt.Sprintf("request type: %s - %v", key, val))
+				}
+			}
+		}
+	}
+
+	// Process general msg and errorcode
+	if msg, ok := fetchResp["msg"].(string); ok {
+		errorMessages = append(errorMessages, fmt.Sprintf("message: %s", msg))
+	}
+	if ec, ok := fetchResp["errorcode"].(string); ok {
+		errorMessages = append(errorMessages, fmt.Sprintf("errorcode: %s", ec))
+	}
+
+	// Combine and return error
+	fullError := strings.Join(errorMessages, "\n")
+	return fmt.Errorf("dynamic Attributes Fetch Failed: %s", fullError)
+}
+
+// ReadDynamicAttribute reads dynamic attributes
+func (r *DynamicAttributeResource) ReadDynamicAttribute(ctx context.Context, endpointName string) (*openapi.FetchDynamicAttributesResponse, error) {
+	log.Printf("[DEBUG] DynamicAttribute: Starting read operation for endpoint: %s", endpointName)
+
+	dynAttrOps := r.dynamicAttributeFactory.CreateDynamicAttributeOperations(r.client.APIBaseURL(), r.token)
+
+	log.Printf("[DEBUG] DynamicAttribute: Making API call to fetch attributes for endpoint: %s", endpointName)
+	fetchResp, httpResp, err := dynAttrOps.FetchDynamicAttribute(ctx, endpointName)
+
+	if httpResp != nil && httpResp.StatusCode == 412 {
+		log.Printf("[ERROR] DynamicAttribute: Received 412 Precondition Failed for endpoint: %s", endpointName)
+		return nil, r.ProcessReadErrorResponse(httpResp)
+	}
+
+	if err != nil {
+		log.Printf("[ERROR] DynamicAttribute: Problem with the get function in ReadDynamicAttribute. Error: %v", err)
+		return nil, fmt.Errorf("fetch API call failed: %w", err)
+	}
+
+	log.Printf("[INFO] Dynamic attribute resource read successfully. Endpoint: %s", endpointName)
+
+	return fetchResp, nil
+}
+
+// ConvertAttributesToTerraformMap converts attributes map to Terraform Map type
+func (r *DynamicAttributeResource) ConvertAttributesToTerraformMap(updatedAttrs map[string]Dynamicattribute, ctx context.Context) (types.Map, diag.Diagnostics) {
+	dynamicAttributesMap, diags := types.MapValueFrom(ctx, types.ObjectType{
 		AttrTypes: map[string]attr.Type{
 			"attribute_name":  types.StringType,
 			"request_type":    types.StringType,
@@ -439,9 +578,8 @@ func (r *dynamicAttributeResource) Create(ctx context.Context, req resource.Crea
 			"editable":        types.StringType,
 			"hide_on_update":  types.StringType,
 			"action_to_perform_when_parent_attribute_changes": types.StringType,
-			"default_value": types.StringType,
-			"required":      types.StringType,
-			// "regex":              types.StringType,
+			"default_value":      types.StringType,
+			"required":           types.StringType,
 			"attribute_value":    types.StringType,
 			"showonchild":        types.StringType,
 			"parent_attribute":   types.StringType,
@@ -449,122 +587,76 @@ func (r *dynamicAttributeResource) Create(ctx context.Context, req resource.Crea
 		},
 	}, updatedAttrs)
 
-	if diags.HasError() {
-		resp.Diagnostics.Append(diags...)
-		return
+	return dynamicAttributesMap, diags
+}
+func (r *DynamicAttributeResource) BuildUpdatedAttributeFromAPI(attrName string, apiAttr openapi.FetchDynamicAttributeResponseInner, isImport bool) Dynamicattribute {
+	updatedAttr := Dynamicattribute{
+		Attributename:  types.StringValue(attrName),
+		Requesttype:    util.SafeStringDatasource(apiAttr.Requesttype),
+		Orderindex:     util.SafeStringDatasource(apiAttr.Orderindex),
+		Required:       util.SafeStringDatasource(apiAttr.Required),
+		Editable:       util.SafeStringDatasource(apiAttr.Editable),
+		Hideoncreate:   util.SafeStringDatasource(apiAttr.Hideoncreate),
+		Hideonupdate:   util.SafeStringDatasource(apiAttr.Hideonupdate),
+		Attributegroup: util.SafeStringDatasource(apiAttr.Attributegroup),
+		Attributelable: util.SafeStringDatasource(apiAttr.Attributelable),
+		Accountscolumn: util.SafeStringDatasource(apiAttr.Accountscolumn),
+		Actionstring:   util.SafeStringDatasource(apiAttr.Actionstring),
+		Action_to_perform_when_parent_attribute_changes: util.SafeStringDatasource(apiAttr.Actiontoperformwhenparentattributechanges),
+		Defaultvalue:     util.SafeStringDatasource(apiAttr.Defaultvalue),
+		Attributevalue:   util.SafeStringPreserveNull(apiAttr.Attributevalue),
+		Showonchild:      util.SafeStringDatasource(apiAttr.Showonchild),
+		Parentattribute:  util.SafeStringDatasource(apiAttr.Parentattribute),
+		Descriptionascsv: util.SafeStringDatasource(apiAttr.Descriptionascsv),
 	}
 
-	plan.DynamicAttributes = updatedMap
-	plan.ID = types.StringValue("dynamic-attr-" + plan.Endpoint.ValueString())
-	plan.Msg = types.StringValue(util.SafeDeref(createResp.Msg))
-	plan.ErrorCode = types.StringValue(util.SafeDeref(createResp.Errorcode))
-	plan.DynamicAttributesError = types.StringNull()
-	plan.Updateuser = types.StringValue(plan.Updateuser.ValueString())
+	// Handle attribute type differently for import vs regular read
+	if isImport {
+		updatedAttr.Attributetype = util.SafeStringDatasource(apiAttr.Attributetype)
+	} else {
+		updatedAttr.Attributetype = types.StringValue(dynamicattributeutil.TranslateValue(*apiAttr.Attributetype, dynamicattributeutil.AttributeTypeMap))
+	}
 
-	// Set the final state
-	resp.Diagnostics.Append(resp.State.Set(ctx, &plan)...)
-	log.Printf("[DEBUG] DynamicAttribute: Successfully created dynamic attributes for endpoint: %s", plan.Endpoint.ValueString())
+	return updatedAttr
 }
 
-func (r *dynamicAttributeResource) Read(ctx context.Context, req resource.ReadRequest, resp *resource.ReadResponse) {
-	var state DynamicAttributeResourceModel
-
-	diags := req.State.Get(ctx, &state)
-	resp.Diagnostics.Append(diags...)
-	if resp.Diagnostics.HasError() {
-		return
+// BuildUpdatedAttributesForImport builds updated attributes for import case
+func (r *DynamicAttributeResource) BuildUpdatedAttributesForImport(apiAttrs map[string]openapi.FetchDynamicAttributeResponseInner) map[string]Dynamicattribute {
+	updatedAttrs := make(map[string]Dynamicattribute)
+	for attrName, apiAttr := range apiAttrs {
+		updatedAttrs[attrName] = r.BuildUpdatedAttributeFromAPI(attrName, apiAttr, true)
 	}
-	cfg := openapi.NewConfiguration()
-	apiBaseURL := strings.TrimPrefix(strings.TrimPrefix(r.client.APIBaseURL(), "https://"), "http://")
-	cfg.Host = apiBaseURL
-	cfg.Scheme = "https"
-	cfg.AddDefaultHeader("Authorization", "Bearer "+r.token)
-	cfg.HTTPClient = http.DefaultClient
+	log.Printf("[IMPORT] Importing all %d dynamic attributes from API", len(apiAttrs))
+	return updatedAttrs
+}
 
-	apiClient := openapi.NewAPIClient(cfg)
+// BuildUpdatedAttributesForRead builds updated attributes for regular read case
+func (r *DynamicAttributeResource) BuildUpdatedAttributesForRead(currentAttrs map[string]Dynamicattribute, apiAttrs map[string]openapi.FetchDynamicAttributeResponseInner) map[string]Dynamicattribute {
+	updatedAttrs := make(map[string]Dynamicattribute)
+	removedAttributes := make([]string, 0)
 
-	fetchReq := apiClient.DynamicAttributesAPI.
-		FetchDynamicAttribute(ctx).
-		Endpoint([]string{state.Endpoint.ValueString()})
-	log.Printf("[DEBUG] Fetch Request read: %+v", state.Endpoint.ValueString())
-
-	log.Printf("[DEBUG] DynamicAttribute: Making API call to fetch attributes for endpoint: %s", state.Endpoint.ValueString())
-	apiResp, httpResp, err := fetchReq.Execute()
-
-	if httpResp != nil && httpResp.StatusCode == 412 {
-		var fetchResp map[string]interface{}
-		if err := json.NewDecoder(httpResp.Body).Decode(&fetchResp); err != nil {
-			resp.Diagnostics.AddError("Failed to decode error response", err.Error())
-			return
+	for attrName := range currentAttrs {
+		if apiAttr, exists := apiAttrs[attrName]; exists {
+			// Attribute exists in API response - update with API values
+			updatedAttrs[attrName] = r.BuildUpdatedAttributeFromAPI(attrName, apiAttr, false)
+		} else {
+			// Attribute doesn't exist in API response - mark for removal
+			removedAttributes = append(removedAttributes, attrName)
 		}
-
-		var errorMessages []string
-
-		// Process securitysystems
-		if secSystems, ok := fetchResp["securitysystems"].([]interface{}); ok {
-			for _, item := range secSystems {
-				if secMap, ok := item.(map[string]interface{}); ok {
-					for key, val := range secMap {
-						errorMessages = append(errorMessages, fmt.Sprintf("securitysystem: %s - %v", key, val))
-					}
-				}
-			}
-		}
-
-		// Process endpoints
-		if endpoints, ok := fetchResp["endpoints"].([]interface{}); ok {
-			for _, item := range endpoints {
-				if epMap, ok := item.(map[string]interface{}); ok {
-					for key, val := range epMap {
-						errorMessages = append(errorMessages, fmt.Sprintf("endpoint: %s - %v", key, val))
-					}
-				}
-			}
-		}
-
-		if requestTypes, ok := fetchResp["requesttype"].([]interface{}); ok {
-			for _, item := range requestTypes {
-				if epMap, ok := item.(map[string]interface{}); ok {
-					for key, val := range epMap {
-						errorMessages = append(errorMessages, fmt.Sprintf("request type: %s - %v", key, val))
-					}
-				}
-			}
-		}
-
-		// Process general msg and errorcode
-		if msg, ok := fetchResp["msg"].(string); ok {
-			errorMessages = append(errorMessages, fmt.Sprintf("message: %s", msg))
-		}
-		if ec, ok := fetchResp["errorcode"].(string); ok {
-			errorMessages = append(errorMessages, fmt.Sprintf("errorcode: %s", ec))
-		}
-
-		// Combine and populate the Terraform state
-		fullError := strings.Join(errorMessages, "\n")
-		state.Securitysystem = types.StringValue("")
-		state.Endpoint = types.StringValue("")
-		state.DynamicAttributesError = types.StringValue(fullError)
-
-		// Persist in state
-		diags := resp.State.Set(ctx, &state)
-		resp.Diagnostics.Append(diags...)
-		if resp.Diagnostics.HasError() {
-			return
-		}
-
-		// Display error to user
-		resp.Diagnostics.AddError("Dynamic Attributes Fetch Failed", fullError)
-		return
 	}
 
-	if err != nil {
-		log.Printf("[ERROR] Fetch API Call Failed: %v", err)
-		resp.Diagnostics.AddError("Fetch API Call Failed", fmt.Sprintf("Error: %v", err))
-		return
+	log.Printf("Updated attributes: %q", updatedAttrs)
+	// Log removed attributes
+	if len(removedAttributes) > 0 {
+		log.Printf("[INFO] Removing attributes not present in API response: %v", removedAttributes)
 	}
 
-	log.Printf("[DEBUG] Read HTTP Status Code: %d", httpResp.StatusCode)
+	return updatedAttrs
+}
+
+// UpdateModelFromReadResponse updates the model from read response
+func (r *DynamicAttributeResource) UpdateModelFromReadResponse(state *DynamicAttributeResourceModel, apiResp *openapi.FetchDynamicAttributesResponse, ctx context.Context) error {
+	log.Printf("[DEBUG] Read HTTP Status Code: %d", 200) // Assuming success if we reach here
 	log.Printf("[DEBUG] Read API Error code: %+v", util.SafeDeref(apiResp.Errorcode))
 	log.Printf("[DEBUG] Read API Message: %+v", util.SafeDeref(apiResp.Msg))
 
@@ -573,8 +665,7 @@ func (r *dynamicAttributeResource) Read(ctx context.Context, req resource.ReadRe
 	if !state.DynamicAttributes.IsNull() {
 		diags := state.DynamicAttributes.ElementsAs(ctx, &currentAttrs, false)
 		if diags.HasError() {
-			resp.Diagnostics.Append(diags...)
-			return
+			return fmt.Errorf("failed to get current attributes: %v", diags.Errors())
 		}
 	}
 	log.Printf("[DEBUG] Existing attributes (%d):", len(currentAttrs))
@@ -594,105 +685,20 @@ func (r *dynamicAttributeResource) Read(ctx context.Context, req resource.ReadRe
 	}
 	log.Printf("Api attributes: %v", apiAttrs)
 
-	// Build updated attributes map - only include attributes that exist in API response
-	updatedAttrs := make(map[string]Dynamicattribute)
+	// Build updated attributes map using helper functions
+	var updatedAttrs map[string]Dynamicattribute
 	if len(currentAttrs) == 0 {
 		// IMPORT CASE: State is empty, bring in all attributes from API
-		for attrName, apiAttr := range apiAttrs {
-			updatedAttr := Dynamicattribute{
-				Attributename:  types.StringValue(attrName),
-				Requesttype:    util.SafeStringDatasource(apiAttr.Requesttype),
-				Attributetype:  util.SafeStringDatasource(apiAttr.Attributetype),
-				Orderindex:     util.SafeStringDatasource(apiAttr.Orderindex),
-				Required:       util.SafeStringDatasource(apiAttr.Required),
-				Editable:       util.SafeStringDatasource(apiAttr.Editable),
-				Hideoncreate:   util.SafeStringDatasource(apiAttr.Hideoncreate),
-				Hideonupdate:   util.SafeStringDatasource(apiAttr.Hideonupdate),
-				Attributegroup: util.SafeStringDatasource(apiAttr.Attributegroup),
-				Attributelable: util.SafeStringDatasource(apiAttr.Attributelable),
-				Accountscolumn: util.SafeStringDatasource(apiAttr.Accountscolumn),
-				Actionstring:   util.SafeStringDatasource(apiAttr.Actionstring),
-				Action_to_perform_when_parent_attribute_changes: util.SafeStringDatasource(apiAttr.Actiontoperformwhenparentattributechanges),
-				Defaultvalue: util.SafeStringDatasource(apiAttr.Defaultvalue),
-				// Regex:            util.PreserveString(apiAttr.Regex, currentAttrs[attrName].Regex),
-				// Attributevalue:   util.SafeStringDatasource(apiAttr.Attributevalue),
-				Attributevalue:   util.SafeStringPreserveNull(apiAttr.Attributevalue),
-				Showonchild:      util.SafeStringDatasource(apiAttr.Showonchild),
-				Parentattribute:  util.SafeStringDatasource(apiAttr.Parentattribute),
-				Descriptionascsv: util.SafeStringDatasource(apiAttr.Descriptionascsv),
-			}
-			updatedAttrs[attrName] = updatedAttr
-		}
-		log.Printf("[IMPORT] Importing all %d dynamic attributes from API", len(apiAttrs))
+		updatedAttrs = r.BuildUpdatedAttributesForImport(apiAttrs)
 	} else {
-		removedAttributes := make([]string, 0)
-
-		for attrName := range currentAttrs {
-			if apiAttr, exists := apiAttrs[attrName]; exists {
-				// Attribute exists in API response - update with API values
-				updatedAttr := Dynamicattribute{
-					Attributename: types.StringValue(attrName),
-					Requesttype:   util.SafeStringDatasource(apiAttr.Requesttype),
-					// Attributetype:  util.SafeStringDatasource(apiAttr.Attributetype),
-					Attributetype:  types.StringValue(dynamicattributeutil.TranslateValue(*apiAttr.Attributetype, dynamicattributeutil.AttributeTypeMap)),
-					Orderindex:     util.SafeStringDatasource(apiAttr.Orderindex),
-					Required:       util.SafeStringDatasource(apiAttr.Required),
-					Editable:       util.SafeStringDatasource(apiAttr.Editable),
-					Hideoncreate:   util.SafeStringDatasource(apiAttr.Hideoncreate),
-					Hideonupdate:   util.SafeStringDatasource(apiAttr.Hideonupdate),
-					Attributegroup: util.SafeStringDatasource(apiAttr.Attributegroup),
-					Attributelable: util.SafeStringDatasource(apiAttr.Attributelable),
-					Accountscolumn: util.SafeStringDatasource(apiAttr.Accountscolumn),
-					Actionstring:   util.SafeStringDatasource(apiAttr.Actionstring),
-					Action_to_perform_when_parent_attribute_changes: util.SafeStringDatasource(apiAttr.Actiontoperformwhenparentattributechanges),
-					Defaultvalue: util.SafeStringDatasource(apiAttr.Defaultvalue),
-					// Regex:            util.PreserveString(apiAttr.Regex, currentAttrs[attrName].Regex),
-					// Attributevalue:   util.SafeStringDatasource(apiAttr.Attributevalue),
-					Attributevalue:   util.SafeStringPreserveNull(apiAttr.Attributevalue),
-					Showonchild:      util.SafeStringDatasource(apiAttr.Showonchild),
-					Parentattribute:  util.SafeStringDatasource(apiAttr.Parentattribute),
-					Descriptionascsv: util.SafeStringDatasource(apiAttr.Descriptionascsv),
-				}
-				updatedAttrs[attrName] = updatedAttr
-			} else {
-				// Attribute doesn't exist in API response - mark for removal
-				removedAttributes = append(removedAttributes, attrName)
-			}
-		}
-		log.Printf("Updated attributes: %q", updatedAttrs)
-		// Log removed attributes
-		if len(removedAttributes) > 0 {
-			log.Printf("[INFO] Removing attributes not present in API response: %v", removedAttributes)
-		}
+		// REGULAR READ CASE: Update existing attributes with API values
+		updatedAttrs = r.BuildUpdatedAttributesForRead(currentAttrs, apiAttrs)
 	}
-	// Convert to types.Map
-	dynamicAttributesMap, diags := types.MapValueFrom(ctx, types.ObjectType{
-		AttrTypes: map[string]attr.Type{
-			"attribute_name":  types.StringType,
-			"request_type":    types.StringType,
-			"attribute_type":  types.StringType,
-			"attribute_group": types.StringType,
-			"order_index":     types.StringType,
-			"attribute_lable": types.StringType,
-			"accounts_column": types.StringType,
-			"hide_on_create":  types.StringType,
-			"action_string":   types.StringType,
-			"editable":        types.StringType,
-			"hide_on_update":  types.StringType,
-			"action_to_perform_when_parent_attribute_changes": types.StringType,
-			"default_value": types.StringType,
-			"required":      types.StringType,
-			// "regex":              types.StringType,
-			"attribute_value":    types.StringType,
-			"showonchild":        types.StringType,
-			"parent_attribute":   types.StringType,
-			"description_as_csv": types.StringType,
-		},
-	}, updatedAttrs)
 
+	// Convert to types.Map
+	dynamicAttributesMap, diags := r.ConvertAttributesToTerraformMap(updatedAttrs, ctx)
 	if diags.HasError() {
-		resp.Diagnostics.Append(diags...)
-		return
+		return fmt.Errorf("failed to convert attributes to map: %v", diags.Errors())
 	}
 
 	state.DynamicAttributes = dynamicAttributesMap
@@ -702,47 +708,56 @@ func (r *dynamicAttributeResource) Read(ctx context.Context, req resource.ReadRe
 	state.Msg = types.StringValue(util.SafeDeref(apiResp.Msg))
 	state.ErrorCode = types.StringValue(util.SafeDeref(apiResp.Errorcode))
 
-	diags = resp.State.Set(ctx, &state)
-	resp.Diagnostics.Append(diags...)
 	log.Printf("[INFO] DynamicAttribute: Successfully read %d attributes for endpoint: %s", len(updatedAttrs), state.Endpoint.ValueString())
+	return nil
 }
 
-func (r *dynamicAttributeResource) Update(ctx context.Context, req resource.UpdateRequest, resp *resource.UpdateResponse) {
-	var plan DynamicAttributeResourceModel
+// BuildUpdateDynamicAttributes builds dynamic attributes for update
+func (r *DynamicAttributeResource) BuildUpdateDynamicAttributes(attr Dynamicattribute) openapi.UpdateDynamicAttributesInner {
+	attrName := attr.Attributename.ValueString()
+	updateAttr := openapi.NewUpdateDynamicAttributesInner(attrName)
 
-	// Get the plan
-	resp.Diagnostics.Append(req.Plan.Get(ctx, &plan)...)
-	if resp.Diagnostics.HasError() {
-		return
-	}
+	updateAttr.Requesttype = util.StringPointerOrEmpty(attr.Requesttype)
+	updateAttr.Attributetype = util.StringPointerOrEmpty(attr.Attributetype)
+	updateAttr.Attributegroup = util.StringPointerOrEmpty(attr.Attributegroup)
+	updateAttr.Orderindex = util.StringPointerOrEmpty(attr.Orderindex)
+	updateAttr.Attributelable = util.StringPointerOrEmpty(attr.Attributelable)
+	updateAttr.Accountscolumn = util.StringPointerOrEmpty(attr.Accountscolumn)
+	updateAttr.Hideoncreate = util.StringPointerOrEmpty(attr.Hideoncreate)
+	updateAttr.Actionstring = util.StringPointerOrEmpty(attr.Actionstring)
+	updateAttr.Editable = util.StringPointerOrEmpty(attr.Editable)
+	updateAttr.Hideonupdate = util.StringPointerOrEmpty(attr.Hideonupdate)
+	updateAttr.Actiontoperformwhenparentattributechanges = util.StringPointerOrEmpty(attr.Action_to_perform_when_parent_attribute_changes)
+	updateAttr.Defaultvalue = util.StringPointerOrEmpty(attr.Defaultvalue)
+	updateAttr.Required = util.StringPointerOrEmpty(attr.Required)
+	updateAttr.Attributevalue = util.StringPointerOrEmpty(attr.Attributevalue)
+	updateAttr.Showonchild = util.StringPointerOrEmpty(attr.Showonchild)
+	updateAttr.Parentattribute = util.StringPointerOrEmpty(attr.Parentattribute)
+	updateAttr.Descriptionascsv = util.StringPointerOrEmpty(attr.Descriptionascsv)
 
-	// Initialize API client
-	cfg := openapi.NewConfiguration()
-	apiBaseURL := strings.TrimPrefix(strings.TrimPrefix(r.client.APIBaseURL(), "https://"), "http://")
-	cfg.Host = apiBaseURL
-	cfg.Scheme = "https"
-	cfg.AddDefaultHeader("Authorization", "Bearer "+r.token)
-	cfg.HTTPClient = http.DefaultClient
-	apiClient := openapi.NewAPIClient(cfg)
+	return *updateAttr
+}
+
+// UpdateDynamicAttribute updates dynamic attributes
+func (r *DynamicAttributeResource) UpdateDynamicAttribute(ctx context.Context, plan *DynamicAttributeResourceModel) error {
+	log.Printf("[DEBUG] DynamicAttribute: Starting update operation for endpoint: %s", plan.Endpoint.ValueString())
+
+	dynAttrOps := r.dynamicAttributeFactory.CreateDynamicAttributeOperations(r.client.APIBaseURL(), r.token)
 
 	// Get planned attributes
 	var planAttrs map[string]Dynamicattribute
-	resp.Diagnostics.Append(plan.DynamicAttributes.ElementsAs(ctx, &planAttrs, false)...)
-	if resp.Diagnostics.HasError() {
-		return
+	diags := plan.DynamicAttributes.ElementsAs(ctx, &planAttrs, false)
+	if diags.HasError() {
+		log.Printf("[ERROR] DynamicAttribute: Failed to process planned attributes: %v", diags.Errors())
+		return fmt.Errorf("failed to process planned attributes: %v", diags.Errors())
 	}
 	log.Printf("Planned attributes before fetch: %v", len(planAttrs))
 
 	// Get current state from server
-	fetchReq := apiClient.DynamicAttributesAPI.
-		FetchDynamicAttribute(ctx).
-		Securitysystem([]string{plan.Securitysystem.ValueString()}).
-		Endpoint([]string{plan.Endpoint.ValueString()})
-
-	fetchResp, _, err := fetchReq.Execute()
+	fetchResp, err := r.ReadDynamicAttribute(ctx, plan.Endpoint.ValueString())
 	if err != nil {
-		resp.Diagnostics.AddError("Failed to fetch current dynamic attributes", err.Error())
-		return
+		log.Printf("[ERROR] DynamicAttribute: Failed to fetch current dynamic attributes: %v", err)
+		return fmt.Errorf("failed to fetch current dynamic attributes: %w", err)
 	}
 	log.Printf("Fetching existing attributes from api complete")
 
@@ -755,7 +770,7 @@ func (r *dynamicAttributeResource) Update(ctx context.Context, req resource.Upda
 			}
 		}
 	}
-	log.Printf("Existing attributes from api: %v", len(existingAttrs))
+	log.Printf("Length of existing attributes from api: %v", len(existingAttrs))
 
 	// Separate new attributes (need to be created) from existing ones (need to be updated)
 	var newAttrs []openapi.CreateDynamicAttributesInner
@@ -770,53 +785,17 @@ func (r *dynamicAttributeResource) Update(ctx context.Context, req resource.Upda
 				attrName,
 				attr.Requesttype.ValueString(),
 			)
-			// Set all fields...
-			newAttr.Attributetype = util.StringPointerOrEmpty(attr.Attributetype)
-			newAttr.Attributegroup = util.StringPointerOrEmpty(attr.Attributegroup)
-			newAttr.Orderindex = util.StringPointerOrEmpty(attr.Orderindex)
-			newAttr.Accountscolumn = util.StringPointerOrEmpty(attr.Accountscolumn)
-			newAttr.Attributelable = util.StringPointerOrEmpty(attr.Attributelable)
-			newAttr.Hideoncreate = util.StringPointerOrEmpty(attr.Hideoncreate)
-			newAttr.Actionstring = util.StringPointerOrEmpty(attr.Actionstring)
-			newAttr.Editable = util.StringPointerOrEmpty(attr.Editable)
-			newAttr.Hideonupdate = util.StringPointerOrEmpty(attr.Hideonupdate)
-			newAttr.Actiontoperformwhenparentattributechanges = util.StringPointerOrEmpty(attr.Action_to_perform_when_parent_attribute_changes)
-			newAttr.Defaultvalue = util.StringPointerOrEmpty(attr.Defaultvalue)
-			newAttr.Required = util.StringPointerOrEmpty(attr.Required)
-			// newAttr.Regex = util.StringPointerOrEmpty(attr.Regex)
-			newAttr.Attributevalue = util.StringPointerOrEmpty(attr.Attributevalue)
-			newAttr.Showonchild = util.StringPointerOrEmpty(attr.Showonchild)
-			newAttr.Parentattribute = util.StringPointerOrEmpty(attr.Parentattribute)
-			newAttr.Descriptionascsv = util.StringPointerOrEmpty(attr.Descriptionascsv)
+			// Set all fields using existing helper
+			*newAttr = r.BuildCreateDynamicAttributes(map[string]Dynamicattribute{attrName: attr})[0]
 			newAttrs = append(newAttrs, *newAttr)
 		} else {
 			// Existing attribute - prepare for update
-			updateAttr := openapi.NewUpdateDynamicAttributesInner(attrName)
-			// Set all fields...
-			// updateAttr := openapi.NewUpdateDynamicAttributesInner(attrName)
-			updateAttr.Requesttype = util.StringPointerOrEmpty(attr.Requesttype)
-			updateAttr.Attributetype = util.StringPointerOrEmpty(attr.Attributetype)
-			updateAttr.Attributegroup = util.StringPointerOrEmpty(attr.Attributegroup)
-			updateAttr.Orderindex = util.StringPointerOrEmpty(attr.Orderindex)
-			updateAttr.Attributelable = util.StringPointerOrEmpty(attr.Attributelable)
-			updateAttr.Accountscolumn = util.StringPointerOrEmpty(attr.Accountscolumn)
-			updateAttr.Hideoncreate = util.StringPointerOrEmpty(attr.Hideoncreate)
-			updateAttr.Actionstring = util.StringPointerOrEmpty(attr.Actionstring)
-			updateAttr.Editable = util.StringPointerOrEmpty(attr.Editable)
-			updateAttr.Hideonupdate = util.StringPointerOrEmpty(attr.Hideonupdate)
-			updateAttr.Actiontoperformwhenparentattributechanges = util.StringPointerOrEmpty(attr.Action_to_perform_when_parent_attribute_changes)
-			updateAttr.Defaultvalue = util.StringPointerOrEmpty(attr.Defaultvalue)
-			updateAttr.Required = util.StringPointerOrEmpty(attr.Required)
-			// updateAttr.Regex = util.StringPointerOrEmpty(attr.Regex)
-			updateAttr.Attributevalue = util.StringPointerOrEmpty(attr.Attributevalue)
-			updateAttr.Showonchild = util.StringPointerOrEmpty(attr.Showonchild)
-			updateAttr.Parentattribute = util.StringPointerOrEmpty(attr.Parentattribute)
-			updateAttr.Descriptionascsv = util.StringPointerOrEmpty(attr.Descriptionascsv)
-			updateAttrs = append(updateAttrs, *updateAttr)
+			updateAttr := r.BuildUpdateDynamicAttributes(attr)
+			updateAttrs = append(updateAttrs, updateAttr)
 		}
 	}
-	log.Printf("Attributes to create &+%v", len(newAttrs))
-	log.Printf("Attributes to update: %v", len(updateAttrs))
+	log.Printf("Number of attributes to create: %v", len(newAttrs))
+	log.Printf("Number of attributes to update: %v", len(updateAttrs))
 
 	// First, create new attributes if any
 	if len(newAttrs) > 0 {
@@ -827,10 +806,14 @@ func (r *dynamicAttributeResource) Update(ctx context.Context, req resource.Upda
 			newAttrs,
 		)
 
-		_, _, err := apiClient.DynamicAttributesAPI.CreateDynamicAttribute(ctx).CreateDynamicAttributeRequest(*createReq).Execute()
+		createResp, _, err := dynAttrOps.CreateDynamicAttribute(ctx, *createReq)
 		if err != nil {
-			resp.Diagnostics.AddError("Failed to create new dynamic attributes", err.Error())
-			return
+			log.Printf("[ERROR] DynamicAttribute: Failed to create new dynamic attributes: %v", err)
+			return fmt.Errorf("failed to create new dynamic attributes: %w", err)
+		}
+		err = r.ProcessDynamicAttributeErrorResponse(plan, createResp, "create")
+		if err != nil {
+			return err
 		}
 	}
 
@@ -843,123 +826,35 @@ func (r *dynamicAttributeResource) Update(ctx context.Context, req resource.Upda
 			updateAttrs,
 		)
 
-		updateResp, _, err := apiClient.DynamicAttributesAPI.UpdateDynamicAttribute(ctx).UpdateDynamicAttributeRequest(*updateReq).Execute()
+		// Execute update operation through interface
+		updateResp, _, err := dynAttrOps.UpdateDynamicAttribute(ctx, *updateReq)
 		if err != nil {
-			resp.Diagnostics.AddError("Failed to update dynamic attributes", err.Error())
-			return
+			log.Printf("[ERROR]: Problem with the updating function in UpdateDynamicAttribute. Error: %v", err)
+			return fmt.Errorf("failed to update dynamic attributes: %w", err)
 		}
 
-		if updateResp.Errorcode != nil && *updateResp.Errorcode != "0" {
-			resp.Diagnostics.AddError("Dynamic Attribute Update Failed",
-				fmt.Sprintf("Error: %s, Message: %s", *updateResp.Errorcode, *updateResp.Msg))
-			return
-		}
-
-		if updateResp.Errorcode != nil && *updateResp.Errorcode == "1" {
-			var errorMessages []string
-			plan.ErrorCode = types.StringPointerValue(updateResp.Errorcode)
-			plan.Msg = types.StringPointerValue(updateResp.Msg)
-
-			if updateResp.Securitysystem != nil {
-				errorMessages = append(errorMessages, fmt.Sprintf("securitysystem: %s", *updateResp.Securitysystem))
-			}
-			if updateResp.Endpoint != nil {
-				errorMessages = append(errorMessages, fmt.Sprintf("endpoint: %s", *updateResp.Endpoint))
-			}
-			if updateResp.Updateuser != nil {
-				errorMessages = append(errorMessages, fmt.Sprintf("updateuser: %s", *updateResp.Updateuser))
-			}
-
-			if updateResp.Dynamicattributes != nil {
-				rawJSON, err := json.Marshal(updateResp.Dynamicattributes)
-				if err != nil {
-					log.Printf("Error marshaling dynamicattributes: %v", err)
-				} else {
-					// Try as string
-					var str string
-					if err := json.Unmarshal(rawJSON, &str); err == nil {
-						errorMessages = append(errorMessages, fmt.Sprintf("dynamicattributes: %s", str))
-					} else {
-						// Try as map
-						var daMap map[string]map[string]string
-						if err := json.Unmarshal(rawJSON, &daMap); err == nil {
-							for attrID, fieldErrors := range daMap {
-								for field, msg := range fieldErrors {
-									errorMessages = append(errorMessages, fmt.Sprintf("dynamicattributes.%s.%s: %s", attrID, field, msg))
-								}
-							}
-						} else {
-							errorMessages = append(errorMessages, "dynamicattributes: unknown format")
-						}
-					}
-				}
-			}
-
-			fullError := strings.Join(errorMessages, "\n")
-			plan.DynamicAttributesError = types.StringValue(fullError)
-			resp.Diagnostics.AddError("Dynamic Attribute Update Operation Failed", fullError)
-			return
+		err = r.ProcessDynamicAttributeErrorResponse(plan, updateResp, "update")
+		if err != nil {
+			return err
 		}
 	}
 
-	postUpdateFetchReq := apiClient.DynamicAttributesAPI.
-		FetchDynamicAttribute(ctx).
-		Securitysystem([]string{plan.Securitysystem.ValueString()}).
-		Endpoint([]string{plan.Endpoint.ValueString()})
+	log.Printf("[INFO] Dynamic attribute resource updated successfully for endpoint: %s", plan.Endpoint.ValueString())
 
-	postUpdateFetchResp, httpResp, err := postUpdateFetchReq.Execute()
+	return nil
+}
+
+// UpdateModelFromUpdateResponse updates the model from update response
+func (r *DynamicAttributeResource) UpdateModelFromUpdateResponse(plan *DynamicAttributeResourceModel, planAttrs map[string]Dynamicattribute, ctx context.Context) error {
+	// Fetch updated state after update
+	postUpdateFetchResp, err := r.ReadDynamicAttribute(ctx, plan.Endpoint.ValueString())
 	if err != nil {
-		resp.Diagnostics.AddError("Failed to fetch updated dynamic attributes", err.Error())
-		return
-	}
-
-	if httpResp != nil && httpResp.StatusCode == 412 {
-		var fetchResp map[string]interface{}
-		if err := json.NewDecoder(httpResp.Body).Decode(&fetchResp); err != nil {
-			resp.Diagnostics.AddError("Failed to decode error response", err.Error())
-			return
+		// Handle 412 error case
+		if strings.Contains(err.Error(), "Dynamic Attributes Fetch Failed") {
+			plan.DynamicAttributesError = types.StringValue(err.Error())
+			return fmt.Errorf("dynamic Attributes Fetch after update Failed: %s", err.Error())
 		}
-
-		var errorMessages []string
-		if secSystems, ok := fetchResp["securitysystems"].([]interface{}); ok {
-			for _, item := range secSystems {
-				if secMap, ok := item.(map[string]interface{}); ok {
-					for key, val := range secMap {
-						errorMessages = append(errorMessages, fmt.Sprintf("securitysystem: %s - %v", key, val))
-					}
-				}
-			}
-		}
-		if endpoints, ok := fetchResp["endpoints"].([]interface{}); ok {
-			for _, item := range endpoints {
-				if epMap, ok := item.(map[string]interface{}); ok {
-					for key, val := range epMap {
-						errorMessages = append(errorMessages, fmt.Sprintf("endpoint: %s - %v", key, val))
-					}
-				}
-			}
-		}
-		if requestTypes, ok := fetchResp["requesttype"].([]interface{}); ok {
-			for _, item := range requestTypes {
-				if epMap, ok := item.(map[string]interface{}); ok {
-					for key, val := range epMap {
-						errorMessages = append(errorMessages, fmt.Sprintf("request type: %s - %v", key, val))
-					}
-				}
-			}
-		}
-		if msg, ok := fetchResp["msg"].(string); ok {
-			errorMessages = append(errorMessages, fmt.Sprintf("message: %s", msg))
-		}
-		if ec, ok := fetchResp["errorcode"].(string); ok {
-			errorMessages = append(errorMessages, fmt.Sprintf("errorcode: %s", ec))
-		}
-
-		fullError := strings.Join(errorMessages, "\n")
-		plan.DynamicAttributesError = types.StringValue(fullError)
-		resp.Diagnostics.Append(resp.State.Set(ctx, &plan)...)
-		resp.Diagnostics.AddError("Dynamic Attributes Fetch after update Failed", fullError)
-		return
+		return fmt.Errorf("failed to fetch updated dynamic attributes: %w", err)
 	}
 	log.Printf("Post updation read successful")
 
@@ -975,68 +870,20 @@ func (r *dynamicAttributeResource) Update(ctx context.Context, req resource.Upda
 	log.Printf("Api attributes postupdate: %v", postUpdateApiAttrs)
 	updatedAttrs := make(map[string]Dynamicattribute)
 	log.Printf("Planned attributes: %v", len(planAttrs))
-	// removedAttributes := make([]string, 0)
 
 	for attrName := range planAttrs {
 		if apiAttr, exists := postUpdateApiAttrs[attrName]; exists {
-			// Attribute exists in API response - update with API values
-			updatedAttr := Dynamicattribute{
-				Attributename: types.StringValue(attrName),
-				Requesttype:   util.SafeStringDatasource(apiAttr.Requesttype),
-				// Attributetype:  util.SafeStringDatasource(apiAttr.Attributetype),
-				Attributetype:  types.StringValue(dynamicattributeutil.TranslateValue(*apiAttr.Attributetype, dynamicattributeutil.AttributeTypeMap)),
-				Orderindex:     util.SafeStringDatasource(apiAttr.Orderindex),
-				Required:       util.SafeStringDatasource(apiAttr.Required),
-				Editable:       util.SafeStringDatasource(apiAttr.Editable),
-				Hideoncreate:   util.SafeStringDatasource(apiAttr.Hideoncreate),
-				Hideonupdate:   util.SafeStringDatasource(apiAttr.Hideonupdate),
-				Attributegroup: util.SafeStringDatasource(apiAttr.Attributegroup),
-				Attributelable: util.SafeStringDatasource(apiAttr.Attributelable),
-				Accountscolumn: util.SafeStringDatasource(apiAttr.Accountscolumn),
-				Actionstring:   util.SafeStringDatasource(apiAttr.Actionstring),
-				Action_to_perform_when_parent_attribute_changes: util.SafeStringDatasource(apiAttr.Actiontoperformwhenparentattributechanges),
-				Defaultvalue: util.SafeStringDatasource(apiAttr.Defaultvalue),
-				// Regex:            util.PreserveString(apiAttr.Regex, currentAttrs[attrName].Regex),
-				Attributevalue:   util.SafeStringPreserveNull(apiAttr.Attributevalue),
-				Showonchild:      util.SafeStringDatasource(apiAttr.Showonchild),
-				Parentattribute:  util.SafeStringDatasource(apiAttr.Parentattribute),
-				Descriptionascsv: util.SafeStringDatasource(apiAttr.Descriptionascsv),
-			}
-			updatedAttrs[attrName] = updatedAttr
+			// Reuse the existing helper function
+			updatedAttrs[attrName] = r.BuildUpdatedAttributeFromAPI(attrName, apiAttr, false)
 		}
 	}
 
 	log.Printf("[INFO] Processed %d dynamic attributes in state refresh", len(updatedAttrs))
 
-	// Convert to types.Map
 	// Convert the updated attributes map to a Terraform Map type
-	dynamicAttributesMap, diags := types.MapValueFrom(ctx, types.ObjectType{
-		AttrTypes: map[string]attr.Type{
-			"attribute_name":  types.StringType,
-			"request_type":    types.StringType,
-			"attribute_type":  types.StringType,
-			"attribute_group": types.StringType,
-			"order_index":     types.StringType,
-			"attribute_lable": types.StringType,
-			"accounts_column": types.StringType,
-			"hide_on_create":  types.StringType,
-			"action_string":   types.StringType,
-			"editable":        types.StringType,
-			"hide_on_update":  types.StringType,
-			"action_to_perform_when_parent_attribute_changes": types.StringType,
-			"default_value": types.StringType,
-			"required":      types.StringType,
-			// "regex":           types.StringType,
-			"attribute_value":    types.StringType,
-			"showonchild":        types.StringType,
-			"parent_attribute":   types.StringType,
-			"description_as_csv": types.StringType,
-		},
-	}, updatedAttrs)
-
+	dynamicAttributesMap, diags := r.ConvertAttributesToTerraformMap(updatedAttrs, ctx)
 	if diags.HasError() {
-		resp.Diagnostics.Append(diags...)
-		return
+		return fmt.Errorf("failed to convert updated attributes to map: %v", diags.Errors())
 	}
 
 	plan.DynamicAttributes = dynamicAttributesMap
@@ -1045,31 +892,17 @@ func (r *dynamicAttributeResource) Update(ctx context.Context, req resource.Upda
 	plan.Endpoint = util.SafeString(plan.Endpoint.ValueStringPointer())
 	plan.Securitysystem = util.SafeString(plan.Securitysystem.ValueStringPointer())
 	plan.Updateuser = util.SafeString(plan.Updateuser.ValueStringPointer())
-	plan.Msg = types.StringValue(util.SafeDeref(fetchResp.Msg))
-	plan.ErrorCode = types.StringValue(util.SafeDeref(fetchResp.Errorcode))
+	plan.Msg = types.StringValue(util.SafeDeref(postUpdateFetchResp.Msg))
+	plan.ErrorCode = types.StringValue(util.SafeDeref(postUpdateFetchResp.Errorcode))
 
-	// Set final state
-	resp.Diagnostics.Append(resp.State.Set(ctx, &plan)...)
-
+	return nil
 }
 
-func (r *dynamicAttributeResource) Delete(ctx context.Context, req resource.DeleteRequest, resp *resource.DeleteResponse) {
-	var state DynamicAttributeResourceModel
+// DeleteDynamicAttribute deletes dynamic attributes
+func (r *DynamicAttributeResource) DeleteDynamicAttribute(ctx context.Context, state *DynamicAttributeResourceModel) error {
+	log.Printf("[DEBUG] DynamicAttribute: Starting delete operation for endpoint: %s", state.Endpoint.ValueString())
 
-	stateRetrievalDiagnostics := req.State.Get(ctx, &state)
-	resp.Diagnostics.Append(stateRetrievalDiagnostics...)
-	if resp.Diagnostics.HasError() {
-		return
-	}
-
-	cfg := openapi.NewConfiguration()
-	apiBaseURL := strings.TrimPrefix(strings.TrimPrefix(r.client.APIBaseURL(), "https://"), "http://")
-	cfg.Host = apiBaseURL
-	cfg.Scheme = "https"
-	cfg.AddDefaultHeader("Authorization", "Bearer "+r.token)
-	cfg.HTTPClient = http.DefaultClient
-
-	apiClient := openapi.NewAPIClient(cfg)
+	dynAttrOps := r.dynamicAttributeFactory.CreateDynamicAttributeOperations(r.client.APIBaseURL(), r.token)
 
 	// Get attribute names from the map
 	var attributeNames []string
@@ -1078,8 +911,7 @@ func (r *dynamicAttributeResource) Delete(ctx context.Context, req resource.Dele
 	// Properly unmarshal the map
 	diags := state.DynamicAttributes.ElementsAs(ctx, &stateAttrs, false)
 	if diags.HasError() {
-		resp.Diagnostics.Append(diags...)
-		return
+		return fmt.Errorf("failed to process state attributes: %v", diags.Errors())
 	}
 
 	for _, attr := range stateAttrs {
@@ -1095,89 +927,203 @@ func (r *dynamicAttributeResource) Delete(ctx context.Context, req resource.Dele
 		Dynamicattributes: attributeNames,
 	}
 
-	deleteResp, httpResp, err := apiClient.DynamicAttributesAPI.
-		DeleteDynamicAttribute(ctx).
-		DeleteDynamicAttributeRequest(deleteReq).
-		Execute()
-
+	// Execute delete operation through interface
+	deleteResp, httpResp, err := dynAttrOps.DeleteDynamicAttribute(ctx, deleteReq)
 	if err != nil {
-		log.Printf("[ERROR] Delete API Call Failed: %v", err)
-		resp.Diagnostics.AddError("Delete API Call Failed", fmt.Sprintf("Error: %v", err))
-		return
+		log.Printf("[ERROR] DynamicAttribute: Problem with the deleting function in DeleteDynamicAttribute. Error: %v", err)
+		return err
 	}
 
-	var errorMessages []string
-
-	if deleteResp.Errorcode != nil && *deleteResp.Errorcode == "1" {
-		if deleteResp.Securitysystem != nil {
-			errorMessages = append(errorMessages, fmt.Sprintf("securitysystem: %s", *deleteResp.Securitysystem))
-		}
-
-		if deleteResp.Endpoint != nil {
-			errorMessages = append(errorMessages, fmt.Sprintf("endpoint: %s", *deleteResp.Endpoint))
-		}
-
-		if deleteResp.Updateuser != nil {
-			errorMessages = append(errorMessages, fmt.Sprintf("updateuser: %s", *deleteResp.Updateuser))
-		}
-
-		if deleteResp.Dynamicattributes != nil {
-			rawJSON, err := json.Marshal(deleteResp.Dynamicattributes)
-			if err != nil {
-				log.Printf("Error marshaling dynamicattributes: %v", err)
-			} else {
-				var str string
-				if err := json.Unmarshal(rawJSON, &str); err == nil {
-					errorMessages = append(errorMessages, fmt.Sprintf("dynamicattributes: %s", str))
-				} else {
-					var daMap map[string]map[string]string
-					if err := json.Unmarshal(rawJSON, &daMap); err == nil {
-						for attrID, fieldErrors := range daMap {
-							for field, msg := range fieldErrors {
-								errorMessages = append(errorMessages, fmt.Sprintf("dynamicattributes.%s.%s: %s", attrID, field, msg))
-							}
-						}
-					} else {
-						errorMessages = append(errorMessages, "dynamicattributes: unknown format")
-					}
-				}
-			}
-		}
-
-		fullError := strings.Join(errorMessages, "\n")
-		resp.Diagnostics.AddError("Dynamic Attribute Operation Failed", fullError)
-		return
+	err = r.ProcessDynamicAttributeErrorResponse(nil, deleteResp, "delete")
+	if err != nil {
+		return err
 	}
 
 	log.Printf("[DEBUG] Delete HTTP Status Code: %d", httpResp.StatusCode)
 	log.Printf("[DEBUG] Delete API Response: %+v", deleteResp)
+	return nil
 }
 
-func (r *dynamicAttributeResource) ImportState(ctx context.Context, req resource.ImportStateRequest, resp *resource.ImportStateResponse) {
+// ValidateImportKey validates that the endpoint exists and returns its associated security system
+func (r *DynamicAttributeResource) ValidateImportKey(ctx context.Context, endpointName string) (string, error) {
+	endpointOps := r.dynamicAttributeFactory.CreateEndpointOperations(r.client.APIBaseURL(), r.token)
+
+	// Create the request object for GetEndpoints
+	reqParams := endpoint.GetEndpointsRequest{}
+	reqParams.SetEndpointname(endpointName)
+
+	endpointResp, _, err := endpointOps.GetEndpoints(ctx, reqParams)
+	if err != nil {
+		log.Printf("[ERROR] DynamicAttribute: API Call failed: Failed to fetch endpoint details. Error: %v", err)
+		return "", fmt.Errorf("API Call failed: Failed to fetch endpoint details. Error: %v", err)
+	}
+
+	if endpointResp == nil || len(endpointResp.Endpoints) == 0 {
+		log.Printf("[ERROR] Endpoint %s not found", endpointName)
+		return "", fmt.Errorf("Endpoint %s not found", endpointName)
+	}
+
+	securitySystem := endpointResp.Endpoints[0].Securitysystem
+	if securitySystem == nil || *securitySystem == "" {
+		log.Printf("[ERROR] Security system is empty for endpoint %s", endpointName)
+		return "", fmt.Errorf("endpoint %q has no associated security system", endpointName)
+	}
+
+	return *securitySystem, nil
+}
+
+func (r *DynamicAttributeResource) Create(ctx context.Context, req resource.CreateRequest, resp *resource.CreateResponse) {
+	var plan DynamicAttributeResourceModel
+
+	resp.Diagnostics.Append(req.Plan.Get(ctx, &plan)...)
+	if resp.Diagnostics.HasError() {
+		log.Println("[ERROR] DynamicAttribute: Error getting plan data")
+		return
+	}
+
+	// Convert dynamic attributes map to a slice of Dynamicattribute
+	var dynamicAttrMap map[string]Dynamicattribute
+	resp.Diagnostics.Append(plan.DynamicAttributes.ElementsAs(ctx, &dynamicAttrMap, false)...)
+	if resp.Diagnostics.HasError() {
+		log.Println("[ERROR] DynamicAttribute: Failed to process dynamic attributes")
+		return
+	}
+
+	createResp, err := r.CreateDynamicAttribute(ctx, &plan)
+	if err != nil {
+		log.Printf("[ERROR] DynamicAttribute: Error Creating Dynamic Attribute: %v", err)
+		resp.Diagnostics.AddError("Error Creating Dynamic Attribute", fmt.Sprintf("API Error: %v", err))
+		return
+	}
+
+	// Process error response
+	err = r.ProcessDynamicAttributeErrorResponse(&plan, createResp, "create")
+	if err != nil {
+		log.Printf("[ERROR] DynamicAttribute: Dynamic Attribute Create Operation Failed: %v", err)
+		resp.Diagnostics.AddError("Dynamic Attribute Create Operation Failed", err.Error())
+		return
+	}
+
+	// Update model from successful response
+	err = r.UpdateModelFromCreateResponse(&plan, createResp, dynamicAttrMap, ctx)
+	if err != nil {
+		log.Printf("[ERROR] DynamicAttribute: Failed to update model from response: %v", err)
+		resp.Diagnostics.AddError("Failed to update model from response", err.Error())
+		return
+	}
+
+	// Set the final state
+	resp.Diagnostics.Append(resp.State.Set(ctx, &plan)...)
+	log.Printf("[DEBUG] DynamicAttribute: Successfully created dynamic attributes for endpoint: %s", plan.Endpoint.ValueString())
+}
+
+func (r *DynamicAttributeResource) Read(ctx context.Context, req resource.ReadRequest, resp *resource.ReadResponse) {
+	var state DynamicAttributeResourceModel
+
+	diags := req.State.Get(ctx, &state)
+	resp.Diagnostics.Append(diags...)
+	if resp.Diagnostics.HasError() {
+		return
+	}
+
+	apiResp, err := r.ReadDynamicAttribute(ctx, state.Endpoint.ValueString())
+	if err != nil {
+		// Handle 412 error case by setting error in state
+		if strings.Contains(err.Error(), "Dynamic Attributes Fetch Failed") {
+			state.Securitysystem = types.StringValue("")
+			state.Endpoint = types.StringValue("")
+			state.DynamicAttributesError = types.StringValue(err.Error())
+
+			// Persist in state
+			diags := resp.State.Set(ctx, &state)
+			resp.Diagnostics.Append(diags...)
+			if resp.Diagnostics.HasError() {
+				return
+			}
+
+			// Display error to user
+			resp.Diagnostics.AddError("Dynamic Attributes Fetch Failed", err.Error())
+			return
+		}
+		resp.Diagnostics.AddError("API Read Failed In Read Block", err.Error())
+		log.Printf("[ERROR] DynamicAttribute: API Read Failed In Read Block: %v", err)
+		return
+	}
+
+	err = r.UpdateModelFromReadResponse(&state, apiResp, ctx)
+	if err != nil {
+		log.Printf("[ERROR] DynamicAttribute: Failed to update model from read response: %v", err)
+		resp.Diagnostics.AddError("Failed to update model from read response", err.Error())
+		return
+	}
+
+	diags = resp.State.Set(ctx, &state)
+	resp.Diagnostics.Append(diags...)
+}
+
+func (r *DynamicAttributeResource) Update(ctx context.Context, req resource.UpdateRequest, resp *resource.UpdateResponse) {
+	var plan DynamicAttributeResourceModel
+
+	// Get the plan
+	resp.Diagnostics.Append(req.Plan.Get(ctx, &plan)...)
+	if resp.Diagnostics.HasError() {
+		return
+	}
+
+	// Get planned attributes
+	var planAttrs map[string]Dynamicattribute
+	resp.Diagnostics.Append(plan.DynamicAttributes.ElementsAs(ctx, &planAttrs, false)...)
+	if resp.Diagnostics.HasError() {
+		return
+	}
+
+	err := r.UpdateDynamicAttribute(ctx, &plan)
+	if err != nil {
+		log.Printf("[ERROR] DynamicAttribute: API Update Failed: %v", err)
+		resp.Diagnostics.AddError("API Update Failed", err.Error())
+		return
+	}
+
+	err = r.UpdateModelFromUpdateResponse(&plan, planAttrs, ctx)
+	if err != nil {
+		resp.Diagnostics.AddError("Failed to update model from response", err.Error())
+		return
+	}
+
+	// Set final state
+	resp.Diagnostics.Append(resp.State.Set(ctx, &plan)...)
+}
+
+func (r *DynamicAttributeResource) Delete(ctx context.Context, req resource.DeleteRequest, resp *resource.DeleteResponse) {
+	var state DynamicAttributeResourceModel
+
+	stateRetrievalDiagnostics := req.State.Get(ctx, &state)
+	resp.Diagnostics.Append(stateRetrievalDiagnostics...)
+	if resp.Diagnostics.HasError() {
+		return
+	}
+
+	err := r.DeleteDynamicAttribute(ctx, &state)
+	if err != nil {
+		log.Printf("[ERROR] DynamicAttribute: API Delete Failed: %v", err)
+		resp.Diagnostics.AddError("API Delete Failed", err.Error())
+		return
+	}
+}
+
+func (r *DynamicAttributeResource) ImportState(ctx context.Context, req resource.ImportStateRequest, resp *resource.ImportStateResponse) {
 	endpointName := req.ID
 
 	// Set the endpoint from import ID
 	resp.State.SetAttribute(ctx, path.Root("endpoint"), endpointName)
 
-	reqParams := endpoint.GetEndpointsRequest{}
-	reqParams.SetEndpointname(endpointName)
-	endpointResp, _, err := r.client.Endpoints.GetEndpoints(ctx).GetEndpointsRequest(reqParams).Execute()
-
-	if err != nil || endpointResp == nil || len(endpointResp.Endpoints) == 0 {
-		resp.Diagnostics.AddError(
-			"Failed to fetch endpoint details for security system name while importing",
-			fmt.Sprintf("Error retrieving endpoint %q for security system name while importing: %v", endpointName, err),
-		)
+	securitySystem, err := r.ValidateImportKey(ctx, endpointName)
+	if err != nil {
+		log.Printf("[ERROR] DynamicAttribute: Import key validation failed. %v", err)
+		resp.Diagnostics.AddError("Import Key validation failed: ", err.Error())
 		return
 	}
 
-	securitySystem := endpointResp.Endpoints[0].Securitysystem
-	if *securitySystem == "" {
-		resp.Diagnostics.AddWarning(
-			"Security system is empty in import",
-			fmt.Sprintf("Endpoint %q has no associated security system in import", endpointName),
-		)
-	}
 	resp.State.SetAttribute(ctx, path.Root("security_system"), securitySystem)
-	resp.State.SetAttribute(ctx, path.Root("update_user"), r.client.Username)
+	resp.State.SetAttribute(ctx, path.Root("update_user"), r.username)
 }

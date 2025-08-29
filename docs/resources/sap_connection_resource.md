@@ -271,7 +271,7 @@ resource "saviynt_sap_connection_resource" "ss" {
 - `terminated_user_role_action` (String) Terminateduserroleaction.
 - `update_account_json` (String) Updateaccountjson.
 - `user_import_json` (String) Userimportjson.
-- `vault_configuration` (String) JSON string specifying vault configuration. Example: '{"path":"/secrets/data/kv-dev-intgn1/-AD_Credential","keyMapping":{"PASSWORD":"AD_PASSWORD~#~None"}}'
+- `vault_configuration` (String) JSON string specifying vault configuration.
 - `vault_connection` (String) Specifies the type of vault connection being used (e.g., 'Hashicorp'). Example: "Hashicorp"
 
 ### Read-Only

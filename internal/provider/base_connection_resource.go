@@ -53,7 +53,7 @@ func BaseConnectorResourceSchema() map[string]schema.Attribute {
 		},
 		"vault_configuration": schema.StringAttribute{
 			Optional:    true,
-			Description: "JSON string specifying vault configuration. Example: '{\"path\":\"/secrets/data/kv-dev-intgn1/-AD_Credential\",\"keyMapping\":{\"PASSWORD\":\"AD_PASSWORD~#~None\"}}'",
+			Description: "JSON string specifying vault configuration.",
 		},
 		"save_in_vault": schema.StringAttribute{
 			Optional:    true,

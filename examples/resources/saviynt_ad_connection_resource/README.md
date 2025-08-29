@@ -6,6 +6,6 @@ Use the following operations to perform full lifecycle management of your AD con
 - **Read** (Retrieve) the connector’s current configuration  
 - **Update** its configuration
 
-[See Saviynt documentation for more details](https://docs.saviyntcloud.com/bundle/AD-25/page/Content/Active-Directory-Integration-Overview.htm)
+[See Saviynt documentation for more details](https://docs.saviyntcloud.com/bundle/AD-25/page/Content/Using-Classic-integration-v2022x.htm)
 
 - Simple example [can be found here](./resource.tf).
