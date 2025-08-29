@@ -183,7 +183,7 @@ resource "saviynt_unix_connection_resource" "example" {
 - `status_threshold_config` (String) Property for STATUS_THRESHOLD_CONFIG
 - `unlock_account_command` (String) Property for UNLOCK_ACCOUNT_COMMAND
 - `update_account_command` (String) Property for UPDATE_ACCOUNT_COMMAND
-- `vault_configuration` (String) JSON string specifying vault configuration. Example: '{"path":"/secrets/data/kv-dev-intgn1/-AD_Credential","keyMapping":{"PASSWORD":"AD_PASSWORD~#~None"}}'
+- `vault_configuration` (String) JSON string specifying vault configuration.
 - `vault_connection` (String) Specifies the type of vault connection being used (e.g., 'Hashicorp'). Example: "Hashicorp"
 
 ### Read-Only

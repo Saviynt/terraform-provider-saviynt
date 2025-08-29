@@ -284,7 +284,7 @@ EOF
 - `update_entitlement_json` (String) JSON to specify the Queries/stored procedures which will be used to Update the Entitlements. Objects Exposed - (entitlementMgmtObj, task, user, endpoint and all the objects defined in Dynamic Attributes).
 - `update_user_json` (String) JSON to specify the queries/stored procedures used to update user information
 - `user_import` (String) User Import XML file content
-- `vault_configuration` (String) JSON string specifying vault configuration. Example: '{"path":"/secrets/data/kv-dev-intgn1/-AD_Credential","keyMapping":{"PASSWORD":"AD_PASSWORD~#~None"}}'
+- `vault_configuration` (String) JSON string specifying vault configuration.
 - `vault_connection` (String) Specifies the type of vault connection being used (e.g., 'Hashicorp'). Example: "Hashicorp"
 
 ### Read-Only

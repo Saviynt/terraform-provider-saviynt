@@ -473,7 +473,7 @@ resource "saviynt_adsi_connection_resource" "example" {
 - `updateserviceaccountjson` (String) Specify the Field Value which will be used to update the existing Service Account.
 - `updateuserjson` (String) Specify the attribute Value which will be used to Update existing User
 - `user_attribute` (String) Map EIC and AD attributes for user import (AD attributes must be in lower case)
-- `vault_configuration` (String) JSON string specifying vault configuration. Example: '{"path":"/secrets/data/kv-dev-intgn1/-AD_Credential","keyMapping":{"PASSWORD":"AD_PASSWORD~#~None"}}'
+- `vault_configuration` (String) JSON string specifying vault configuration.
 - `vault_connection` (String) Specifies the type of vault connection being used (e.g., 'Hashicorp'). Example: "Hashicorp"
 
 ### Read-Only

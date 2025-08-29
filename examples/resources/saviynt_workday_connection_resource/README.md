@@ -6,6 +6,6 @@ Use the following operations to perform full lifecycle management of your Workda
 - **Read** (Retrieve) the connector’s current configuration  
 - **Update** its configuration
 
-[See Saviynt documentation for more details](https://docs.saviyntcloud.com/bundle/WD2-25/page/Content/Integrating-Workday-Applications-v2022x.htm)
+[See Saviynt documentation for more details](https://docs.saviyntcloud.com/bundle/WD2-25/page/Content/Using-Classic-Integration.htm)
 
 - Simple example [can be found here](./resource.tf).

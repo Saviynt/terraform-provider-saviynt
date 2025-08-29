@@ -26,6 +26,8 @@ var SalesforceConnDescription = "Create and manage Salesforce connector in Saviy
 var UnixConnDescription = "Create and manage Unix connector in Saviynt"
 var WorkdayConnDescription = "Create and manage Workday connector in Saviynt"
 var DynamicAttrDescription = "Create and manage Dynamic Attributes in Saviynt"
+var OktaConnDescription = "Create and manage Okta connector in Saviynt"
+var EntitlementTypeDescription = "Create and manage entitlement types in Saviynt"
 
 var ADConnDataSourceDescription = "Retrieve the details for a given AD connector by its name or key"
 var ADSIConnDataSourceDescription = "Retrieve the details for a given ADSI connector by its name or key"
@@ -37,6 +39,8 @@ var SAPConnDataSourceDescription = "Retrieve the details for a given SAP connect
 var SalesforceConnDataSourceDescription = "Retrieve the details for a given Salesforce connector by its name or key"
 var UnixConnDataSourceDescription = "Retrieve the details for a given Unix connector by its name or key"
 var WorkdayConnDataSourceDescription = "Retrieve the details for a given Workday connector by its name or key"
+var OktaConnDataSourceDescription = "Retrieve the details for a given Okta connector by its name or key"
+var EntitlementTypeDataSourceDescription = "Retrieve the details for a given entitlement type by its name or endpoint"
 
 var FileEphemeralResourceDescription = "Provides ephemeral credentials by reading them from a local json file for use by Connector resources."
 var EnvEphemeralResourceDescription = "Provides ephemeral credentials by reading them from a environment for use by Connector resources."

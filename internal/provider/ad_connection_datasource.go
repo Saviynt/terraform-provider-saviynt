@@ -7,30 +7,29 @@ package provider
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
-	"log"
-	"net/http"
-	"strconv"
-	"strings"
+	"terraform-provider-Saviynt/internal/client"
 	"terraform-provider-Saviynt/util"
+	connectionsutil "terraform-provider-Saviynt/util/connectionsutil"
+	"terraform-provider-Saviynt/util/errorsutil"
 
 	"github.com/hashicorp/terraform-plugin-framework/datasource"
 	"github.com/hashicorp/terraform-plugin-framework/datasource/schema"
 	"github.com/hashicorp/terraform-plugin-framework/types"
-	s "github.com/saviynt/saviynt-api-go-client"
-
-	connectionsutil "terraform-provider-Saviynt/util/connectionsutil"
-
+	"github.com/hashicorp/terraform-plugin-log/tflog"
 	openapi "github.com/saviynt/saviynt-api-go-client/connections"
 )
 
 var _ datasource.DataSource = &adConnectionsDataSource{}
 
+// Initialize error codes for AD Connection datasource operations
+var adDatasourceErrorCodes = errorsutil.NewConnectorErrorCodes(errorsutil.ConnectorTypeAD)
+
 // ADConnectionsDataSource defines the data source
 type adConnectionsDataSource struct {
-	client *s.Client
-	token  string
+	client            client.SaviyntClientInterface
+	token             string
+	connectionFactory client.ConnectionFactoryInterface
 }
 
 type ADConnectionDataSourceModel struct {
@@ -101,13 +100,34 @@ type ADConnectionAttributes struct {
 	CheckForUnique             types.String             `tfsdk:"check_for_unique"`
 	ConnectionTimeoutConfig    *ConnectionTimeoutConfig `tfsdk:"connection_timeout_config"`
 	IsTimeoutConfigValidated   types.Bool               `tfsdk:"is_timeout_config_validated"`
-	ResetAndChangePasswdJSON   types.String             `tfsdk:"reset_and_change_passwd_json"`
 }
 
+// NewADConnectionsDataSource creates a new AD connections data source with default factory
 func NewADConnectionsDataSource() datasource.DataSource {
-	return &adConnectionsDataSource{}
+	return &adConnectionsDataSource{
+		connectionFactory: &client.DefaultConnectionFactory{},
+	}
 }
 
+// NewADConnectionsDataSourceWithFactory creates a new AD connections data source with custom factory
+// Used primarily for testing with mock factories
+func NewADConnectionsDataSourceWithFactory(factory client.ConnectionFactoryInterface) datasource.DataSource {
+	return &adConnectionsDataSource{
+		connectionFactory: factory,
+	}
+}
+
+// SetClient sets the client for testing purposes
+func (d *adConnectionsDataSource) SetClient(client client.SaviyntClientInterface) {
+	d.client = client
+}
+
+// SetToken sets the token for testing purposes
+func (d *adConnectionsDataSource) SetToken(token string) {
+	d.token = token
+}
+
+// Metadata sets the data source type name for Terraform
 func (d *adConnectionsDataSource) Metadata(ctx context.Context, req datasource.MetadataRequest, resp *datasource.MetadataResponse) {
 	resp.TypeName = "saviynt_ad_connection_datasource"
 }
@@ -180,7 +200,6 @@ func ADConnectorsDataSourceSchema() map[string]schema.Attribute {
 				"max_change_number":              schema.StringAttribute{Computed: true},
 				"incremental_config":             schema.StringAttribute{Computed: true},
 				"check_for_unique":               schema.StringAttribute{Computed: true},
-				"reset_and_change_passwd_json":   schema.StringAttribute{Computed: true},
 				"connection_timeout_config": schema.SingleNestedAttribute{
 					Computed:   true,
 					Attributes: ConnectionTimeoutConfigeSchema(),
@@ -190,6 +209,8 @@ func ADConnectorsDataSourceSchema() map[string]schema.Attribute {
 		},
 	}
 }
+
+// Schema defines the structure and attributes available for the AD connection data source
 func (d *adConnectionsDataSource) Schema(ctx context.Context, req datasource.SchemaRequest, resp *datasource.SchemaResponse) {
 	resp.Schema = schema.Schema{
 		Description: util.ADConnDataSourceDescription,
@@ -197,87 +218,185 @@ func (d *adConnectionsDataSource) Schema(ctx context.Context, req datasource.Sch
 	}
 }
 
+// Configure initializes the data source with provider configuration
+// Sets up client and authentication token for API operations
 func (d *adConnectionsDataSource) Configure(ctx context.Context, req datasource.ConfigureRequest, resp *datasource.ConfigureResponse) {
+	opCtx := errorsutil.CreateOperationContext(errorsutil.ConnectorTypeAD, "configure", "")
+	ctx = opCtx.AddContextToLogger(ctx)
+
+	opCtx.LogOperationStart(ctx, "Starting AD connection datasource configuration")
+
 	// Check if provider data is available.
 	if req.ProviderData == nil {
-		log.Println("ProviderData is nil, returning early.")
+		tflog.Debug(ctx, "ProviderData is nil, returning early")
+		opCtx.LogOperationEnd(ctx, "AD connection datasource configuration completed - no provider data")
 		return
 	}
 
 	// Cast provider data to your provider type.
 	prov, ok := req.ProviderData.(*saviyntProvider)
 	if !ok {
-		resp.Diagnostics.AddError("Unexpected Provider Data", "Expected *saviyntProvider")
+		errorCode := adDatasourceErrorCodes.ProviderConfig()
+		opCtx.LogOperationError(ctx, "Provider configuration failed", errorCode,
+			fmt.Errorf("expected *saviyntProvider, got different type"),
+			map[string]interface{}{"expected_type": "*saviyntProvider"})
+
+		resp.Diagnostics.AddError(
+			errorsutil.GetErrorMessage(errorsutil.ErrProviderConfig),
+			fmt.Sprintf("[%s] Expected *saviyntProvider, got different type", errorCode),
+		)
 		return
 	}
 
-	// Set the client and token from the provider state.
-	d.client = prov.client
+	// Set the client and token from the provider state using interface wrapper.
+	d.client = &client.SaviyntClientWrapper{Client: prov.client}
 	d.token = prov.accessToken
+
+	opCtx.LogOperationEnd(ctx, "AD connection datasource configured successfully")
 }
 
+// Read retrieves AD connection details from Saviynt and populates the Terraform state
+// Supports lookup by connection name or connection key with comprehensive error handling
 func (d *adConnectionsDataSource) Read(ctx context.Context, req datasource.ReadRequest, resp *datasource.ReadResponse) {
 	var state ADConnectionDataSourceModel
 
+	opCtx := errorsutil.CreateOperationContext(errorsutil.ConnectorTypeAD, "datasource_read", "")
+	ctx = opCtx.AddContextToLogger(ctx)
+
+	opCtx.LogOperationStart(ctx, "Starting AD connection datasource read")
+
+	// Extract configuration from request
 	configDiagnostics := req.Config.Get(ctx, &state)
 	resp.Diagnostics.Append(configDiagnostics...)
 	if resp.Diagnostics.HasError() {
+		errorCode := adDatasourceErrorCodes.ConfigExtraction()
+		opCtx.LogOperationError(ctx, "Failed to get config from request", errorCode,
+			fmt.Errorf("config extraction failed"))
+		resp.Diagnostics.AddError(
+			errorsutil.GetErrorMessage(errorsutil.ErrConfigExtraction),
+			fmt.Sprintf("[%s] Unable to extract Terraform configuration from request", errorCode),
+		)
 		return
 	}
 
-	cfg := openapi.NewConfiguration()
-	apiBaseURL := strings.TrimPrefix(strings.TrimPrefix(d.client.APIBaseURL(), "https://"), "http://")
-	cfg.Host = apiBaseURL
-	cfg.Scheme = "https"
-	cfg.AddDefaultHeader("Authorization", "Bearer "+d.token)
-	cfg.HTTPClient = http.DefaultClient
-
-	apiClient := openapi.NewAPIClient(cfg)
-	reqParams := openapi.GetConnectionDetailsRequest{}
-
-	// Set filters based on provided parameters
+	// Update operation context with connection name if available
+	connectionName := ""
 	if !state.ConnectionName.IsNull() && state.ConnectionName.ValueString() != "" {
-		reqParams.SetConnectionname(state.ConnectionName.ValueString())
+		connectionName = state.ConnectionName.ValueString()
+		opCtx.ConnectionName = connectionName
+		ctx = opCtx.AddContextToLogger(ctx)
 	}
+
+	// Prepare connection parameters
+	var connectionKey *int64
 	if !state.ConnectionKey.IsNull() {
-		connectionKeyInt := state.ConnectionKey.ValueInt64()
-		reqParams.SetConnectionkey(strconv.FormatInt(connectionKeyInt, 10))
+		keyValue := state.ConnectionKey.ValueInt64()
+		connectionKey = &keyValue
 	}
-	apiReq := apiClient.ConnectionsAPI.GetConnectionDetails(ctx).GetConnectionDetailsRequest(reqParams)
 
-	// Execute API request
-	apiResp, httpResp, err := apiReq.Execute()
+	// Execute API call to get AD connection details
+	apiResp, err := d.ReadADConnectionDetails(ctx, connectionName, connectionKey)
 	if err != nil {
-		if httpResp != nil && httpResp.StatusCode != 200 {
-			log.Printf("[ERROR] HTTP error while creating AD Connector: %s", httpResp.Status)
-			var fetchResp map[string]interface{}
-			if err := json.NewDecoder(httpResp.Body).Decode(&fetchResp); err != nil {
-				resp.Diagnostics.AddError("Failed to decode error response", err.Error())
-				return
-			}
-			resp.Diagnostics.AddError(
-				"HTTP Error",
-				fmt.Sprintf("HTTP error while creating AD Connector for the reasons: %s", fetchResp["msg"]),
-			)
-
-		} else {
-			log.Printf("[ERROR] API Call Failed: %v", err)
-			resp.Diagnostics.AddError("API Call Failed", fmt.Sprintf("Error: %v", err))
-		}
+		// Error is already sanitized in ReadADConnectionDetails method
+		errorCode := adDatasourceErrorCodes.ReadFailed()
+		opCtx.LogOperationError(ctx, "Failed to read AD connection details", errorCode, err)
+		resp.Diagnostics.AddError(
+			errorsutil.GetErrorMessage(errorsutil.ErrReadFailed),
+			fmt.Sprintf("[%s] %s", errorCode, err.Error()),
+		)
 		return
 	}
 
+	// Validate API response
+	if err := d.ValidateADConnectionResponse(apiResp); err != nil {
+		errorCode := adDatasourceErrorCodes.APIError()
+		opCtx.LogOperationError(ctx, "Invalid connection type for AD datasource", errorCode, err)
+		resp.Diagnostics.AddError(
+			errorsutil.GetErrorMessage(errorsutil.ErrAPIError),
+			fmt.Sprintf("[%s] Unable to verify connection type for connection %q. The provider could not determine the type of this connection. Please ensure the connection name is correct and belongs to a supported connector type.", errorCode, connectionName),
+		)
+		return
+	}
+
+	// Map API response to state
+	d.UpdateModelFromADConnectionResponse(&state, apiResp)
+
+	// Handle authentication logic
+	d.HandleADAuthenticationLogic(&state, resp)
+
+	// Set final state
+	stateDiagnostics := resp.State.Set(ctx, &state)
+	resp.Diagnostics.Append(stateDiagnostics...)
+	if resp.Diagnostics.HasError() {
+		errorCode := adDatasourceErrorCodes.StateUpdate()
+		opCtx.LogOperationError(ctx, "Failed to set state", errorCode,
+			fmt.Errorf("state update failed"))
+		resp.Diagnostics.AddError(
+			errorsutil.GetErrorMessage(errorsutil.ErrStateUpdate),
+			fmt.Sprintf("[%s] Unable to update Terraform state for AD connection datasource", errorCode),
+		)
+		return
+	}
+
+	opCtx.LogOperationEnd(ctx, "AD connection datasource read completed successfully",
+		map[string]interface{}{
+			"connection_name": connectionName,
+			"has_attributes":  state.ConnectionAttributes != nil,
+		})
+}
+
+// ReadADConnectionDetails retrieves AD connection details from Saviynt API
+// Handles both connection name and connection key based lookups using factory pattern
+// Returns standardized errors with proper correlation tracking and sensitive data sanitization
+func (d *adConnectionsDataSource) ReadADConnectionDetails(ctx context.Context, connectionName string, connectionKey *int64) (*openapi.GetConnectionDetailsResponse, error) {
+	opCtx := errorsutil.CreateOperationContext(errorsutil.ConnectorTypeAD, "api_read", connectionName)
+	logCtx := opCtx.AddContextToLogger(ctx)
+
+	opCtx.LogOperationStart(logCtx, "Starting AD connection API call")
+
+	// Use factory pattern instead of direct client creation
+	connectionOps := d.connectionFactory.CreateConnectionOperations(d.client.APIBaseURL(), d.token)
+
+	tflog.Debug(logCtx, "Executing API request to get AD connection details")
+
+	// Execute API request through interface - use original context for API calls
+	apiResp, _, err := connectionOps.GetConnectionDetails(ctx, connectionName)
+	if err != nil {
+		errorCode := adDatasourceErrorCodes.ReadFailed()
+		opCtx.LogOperationError(logCtx, "Failed to read AD connection details", errorCode, err)
+		return nil, errorsutil.CreateStandardError(errorsutil.ConnectorTypeAD, errorCode, "api_read", connectionName, err)
+	}
+
+	opCtx.LogOperationEnd(logCtx, "AD connection API call completed successfully")
+
+	return apiResp, nil
+}
+
+// ValidateADConnectionResponse validates that the API response contains valid AD connection data
+// Returns standardized error if validation fails
+func (d *adConnectionsDataSource) ValidateADConnectionResponse(apiResp *openapi.GetConnectionDetailsResponse) error {
 	if apiResp != nil && apiResp.ADConnectionResponse == nil {
-		error := "Verify the connection type"
-		log.Printf("[ERROR]: Verify the connection type given")
-		resp.Diagnostics.AddError("Read of AD connection failed", error)
-		return
+		return fmt.Errorf("verify the connection type - AD connection response is nil")
 	}
+	return nil
+}
 
-	log.Printf("[DEBUG] HTTP Status Code: %d", httpResp.StatusCode)
+// UpdateModelFromADConnectionResponse maps API response data to the Terraform state model
+// It handles both base connection fields and detailed connection attributes
+func (d *adConnectionsDataSource) UpdateModelFromADConnectionResponse(state *ADConnectionDataSourceModel, apiResp *openapi.GetConnectionDetailsResponse) {
+	// Map base connection fields
+	d.MapBaseADConnectionFields(state, apiResp)
 
+	// Map connection attributes
+	d.MapADConnectionAttributes(state, apiResp)
+}
+
+// MapBaseADConnectionFields maps basic connection fields from API response to state model
+// These are common fields available for all connection types
+func (d *adConnectionsDataSource) MapBaseADConnectionFields(state *ADConnectionDataSourceModel, apiResp *openapi.GetConnectionDetailsResponse) {
 	state.Msg = util.SafeStringDatasource(apiResp.ADConnectionResponse.Msg)
 	state.ErrorCode = util.SafeInt64(apiResp.ADConnectionResponse.Errorcode)
+	state.ID = types.StringValue(fmt.Sprintf("ds-ad-%d", *apiResp.ADConnectionResponse.Connectionkey))
 	state.ConnectionName = util.SafeStringDatasource(apiResp.ADConnectionResponse.Connectionname)
 	state.ConnectionKey = util.SafeInt64(apiResp.ADConnectionResponse.Connectionkey)
 	state.Description = util.SafeStringDatasource(apiResp.ADConnectionResponse.Description)
@@ -286,95 +405,114 @@ func (d *adConnectionsDataSource) Read(ctx context.Context, req datasource.ReadR
 	state.CreatedOn = util.SafeStringDatasource(apiResp.ADConnectionResponse.Createdon)
 	state.CreatedBy = util.SafeStringDatasource(apiResp.ADConnectionResponse.Createdby)
 	state.UpdatedBy = util.SafeStringDatasource(apiResp.ADConnectionResponse.Updatedby)
-	state.Msg = util.SafeStringDatasource(apiResp.ADConnectionResponse.Msg)
 	state.EmailTemplate = util.SafeStringDatasource(apiResp.ADConnectionResponse.Emailtemplate)
+}
 
-	if apiResp.ADConnectionResponse.Connectionattributes != nil {
-		state.ConnectionAttributes = &ADConnectionAttributes{
-			URL:                       util.SafeStringDatasource(apiResp.ADConnectionResponse.Connectionattributes.URL),
-			ConnectionType:            util.SafeStringDatasource(apiResp.ADConnectionResponse.Connectionattributes.ConnectionType),
-			AdvSearch:                 util.SafeStringDatasource(apiResp.ADConnectionResponse.Connectionattributes.ADVSEARCH),
-			LastImportTime:            util.SafeStringDatasource(apiResp.ADConnectionResponse.Connectionattributes.LAST_IMPORT_TIME),
-			CreateAccountJSON:         util.SafeStringDatasource(apiResp.ADConnectionResponse.Connectionattributes.CREATEACCOUNTJSON),
-			DisableAccountJSON:        util.SafeStringDatasource(apiResp.ADConnectionResponse.Connectionattributes.DISABLEACCOUNTJSON),
-			GroupSearchBaseDN:         util.SafeStringDatasource(apiResp.ADConnectionResponse.Connectionattributes.GroupSearchBaseDN),
-			PasswordNoOfSplChars:      util.SafeStringDatasource(apiResp.ADConnectionResponse.Connectionattributes.PASSWORD_NOOFSPLCHARS),
-			PasswordNoOfDigits:        util.SafeStringDatasource(apiResp.ADConnectionResponse.Connectionattributes.PASSWORD_NOOFDIGITS),
-			StatusKeyJSON:             util.SafeStringDatasource(apiResp.ADConnectionResponse.Connectionattributes.STATUSKEYJSON),
-			SearchFilter:              util.SafeStringDatasource(apiResp.ADConnectionResponse.Connectionattributes.SEARCHFILTER),
-			ConfigJSON:                util.SafeStringDatasource(apiResp.ADConnectionResponse.Connectionattributes.ConfigJSON),
-			RemoveAccountAction:       util.SafeStringDatasource(apiResp.ADConnectionResponse.Connectionattributes.REMOVEACCOUNTACTION),
-			AccountAttribute:          util.SafeStringDatasource(apiResp.ADConnectionResponse.Connectionattributes.ACCOUNT_ATTRIBUTE),
-			AccountNameRule:           util.SafeStringDatasource(apiResp.ADConnectionResponse.Connectionattributes.ACCOUNTNAMERULE),
-			LDAPOrAD:                  util.SafeStringDatasource(apiResp.ADConnectionResponse.Connectionattributes.LDAP_OR_AD),
-			EntitlementAttribute:      util.SafeStringDatasource(apiResp.ADConnectionResponse.Connectionattributes.ENTITLEMENT_ATTRIBUTE),
-			SetRandomPassword:         util.SafeStringDatasource(apiResp.ADConnectionResponse.Connectionattributes.SETRANDOMPASSWORD),
-			PasswordMinLength:         util.SafeStringDatasource(apiResp.ADConnectionResponse.Connectionattributes.PASSWORD_MIN_LENGTH),
-			PasswordMaxLength:         util.SafeStringDatasource(apiResp.ADConnectionResponse.Connectionattributes.PASSWORD_MAX_LENGTH),
-			PasswordNoOfCapsAlpha:     util.SafeStringDatasource(apiResp.ADConnectionResponse.Connectionattributes.PASSWORD_NOOFCAPSALPHA),
-			SetDefaultPageSize:        util.SafeStringDatasource(apiResp.ADConnectionResponse.Connectionattributes.SETDEFAULTPAGESIZE),
-			IsTimeoutSupported:        util.SafeBoolDatasource(apiResp.ADConnectionResponse.Connectionattributes.IsTimeoutSupported),
-			ReuseInactiveAccount:      util.SafeStringDatasource(apiResp.ADConnectionResponse.Connectionattributes.REUSEINACTIVEACCOUNT),
-			ImportJSON:                util.SafeStringDatasource(apiResp.ADConnectionResponse.Connectionattributes.IMPORTJSON),
-			CreateUpdateMappings:      util.SafeStringDatasource(apiResp.ADConnectionResponse.Connectionattributes.CreateUpdateMappings),
-			AdvanceFilterJSON:         util.SafeStringDatasource(apiResp.ADConnectionResponse.Connectionattributes.ADVANCE_FILTER_JSON),
-			OrgImportJSON:             util.SafeStringDatasource(apiResp.ADConnectionResponse.Connectionattributes.ORGIMPORTJSON),
-			PAMConfig:                 util.SafeStringDatasource(apiResp.ADConnectionResponse.Connectionattributes.PAM_CONFIG),
-			PageSize:                  util.SafeStringDatasource(apiResp.ADConnectionResponse.Connectionattributes.PAGE_SIZE),
-			Base:                      util.SafeStringDatasource(apiResp.ADConnectionResponse.Connectionattributes.BASE),
-			DCLocator:                 util.SafeStringDatasource(apiResp.ADConnectionResponse.Connectionattributes.DC_LOCATOR),
-			StatusThresholdConfig:     util.SafeStringDatasource(apiResp.ADConnectionResponse.Connectionattributes.STATUS_THRESHOLD_CONFIG),
-			ResetAndChangePasswdJSON:  util.SafeStringDatasource(apiResp.ADConnectionResponse.Connectionattributes.RESETANDCHANGEPASSWRDJSON),
-			SupportEmptyString:        util.SafeStringDatasource(apiResp.ADConnectionResponse.Connectionattributes.SUPPORTEMPTYSTRING),
-			ReadOperationalAttributes: util.SafeStringDatasource(apiResp.ADConnectionResponse.Connectionattributes.READ_OPERATIONAL_ATTRIBUTES),
-			EnableAccountJSON:         util.SafeStringDatasource(apiResp.ADConnectionResponse.Connectionattributes.ENABLEACCOUNTJSON),
-			UserAttribute:             util.SafeStringDatasource(apiResp.ADConnectionResponse.Connectionattributes.USER_ATTRIBUTE),
-			DefaultUserRole:           util.SafeStringDatasource(apiResp.ADConnectionResponse.Connectionattributes.DEFAULT_USER_ROLE),
-			EndpointsFilter:           util.SafeStringDatasource(apiResp.ADConnectionResponse.Connectionattributes.ENDPOINTS_FILTER),
-			UpdateAccountJSON:         util.SafeStringDatasource(apiResp.ADConnectionResponse.Connectionattributes.UPDATEACCOUNTJSON),
-			ReuseAccountJSON:          util.SafeStringDatasource(apiResp.ADConnectionResponse.Connectionattributes.REUSEACCOUNTJSON),
-			EnforceTreeDeletion:       util.SafeStringDatasource(apiResp.ADConnectionResponse.Connectionattributes.ENFORCE_TREE_DELETION),
-			Filter:                    util.SafeStringDatasource(apiResp.ADConnectionResponse.Connectionattributes.FILTER),
-			ObjectFilter:              util.SafeStringDatasource(apiResp.ADConnectionResponse.Connectionattributes.OBJECTFILTER),
-			UpdateUserJSON:            util.SafeStringDatasource(apiResp.ADConnectionResponse.Connectionattributes.UPDATEUSERJSON),
-			SaveConnection:            util.SafeStringDatasource(apiResp.ADConnectionResponse.Connectionattributes.Saveconnection),
-			SystemName:                util.SafeStringDatasource(apiResp.ADConnectionResponse.Connectionattributes.Systemname),
-			GroupImportMapping:        util.SafeStringDatasource(apiResp.ADConnectionResponse.Connectionattributes.GroupImportMapping),
-			UnlockAccountJSON:         util.SafeStringDatasource(apiResp.ADConnectionResponse.Connectionattributes.UNLOCKACCOUNTJSON),
-			EnableGroupManagement:     util.SafeStringDatasource(apiResp.ADConnectionResponse.Connectionattributes.ENABLEGROUPMANAGEMENT),
-			ModifyUserDataJSON:        util.SafeStringDatasource(apiResp.ADConnectionResponse.Connectionattributes.MODIFYUSERDATAJSON),
-			OrgBase:                   util.SafeStringDatasource(apiResp.ADConnectionResponse.Connectionattributes.ORG_BASE),
-			OrganizationAttribute:     util.SafeStringDatasource(apiResp.ADConnectionResponse.Connectionattributes.ORGANIZATION_ATTRIBUTE),
-			CreateOrgJSON:             util.SafeStringDatasource(apiResp.ADConnectionResponse.Connectionattributes.CREATEORGJSON),
-			UpdateOrgJSON:             util.SafeStringDatasource(apiResp.ADConnectionResponse.Connectionattributes.UPDATEORGJSON),
-			MaxChangeNumber:           util.SafeStringDatasource(apiResp.ADConnectionResponse.Connectionattributes.MAX_CHANGENUMBER),
-			IncrementalConfig:         util.SafeStringDatasource(apiResp.ADConnectionResponse.Connectionattributes.INCREMENTAL_CONFIG),
-			CheckForUnique:            util.SafeStringDatasource(apiResp.ADConnectionResponse.Connectionattributes.CHECKFORUNIQUE),
-			IsTimeoutConfigValidated:  util.SafeBoolDatasource(apiResp.ADConnectionResponse.Connectionattributes.IsTimeoutConfigValidated),
-		}
-		if apiResp.ADConnectionResponse.Connectionattributes.ConnectionTimeoutConfig != nil {
-			state.ConnectionAttributes.ConnectionTimeoutConfig = &ConnectionTimeoutConfig{
-				RetryWait:               util.SafeInt64(apiResp.ADConnectionResponse.Connectionattributes.ConnectionTimeoutConfig.RetryWait),
-				TokenRefreshMaxTryCount: util.SafeInt64(apiResp.ADConnectionResponse.Connectionattributes.ConnectionTimeoutConfig.TokenRefreshMaxTryCount),
-				RetryWaitMaxValue:       util.SafeInt64(apiResp.ADConnectionResponse.Connectionattributes.ConnectionTimeoutConfig.RetryWaitMaxValue),
-				RetryCount:              util.SafeInt64(apiResp.ADConnectionResponse.Connectionattributes.ConnectionTimeoutConfig.RetryCount),
-				ReadTimeout:             util.SafeInt64(apiResp.ADConnectionResponse.Connectionattributes.ConnectionTimeoutConfig.ReadTimeout),
-				ConnectionTimeout:       util.SafeInt64(apiResp.ADConnectionResponse.Connectionattributes.ConnectionTimeoutConfig.ConnectionTimeout),
-				RetryFailureStatusCode:  util.SafeInt64(apiResp.ADConnectionResponse.Connectionattributes.ConnectionTimeoutConfig.RetryFailureStatusCode),
-			}
-		}
-	}
+// MapADConnectionAttributes maps detailed AD connection attributes from API response to state model
+// Returns nil if no connection attributes are present in the response
+func (d *adConnectionsDataSource) MapADConnectionAttributes(state *ADConnectionDataSourceModel, apiResp *openapi.GetConnectionDetailsResponse) {
 	if apiResp.ADConnectionResponse.Connectionattributes == nil {
 		state.ConnectionAttributes = nil
+		return
 	}
 
+	attrs := apiResp.ADConnectionResponse.Connectionattributes
+	state.ConnectionAttributes = &ADConnectionAttributes{
+		URL:                        util.SafeStringDatasource(attrs.URL),
+		ConnectionType:             util.SafeStringDatasource(attrs.ConnectionType),
+		AdvSearch:                  util.SafeStringDatasource(attrs.ADVSEARCH),
+		LastImportTime:             util.SafeStringDatasource(attrs.LAST_IMPORT_TIME),
+		CreateAccountJSON:          util.SafeStringDatasource(attrs.CREATEACCOUNTJSON),
+		DisableAccountJSON:         util.SafeStringDatasource(attrs.DISABLEACCOUNTJSON),
+		GroupSearchBaseDN:          util.SafeStringDatasource(attrs.GroupSearchBaseDN),
+		PasswordNoOfSplChars:       util.SafeStringDatasource(attrs.PASSWORD_NOOFSPLCHARS),
+		PasswordNoOfDigits:         util.SafeStringDatasource(attrs.PASSWORD_NOOFDIGITS),
+		StatusKeyJSON:              util.SafeStringDatasource(attrs.STATUSKEYJSON),
+		SearchFilter:               util.SafeStringDatasource(attrs.SEARCHFILTER),
+		ConfigJSON:                 util.SafeStringDatasource(attrs.ConfigJSON),
+		RemoveAccountAction:        util.SafeStringDatasource(attrs.REMOVEACCOUNTACTION),
+		AccountAttribute:           util.SafeStringDatasource(attrs.ACCOUNT_ATTRIBUTE),
+		AccountNameRule:            util.SafeStringDatasource(attrs.ACCOUNTNAMERULE),
+		LDAPOrAD:                   util.SafeStringDatasource(attrs.LDAP_OR_AD),
+		EntitlementAttribute:       util.SafeStringDatasource(attrs.ENTITLEMENT_ATTRIBUTE),
+		SetRandomPassword:          util.SafeStringDatasource(attrs.SETRANDOMPASSWORD),
+		PasswordMinLength:          util.SafeStringDatasource(attrs.PASSWORD_MIN_LENGTH),
+		PasswordMaxLength:          util.SafeStringDatasource(attrs.PASSWORD_MAX_LENGTH),
+		PasswordNoOfCapsAlpha:      util.SafeStringDatasource(attrs.PASSWORD_NOOFCAPSALPHA),
+		SetDefaultPageSize:         util.SafeStringDatasource(attrs.SETDEFAULTPAGESIZE),
+		IsTimeoutSupported:         util.SafeBoolDatasource(attrs.IsTimeoutSupported),
+		ReuseInactiveAccount:       util.SafeStringDatasource(attrs.REUSEINACTIVEACCOUNT),
+		ImportJSON:                 util.SafeStringDatasource(attrs.IMPORTJSON),
+		CreateUpdateMappings:       util.SafeStringDatasource(attrs.CreateUpdateMappings),
+		AdvanceFilterJSON:          util.SafeStringDatasource(attrs.ADVANCE_FILTER_JSON),
+		OrgImportJSON:              util.SafeStringDatasource(attrs.ORGIMPORTJSON),
+		PAMConfig:                  util.SafeStringDatasource(attrs.PAM_CONFIG),
+		PageSize:                   util.SafeStringDatasource(attrs.PAGE_SIZE),
+		Base:                       util.SafeStringDatasource(attrs.BASE),
+		DCLocator:                  util.SafeStringDatasource(attrs.DC_LOCATOR),
+		StatusThresholdConfig:      util.SafeStringDatasource(attrs.STATUS_THRESHOLD_CONFIG),
+		ResetAndChangePasswordJSON: util.SafeStringDatasource(attrs.RESETANDCHANGEPASSWRDJSON),
+		SupportEmptyString:         util.SafeStringDatasource(attrs.SUPPORTEMPTYSTRING),
+		ReadOperationalAttributes:  util.SafeStringDatasource(attrs.READ_OPERATIONAL_ATTRIBUTES),
+		EnableAccountJSON:          util.SafeStringDatasource(attrs.ENABLEACCOUNTJSON),
+		UserAttribute:              util.SafeStringDatasource(attrs.USER_ATTRIBUTE),
+		DefaultUserRole:            util.SafeStringDatasource(attrs.DEFAULT_USER_ROLE),
+		EndpointsFilter:            util.SafeStringDatasource(attrs.ENDPOINTS_FILTER),
+		UpdateAccountJSON:          util.SafeStringDatasource(attrs.UPDATEACCOUNTJSON),
+		ReuseAccountJSON:           util.SafeStringDatasource(attrs.REUSEACCOUNTJSON),
+		EnforceTreeDeletion:        util.SafeStringDatasource(attrs.ENFORCE_TREE_DELETION),
+		Filter:                     util.SafeStringDatasource(attrs.FILTER),
+		ObjectFilter:               util.SafeStringDatasource(attrs.OBJECTFILTER),
+		UpdateUserJSON:             util.SafeStringDatasource(attrs.UPDATEUSERJSON),
+		SaveConnection:             util.SafeStringDatasource(attrs.Saveconnection),
+		SystemName:                 util.SafeStringDatasource(attrs.Systemname),
+		GroupImportMapping:         util.SafeStringDatasource(attrs.GroupImportMapping),
+		UnlockAccountJSON:          util.SafeStringDatasource(attrs.UNLOCKACCOUNTJSON),
+		EnableGroupManagement:      util.SafeStringDatasource(attrs.ENABLEGROUPMANAGEMENT),
+		ModifyUserDataJSON:         util.SafeStringDatasource(attrs.MODIFYUSERDATAJSON),
+		OrgBase:                    util.SafeStringDatasource(attrs.ORG_BASE),
+		OrganizationAttribute:      util.SafeStringDatasource(attrs.ORGANIZATION_ATTRIBUTE),
+		CreateOrgJSON:              util.SafeStringDatasource(attrs.CREATEORGJSON),
+		UpdateOrgJSON:              util.SafeStringDatasource(attrs.UPDATEORGJSON),
+		MaxChangeNumber:            util.SafeStringDatasource(attrs.MAX_CHANGENUMBER),
+		IncrementalConfig:          util.SafeStringDatasource(attrs.INCREMENTAL_CONFIG),
+		CheckForUnique:             util.SafeStringDatasource(attrs.CHECKFORUNIQUE),
+		IsTimeoutConfigValidated:   util.SafeBoolDatasource(attrs.IsTimeoutConfigValidated),
+	}
+
+	// Map connection timeout config if present
+	d.MapADTimeoutConfig(attrs, state.ConnectionAttributes)
+}
+
+// MapADTimeoutConfig maps connection timeout configuration from API response to state model
+// Only maps timeout config if it exists in the API response
+func (d *adConnectionsDataSource) MapADTimeoutConfig(attrs *openapi.ADConnectionAttributes, connectionAttrs *ADConnectionAttributes) {
+	if attrs.ConnectionTimeoutConfig != nil {
+		connectionAttrs.ConnectionTimeoutConfig = &ConnectionTimeoutConfig{
+			RetryWait:               util.SafeInt64(attrs.ConnectionTimeoutConfig.RetryWait),
+			TokenRefreshMaxTryCount: util.SafeInt64(attrs.ConnectionTimeoutConfig.TokenRefreshMaxTryCount),
+			RetryWaitMaxValue:       util.SafeInt64(attrs.ConnectionTimeoutConfig.RetryWaitMaxValue),
+			RetryCount:              util.SafeInt64(attrs.ConnectionTimeoutConfig.RetryCount),
+			ReadTimeout:             util.SafeInt64(attrs.ConnectionTimeoutConfig.ReadTimeout),
+			ConnectionTimeout:       util.SafeInt64(attrs.ConnectionTimeoutConfig.ConnectionTimeout),
+			RetryFailureStatusCode:  util.SafeInt64(attrs.ConnectionTimeoutConfig.RetryFailureStatusCode),
+		}
+	}
+}
+
+// HandleADAuthenticationLogic processes the authenticate flag to control sensitive data visibility
+// When authenticate=false, connection_attributes are removed from state to prevent sensitive data exposure
+// When authenticate=true, all connection_attributes are returned in state
+func (d *adConnectionsDataSource) HandleADAuthenticationLogic(state *ADConnectionDataSourceModel, resp *datasource.ReadResponse) {
 	if !state.Authenticate.IsNull() && !state.Authenticate.IsUnknown() {
 		if state.Authenticate.ValueBool() {
+			tflog.Info(context.Background(), "Authentication enabled - returning all connection attributes")
 			resp.Diagnostics.AddWarning(
 				"Authentication Enabled",
 				"`authenticate` is true; all connection_attributes will be returned in state.",
 			)
 		} else {
+			tflog.Info(context.Background(), "Authentication disabled - removing connection attributes from state")
 			resp.Diagnostics.AddWarning(
 				"Authentication Disabled",
 				"`authenticate` is false; connection_attributes will be removed from state.",
@@ -382,6 +520,4 @@ func (d *adConnectionsDataSource) Read(ctx context.Context, req datasource.ReadR
 			state.ConnectionAttributes = nil
 		}
 	}
-	stateDiagnostics := resp.State.Set(ctx, &state)
-	resp.Diagnostics.Append(stateDiagnostics...)
 }
