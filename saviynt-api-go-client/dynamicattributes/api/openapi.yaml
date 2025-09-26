@@ -1,0 +1,813 @@
+# Copyright (c) 2025 Saviynt Inc.
+# SPDX-License-Identifier: MPL-2.0
+
+openapi: 3.1.0
+info:
+  description: |-
+    Use this API to manage dynamic attributes in Saviynt Identity Cloud.
+
+    The Authorization header must have "Bearer {token}".
+  title: Dynamic Attribute Management API
+  version: 1.0.0
+servers:
+- url: http://localhost:3000
+paths:
+  /ECM/api/v5/createDynamicAttribute:
+    post:
+      operationId: createDynamicAttribute
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateDynamicAttributeRequest'
+        description: Request payload for creating a dynamic attribute.
+        required: true
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CreateOrUpdateOrDeleteDynamicAttributeResponse'
+          description: Create dynamic attribute success
+          headers:
+            Access-Control-Allow-Credentials:
+              explode: false
+              schema:
+                example: "true"
+                type: string
+              style: simple
+            Access-Control-Allow-Origin:
+              explode: false
+              schema:
+                example: http://localhost
+                type: string
+              style: simple
+            Cache-Control:
+              explode: false
+              schema:
+                example: "no-store, no-cache, must-revalidate"
+                type: string
+              style: simple
+            Date:
+              explode: false
+              schema:
+                example: "Wed, 08 Aug 2018 00:33:37 GMT"
+                type: string
+              style: simple
+      summary: Create a dynamic attribute
+      tags:
+      - dynamic-attributes
+  /ECM/api/v5/updateDynamicAttribute:
+    put:
+      operationId: updateDynamicAttribute
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateDynamicAttributeRequest'
+        description: Request payload for updating a dynamic attribute.
+        required: true
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CreateOrUpdateOrDeleteDynamicAttributeResponse'
+          description: Update dynamic attribute success
+          headers:
+            Access-Control-Allow-Credentials:
+              explode: false
+              schema:
+                example: "true"
+                type: string
+              style: simple
+            Access-Control-Allow-Origin:
+              explode: false
+              schema:
+                example: http://localhost
+                type: string
+              style: simple
+            Cache-Control:
+              explode: false
+              schema:
+                example: "no-store, no-cache, must-revalidate"
+                type: string
+              style: simple
+            Date:
+              explode: false
+              schema:
+                example: "Wed, 08 Aug 2018 00:33:37 GMT"
+                type: string
+              style: simple
+      summary: Update a dynamic attribute
+      tags:
+      - dynamic-attributes
+  /ECM/api/v5/fetchDynamicAttribute:
+    get:
+      operationId: fetchDynamicAttribute
+      parameters:
+      - description: List of security systems to filter
+        explode: true
+        in: query
+        name: securitysystem
+        required: false
+        schema:
+          items:
+            type: string
+          type: array
+          style: form
+          explode: true
+        style: form
+      - description: List of endpoints to filter
+        explode: true
+        in: query
+        name: endpoint
+        required: false
+        schema:
+          items:
+            type: string
+          type: array
+          style: form
+          explode: true
+        style: form
+      - description: List of dynamic attribute names
+        explode: true
+        in: query
+        name: dynamicattributes
+        required: false
+        schema:
+          items:
+            type: string
+          type: array
+          style: form
+          explode: true
+        style: form
+      - description: "Types of request (ACCOUNT, etc.)"
+        explode: true
+        in: query
+        name: requesttype
+        required: false
+        schema:
+          items:
+            type: string
+          type: array
+          style: form
+          explode: true
+        style: form
+      - description: Pagination offset
+        explode: true
+        in: query
+        name: offset
+        required: false
+        schema:
+          type: string
+        style: form
+      - description: Maximum number of results
+        explode: true
+        in: query
+        name: max
+        required: false
+        schema:
+          type: string
+        style: form
+      - description: Username of the logged-in user
+        explode: true
+        in: query
+        name: loggedinuser
+        required: false
+        schema:
+          type: string
+        style: form
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/FetchDynamicAttributesResponse'
+          description: Fetching dynamic attributes success
+          headers:
+            Access-Control-Allow-Credentials:
+              explode: false
+              schema:
+                example: "true"
+                type: string
+              style: simple
+            Access-Control-Allow-Origin:
+              explode: false
+              schema:
+                example: http://localhost
+                type: string
+              style: simple
+            Cache-Control:
+              explode: false
+              schema:
+                example: "no-store, no-cache, must-revalidate"
+                type: string
+              style: simple
+            Date:
+              explode: false
+              schema:
+                example: "Wed, 08 Aug 2018 00:33:37 GMT"
+                type: string
+              style: simple
+      summary: Fetch the dynamic attributes based on a given filter value or all
+      tags:
+      - dynamic-attributes
+  /ECM/api/v5/deleteDynamicAttribute:
+    delete:
+      operationId: deleteDynamicAttribute
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/DeleteDynamicAttributeRequest'
+        description: Request payload for deleting dynamic attributes.
+        required: true
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CreateOrUpdateOrDeleteDynamicAttributeResponse'
+          description: Deletion of dynamic attribute success
+          headers:
+            Access-Control-Allow-Credentials:
+              explode: false
+              schema:
+                example: "true"
+                type: string
+              style: simple
+            Access-Control-Allow-Origin:
+              explode: false
+              schema:
+                example: http://localhost
+                type: string
+              style: simple
+            Cache-Control:
+              explode: false
+              schema:
+                example: "no-store, no-cache, must-revalidate"
+                type: string
+              style: simple
+            Date:
+              explode: false
+              schema:
+                example: "Wed, 08 Aug 2018 00:33:37 GMT"
+                type: string
+              style: simple
+      summary: Delete a dynamic attribute
+      tags:
+      - dynamic-attributes
+components:
+  schemas:
+    CreateDynamicAttributes:
+      items:
+        $ref: '#/components/schemas/CreateDynamicAttributes_inner'
+      type: array
+    UpdateDynamicAttributes:
+      items:
+        $ref: '#/components/schemas/UpdateDynamicAttributes_inner'
+      type: array
+    CreateDynamicAttributeRequest:
+      example:
+        endpoint: sample-endpoint
+        dynamicattributes:
+        - accountscolumn: accountscolumn
+          hideoncreate: "false"
+          attributegroup: attributegroup
+          orderindex: orderindex
+          editable: "true"
+          attributevalue: attributevalue
+          defaultvalue: defaultvalue
+          attributename: sample-attribute
+          attributelable: '##SavBoldStart##Attribute_Name##SavBoldEnd##'
+          required: "false"
+          descriptionascsv: descriptionascsv
+          requesttype: SERVICE ACCOUNT
+          hideonupdate: "false"
+          regex: regex
+          showonchild: "false"
+          actiontoperformwhenparentattributechanges: actiontoperformwhenparentattributechanges
+          parentattribute: parentattribute
+          attributetype: BOOLEAN
+          actionstring: actionstring
+        - accountscolumn: accountscolumn
+          hideoncreate: "false"
+          attributegroup: attributegroup
+          orderindex: orderindex
+          editable: "true"
+          attributevalue: attributevalue
+          defaultvalue: defaultvalue
+          attributename: sample-attribute
+          attributelable: '##SavBoldStart##Attribute_Name##SavBoldEnd##'
+          required: "false"
+          descriptionascsv: descriptionascsv
+          requesttype: SERVICE ACCOUNT
+          hideonupdate: "false"
+          regex: regex
+          showonchild: "false"
+          actiontoperformwhenparentattributechanges: actiontoperformwhenparentattributechanges
+          parentattribute: parentattribute
+          attributetype: BOOLEAN
+          actionstring: actionstring
+        securitysystem: sample-system
+        updateuser: updateuser
+      properties:
+        securitysystem:
+          description: Name of the security systems
+          example: sample-system
+          type: string
+        endpoint:
+          description: Name of the endpoint
+          example: sample-endpoint
+          type: string
+        updateuser:
+          description: Username
+          type: string
+        dynamicattributes:
+          items:
+            $ref: '#/components/schemas/CreateDynamicAttributes_inner'
+          type: array
+      required:
+      - dynamicattributes
+      - endpoint
+      - securitysystem
+      - updateuser
+    UpdateDynamicAttributeRequest:
+      example:
+        endpoint: sample-endpoint
+        dynamicattributes:
+        - accountscolumn: accountscolumn
+          hideoncreate: "false"
+          attributegroup: attributegroup
+          orderindex: orderindex
+          editable: "true"
+          attributevalue: attributevalue
+          defaultvalue: defaultvalue
+          attributename: sample-attribute
+          attributelable: '##SavBoldStart##Attribute_Name##SavBoldEnd##'
+          required: "false"
+          descriptionascsv: descriptionascsv
+          requesttype: SERVICE ACCOUNT
+          hideonupdate: "false"
+          regex: regex
+          showonchild: "false"
+          actiontoperformwhenparentattributechanges: actiontoperformwhenparentattributechanges
+          parentattribute: parentattribute
+          attributetype: BOOLEAN
+          actionstring: actionstring
+        - accountscolumn: accountscolumn
+          hideoncreate: "false"
+          attributegroup: attributegroup
+          orderindex: orderindex
+          editable: "true"
+          attributevalue: attributevalue
+          defaultvalue: defaultvalue
+          attributename: sample-attribute
+          attributelable: '##SavBoldStart##Attribute_Name##SavBoldEnd##'
+          required: "false"
+          descriptionascsv: descriptionascsv
+          requesttype: SERVICE ACCOUNT
+          hideonupdate: "false"
+          regex: regex
+          showonchild: "false"
+          actiontoperformwhenparentattributechanges: actiontoperformwhenparentattributechanges
+          parentattribute: parentattribute
+          attributetype: BOOLEAN
+          actionstring: actionstring
+        securitysystem: sample-system
+        updateuser: username
+      properties:
+        securitysystem:
+          description: Name of the security systems
+          example: sample-system
+          type: string
+        endpoint:
+          description: Name of the endpoint
+          example: sample-endpoint
+          type: string
+        updateuser:
+          description: Username
+          example: username
+          type: string
+        dynamicattributes:
+          items:
+            $ref: '#/components/schemas/UpdateDynamicAttributes_inner'
+          type: array
+      required:
+      - dynamicattributes
+      - endpoint
+      - securitysystem
+      - updateuser
+    DeleteDynamicAttributeRequest:
+      example:
+        endpoint: System1
+        dynamicattributes:
+        - dynamicattributes
+        - dynamicattributes
+        securitysystem: System1
+        updateuser: admin-user
+      properties:
+        securitysystem:
+          description: Name of the security system
+          example: System1
+          type: string
+        endpoint:
+          description: Name of the endpoint
+          example: System1
+          type: string
+        updateuser:
+          description: Username of the user performing the update
+          example: admin-user
+          type: string
+        dynamicattributes:
+          description: List of dynamic attribute names to be deleted
+          items:
+            type: string
+          type: array
+      required:
+      - dynamicattributes
+      - endpoint
+      - securitysystem
+      - updateuser
+    DynamicAttributeDetails:
+      additionalProperties:
+        type: object
+    CreateOrUpdateOrDeleteDynamicAttributeResponse:
+      example:
+        msg: Success
+        endpoint: endpoint
+        dynamicattributes: CreateOrUpdateOrDeleteDynamicAttributeResponse_dynamicattributes
+        securitysystem: securitysystem
+        errorcode: "0"
+        updateuser: updateuser
+      properties:
+        msg:
+          description: A message indicating the outcome of the operation.
+          example: Success
+          type: string
+        errorcode:
+          description: An error code where '0' signifies success and '1' signifies
+            an unsuccessful operation.
+          example: "0"
+          type: string
+        securitysystem:
+          description: Name of the security system
+          type: string
+          nullable: true
+        endpoint:
+          description: Name of endpoint
+          type: string
+          nullable: true
+        updateuser:
+          description: Username of the user performing the update
+          type: string
+          nullable: true
+        dynamicattributes:
+          $ref: '#/components/schemas/CreateOrUpdateOrDeleteDynamicAttributeResponse_dynamicattributes'
+    FetchDynamicAttributeResponse:
+      items:
+        $ref: '#/components/schemas/FetchDynamicAttributeResponse_inner'
+      type: array
+    FetchDynamicAttributesResponse:
+      example:
+        msg: success
+        displaycount: 0
+        totalcount: 6
+        dynamicattributes:
+        - accountscolumn: accountscolumn
+          hideoncreate: "true"
+          orderindex: orderindex
+          attributegroup: attributegroup
+          attributevalue: attributevalue
+          editable: "true"
+          securitysystem: securitysystem
+          defaultvalue: defaultvalue
+          attributename: attributename
+          attributelable: attributelable
+          required: "true"
+          descriptionascsv: descriptionascsv
+          regex: regex
+          endpoint: endpoint
+          hideonupdate: "true"
+          requesttype: ACCOUNT
+          showonchild: "true"
+          actiontoperformwhenparentattributechanges: actiontoperformwhenparentattributechanges
+          parentattribute: parentattribute
+          actionstring: actionstring
+          attributetype: SQL MULTISELECT
+        - accountscolumn: accountscolumn
+          hideoncreate: "true"
+          orderindex: orderindex
+          attributegroup: attributegroup
+          attributevalue: attributevalue
+          editable: "true"
+          securitysystem: securitysystem
+          defaultvalue: defaultvalue
+          attributename: attributename
+          attributelable: attributelable
+          required: "true"
+          descriptionascsv: descriptionascsv
+          regex: regex
+          endpoint: endpoint
+          hideonupdate: "true"
+          requesttype: ACCOUNT
+          showonchild: "true"
+          actiontoperformwhenparentattributechanges: actiontoperformwhenparentattributechanges
+          parentattribute: parentattribute
+          actionstring: actionstring
+          attributetype: SQL MULTISELECT
+        errorcode: "0"
+      properties:
+        msg:
+          description: A message indicating the outcome of the operation.
+          example: success
+          type: string
+        errorcode:
+          description: An error code where '0' signifies success and '1' signifies
+            an unsuccessful operation.
+          example: "0"
+          type: string
+        displaycount:
+          description: Total number of records displayed.
+          type: integer
+        totalcount:
+          description: Total number of records available.
+          type: integer
+        dynamicattributes:
+          $ref: '#/components/schemas/FetchDynamicAttributesResponse_dynamicattributes'
+    CreateDynamicAttributes_inner:
+      example:
+        accountscolumn: accountscolumn
+        hideoncreate: "false"
+        attributegroup: attributegroup
+        orderindex: orderindex
+        editable: "true"
+        attributevalue: attributevalue
+        defaultvalue: defaultvalue
+        attributename: sample-attribute
+        attributelable: '##SavBoldStart##Attribute_Name##SavBoldEnd##'
+        required: "false"
+        descriptionascsv: descriptionascsv
+        requesttype: SERVICE ACCOUNT
+        hideonupdate: "false"
+        regex: regex
+        showonchild: "false"
+        actiontoperformwhenparentattributechanges: actiontoperformwhenparentattributechanges
+        parentattribute: parentattribute
+        attributetype: BOOLEAN
+        actionstring: actionstring
+      properties:
+        attributename:
+          description: Specify the dynamic attribute name to be used for filtering
+            out and calling the respective attribute to be displayed.
+          example: sample-attribute
+          type: string
+        requesttype:
+          description: Type of request
+          example: SERVICE ACCOUNT
+          type: string
+        attributetype:
+          description: Specify the attribute type based on which you want to filter
+            and display the dynamic attributes.
+          example: BOOLEAN
+          type: string
+        attributegroup:
+          description: Attribute Group provides you an option to group or categorize
+            and display the dynamic attributes in the Access Requests request form.
+          type: string
+        orderindex:
+          description: Specify the sequence where you want to display the dynamic
+            attributes
+          type: string
+        attributelable:
+          description: "pecify the name of the attribute, which you want to display\
+            \ in the Access Requests request form."
+          example: '##SavBoldStart##Attribute_Name##SavBoldEnd##'
+          type: string
+        accountscolumn:
+          type: string
+        hideoncreate:
+          example: "false"
+          type: string
+        actionstring:
+          type: string
+        editable:
+          example: "true"
+          type: string
+        hideonupdate:
+          example: "false"
+          type: string
+        actiontoperformwhenparentattributechanges:
+          type: string
+        defaultvalue:
+          type: string
+        required:
+          example: "false"
+          type: string
+        regex:
+          type: string
+        attributevalue:
+          type: string
+        showonchild:
+          example: "false"
+          type: string
+        parentattribute:
+          type: string
+        descriptionascsv:
+          type: string
+      required:
+      - attributename
+      - requesttype
+    UpdateDynamicAttributes_inner:
+      example:
+        accountscolumn: accountscolumn
+        hideoncreate: "false"
+        attributegroup: attributegroup
+        orderindex: orderindex
+        editable: "true"
+        attributevalue: attributevalue
+        defaultvalue: defaultvalue
+        attributename: sample-attribute
+        attributelable: '##SavBoldStart##Attribute_Name##SavBoldEnd##'
+        required: "false"
+        descriptionascsv: descriptionascsv
+        requesttype: SERVICE ACCOUNT
+        hideonupdate: "false"
+        regex: regex
+        showonchild: "false"
+        actiontoperformwhenparentattributechanges: actiontoperformwhenparentattributechanges
+        parentattribute: parentattribute
+        attributetype: BOOLEAN
+        actionstring: actionstring
+      properties:
+        attributename:
+          description: Specify the dynamic attribute name to be used for filtering
+            out and calling the respective attribute to be displayed.
+          example: sample-attribute
+          type: string
+        requesttype:
+          description: Type of request
+          example: SERVICE ACCOUNT
+          type: string
+        attributetype:
+          description: Specify the attribute type based on which you want to filter
+            and display the dynamic attributes.
+          example: BOOLEAN
+          type: string
+        attributegroup:
+          description: Attribute Group provides you an option to group or categorize
+            and display the dynamic attributes in the Access Requests request form.
+          type: string
+        orderindex:
+          description: Specify the sequence where you want to display the dynamic
+            attributes
+          type: string
+        attributelable:
+          description: "pecify the name of the attribute, which you want to display\
+            \ in the Access Requests request form."
+          example: '##SavBoldStart##Attribute_Name##SavBoldEnd##'
+          type: string
+        accountscolumn:
+          type: string
+        hideoncreate:
+          example: "false"
+          type: string
+        actionstring:
+          type: string
+        editable:
+          example: "true"
+          type: string
+        hideonupdate:
+          example: "false"
+          type: string
+        actiontoperformwhenparentattributechanges:
+          type: string
+        defaultvalue:
+          type: string
+        required:
+          example: "false"
+          type: string
+        regex:
+          type: string
+        attributevalue:
+          type: string
+        showonchild:
+          example: "false"
+          type: string
+        parentattribute:
+          type: string
+        descriptionascsv:
+          type: string
+      required:
+      - attributename
+    CreateOrUpdateOrDeleteDynamicAttributeResponse_dynamicattributes:
+      description: "If present, either:\n  • a string (e.g. \"attributenames [sample]\
+        \ does not exist\"), or  \n  • an object of sub‐field errors (e.g. `{ \"attributetype\"\
+        : \"not valid\" }`)\n"
+      oneOf:
+      - type: string
+      - $ref: '#/components/schemas/DynamicAttributeDetails'
+    FetchDynamicAttributeResponse_inner:
+      example:
+        accountscolumn: accountscolumn
+        hideoncreate: "true"
+        orderindex: orderindex
+        attributegroup: attributegroup
+        attributevalue: attributevalue
+        editable: "true"
+        securitysystem: securitysystem
+        defaultvalue: defaultvalue
+        attributename: attributename
+        attributelable: attributelable
+        required: "true"
+        descriptionascsv: descriptionascsv
+        regex: regex
+        endpoint: endpoint
+        hideonupdate: "true"
+        requesttype: ACCOUNT
+        showonchild: "true"
+        actiontoperformwhenparentattributechanges: actiontoperformwhenparentattributechanges
+        parentattribute: parentattribute
+        actionstring: actionstring
+        attributetype: SQL MULTISELECT
+      properties:
+        accountscolumn:
+          type: string
+        hideoncreate:
+          enum:
+          - "true"
+          - "false"
+          type: string
+        orderindex:
+          type: string
+        attributevalue:
+          type: string
+        attributegroup:
+          type: string
+        defaultvalue:
+          type: string
+        actionstring:
+          type: string
+        editable:
+          enum:
+          - "true"
+          - "false"
+          type: string
+        regex:
+          type: string
+        securitysystem:
+          type: string
+        attributename:
+          type: string
+        attributelable:
+          type: string
+        required:
+          enum:
+          - "true"
+          - "false"
+          type: string
+        endpoint:
+          type: string
+        hideonupdate:
+          enum:
+          - "true"
+          - "false"
+          type: string
+        requesttype:
+          enum:
+          - ACCOUNT
+          - PROPOSED ENTITLEMENT OWNER
+          - ENTITLEMENT OWNER ATTESTATION
+          - ROLE
+          - SERVICE ACCOUNT
+          type: string
+        showonchild:
+          enum:
+          - "true"
+          - "false"
+          type: string
+        actiontoperformwhenparentattributechanges:
+          type: string
+        attributetype:
+          enum:
+          - SQL MULTISELECT
+          - SQL ENUM
+          - BOOLEAN
+          - STRING
+          - DATE
+          - MULTISELECT
+          type: string
+        parentattribute:
+          type: string
+        descriptionascsv:
+          type: string
+    FetchDynamicAttributesResponse_dynamicattributes:
+      anyOf:
+      - $ref: '#/components/schemas/FetchDynamicAttributeResponse'
+      - items:
+          additionalProperties:
+            type: string
+          example:
+            sample-dynamic-attr: attribute is not valid
+        type: array
