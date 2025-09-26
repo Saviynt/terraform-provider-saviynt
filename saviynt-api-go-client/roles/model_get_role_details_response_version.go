@@ -18,7 +18,7 @@ import (
 
 // GetRoleDetailsResponseVersion - struct for GetRoleDetailsResponseVersion
 type GetRoleDetailsResponseVersion struct {
-	Int32 *int32
+	Int32  *int32
 	String *string
 }
 
@@ -35,7 +35,6 @@ func StringAsGetRoleDetailsResponseVersion(v *string) GetRoleDetailsResponseVers
 		String: v,
 	}
 }
-
 
 // Unmarshal JSON data into one of the pointers in the struct
 func (dst *GetRoleDetailsResponseVersion) UnmarshalJSON(data []byte) error {
@@ -102,7 +101,7 @@ func (src GetRoleDetailsResponseVersion) MarshalJSON() ([]byte, error) {
 }
 
 // Get the actual instance
-func (obj *GetRoleDetailsResponseVersion) GetActualInstance() (interface{}) {
+func (obj *GetRoleDetailsResponseVersion) GetActualInstance() interface{} {
 	if obj == nil {
 		return nil
 	}
@@ -119,7 +118,7 @@ func (obj *GetRoleDetailsResponseVersion) GetActualInstance() (interface{}) {
 }
 
 // Get the actual instance value
-func (obj GetRoleDetailsResponseVersion) GetActualInstanceValue() (interface{}) {
+func (obj GetRoleDetailsResponseVersion) GetActualInstanceValue() interface{} {
 	if obj.Int32 != nil {
 		return *obj.Int32
 	}
@@ -167,5 +166,3 @@ func (v *NullableGetRoleDetailsResponseVersion) UnmarshalJSON(src []byte) error 
 	v.isSet = true
 	return json.Unmarshal(src, &v.value)
 }
-
-

@@ -19,48 +19,48 @@ var _ MappedNullable = &WorkdayConnectionAttributes{}
 
 // WorkdayConnectionAttributes struct for WorkdayConnectionAttributes
 type WorkdayConnectionAttributes struct {
-	USE_OAUTH *string `json:"USE_OAUTH,omitempty"`
-	USER_IMPORT_MAPPING *string `json:"USER_IMPORT_MAPPING,omitempty"`
-	ACCOUNTS_LAST_IMPORT_TIME *string `json:"ACCOUNTS_LAST_IMPORT_TIME,omitempty"`
-	STATUS_KEY_JSON *string `json:"STATUS_KEY_JSON,omitempty"`
-	ConnectionTimeoutConfig *ConnectionTimeoutConfig `json:"connectionTimeoutConfig,omitempty"`
-	ConnectionType *string `json:"connectionType,omitempty"`
-	RAAS_MAPPING_JSON *string `json:"RAAS_MAPPING_JSON,omitempty"`
-	ACCOUNT_IMPORT_PAYLOAD *string `json:"ACCOUNT_IMPORT_PAYLOAD,omitempty"`
-	UPDATE_ACCOUNT_PAYLOAD *string `json:"UPDATE_ACCOUNT_PAYLOAD,omitempty"`
-	CLIENT_ID *string `json:"CLIENT_ID,omitempty"`
-	STATUS_THRESHOLD_CONFIG *string `json:"STATUS_THRESHOLD_CONFIG,omitempty"`
-	USERNAME *string `json:"USERNAME,omitempty"`
-	ACCESS_IMPORT_LIST *string `json:"ACCESS_IMPORT_LIST,omitempty"`
-	IsTimeoutSupported *bool `json:"isTimeoutSupported,omitempty"`
-	ACCOUNT_IMPORT_MAPPING *string `json:"ACCOUNT_IMPORT_MAPPING,omitempty"`
-	CLIENT_SECRET *string `json:"CLIENT_SECRET,omitempty"`
-	ORGROLE_IMPORT_PAYLOAD *string `json:"ORGROLE_IMPORT_PAYLOAD,omitempty"`
-	ASSIGN_ORGROLE_PAYLOAD *string `json:"ASSIGN_ORGROLE_PAYLOAD,omitempty"`
-	ACCESS_IMPORT_MAPPING *string `json:"ACCESS_IMPORT_MAPPING,omitempty"`
-	API_VERSION *string `json:"API_VERSION,omitempty"`
-	REMOVE_ORGROLE_PAYLOAD *string `json:"REMOVE_ORGROLE_PAYLOAD,omitempty"`
-	INCLUDE_REFERENCE_DESCRIPTORS *string `json:"INCLUDE_REFERENCE_DESCRIPTORS,omitempty"`
-	REFRESH_TOKEN *string `json:"REFRESH_TOKEN,omitempty"`
-	MODIFYUSERDATAJSON *string `json:"MODIFYUSERDATAJSON,omitempty"`
-	IsTimeoutConfigValidated *bool `json:"isTimeoutConfigValidated,omitempty"`
-	USEX509AUTHFORSOAP *string `json:"USE_X509AUTH_FOR_SOAP,omitempty"`
-	REPORT_OWNER *string `json:"REPORT_OWNER,omitempty"`
-	X509KEY *string `json:"X509_KEY,omitempty"`
-	CUSTOM_CONFIG *string `json:"CUSTOM_CONFIG,omitempty"`
-	USERATTRIBUTEJSON *string `json:"USERATTRIBUTEJSON,omitempty"`
-	X509CERT *string `json:"X509_CERT,omitempty"`
-	PASSWORD *string `json:"PASSWORD,omitempty"`
-	USER_IMPORT_PAYLOAD *string `json:"USER_IMPORT_PAYLOAD,omitempty"`
-	PAM_CONFIG *string `json:"PAM_CONFIG,omitempty"`
-	ACCESS_LAST_IMPORT_TIME *string `json:"ACCESS_LAST_IMPORT_TIME,omitempty"`
-	USERS_LAST_IMPORT_TIME *string `json:"USERS_LAST_IMPORT_TIME,omitempty"`
-	UPDATE_USER_PAYLOAD *string `json:"UPDATE_USER_PAYLOAD,omitempty"`
-	PAGE_SIZE *string `json:"PAGE_SIZE,omitempty"`
-	TENANT_NAME *string `json:"TENANT_NAME,omitempty"`
-	USE_ENHANCED_ORGROLE *string `json:"USE_ENHANCED_ORGROLE,omitempty"`
-	CREATE_ACCOUNT_PAYLOAD *string `json:"CREATE_ACCOUNT_PAYLOAD,omitempty"`
-	BASE_URL *string `json:"BASE_URL,omitempty"`
+	USE_OAUTH                     *string                  `json:"USE_OAUTH,omitempty"`
+	USER_IMPORT_MAPPING           *string                  `json:"USER_IMPORT_MAPPING,omitempty"`
+	ACCOUNTS_LAST_IMPORT_TIME     *string                  `json:"ACCOUNTS_LAST_IMPORT_TIME,omitempty"`
+	STATUS_KEY_JSON               *string                  `json:"STATUS_KEY_JSON,omitempty"`
+	ConnectionTimeoutConfig       *ConnectionTimeoutConfig `json:"connectionTimeoutConfig,omitempty"`
+	ConnectionType                *string                  `json:"connectionType,omitempty"`
+	RAAS_MAPPING_JSON             *string                  `json:"RAAS_MAPPING_JSON,omitempty"`
+	ACCOUNT_IMPORT_PAYLOAD        *string                  `json:"ACCOUNT_IMPORT_PAYLOAD,omitempty"`
+	UPDATE_ACCOUNT_PAYLOAD        *string                  `json:"UPDATE_ACCOUNT_PAYLOAD,omitempty"`
+	CLIENT_ID                     *string                  `json:"CLIENT_ID,omitempty"`
+	STATUS_THRESHOLD_CONFIG       *string                  `json:"STATUS_THRESHOLD_CONFIG,omitempty"`
+	USERNAME                      *string                  `json:"USERNAME,omitempty"`
+	ACCESS_IMPORT_LIST            *string                  `json:"ACCESS_IMPORT_LIST,omitempty"`
+	IsTimeoutSupported            *bool                    `json:"isTimeoutSupported,omitempty"`
+	ACCOUNT_IMPORT_MAPPING        *string                  `json:"ACCOUNT_IMPORT_MAPPING,omitempty"`
+	CLIENT_SECRET                 *string                  `json:"CLIENT_SECRET,omitempty"`
+	ORGROLE_IMPORT_PAYLOAD        *string                  `json:"ORGROLE_IMPORT_PAYLOAD,omitempty"`
+	ASSIGN_ORGROLE_PAYLOAD        *string                  `json:"ASSIGN_ORGROLE_PAYLOAD,omitempty"`
+	ACCESS_IMPORT_MAPPING         *string                  `json:"ACCESS_IMPORT_MAPPING,omitempty"`
+	API_VERSION                   *string                  `json:"API_VERSION,omitempty"`
+	REMOVE_ORGROLE_PAYLOAD        *string                  `json:"REMOVE_ORGROLE_PAYLOAD,omitempty"`
+	INCLUDE_REFERENCE_DESCRIPTORS *string                  `json:"INCLUDE_REFERENCE_DESCRIPTORS,omitempty"`
+	REFRESH_TOKEN                 *string                  `json:"REFRESH_TOKEN,omitempty"`
+	MODIFYUSERDATAJSON            *string                  `json:"MODIFYUSERDATAJSON,omitempty"`
+	IsTimeoutConfigValidated      *bool                    `json:"isTimeoutConfigValidated,omitempty"`
+	USEX509AUTHFORSOAP            *string                  `json:"USE_X509AUTH_FOR_SOAP,omitempty"`
+	REPORT_OWNER                  *string                  `json:"REPORT_OWNER,omitempty"`
+	X509KEY                       *string                  `json:"X509_KEY,omitempty"`
+	CUSTOM_CONFIG                 *string                  `json:"CUSTOM_CONFIG,omitempty"`
+	USERATTRIBUTEJSON             *string                  `json:"USERATTRIBUTEJSON,omitempty"`
+	X509CERT                      *string                  `json:"X509_CERT,omitempty"`
+	PASSWORD                      *string                  `json:"PASSWORD,omitempty"`
+	USER_IMPORT_PAYLOAD           *string                  `json:"USER_IMPORT_PAYLOAD,omitempty"`
+	PAM_CONFIG                    *string                  `json:"PAM_CONFIG,omitempty"`
+	ACCESS_LAST_IMPORT_TIME       *string                  `json:"ACCESS_LAST_IMPORT_TIME,omitempty"`
+	USERS_LAST_IMPORT_TIME        *string                  `json:"USERS_LAST_IMPORT_TIME,omitempty"`
+	UPDATE_USER_PAYLOAD           *string                  `json:"UPDATE_USER_PAYLOAD,omitempty"`
+	PAGE_SIZE                     *string                  `json:"PAGE_SIZE,omitempty"`
+	TENANT_NAME                   *string                  `json:"TENANT_NAME,omitempty"`
+	USE_ENHANCED_ORGROLE          *string                  `json:"USE_ENHANCED_ORGROLE,omitempty"`
+	CREATE_ACCOUNT_PAYLOAD        *string                  `json:"CREATE_ACCOUNT_PAYLOAD,omitempty"`
+	BASE_URL                      *string                  `json:"BASE_URL,omitempty"`
 }
 
 // NewWorkdayConnectionAttributes instantiates a new WorkdayConnectionAttributes object
@@ -1425,7 +1425,7 @@ func (o *WorkdayConnectionAttributes) SetBASE_URL(v string) {
 }
 
 func (o WorkdayConnectionAttributes) MarshalJSON() ([]byte, error) {
-	toSerialize,err := o.ToMap()
+	toSerialize, err := o.ToMap()
 	if err != nil {
 		return []byte{}, err
 	}
@@ -1598,5 +1598,3 @@ func (v *NullableWorkdayConnectionAttributes) UnmarshalJSON(src []byte) error {
 	v.isSet = true
 	return json.Unmarshal(src, &v.value)
 }
-
-

@@ -1,7 +1,7 @@
 /*
 Privilege Management API
 
-API for managing privileges in Saviynt/SSM. - **Create Privilege**: Creates a new privilege. - **Update Privilege**: Updates an existing privilege. - **Get Privilege List**: Returns a list of privileges based on search criteria. - **Delete Privilege**: Delete a privilege 
+API for managing privileges in Saviynt/SSM. - **Create Privilege**: Creates a new privilege. - **Update Privilege**: Updates an existing privilege. - **Get Privilege List**: Returns a list of privileges based on search criteria. - **Delete Privilege**: Delete a privilege
 
 API version: 1.0.0
 */
@@ -18,13 +18,12 @@ import (
 	"net/url"
 )
 
-
 // PrivilegeAPIService PrivilegeAPI service
 type PrivilegeAPIService service
 
 type ApiCreatePrivilegeRequest struct {
-	ctx context.Context
-	ApiService *PrivilegeAPIService
+	ctx                          context.Context
+	ApiService                   *PrivilegeAPIService
 	createUpdatePrivilegeRequest *CreateUpdatePrivilegeRequest
 }
 
@@ -41,24 +40,25 @@ func (r ApiCreatePrivilegeRequest) Execute() (*CreateUpdatePrivilegeResponse, *h
 /*
 CreatePrivilege Create a privilege
 
- @param ctx context.Context - for authentication, logging, cancellation, deadlines, tracing, etc. Passed from http.Request or context.Background().
- @return ApiCreatePrivilegeRequest
+	@param ctx context.Context - for authentication, logging, cancellation, deadlines, tracing, etc. Passed from http.Request or context.Background().
+	@return ApiCreatePrivilegeRequest
 */
 func (a *PrivilegeAPIService) CreatePrivilege(ctx context.Context) ApiCreatePrivilegeRequest {
 	return ApiCreatePrivilegeRequest{
 		ApiService: a,
-		ctx: ctx,
+		ctx:        ctx,
 	}
 }
 
 // Execute executes the request
-//  @return CreateUpdatePrivilegeResponse
+//
+//	@return CreateUpdatePrivilegeResponse
 func (a *PrivilegeAPIService) CreatePrivilegeExecute(r ApiCreatePrivilegeRequest) (*CreateUpdatePrivilegeResponse, *http.Response, error) {
 	var (
-		localVarHTTPMethod   = http.MethodPost
-		localVarPostBody     interface{}
-		formFiles            []formFile
-		localVarReturnValue  *CreateUpdatePrivilegeResponse
+		localVarHTTPMethod  = http.MethodPost
+		localVarPostBody    interface{}
+		formFiles           []formFile
+		localVarReturnValue *CreateUpdatePrivilegeResponse
 	)
 
 	localBasePath, err := a.client.cfg.ServerURLWithContext(r.ctx, "PrivilegeAPIService.CreatePrivilege")
@@ -132,8 +132,8 @@ func (a *PrivilegeAPIService) CreatePrivilegeExecute(r ApiCreatePrivilegeRequest
 }
 
 type ApiDeletePrivilegeRequest struct {
-	ctx context.Context
-	ApiService *PrivilegeAPIService
+	ctx                    context.Context
+	ApiService             *PrivilegeAPIService
 	deletePrivilegeRequest *DeletePrivilegeRequest
 }
 
@@ -150,24 +150,25 @@ func (r ApiDeletePrivilegeRequest) Execute() (*DeletePrivilegeResponse, *http.Re
 /*
 DeletePrivilege Delete a privilege
 
- @param ctx context.Context - for authentication, logging, cancellation, deadlines, tracing, etc. Passed from http.Request or context.Background().
- @return ApiDeletePrivilegeRequest
+	@param ctx context.Context - for authentication, logging, cancellation, deadlines, tracing, etc. Passed from http.Request or context.Background().
+	@return ApiDeletePrivilegeRequest
 */
 func (a *PrivilegeAPIService) DeletePrivilege(ctx context.Context) ApiDeletePrivilegeRequest {
 	return ApiDeletePrivilegeRequest{
 		ApiService: a,
-		ctx: ctx,
+		ctx:        ctx,
 	}
 }
 
 // Execute executes the request
-//  @return DeletePrivilegeResponse
+//
+//	@return DeletePrivilegeResponse
 func (a *PrivilegeAPIService) DeletePrivilegeExecute(r ApiDeletePrivilegeRequest) (*DeletePrivilegeResponse, *http.Response, error) {
 	var (
-		localVarHTTPMethod   = http.MethodDelete
-		localVarPostBody     interface{}
-		formFiles            []formFile
-		localVarReturnValue  *DeletePrivilegeResponse
+		localVarHTTPMethod  = http.MethodDelete
+		localVarPostBody    interface{}
+		formFiles           []formFile
+		localVarReturnValue *DeletePrivilegeResponse
 	)
 
 	localBasePath, err := a.client.cfg.ServerURLWithContext(r.ctx, "PrivilegeAPIService.DeletePrivilege")
@@ -241,8 +242,8 @@ func (a *PrivilegeAPIService) DeletePrivilegeExecute(r ApiDeletePrivilegeRequest
 }
 
 type ApiGetPrivilegeRequest struct {
-	ctx context.Context
-	ApiService *PrivilegeAPIService
+	ctx                     context.Context
+	ApiService              *PrivilegeAPIService
 	getPrivilegeListRequest *GetPrivilegeListRequest
 }
 
@@ -259,24 +260,25 @@ func (r ApiGetPrivilegeRequest) Execute() (*GetPrivilegeListResponse, *http.Resp
 /*
 GetPrivilege Get a list of privileges
 
- @param ctx context.Context - for authentication, logging, cancellation, deadlines, tracing, etc. Passed from http.Request or context.Background().
- @return ApiGetPrivilegeRequest
+	@param ctx context.Context - for authentication, logging, cancellation, deadlines, tracing, etc. Passed from http.Request or context.Background().
+	@return ApiGetPrivilegeRequest
 */
 func (a *PrivilegeAPIService) GetPrivilege(ctx context.Context) ApiGetPrivilegeRequest {
 	return ApiGetPrivilegeRequest{
 		ApiService: a,
-		ctx: ctx,
+		ctx:        ctx,
 	}
 }
 
 // Execute executes the request
-//  @return GetPrivilegeListResponse
+//
+//	@return GetPrivilegeListResponse
 func (a *PrivilegeAPIService) GetPrivilegeExecute(r ApiGetPrivilegeRequest) (*GetPrivilegeListResponse, *http.Response, error) {
 	var (
-		localVarHTTPMethod   = http.MethodPost
-		localVarPostBody     interface{}
-		formFiles            []formFile
-		localVarReturnValue  *GetPrivilegeListResponse
+		localVarHTTPMethod  = http.MethodPost
+		localVarPostBody    interface{}
+		formFiles           []formFile
+		localVarReturnValue *GetPrivilegeListResponse
 	)
 
 	localBasePath, err := a.client.cfg.ServerURLWithContext(r.ctx, "PrivilegeAPIService.GetPrivilege")
@@ -350,8 +352,8 @@ func (a *PrivilegeAPIService) GetPrivilegeExecute(r ApiGetPrivilegeRequest) (*Ge
 }
 
 type ApiUpdatePrivilegeRequest struct {
-	ctx context.Context
-	ApiService *PrivilegeAPIService
+	ctx                          context.Context
+	ApiService                   *PrivilegeAPIService
 	createUpdatePrivilegeRequest *CreateUpdatePrivilegeRequest
 }
 
@@ -368,24 +370,25 @@ func (r ApiUpdatePrivilegeRequest) Execute() (*CreateUpdatePrivilegeResponse, *h
 /*
 UpdatePrivilege Update a privilege
 
- @param ctx context.Context - for authentication, logging, cancellation, deadlines, tracing, etc. Passed from http.Request or context.Background().
- @return ApiUpdatePrivilegeRequest
+	@param ctx context.Context - for authentication, logging, cancellation, deadlines, tracing, etc. Passed from http.Request or context.Background().
+	@return ApiUpdatePrivilegeRequest
 */
 func (a *PrivilegeAPIService) UpdatePrivilege(ctx context.Context) ApiUpdatePrivilegeRequest {
 	return ApiUpdatePrivilegeRequest{
 		ApiService: a,
-		ctx: ctx,
+		ctx:        ctx,
 	}
 }
 
 // Execute executes the request
-//  @return CreateUpdatePrivilegeResponse
+//
+//	@return CreateUpdatePrivilegeResponse
 func (a *PrivilegeAPIService) UpdatePrivilegeExecute(r ApiUpdatePrivilegeRequest) (*CreateUpdatePrivilegeResponse, *http.Response, error) {
 	var (
-		localVarHTTPMethod   = http.MethodPut
-		localVarPostBody     interface{}
-		formFiles            []formFile
-		localVarReturnValue  *CreateUpdatePrivilegeResponse
+		localVarHTTPMethod  = http.MethodPut
+		localVarPostBody    interface{}
+		formFiles           []formFile
+		localVarReturnValue *CreateUpdatePrivilegeResponse
 	)
 
 	localBasePath, err := a.client.cfg.ServerURLWithContext(r.ctx, "PrivilegeAPIService.UpdatePrivilege")

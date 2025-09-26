@@ -1,7 +1,7 @@
 /*
 Privilege Management API
 
-API for managing privileges in Saviynt/SSM. - **Create Privilege**: Creates a new privilege. - **Update Privilege**: Updates an existing privilege. - **Get Privilege List**: Returns a list of privileges based on search criteria. - **Delete Privilege**: Delete a privilege 
+API for managing privileges in Saviynt/SSM. - **Create Privilege**: Creates a new privilege. - **Update Privilege**: Updates an existing privilege. - **Get Privilege List**: Returns a list of privileges based on search criteria. - **Delete Privilege**: Delete a privilege
 
 API version: 1.0.0
 */
@@ -16,10 +16,10 @@ import (
 	"gopkg.in/validator.v2"
 )
 
-// CreateUpdatePrivilegeResponsePrivilege - If present, either:   • a string (e.g. \"privilege are not provided\"), or     • an object of sub‐field errors (e.g. `{ \"attributename\": \"attributename cannot be null or blank\"\" }`) 
+// CreateUpdatePrivilegeResponsePrivilege - If present, either:   • a string (e.g. \"privilege are not provided\"), or     • an object of sub‐field errors (e.g. `{ \"attributename\": \"attributename cannot be null or blank\"\" }`)
 type CreateUpdatePrivilegeResponsePrivilege struct {
 	MapmapOfStringstring *map[string]string
-	String *string
+	String               *string
 }
 
 // map[string]stringAsCreateUpdatePrivilegeResponsePrivilege is a convenience function that returns map[string]string wrapped in CreateUpdatePrivilegeResponsePrivilege
@@ -35,7 +35,6 @@ func StringAsCreateUpdatePrivilegeResponsePrivilege(v *string) CreateUpdatePrivi
 		String: v,
 	}
 }
-
 
 // Unmarshal JSON data into one of the pointers in the struct
 func (dst *CreateUpdatePrivilegeResponsePrivilege) UnmarshalJSON(data []byte) error {
@@ -102,7 +101,7 @@ func (src CreateUpdatePrivilegeResponsePrivilege) MarshalJSON() ([]byte, error) 
 }
 
 // Get the actual instance
-func (obj *CreateUpdatePrivilegeResponsePrivilege) GetActualInstance() (interface{}) {
+func (obj *CreateUpdatePrivilegeResponsePrivilege) GetActualInstance() interface{} {
 	if obj == nil {
 		return nil
 	}
@@ -119,7 +118,7 @@ func (obj *CreateUpdatePrivilegeResponsePrivilege) GetActualInstance() (interfac
 }
 
 // Get the actual instance value
-func (obj CreateUpdatePrivilegeResponsePrivilege) GetActualInstanceValue() (interface{}) {
+func (obj CreateUpdatePrivilegeResponsePrivilege) GetActualInstanceValue() interface{} {
 	if obj.MapmapOfStringstring != nil {
 		return *obj.MapmapOfStringstring
 	}
@@ -167,5 +166,3 @@ func (v *NullableCreateUpdatePrivilegeResponsePrivilege) UnmarshalJSON(src []byt
 	v.isSet = true
 	return json.Unmarshal(src, &v.value)
 }
-
-

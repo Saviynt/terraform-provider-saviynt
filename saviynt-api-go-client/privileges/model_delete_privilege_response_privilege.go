@@ -1,7 +1,7 @@
 /*
 Privilege Management API
 
-API for managing privileges in Saviynt/SSM. - **Create Privilege**: Creates a new privilege. - **Update Privilege**: Updates an existing privilege. - **Get Privilege List**: Returns a list of privileges based on search criteria. - **Delete Privilege**: Delete a privilege 
+API for managing privileges in Saviynt/SSM. - **Create Privilege**: Creates a new privilege. - **Update Privilege**: Updates an existing privilege. - **Get Privilege List**: Returns a list of privileges based on search criteria. - **Delete Privilege**: Delete a privilege
 
 API version: 1.0.0
 */
@@ -19,7 +19,7 @@ import (
 // DeletePrivilegeResponsePrivilege - struct for DeletePrivilegeResponsePrivilege
 type DeletePrivilegeResponsePrivilege struct {
 	DeletePrivilegeResponsePrivilegeOneOf *DeletePrivilegeResponsePrivilegeOneOf
-	String *string
+	String                                *string
 }
 
 // DeletePrivilegeResponsePrivilegeOneOfAsDeletePrivilegeResponsePrivilege is a convenience function that returns DeletePrivilegeResponsePrivilegeOneOf wrapped in DeletePrivilegeResponsePrivilege
@@ -35,7 +35,6 @@ func StringAsDeletePrivilegeResponsePrivilege(v *string) DeletePrivilegeResponse
 		String: v,
 	}
 }
-
 
 // Unmarshal JSON data into one of the pointers in the struct
 func (dst *DeletePrivilegeResponsePrivilege) UnmarshalJSON(data []byte) error {
@@ -102,7 +101,7 @@ func (src DeletePrivilegeResponsePrivilege) MarshalJSON() ([]byte, error) {
 }
 
 // Get the actual instance
-func (obj *DeletePrivilegeResponsePrivilege) GetActualInstance() (interface{}) {
+func (obj *DeletePrivilegeResponsePrivilege) GetActualInstance() interface{} {
 	if obj == nil {
 		return nil
 	}
@@ -119,7 +118,7 @@ func (obj *DeletePrivilegeResponsePrivilege) GetActualInstance() (interface{}) {
 }
 
 // Get the actual instance value
-func (obj DeletePrivilegeResponsePrivilege) GetActualInstanceValue() (interface{}) {
+func (obj DeletePrivilegeResponsePrivilege) GetActualInstanceValue() interface{} {
 	if obj.DeletePrivilegeResponsePrivilegeOneOf != nil {
 		return *obj.DeletePrivilegeResponsePrivilegeOneOf
 	}
@@ -167,5 +166,3 @@ func (v *NullableDeletePrivilegeResponsePrivilege) UnmarshalJSON(src []byte) err
 	v.isSet = true
 	return json.Unmarshal(src, &v.value)
 }
-
-

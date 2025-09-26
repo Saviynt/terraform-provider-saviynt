@@ -1,7 +1,7 @@
 /*
 Entitlement Management API
 
-API for managing entitlements in Saviynt/SSM. - **Create Entitlement**: Creates a new entitlement. - **Update Entitlement**: Updates an existing entitlement. - **Get Entitlement List**: Returns a list of entitlement based on search criteria. 
+API for managing entitlements in Saviynt/SSM. - **Create Entitlement**: Creates a new entitlement. - **Update Entitlement**: Updates an existing entitlement. - **Get Entitlement List**: Returns a list of entitlement based on search criteria.
 
 API version: 1.0.0
 */
@@ -209,7 +209,7 @@ func (o *GetEntitlementResponse) SetEntitlementdetails(v []GetEntitlementRespons
 }
 
 func (o GetEntitlementResponse) MarshalJSON() ([]byte, error) {
-	toSerialize,err := o.ToMap()
+	toSerialize, err := o.ToMap()
 	if err != nil {
 		return []byte{}, err
 	}
@@ -271,5 +271,3 @@ func (v *NullableGetEntitlementResponse) UnmarshalJSON(src []byte) error {
 	v.isSet = true
 	return json.Unmarshal(src, &v.value)
 }
-
-

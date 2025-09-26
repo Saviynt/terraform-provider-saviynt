@@ -11,8 +11,8 @@ API version: 1.0.0
 package dynamicattributes
 
 import (
-	"encoding/json"
 	"bytes"
+	"encoding/json"
 	"fmt"
 )
 
@@ -32,20 +32,20 @@ type UpdateDynamicAttributesInner struct {
 	// Specify the sequence where you want to display the dynamic attributes
 	Orderindex *string `json:"orderindex,omitempty"`
 	// pecify the name of the attribute, which you want to display in the Access Requests request form.
-	Attributelable *string `json:"attributelable,omitempty"`
-	Accountscolumn *string `json:"accountscolumn,omitempty"`
-	Hideoncreate *string `json:"hideoncreate,omitempty"`
-	Actionstring *string `json:"actionstring,omitempty"`
-	Editable *string `json:"editable,omitempty"`
-	Hideonupdate *string `json:"hideonupdate,omitempty"`
+	Attributelable                            *string `json:"attributelable,omitempty"`
+	Accountscolumn                            *string `json:"accountscolumn,omitempty"`
+	Hideoncreate                              *string `json:"hideoncreate,omitempty"`
+	Actionstring                              *string `json:"actionstring,omitempty"`
+	Editable                                  *string `json:"editable,omitempty"`
+	Hideonupdate                              *string `json:"hideonupdate,omitempty"`
 	Actiontoperformwhenparentattributechanges *string `json:"actiontoperformwhenparentattributechanges,omitempty"`
-	Defaultvalue *string `json:"defaultvalue,omitempty"`
-	Required *string `json:"required,omitempty"`
-	Regex *string `json:"regex,omitempty"`
-	Attributevalue *string `json:"attributevalue,omitempty"`
-	Showonchild *string `json:"showonchild,omitempty"`
-	Parentattribute *string `json:"parentattribute,omitempty"`
-	Descriptionascsv *string `json:"descriptionascsv,omitempty"`
+	Defaultvalue                              *string `json:"defaultvalue,omitempty"`
+	Required                                  *string `json:"required,omitempty"`
+	Regex                                     *string `json:"regex,omitempty"`
+	Attributevalue                            *string `json:"attributevalue,omitempty"`
+	Showonchild                               *string `json:"showonchild,omitempty"`
+	Parentattribute                           *string `json:"parentattribute,omitempty"`
+	Descriptionascsv                          *string `json:"descriptionascsv,omitempty"`
 }
 
 type _UpdateDynamicAttributesInner UpdateDynamicAttributesInner
@@ -669,7 +669,7 @@ func (o *UpdateDynamicAttributesInner) SetDescriptionascsv(v string) {
 }
 
 func (o UpdateDynamicAttributesInner) MarshalJSON() ([]byte, error) {
-	toSerialize,err := o.ToMap()
+	toSerialize, err := o.ToMap()
 	if err != nil {
 		return []byte{}, err
 	}
@@ -749,10 +749,10 @@ func (o *UpdateDynamicAttributesInner) UnmarshalJSON(data []byte) (err error) {
 	err = json.Unmarshal(data, &allProperties)
 
 	if err != nil {
-		return err;
+		return err
 	}
 
-	for _, requiredProperty := range(requiredProperties) {
+	for _, requiredProperty := range requiredProperties {
 		if _, exists := allProperties[requiredProperty]; !exists {
 			return fmt.Errorf("no value given for required property %v", requiredProperty)
 		}
@@ -808,5 +808,3 @@ func (v *NullableUpdateDynamicAttributesInner) UnmarshalJSON(src []byte) error {
 	v.isSet = true
 	return json.Unmarshal(src, &v.value)
 }
-
-

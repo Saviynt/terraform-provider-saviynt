@@ -19,7 +19,7 @@ var _ MappedNullable = &UpdateChildRolePayload{}
 
 // UpdateChildRolePayload struct for UpdateChildRolePayload
 type UpdateChildRolePayload struct {
-	Rolename *string `json:"rolename,omitempty"`
+	Rolename   *string `json:"rolename,omitempty"`
 	UpdateType *string `json:"updateType,omitempty"`
 }
 
@@ -105,7 +105,7 @@ func (o *UpdateChildRolePayload) SetUpdateType(v string) {
 }
 
 func (o UpdateChildRolePayload) MarshalJSON() ([]byte, error) {
-	toSerialize,err := o.ToMap()
+	toSerialize, err := o.ToMap()
 	if err != nil {
 		return []byte{}, err
 	}
@@ -158,5 +158,3 @@ func (v *NullableUpdateChildRolePayload) UnmarshalJSON(src []byte) error {
 	v.isSet = true
 	return json.Unmarshal(src, &v.value)
 }
-
-

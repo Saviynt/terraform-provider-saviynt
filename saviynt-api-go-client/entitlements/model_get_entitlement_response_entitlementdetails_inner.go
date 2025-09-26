@@ -1,7 +1,7 @@
 /*
 Entitlement Management API
 
-API for managing entitlements in Saviynt/SSM. - **Create Entitlement**: Creates a new entitlement. - **Update Entitlement**: Updates an existing entitlement. - **Get Entitlement List**: Returns a list of entitlement based on search criteria. 
+API for managing entitlements in Saviynt/SSM. - **Create Entitlement**: Creates a new entitlement. - **Update Entitlement**: Updates an existing entitlement. - **Get Entitlement List**: Returns a list of entitlement based on search criteria.
 
 API version: 1.0.0
 */
@@ -68,7 +68,7 @@ type GetEntitlementResponseEntitlementdetailsInner struct {
 	// Name of the endpoint the entitlement is linked to.
 	Endpoint *string `json:"endpoint,omitempty"`
 	// Key of the endpoint associated with the entitlement.
-	EndpointKey *int32 `json:"endpointKey,omitempty"`
+	EndpointKey      *int32                                                         `json:"endpointKey,omitempty"`
 	EntitlementOwner *GetEntitlementResponseEntitlementdetailsInnerEntitlementOwner `json:"entitlementOwner,omitempty"`
 	// Custom property 1 value.
 	CustomProperty1 *string `json:"Custom Property 1,omitempty"`
@@ -2384,7 +2384,7 @@ func (o *GetEntitlementResponseEntitlementdetailsInner) SetEntitlementMapDetails
 }
 
 func (o GetEntitlementResponseEntitlementdetailsInner) MarshalJSON() ([]byte, error) {
-	toSerialize,err := o.ToMap()
+	toSerialize, err := o.ToMap()
 	if err != nil {
 		return []byte{}, err
 	}
@@ -2638,5 +2638,3 @@ func (v *NullableGetEntitlementResponseEntitlementdetailsInner) UnmarshalJSON(sr
 	v.isSet = true
 	return json.Unmarshal(src, &v.value)
 }
-
-

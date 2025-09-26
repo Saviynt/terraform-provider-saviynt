@@ -44,12 +44,12 @@ func TestPrivilegesAPIService(t *testing.T) {
 		}
 
 		createReqBody := privileges.CreateUpdatePrivilegeRequest{
-			Endpoint: endpoint,
+			Endpoint:        endpoint,
 			Entitlementtype: entitlementtype,
-			Securitysystem: securitysystem,
+			Securitysystem:  securitysystem,
 			Privilege: privileges.CreateUpdatePrivilegeRequestPrivilege{
-				Attributename: saviyntapigoclient.Pointer(uniqueName),
-				Attributetype: saviyntapigoclient.Pointer("STRING"),
+				Attributename:   saviyntapigoclient.Pointer(uniqueName),
+				Attributetype:   saviyntapigoclient.Pointer("STRING"),
 				Attributeconfig: saviyntapigoclient.Pointer("USER-BASED"),
 			},
 		}
@@ -78,15 +78,15 @@ func TestPrivilegesAPIService(t *testing.T) {
 		}
 
 		updateReqBody := privileges.CreateUpdatePrivilegeRequest{
-			Endpoint: endpoint,
+			Endpoint:        endpoint,
 			Entitlementtype: entitlementtype,
-			Securitysystem: securitysystem,
+			Securitysystem:  securitysystem,
 			Privilege: privileges.CreateUpdatePrivilegeRequestPrivilege{
-				Attributename: saviyntapigoclient.Pointer(uniqueName),
-				Attributetype: saviyntapigoclient.Pointer("BOOLEAN"),
+				Attributename:   saviyntapigoclient.Pointer(uniqueName),
+				Attributetype:   saviyntapigoclient.Pointer("BOOLEAN"),
 				Attributeconfig: saviyntapigoclient.Pointer("ENTITLEMENT-BASED"),
-				Orderindex: saviyntapigoclient.Pointer("2"),
-				Hideoncreate: saviyntapigoclient.Pointer(true),
+				Orderindex:      saviyntapigoclient.Pointer("2"),
+				Hideoncreate:    saviyntapigoclient.Pointer(true),
 			},
 		}
 
@@ -110,7 +110,7 @@ func TestPrivilegesAPIService(t *testing.T) {
 
 		getReqBody := privileges.GetPrivilegeListRequest{
 			Endpoint: endpoint,
-			Offset: saviyntapigoclient.Pointer("2"),
+			Offset:   saviyntapigoclient.Pointer("2"),
 		}
 
 		getReq := apiClient.Privileges.GetPrivilege(ctx).GetPrivilegeListRequest(getReqBody)
@@ -132,10 +132,10 @@ func TestPrivilegesAPIService(t *testing.T) {
 		}
 
 		deleteReqBody := privileges.DeletePrivilegeRequest{
-			Securitysystem: securitysystem,
-			Endpoint: endpoint,
+			Securitysystem:  securitysystem,
+			Endpoint:        endpoint,
 			Entitlementtype: entitlementtype,
-			Privilege: uniqueName,
+			Privilege:       uniqueName,
 		}
 
 		deleteReq := apiClient.Privileges.DeletePrivilege(ctx).DeletePrivilegeRequest(deleteReqBody)

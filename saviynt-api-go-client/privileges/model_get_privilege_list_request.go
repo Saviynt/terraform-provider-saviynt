@@ -1,7 +1,7 @@
 /*
 Privilege Management API
 
-API for managing privileges in Saviynt/SSM. - **Create Privilege**: Creates a new privilege. - **Update Privilege**: Updates an existing privilege. - **Get Privilege List**: Returns a list of privileges based on search criteria. - **Delete Privilege**: Delete a privilege 
+API for managing privileges in Saviynt/SSM. - **Create Privilege**: Creates a new privilege. - **Update Privilege**: Updates an existing privilege. - **Get Privilege List**: Returns a list of privileges based on search criteria. - **Delete Privilege**: Delete a privilege
 
 API version: 1.0.0
 */
@@ -11,8 +11,8 @@ API version: 1.0.0
 package privileges
 
 import (
-	"encoding/json"
 	"bytes"
+	"encoding/json"
 	"fmt"
 )
 
@@ -172,7 +172,7 @@ func (o *GetPrivilegeListRequest) SetOffset(v string) {
 }
 
 func (o GetPrivilegeListRequest) MarshalJSON() ([]byte, error) {
-	toSerialize,err := o.ToMap()
+	toSerialize, err := o.ToMap()
 	if err != nil {
 		return []byte{}, err
 	}
@@ -207,10 +207,10 @@ func (o *GetPrivilegeListRequest) UnmarshalJSON(data []byte) (err error) {
 	err = json.Unmarshal(data, &allProperties)
 
 	if err != nil {
-		return err;
+		return err
 	}
 
-	for _, requiredProperty := range(requiredProperties) {
+	for _, requiredProperty := range requiredProperties {
 		if _, exists := allProperties[requiredProperty]; !exists {
 			return fmt.Errorf("no value given for required property %v", requiredProperty)
 		}
@@ -266,5 +266,3 @@ func (v *NullableGetPrivilegeListRequest) UnmarshalJSON(src []byte) error {
 	v.isSet = true
 	return json.Unmarshal(src, &v.value)
 }
-
-

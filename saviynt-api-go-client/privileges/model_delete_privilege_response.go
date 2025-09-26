@@ -1,7 +1,7 @@
 /*
 Privilege Management API
 
-API for managing privileges in Saviynt/SSM. - **Create Privilege**: Creates a new privilege. - **Update Privilege**: Updates an existing privilege. - **Get Privilege List**: Returns a list of privileges based on search criteria. - **Delete Privilege**: Delete a privilege 
+API for managing privileges in Saviynt/SSM. - **Create Privilege**: Creates a new privilege. - **Update Privilege**: Updates an existing privilege. - **Get Privilege List**: Returns a list of privileges based on search criteria. - **Delete Privilege**: Delete a privilege
 
 API version: 1.0.0
 */
@@ -28,8 +28,8 @@ type DeletePrivilegeResponse struct {
 	// Endpoint validation error
 	Endpoint *string `json:"endpoint,omitempty"`
 	// Entitlement type validation error
-	Entitlementtype *string `json:"entitlementtype,omitempty"`
-	Privilege *DeletePrivilegeResponsePrivilege `json:"privilege,omitempty"`
+	Entitlementtype *string                           `json:"entitlementtype,omitempty"`
+	Privilege       *DeletePrivilegeResponsePrivilege `json:"privilege,omitempty"`
 }
 
 // NewDeletePrivilegeResponse instantiates a new DeletePrivilegeResponse object
@@ -242,7 +242,7 @@ func (o *DeletePrivilegeResponse) SetPrivilege(v DeletePrivilegeResponsePrivileg
 }
 
 func (o DeletePrivilegeResponse) MarshalJSON() ([]byte, error) {
-	toSerialize,err := o.ToMap()
+	toSerialize, err := o.ToMap()
 	if err != nil {
 		return []byte{}, err
 	}
@@ -307,5 +307,3 @@ func (v *NullableDeletePrivilegeResponse) UnmarshalJSON(src []byte) error {
 	v.isSet = true
 	return json.Unmarshal(src, &v.value)
 }
-
-

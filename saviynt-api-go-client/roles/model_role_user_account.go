@@ -19,7 +19,7 @@ var _ MappedNullable = &RoleUserAccount{}
 
 // RoleUserAccount struct for RoleUserAccount
 type RoleUserAccount struct {
-	Id *int32 `json:"id,omitempty"`
+	Id    *int32  `json:"id,omitempty"`
 	Class *string `json:"class,omitempty"`
 }
 
@@ -105,7 +105,7 @@ func (o *RoleUserAccount) SetClass(v string) {
 }
 
 func (o RoleUserAccount) MarshalJSON() ([]byte, error) {
-	toSerialize,err := o.ToMap()
+	toSerialize, err := o.ToMap()
 	if err != nil {
 		return []byte{}, err
 	}
@@ -158,5 +158,3 @@ func (v *NullableRoleUserAccount) UnmarshalJSON(src []byte) error {
 	v.isSet = true
 	return json.Unmarshal(src, &v.value)
 }
-
-

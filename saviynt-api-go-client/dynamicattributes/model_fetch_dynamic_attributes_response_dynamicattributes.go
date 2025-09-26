@@ -15,18 +15,17 @@ import (
 	"fmt"
 )
 
-
 // FetchDynamicAttributesResponseDynamicattributes struct for FetchDynamicAttributesResponseDynamicattributes
 type FetchDynamicAttributesResponseDynamicattributes struct {
 	ArrayOfFetchDynamicAttributeResponseInner *[]FetchDynamicAttributeResponseInner
-	ArrayOfMapmapOfStringstring *[]map[string]string
+	ArrayOfMapmapOfStringstring               *[]map[string]string
 }
 
 // Unmarshal JSON data into any of the pointers in the struct
 func (dst *FetchDynamicAttributesResponseDynamicattributes) UnmarshalJSON(data []byte) error {
 	var err error
 	// try to unmarshal JSON data into ArrayOfFetchDynamicAttributeResponseInner
-	err = json.Unmarshal(data, &dst.ArrayOfFetchDynamicAttributeResponseInner);
+	err = json.Unmarshal(data, &dst.ArrayOfFetchDynamicAttributeResponseInner)
 	if err == nil {
 		jsonArrayOfFetchDynamicAttributeResponseInner, _ := json.Marshal(dst.ArrayOfFetchDynamicAttributeResponseInner)
 		if string(jsonArrayOfFetchDynamicAttributeResponseInner) == "{}" { // empty struct
@@ -39,7 +38,7 @@ func (dst *FetchDynamicAttributesResponseDynamicattributes) UnmarshalJSON(data [
 	}
 
 	// try to unmarshal JSON data into ArrayOfMapmapOfStringstring
-	err = json.Unmarshal(data, &dst.ArrayOfMapmapOfStringstring);
+	err = json.Unmarshal(data, &dst.ArrayOfMapmapOfStringstring)
 	if err == nil {
 		jsonArrayOfMapmapOfStringstring, _ := json.Marshal(dst.ArrayOfMapmapOfStringstring)
 		if string(jsonArrayOfMapmapOfStringstring) == "{}" { // empty struct
@@ -66,7 +65,6 @@ func (src FetchDynamicAttributesResponseDynamicattributes) MarshalJSON() ([]byte
 
 	return nil, nil // no data in anyOf schemas
 }
-
 
 type NullableFetchDynamicAttributesResponseDynamicattributes struct {
 	value *FetchDynamicAttributesResponseDynamicattributes
@@ -103,5 +101,3 @@ func (v *NullableFetchDynamicAttributesResponseDynamicattributes) UnmarshalJSON(
 	v.isSet = true
 	return json.Unmarshal(src, &v.value)
 }
-
-

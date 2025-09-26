@@ -11,8 +11,8 @@ API version: 1.0.0
 package connections
 
 import (
-	"encoding/json"
 	"bytes"
+	"encoding/json"
 	"fmt"
 )
 
@@ -22,19 +22,19 @@ var _ MappedNullable = &D365Connector{}
 // D365Connector struct for D365Connector
 type D365Connector struct {
 	BaseConnector
-	BASEURL string `json:"BASEURL"`
-	TENANT_ID string `json:"TENANT_ID"`
-	LOGIN_URL string `json:"LOGIN_URL"`
-	CLIENT_ID string `json:"CLIENT_ID"`
+	BASEURL       string `json:"BASEURL"`
+	TENANT_ID     string `json:"TENANT_ID"`
+	LOGIN_URL     string `json:"LOGIN_URL"`
+	CLIENT_ID     string `json:"CLIENT_ID"`
 	CLIENT_SECRET string `json:"CLIENT_SECRET"`
 	// Property for USER_FILTER
 	USER_FILTER *string `json:"USER_FILTER,omitempty"`
 	// Property for USER_IMPORT_MAPPING
-	USER_IMPORT_MAPPING *string `json:"USER_IMPORT_MAPPING,omitempty"`
-	ACCOUNT_IMPORT_MAPPING *string `json:"ACCOUNT_IMPORT_MAPPING,omitempty"`
-	ORGANIZATION_FILTER *string `json:"ORGANIZATION_FILTER,omitempty"`
+	USER_IMPORT_MAPPING     *string `json:"USER_IMPORT_MAPPING,omitempty"`
+	ACCOUNT_IMPORT_MAPPING  *string `json:"ACCOUNT_IMPORT_MAPPING,omitempty"`
+	ORGANIZATION_FILTER     *string `json:"ORGANIZATION_FILTER,omitempty"`
 	STATUS_THRESHOLD_CONFIG *string `json:"STATUS_THRESHOLD_CONFIG,omitempty"`
-	ConfigJSON *string `json:"ConfigJSON,omitempty"`
+	ConfigJSON              *string `json:"ConfigJSON,omitempty"`
 	// If present - 2.0 API will be used. Accepts space separated values. If blank 1.0 API is used
 	SCOPE *string `json:"SCOPE,omitempty"`
 	// JSON to specify the Field Value which will be used to Create the New Account
@@ -648,7 +648,7 @@ func (o *D365Connector) SetRemoveAccountJSON(v string) {
 }
 
 func (o D365Connector) MarshalJSON() ([]byte, error) {
-	toSerialize,err := o.ToMap()
+	toSerialize, err := o.ToMap()
 	if err != nil {
 		return []byte{}, err
 	}
@@ -734,10 +734,10 @@ func (o *D365Connector) UnmarshalJSON(data []byte) (err error) {
 	err = json.Unmarshal(data, &allProperties)
 
 	if err != nil {
-		return err;
+		return err
 	}
 
-	for _, requiredProperty := range(requiredProperties) {
+	for _, requiredProperty := range requiredProperties {
 		if _, exists := allProperties[requiredProperty]; !exists {
 			return fmt.Errorf("no value given for required property %v", requiredProperty)
 		}
@@ -793,5 +793,3 @@ func (v *NullableD365Connector) UnmarshalJSON(src []byte) error {
 	v.isSet = true
 	return json.Unmarshal(src, &v.value)
 }
-
-

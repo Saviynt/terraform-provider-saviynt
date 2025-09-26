@@ -1,7 +1,7 @@
 /*
 Entitlement Management API
 
-API for managing entitlements in Saviynt/SSM. - **Create Entitlement**: Creates a new entitlement. - **Update Entitlement**: Updates an existing entitlement. - **Get Entitlement List**: Returns a list of entitlement based on search criteria. 
+API for managing entitlements in Saviynt/SSM. - **Create Entitlement**: Creates a new entitlement. - **Update Entitlement**: Updates an existing entitlement. - **Get Entitlement List**: Returns a list of entitlement based on search criteria.
 
 API version: 1.0.0
 */

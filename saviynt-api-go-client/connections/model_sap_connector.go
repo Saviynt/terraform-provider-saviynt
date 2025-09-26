@@ -11,8 +11,8 @@ API version: 1.0.0
 package connections
 
 import (
-	"encoding/json"
 	"bytes"
+	"encoding/json"
 	"fmt"
 )
 
@@ -57,7 +57,7 @@ type SAPConnector struct {
 	// The Quality of Protection Level
 	JCO_SNC_QOP *string `json:"JCO_SNC_QOP,omitempty"`
 	// Tables to be Imported
-	TABLES *string `json:"TABLES,omitempty"`
+	TABLES     *string `json:"TABLES,omitempty"`
 	SYSTEMNAME *string `json:"SYSTEMNAME,omitempty"`
 	// User group for all terminated users
 	TERMINATEDUSERGROUP *string `json:"TERMINATEDUSERGROUP,omitempty"`
@@ -99,7 +99,7 @@ type SAPConnector struct {
 	PASSWORD_MAX_LENGTH *string `json:"PASSWORD_MAX_LENGTH,omitempty"`
 	// Specify the Number of Upper case alphabets required for the random password
 	PASSWORD_NOOFCAPSALPHA *string `json:"PASSWORD_NOOFCAPSALPHA,omitempty"`
-	// Specify the Number of digits required for the random password 
+	// Specify the Number of digits required for the random password
 	PASSWORD_NOOFDIGITS *string `json:"PASSWORD_NOOFDIGITS,omitempty"`
 	// Specify the Number of special chars required for the random password
 	PASSWORD_NOOFSPLCHARS *string `json:"PASSWORD_NOOFSPLCHARS,omitempty"`
@@ -115,7 +115,7 @@ type SAPConnector struct {
 	STATUS_THRESHOLD_CONFIG *string `json:"STATUS_THRESHOLD_CONFIG,omitempty"`
 	// set it to FALSE if using an older CUA System to not support setting sub-systems
 	SETCUASYSTEM *string `json:"SETCUASYSTEM,omitempty"`
-	// JSON similar to Update Account to mention SNC and other related changes that needs to be done 
+	// JSON similar to Update Account to mention SNC and other related changes that needs to be done
 	FIREFIGHTERID_GRANT_ACCESS_JSON *string `json:"FIREFIGHTERID_GRANT_ACCESS_JSON,omitempty"`
 	// JSON similar to Update Account to reset SNC and other related changes that were done during GRANT
 	FIREFIGHTERID_REVOKE_ACCESS_JSON *string `json:"FIREFIGHTERID_REVOKE_ACCESS_JSON,omitempty"`
@@ -127,7 +127,7 @@ type SAPConnector struct {
 	EXTERNAL_SOD_EVAL_JSON_DETAIL *string `json:"EXTERNAL_SOD_EVAL_JSON_DETAIL,omitempty"`
 	// Property for LOGS_TABLE_FILTER
 	LOGS_TABLE_FILTER *string `json:"LOGS_TABLE_FILTER,omitempty"`
-	// JSON for PAM Bootstrap Configuration 
+	// JSON for PAM Bootstrap Configuration
 	PAM_CONFIG *string `json:"PAM_CONFIG,omitempty"`
 	// Property for SAPTABLE_FILTER_LANG
 	SAPTABLE_FILTER_LANG *string `json:"SAPTABLE_FILTER_LANG,omitempty"`
@@ -2085,7 +2085,7 @@ func (o *SAPConnector) SetConfigJSON(v string) {
 }
 
 func (o SAPConnector) MarshalJSON() ([]byte, error) {
-	toSerialize,err := o.ToMap()
+	toSerialize, err := o.ToMap()
 	if err != nil {
 		return []byte{}, err
 	}
@@ -2299,10 +2299,10 @@ func (o *SAPConnector) UnmarshalJSON(data []byte) (err error) {
 	err = json.Unmarshal(data, &allProperties)
 
 	if err != nil {
-		return err;
+		return err
 	}
 
-	for _, requiredProperty := range(requiredProperties) {
+	for _, requiredProperty := range requiredProperties {
 		if _, exists := allProperties[requiredProperty]; !exists {
 			return fmt.Errorf("no value given for required property %v", requiredProperty)
 		}
@@ -2358,5 +2358,3 @@ func (v *NullableSAPConnector) UnmarshalJSON(src []byte) error {
 	v.isSet = true
 	return json.Unmarshal(src, &v.value)
 }
-
-

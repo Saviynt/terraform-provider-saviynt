@@ -16,10 +16,10 @@ import (
 	"gopkg.in/validator.v2"
 )
 
-// CreateOrUpdateOrDeleteDynamicAttributeResponseDynamicattributes - If present, either:   • a string (e.g. \"attributenames [sample] does not exist\"), or     • an object of sub‐field errors (e.g. `{ \"attributetype\": \"not valid\" }`) 
+// CreateOrUpdateOrDeleteDynamicAttributeResponseDynamicattributes - If present, either:   • a string (e.g. \"attributenames [sample] does not exist\"), or     • an object of sub‐field errors (e.g. `{ \"attributetype\": \"not valid\" }`)
 type CreateOrUpdateOrDeleteDynamicAttributeResponseDynamicattributes struct {
 	MapmapOfStringmapmapOfStringAny *map[string]map[string]interface{}
-	String *string
+	String                          *string
 }
 
 // map[string]map[string]interface{}AsCreateOrUpdateOrDeleteDynamicAttributeResponseDynamicattributes is a convenience function that returns map[string]map[string]interface{} wrapped in CreateOrUpdateOrDeleteDynamicAttributeResponseDynamicattributes
@@ -35,7 +35,6 @@ func StringAsCreateOrUpdateOrDeleteDynamicAttributeResponseDynamicattributes(v *
 		String: v,
 	}
 }
-
 
 // Unmarshal JSON data into one of the pointers in the struct
 func (dst *CreateOrUpdateOrDeleteDynamicAttributeResponseDynamicattributes) UnmarshalJSON(data []byte) error {
@@ -102,7 +101,7 @@ func (src CreateOrUpdateOrDeleteDynamicAttributeResponseDynamicattributes) Marsh
 }
 
 // Get the actual instance
-func (obj *CreateOrUpdateOrDeleteDynamicAttributeResponseDynamicattributes) GetActualInstance() (interface{}) {
+func (obj *CreateOrUpdateOrDeleteDynamicAttributeResponseDynamicattributes) GetActualInstance() interface{} {
 	if obj == nil {
 		return nil
 	}
@@ -119,7 +118,7 @@ func (obj *CreateOrUpdateOrDeleteDynamicAttributeResponseDynamicattributes) GetA
 }
 
 // Get the actual instance value
-func (obj CreateOrUpdateOrDeleteDynamicAttributeResponseDynamicattributes) GetActualInstanceValue() (interface{}) {
+func (obj CreateOrUpdateOrDeleteDynamicAttributeResponseDynamicattributes) GetActualInstanceValue() interface{} {
 	if obj.MapmapOfStringmapmapOfStringAny != nil {
 		return *obj.MapmapOfStringmapmapOfStringAny
 	}
@@ -167,5 +166,3 @@ func (v *NullableCreateOrUpdateOrDeleteDynamicAttributeResponseDynamicattributes
 	v.isSet = true
 	return json.Unmarshal(src, &v.value)
 }
-
-

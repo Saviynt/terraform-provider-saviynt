@@ -19,13 +19,12 @@ import (
 	"reflect"
 )
 
-
 // DynamicAttributesAPIService DynamicAttributesAPI service
 type DynamicAttributesAPIService service
 
 type ApiCreateDynamicAttributeRequest struct {
-	ctx context.Context
-	ApiService *DynamicAttributesAPIService
+	ctx                           context.Context
+	ApiService                    *DynamicAttributesAPIService
 	createDynamicAttributeRequest *CreateDynamicAttributeRequest
 }
 
@@ -42,24 +41,25 @@ func (r ApiCreateDynamicAttributeRequest) Execute() (*CreateOrUpdateOrDeleteDyna
 /*
 CreateDynamicAttribute Create a dynamic attribute
 
- @param ctx context.Context - for authentication, logging, cancellation, deadlines, tracing, etc. Passed from http.Request or context.Background().
- @return ApiCreateDynamicAttributeRequest
+	@param ctx context.Context - for authentication, logging, cancellation, deadlines, tracing, etc. Passed from http.Request or context.Background().
+	@return ApiCreateDynamicAttributeRequest
 */
 func (a *DynamicAttributesAPIService) CreateDynamicAttribute(ctx context.Context) ApiCreateDynamicAttributeRequest {
 	return ApiCreateDynamicAttributeRequest{
 		ApiService: a,
-		ctx: ctx,
+		ctx:        ctx,
 	}
 }
 
 // Execute executes the request
-//  @return CreateOrUpdateOrDeleteDynamicAttributeResponse
+//
+//	@return CreateOrUpdateOrDeleteDynamicAttributeResponse
 func (a *DynamicAttributesAPIService) CreateDynamicAttributeExecute(r ApiCreateDynamicAttributeRequest) (*CreateOrUpdateOrDeleteDynamicAttributeResponse, *http.Response, error) {
 	var (
-		localVarHTTPMethod   = http.MethodPost
-		localVarPostBody     interface{}
-		formFiles            []formFile
-		localVarReturnValue  *CreateOrUpdateOrDeleteDynamicAttributeResponse
+		localVarHTTPMethod  = http.MethodPost
+		localVarPostBody    interface{}
+		formFiles           []formFile
+		localVarReturnValue *CreateOrUpdateOrDeleteDynamicAttributeResponse
 	)
 
 	localBasePath, err := a.client.cfg.ServerURLWithContext(r.ctx, "DynamicAttributesAPIService.CreateDynamicAttribute")
@@ -133,8 +133,8 @@ func (a *DynamicAttributesAPIService) CreateDynamicAttributeExecute(r ApiCreateD
 }
 
 type ApiDeleteDynamicAttributeRequest struct {
-	ctx context.Context
-	ApiService *DynamicAttributesAPIService
+	ctx                           context.Context
+	ApiService                    *DynamicAttributesAPIService
 	deleteDynamicAttributeRequest *DeleteDynamicAttributeRequest
 }
 
@@ -151,24 +151,25 @@ func (r ApiDeleteDynamicAttributeRequest) Execute() (*CreateOrUpdateOrDeleteDyna
 /*
 DeleteDynamicAttribute Delete a dynamic attribute
 
- @param ctx context.Context - for authentication, logging, cancellation, deadlines, tracing, etc. Passed from http.Request or context.Background().
- @return ApiDeleteDynamicAttributeRequest
+	@param ctx context.Context - for authentication, logging, cancellation, deadlines, tracing, etc. Passed from http.Request or context.Background().
+	@return ApiDeleteDynamicAttributeRequest
 */
 func (a *DynamicAttributesAPIService) DeleteDynamicAttribute(ctx context.Context) ApiDeleteDynamicAttributeRequest {
 	return ApiDeleteDynamicAttributeRequest{
 		ApiService: a,
-		ctx: ctx,
+		ctx:        ctx,
 	}
 }
 
 // Execute executes the request
-//  @return CreateOrUpdateOrDeleteDynamicAttributeResponse
+//
+//	@return CreateOrUpdateOrDeleteDynamicAttributeResponse
 func (a *DynamicAttributesAPIService) DeleteDynamicAttributeExecute(r ApiDeleteDynamicAttributeRequest) (*CreateOrUpdateOrDeleteDynamicAttributeResponse, *http.Response, error) {
 	var (
-		localVarHTTPMethod   = http.MethodDelete
-		localVarPostBody     interface{}
-		formFiles            []formFile
-		localVarReturnValue  *CreateOrUpdateOrDeleteDynamicAttributeResponse
+		localVarHTTPMethod  = http.MethodDelete
+		localVarPostBody    interface{}
+		formFiles           []formFile
+		localVarReturnValue *CreateOrUpdateOrDeleteDynamicAttributeResponse
 	)
 
 	localBasePath, err := a.client.cfg.ServerURLWithContext(r.ctx, "DynamicAttributesAPIService.DeleteDynamicAttribute")
@@ -242,15 +243,15 @@ func (a *DynamicAttributesAPIService) DeleteDynamicAttributeExecute(r ApiDeleteD
 }
 
 type ApiFetchDynamicAttributeRequest struct {
-	ctx context.Context
-	ApiService *DynamicAttributesAPIService
-	securitysystem *[]string
-	endpoint *[]string
+	ctx               context.Context
+	ApiService        *DynamicAttributesAPIService
+	securitysystem    *[]string
+	endpoint          *[]string
 	dynamicattributes *[]string
-	requesttype *[]string
-	offset *string
-	max *string
-	loggedinuser *string
+	requesttype       *[]string
+	offset            *string
+	max               *string
+	loggedinuser      *string
 }
 
 // List of security systems to filter
@@ -302,24 +303,25 @@ func (r ApiFetchDynamicAttributeRequest) Execute() (*FetchDynamicAttributesRespo
 /*
 FetchDynamicAttribute Fetch the dynamic attributes based on a given filter value or all
 
- @param ctx context.Context - for authentication, logging, cancellation, deadlines, tracing, etc. Passed from http.Request or context.Background().
- @return ApiFetchDynamicAttributeRequest
+	@param ctx context.Context - for authentication, logging, cancellation, deadlines, tracing, etc. Passed from http.Request or context.Background().
+	@return ApiFetchDynamicAttributeRequest
 */
 func (a *DynamicAttributesAPIService) FetchDynamicAttribute(ctx context.Context) ApiFetchDynamicAttributeRequest {
 	return ApiFetchDynamicAttributeRequest{
 		ApiService: a,
-		ctx: ctx,
+		ctx:        ctx,
 	}
 }
 
 // Execute executes the request
-//  @return FetchDynamicAttributesResponse
+//
+//	@return FetchDynamicAttributesResponse
 func (a *DynamicAttributesAPIService) FetchDynamicAttributeExecute(r ApiFetchDynamicAttributeRequest) (*FetchDynamicAttributesResponse, *http.Response, error) {
 	var (
-		localVarHTTPMethod   = http.MethodGet
-		localVarPostBody     interface{}
-		formFiles            []formFile
-		localVarReturnValue  *FetchDynamicAttributesResponse
+		localVarHTTPMethod  = http.MethodGet
+		localVarPostBody    interface{}
+		formFiles           []formFile
+		localVarReturnValue *FetchDynamicAttributesResponse
 	)
 
 	localBasePath, err := a.client.cfg.ServerURLWithContext(r.ctx, "DynamicAttributesAPIService.FetchDynamicAttribute")
@@ -441,8 +443,8 @@ func (a *DynamicAttributesAPIService) FetchDynamicAttributeExecute(r ApiFetchDyn
 }
 
 type ApiUpdateDynamicAttributeRequest struct {
-	ctx context.Context
-	ApiService *DynamicAttributesAPIService
+	ctx                           context.Context
+	ApiService                    *DynamicAttributesAPIService
 	updateDynamicAttributeRequest *UpdateDynamicAttributeRequest
 }
 
@@ -459,24 +461,25 @@ func (r ApiUpdateDynamicAttributeRequest) Execute() (*CreateOrUpdateOrDeleteDyna
 /*
 UpdateDynamicAttribute Update a dynamic attribute
 
- @param ctx context.Context - for authentication, logging, cancellation, deadlines, tracing, etc. Passed from http.Request or context.Background().
- @return ApiUpdateDynamicAttributeRequest
+	@param ctx context.Context - for authentication, logging, cancellation, deadlines, tracing, etc. Passed from http.Request or context.Background().
+	@return ApiUpdateDynamicAttributeRequest
 */
 func (a *DynamicAttributesAPIService) UpdateDynamicAttribute(ctx context.Context) ApiUpdateDynamicAttributeRequest {
 	return ApiUpdateDynamicAttributeRequest{
 		ApiService: a,
-		ctx: ctx,
+		ctx:        ctx,
 	}
 }
 
 // Execute executes the request
-//  @return CreateOrUpdateOrDeleteDynamicAttributeResponse
+//
+//	@return CreateOrUpdateOrDeleteDynamicAttributeResponse
 func (a *DynamicAttributesAPIService) UpdateDynamicAttributeExecute(r ApiUpdateDynamicAttributeRequest) (*CreateOrUpdateOrDeleteDynamicAttributeResponse, *http.Response, error) {
 	var (
-		localVarHTTPMethod   = http.MethodPut
-		localVarPostBody     interface{}
-		formFiles            []formFile
-		localVarReturnValue  *CreateOrUpdateOrDeleteDynamicAttributeResponse
+		localVarHTTPMethod  = http.MethodPut
+		localVarPostBody    interface{}
+		formFiles           []formFile
+		localVarReturnValue *CreateOrUpdateOrDeleteDynamicAttributeResponse
 	)
 
 	localBasePath, err := a.client.cfg.ServerURLWithContext(r.ctx, "DynamicAttributesAPIService.UpdateDynamicAttribute")

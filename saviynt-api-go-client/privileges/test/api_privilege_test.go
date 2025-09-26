@@ -28,7 +28,7 @@ func Test_privileges_PrivilegeAPIService(t *testing.T) {
 
 	t.Run("Test PrivilegeAPIService CreatePrivilege", func(t *testing.T) {
 
-		t.Skip("skip test")  // remove to run test
+		t.Skip("skip test") // remove to run test
 
 		resp, httpRes, err := apiClient.PrivilegeAPI.CreatePrivilege(context.Background()).Execute()
 
@@ -40,7 +40,7 @@ func Test_privileges_PrivilegeAPIService(t *testing.T) {
 
 	t.Run("Test PrivilegeAPIService DeletePrivilege", func(t *testing.T) {
 
-		t.Skip("skip test")  // remove to run test
+		t.Skip("skip test") // remove to run test
 
 		resp, httpRes, err := apiClient.PrivilegeAPI.DeletePrivilege(context.Background()).Execute()
 
@@ -52,7 +52,7 @@ func Test_privileges_PrivilegeAPIService(t *testing.T) {
 
 	t.Run("Test PrivilegeAPIService GetPrivilege", func(t *testing.T) {
 
-		t.Skip("skip test")  // remove to run test
+		t.Skip("skip test") // remove to run test
 
 		resp, httpRes, err := apiClient.PrivilegeAPI.GetPrivilege(context.Background()).Execute()
 
@@ -64,7 +64,7 @@ func Test_privileges_PrivilegeAPIService(t *testing.T) {
 
 	t.Run("Test PrivilegeAPIService UpdatePrivilege", func(t *testing.T) {
 
-		t.Skip("skip test")  // remove to run test
+		t.Skip("skip test") // remove to run test
 
 		resp, httpRes, err := apiClient.PrivilegeAPI.UpdatePrivilege(context.Background()).Execute()
 

@@ -19,10 +19,10 @@ var _ MappedNullable = &UpdateEnterpriseRoleResponse{}
 
 // UpdateEnterpriseRoleResponse struct for UpdateEnterpriseRoleResponse
 type UpdateEnterpriseRoleResponse struct {
-	Requestid *string `json:"requestid,omitempty"`
+	Requestid  *string `json:"requestid,omitempty"`
 	Requestkey *string `json:"requestkey,omitempty"`
-	ErrorCode *string `json:"errorCode,omitempty"`
-	Message *string `json:"message,omitempty"`
+	ErrorCode  *string `json:"errorCode,omitempty"`
+	Message    *string `json:"message,omitempty"`
 }
 
 // NewUpdateEnterpriseRoleResponse instantiates a new UpdateEnterpriseRoleResponse object
@@ -171,7 +171,7 @@ func (o *UpdateEnterpriseRoleResponse) SetMessage(v string) {
 }
 
 func (o UpdateEnterpriseRoleResponse) MarshalJSON() ([]byte, error) {
-	toSerialize,err := o.ToMap()
+	toSerialize, err := o.ToMap()
 	if err != nil {
 		return []byte{}, err
 	}
@@ -230,5 +230,3 @@ func (v *NullableUpdateEnterpriseRoleResponse) UnmarshalJSON(src []byte) error {
 	v.isSet = true
 	return json.Unmarshal(src, &v.value)
 }
-
-

@@ -18,18 +18,18 @@ import (
 
 // CreateOrUpdateRequest - struct for CreateOrUpdateRequest
 type CreateOrUpdateRequest struct {
-	ADConnector *ADConnector
-	ADSIConnector *ADSIConnector
-	D365Connector *D365Connector
-	DBConnector *DBConnector
-	EntraIDConnector *EntraIDConnector
+	ADConnector         *ADConnector
+	ADSIConnector       *ADSIConnector
+	D365Connector       *D365Connector
+	DBConnector         *DBConnector
+	EntraIDConnector    *EntraIDConnector
 	GithubRESTConnector *GithubRESTConnector
-	OktaConnector *OktaConnector
-	RESTConnector *RESTConnector
-	SAPConnector *SAPConnector
+	OktaConnector       *OktaConnector
+	RESTConnector       *RESTConnector
+	SAPConnector        *SAPConnector
 	SalesforceConnector *SalesforceConnector
-	UNIXConnector *UNIXConnector
-	WorkdayConnector *WorkdayConnector
+	UNIXConnector       *UNIXConnector
+	WorkdayConnector    *WorkdayConnector
 }
 
 // ADConnectorAsCreateOrUpdateRequest is a convenience function that returns ADConnector wrapped in CreateOrUpdateRequest
@@ -115,7 +115,6 @@ func WorkdayConnectorAsCreateOrUpdateRequest(v *WorkdayConnector) CreateOrUpdate
 		WorkdayConnector: v,
 	}
 }
-
 
 // Unmarshal JSON data into one of the pointers in the struct
 func (dst *CreateOrUpdateRequest) UnmarshalJSON(data []byte) error {
@@ -402,7 +401,7 @@ func (src CreateOrUpdateRequest) MarshalJSON() ([]byte, error) {
 }
 
 // Get the actual instance
-func (obj *CreateOrUpdateRequest) GetActualInstance() (interface{}) {
+func (obj *CreateOrUpdateRequest) GetActualInstance() interface{} {
 	if obj == nil {
 		return nil
 	}
@@ -459,7 +458,7 @@ func (obj *CreateOrUpdateRequest) GetActualInstance() (interface{}) {
 }
 
 // Get the actual instance value
-func (obj CreateOrUpdateRequest) GetActualInstanceValue() (interface{}) {
+func (obj CreateOrUpdateRequest) GetActualInstanceValue() interface{} {
 	if obj.ADConnector != nil {
 		return *obj.ADConnector
 	}
@@ -547,5 +546,3 @@ func (v *NullableCreateOrUpdateRequest) UnmarshalJSON(src []byte) error {
 	v.isSet = true
 	return json.Unmarshal(src, &v.value)
 }
-
-

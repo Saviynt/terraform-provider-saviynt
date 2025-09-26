@@ -1,7 +1,7 @@
 /*
 Entitlement Management API
 
-API for managing entitlements in Saviynt/SSM. - **Create Entitlement**: Creates a new entitlement. - **Update Entitlement**: Updates an existing entitlement. - **Get Entitlement List**: Returns a list of entitlement based on search criteria. 
+API for managing entitlements in Saviynt/SSM. - **Create Entitlement**: Creates a new entitlement. - **Update Entitlement**: Updates an existing entitlement. - **Get Entitlement List**: Returns a list of entitlement based on search criteria.
 
 API version: 1.0.0
 */
@@ -18,9 +18,9 @@ import (
 
 // GetEntitlementResponseEntitlementdetailsInnerEntitlementOwner - struct for GetEntitlementResponseEntitlementdetailsInnerEntitlementOwner
 type GetEntitlementResponseEntitlementdetailsInnerEntitlementOwner struct {
-	ArrayOfString *[]string
+	ArrayOfString               *[]string
 	MapmapOfStringarrayOfString *map[string][]string
-	String *string
+	String                      *string
 }
 
 // []stringAsGetEntitlementResponseEntitlementdetailsInnerEntitlementOwner is a convenience function that returns []string wrapped in GetEntitlementResponseEntitlementdetailsInnerEntitlementOwner
@@ -43,7 +43,6 @@ func StringAsGetEntitlementResponseEntitlementdetailsInnerEntitlementOwner(v *st
 		String: v,
 	}
 }
-
 
 // Unmarshal JSON data into one of the pointers in the struct
 func (dst *GetEntitlementResponseEntitlementdetailsInnerEntitlementOwner) UnmarshalJSON(data []byte) error {
@@ -135,7 +134,7 @@ func (src GetEntitlementResponseEntitlementdetailsInnerEntitlementOwner) Marshal
 }
 
 // Get the actual instance
-func (obj *GetEntitlementResponseEntitlementdetailsInnerEntitlementOwner) GetActualInstance() (interface{}) {
+func (obj *GetEntitlementResponseEntitlementdetailsInnerEntitlementOwner) GetActualInstance() interface{} {
 	if obj == nil {
 		return nil
 	}
@@ -156,7 +155,7 @@ func (obj *GetEntitlementResponseEntitlementdetailsInnerEntitlementOwner) GetAct
 }
 
 // Get the actual instance value
-func (obj GetEntitlementResponseEntitlementdetailsInnerEntitlementOwner) GetActualInstanceValue() (interface{}) {
+func (obj GetEntitlementResponseEntitlementdetailsInnerEntitlementOwner) GetActualInstanceValue() interface{} {
 	if obj.ArrayOfString != nil {
 		return *obj.ArrayOfString
 	}
@@ -208,5 +207,3 @@ func (v *NullableGetEntitlementResponseEntitlementdetailsInnerEntitlementOwner) 
 	v.isSet = true
 	return json.Unmarshal(src, &v.value)
 }
-
-

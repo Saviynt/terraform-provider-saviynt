@@ -1,7 +1,7 @@
 /*
 Privilege Management API
 
-API for managing privileges in Saviynt/SSM. - **Create Privilege**: Creates a new privilege. - **Update Privilege**: Updates an existing privilege. - **Get Privilege List**: Returns a list of privileges based on search criteria. - **Delete Privilege**: Delete a privilege 
+API for managing privileges in Saviynt/SSM. - **Create Privilege**: Creates a new privilege. - **Update Privilege**: Updates an existing privilege. - **Get Privilege List**: Returns a list of privileges based on search criteria. - **Delete Privilege**: Delete a privilege
 
 API version: 1.0.0
 */
@@ -20,7 +20,7 @@ var _ MappedNullable = &GetPrivilegeDetailEntitlementTypes{}
 // GetPrivilegeDetailEntitlementTypes struct for GetPrivilegeDetailEntitlementTypes
 type GetPrivilegeDetailEntitlementTypes struct {
 	Entitlementname *string `json:"entitlementname,omitempty"`
-	Endpointkey *string `json:"endpointkey,omitempty"`
+	Endpointkey     *string `json:"endpointkey,omitempty"`
 }
 
 // NewGetPrivilegeDetailEntitlementTypes instantiates a new GetPrivilegeDetailEntitlementTypes object
@@ -105,7 +105,7 @@ func (o *GetPrivilegeDetailEntitlementTypes) SetEndpointkey(v string) {
 }
 
 func (o GetPrivilegeDetailEntitlementTypes) MarshalJSON() ([]byte, error) {
-	toSerialize,err := o.ToMap()
+	toSerialize, err := o.ToMap()
 	if err != nil {
 		return []byte{}, err
 	}
@@ -158,5 +158,3 @@ func (v *NullableGetPrivilegeDetailEntitlementTypes) UnmarshalJSON(src []byte) e
 	v.isSet = true
 	return json.Unmarshal(src, &v.value)
 }
-
-

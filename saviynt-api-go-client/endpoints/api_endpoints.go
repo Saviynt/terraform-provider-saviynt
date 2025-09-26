@@ -1,7 +1,7 @@
 /*
 Account Management API
 
-API for managing accounts in Saviynt/SSM. - **Create Endpoint**: Creates a new endpoint. - **Update Endpoint**: Updates an existing endpoint based on its name and roletype. - **Get Endpoint List**: Returns a list of endpoints based on search criteria. 
+API for managing accounts in Saviynt/SSM. - **Create Endpoint**: Creates a new endpoint. - **Update Endpoint**: Updates an existing endpoint based on its name and roletype. - **Get Endpoint List**: Returns a list of endpoints based on search criteria.
 
 API version: 1.0.0
 */
@@ -18,13 +18,12 @@ import (
 	"net/url"
 )
 
-
 // EndpointsAPIService EndpointsAPI service
 type EndpointsAPIService service
 
 type ApiCreateEndpointRequest struct {
-	ctx context.Context
-	ApiService *EndpointsAPIService
+	ctx                   context.Context
+	ApiService            *EndpointsAPIService
 	createEndpointRequest *CreateEndpointRequest
 }
 
@@ -41,24 +40,25 @@ func (r ApiCreateEndpointRequest) Execute() (*UpdateEndpoint200Response, *http.R
 /*
 CreateEndpoint Create endpoint
 
- @param ctx context.Context - for authentication, logging, cancellation, deadlines, tracing, etc. Passed from http.Request or context.Background().
- @return ApiCreateEndpointRequest
+	@param ctx context.Context - for authentication, logging, cancellation, deadlines, tracing, etc. Passed from http.Request or context.Background().
+	@return ApiCreateEndpointRequest
 */
 func (a *EndpointsAPIService) CreateEndpoint(ctx context.Context) ApiCreateEndpointRequest {
 	return ApiCreateEndpointRequest{
 		ApiService: a,
-		ctx: ctx,
+		ctx:        ctx,
 	}
 }
 
 // Execute executes the request
-//  @return UpdateEndpoint200Response
+//
+//	@return UpdateEndpoint200Response
 func (a *EndpointsAPIService) CreateEndpointExecute(r ApiCreateEndpointRequest) (*UpdateEndpoint200Response, *http.Response, error) {
 	var (
-		localVarHTTPMethod   = http.MethodPost
-		localVarPostBody     interface{}
-		formFiles            []formFile
-		localVarReturnValue  *UpdateEndpoint200Response
+		localVarHTTPMethod  = http.MethodPost
+		localVarPostBody    interface{}
+		formFiles           []formFile
+		localVarReturnValue *UpdateEndpoint200Response
 	)
 
 	localBasePath, err := a.client.cfg.ServerURLWithContext(r.ctx, "EndpointsAPIService.CreateEndpoint")
@@ -132,8 +132,8 @@ func (a *EndpointsAPIService) CreateEndpointExecute(r ApiCreateEndpointRequest) 
 }
 
 type ApiGetEndpointsRequest struct {
-	ctx context.Context
-	ApiService *EndpointsAPIService
+	ctx                 context.Context
+	ApiService          *EndpointsAPIService
 	getEndpointsRequest *GetEndpointsRequest
 }
 
@@ -150,24 +150,25 @@ func (r ApiGetEndpointsRequest) Execute() (*GetEndpoints200Response, *http.Respo
 /*
 GetEndpoints Get list of endpoints
 
- @param ctx context.Context - for authentication, logging, cancellation, deadlines, tracing, etc. Passed from http.Request or context.Background().
- @return ApiGetEndpointsRequest
+	@param ctx context.Context - for authentication, logging, cancellation, deadlines, tracing, etc. Passed from http.Request or context.Background().
+	@return ApiGetEndpointsRequest
 */
 func (a *EndpointsAPIService) GetEndpoints(ctx context.Context) ApiGetEndpointsRequest {
 	return ApiGetEndpointsRequest{
 		ApiService: a,
-		ctx: ctx,
+		ctx:        ctx,
 	}
 }
 
 // Execute executes the request
-//  @return GetEndpoints200Response
+//
+//	@return GetEndpoints200Response
 func (a *EndpointsAPIService) GetEndpointsExecute(r ApiGetEndpointsRequest) (*GetEndpoints200Response, *http.Response, error) {
 	var (
-		localVarHTTPMethod   = http.MethodPost
-		localVarPostBody     interface{}
-		formFiles            []formFile
-		localVarReturnValue  *GetEndpoints200Response
+		localVarHTTPMethod  = http.MethodPost
+		localVarPostBody    interface{}
+		formFiles           []formFile
+		localVarReturnValue *GetEndpoints200Response
 	)
 
 	localBasePath, err := a.client.cfg.ServerURLWithContext(r.ctx, "EndpointsAPIService.GetEndpoints")
@@ -241,8 +242,8 @@ func (a *EndpointsAPIService) GetEndpointsExecute(r ApiGetEndpointsRequest) (*Ge
 }
 
 type ApiUpdateEndpointRequest struct {
-	ctx context.Context
-	ApiService *EndpointsAPIService
+	ctx                   context.Context
+	ApiService            *EndpointsAPIService
 	updateEndpointRequest *UpdateEndpointRequest
 }
 
@@ -259,24 +260,25 @@ func (r ApiUpdateEndpointRequest) Execute() (*UpdateEndpoint200Response, *http.R
 /*
 UpdateEndpoint Update endpoint
 
- @param ctx context.Context - for authentication, logging, cancellation, deadlines, tracing, etc. Passed from http.Request or context.Background().
- @return ApiUpdateEndpointRequest
+	@param ctx context.Context - for authentication, logging, cancellation, deadlines, tracing, etc. Passed from http.Request or context.Background().
+	@return ApiUpdateEndpointRequest
 */
 func (a *EndpointsAPIService) UpdateEndpoint(ctx context.Context) ApiUpdateEndpointRequest {
 	return ApiUpdateEndpointRequest{
 		ApiService: a,
-		ctx: ctx,
+		ctx:        ctx,
 	}
 }
 
 // Execute executes the request
-//  @return UpdateEndpoint200Response
+//
+//	@return UpdateEndpoint200Response
 func (a *EndpointsAPIService) UpdateEndpointExecute(r ApiUpdateEndpointRequest) (*UpdateEndpoint200Response, *http.Response, error) {
 	var (
-		localVarHTTPMethod   = http.MethodPut
-		localVarPostBody     interface{}
-		formFiles            []formFile
-		localVarReturnValue  *UpdateEndpoint200Response
+		localVarHTTPMethod  = http.MethodPut
+		localVarPostBody    interface{}
+		formFiles           []formFile
+		localVarReturnValue *UpdateEndpoint200Response
 	)
 
 	localBasePath, err := a.client.cfg.ServerURLWithContext(r.ctx, "EndpointsAPIService.UpdateEndpoint")

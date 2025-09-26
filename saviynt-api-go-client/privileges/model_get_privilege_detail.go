@@ -1,7 +1,7 @@
 /*
 Privilege Management API
 
-API for managing privileges in Saviynt/SSM. - **Create Privilege**: Creates a new privilege. - **Update Privilege**: Updates an existing privilege. - **Get Privilege List**: Returns a list of privileges based on search criteria. - **Delete Privilege**: Delete a privilege 
+API for managing privileges in Saviynt/SSM. - **Create Privilege**: Creates a new privilege. - **Update Privilege**: Updates an existing privilege. - **Get Privilege List**: Returns a list of privileges based on search criteria. - **Delete Privilege**: Delete a privilege
 
 API version: 1.0.0
 */
@@ -19,29 +19,29 @@ var _ MappedNullable = &GetPrivilegeDetail{}
 
 // GetPrivilegeDetail struct for GetPrivilegeDetail
 type GetPrivilegeDetail struct {
-	Hideoncreate *bool `json:"hideoncreate,omitempty"`
-	ActionString *string `json:"actionString,omitempty"`
-	Attributegroup *string `json:"attributegroup,omitempty"`
-	Childaction *string `json:"childaction,omitempty"`
-	Orderindex *string `json:"orderindex,omitempty"`
-	Requestablerequired *bool `json:"requestablerequired,omitempty"`
-	Editable *bool `json:"editable,omitempty"`
-	EntitlementsColumn *string `json:"entitlements_column,omitempty"`
-	Defaultvalue *string `json:"defaultvalue,omitempty"`
-	Hideonupd *bool `json:"hideonupd,omitempty"`
-	AttributeType *string `json:"attribute_type,omitempty"`
-	Label *string `json:"label,omitempty"`
-	AttributeConfig *string `json:"attribute_config,omitempty"`
-	Descriptionascsv *string `json:"descriptionascsv,omitempty"`
-	Required *bool `json:"required,omitempty"`
-	Regex *string `json:"regex,omitempty"`
-	Updatedate *string `json:"updatedate,omitempty"`
-	EntitlementTypes *GetPrivilegeDetailEntitlementTypes `json:"entitlement_types,omitempty"`
-	AttributeValues *string `json:"attribute_values,omitempty"`
-	Parentattribute *string `json:"parentattribute,omitempty"`
-	Attribute *string `json:"attribute,omitempty"`
-	Sqlquery *string `json:"sqlquery,omitempty"`
-	Updateuser *string `json:"updateuser,omitempty"`
+	Hideoncreate        *bool                               `json:"hideoncreate,omitempty"`
+	ActionString        *string                             `json:"actionString,omitempty"`
+	Attributegroup      *string                             `json:"attributegroup,omitempty"`
+	Childaction         *string                             `json:"childaction,omitempty"`
+	Orderindex          *string                             `json:"orderindex,omitempty"`
+	Requestablerequired *bool                               `json:"requestablerequired,omitempty"`
+	Editable            *bool                               `json:"editable,omitempty"`
+	EntitlementsColumn  *string                             `json:"entitlements_column,omitempty"`
+	Defaultvalue        *string                             `json:"defaultvalue,omitempty"`
+	Hideonupd           *bool                               `json:"hideonupd,omitempty"`
+	AttributeType       *string                             `json:"attribute_type,omitempty"`
+	Label               *string                             `json:"label,omitempty"`
+	AttributeConfig     *string                             `json:"attribute_config,omitempty"`
+	Descriptionascsv    *string                             `json:"descriptionascsv,omitempty"`
+	Required            *bool                               `json:"required,omitempty"`
+	Regex               *string                             `json:"regex,omitempty"`
+	Updatedate          *string                             `json:"updatedate,omitempty"`
+	EntitlementTypes    *GetPrivilegeDetailEntitlementTypes `json:"entitlement_types,omitempty"`
+	AttributeValues     *string                             `json:"attribute_values,omitempty"`
+	Parentattribute     *string                             `json:"parentattribute,omitempty"`
+	Attribute           *string                             `json:"attribute,omitempty"`
+	Sqlquery            *string                             `json:"sqlquery,omitempty"`
+	Updateuser          *string                             `json:"updateuser,omitempty"`
 }
 
 // NewGetPrivilegeDetail instantiates a new GetPrivilegeDetail object
@@ -798,7 +798,7 @@ func (o *GetPrivilegeDetail) SetUpdateuser(v string) {
 }
 
 func (o GetPrivilegeDetail) MarshalJSON() ([]byte, error) {
-	toSerialize,err := o.ToMap()
+	toSerialize, err := o.ToMap()
 	if err != nil {
 		return []byte{}, err
 	}
@@ -914,5 +914,3 @@ func (v *NullableGetPrivilegeDetail) UnmarshalJSON(src []byte) error {
 	v.isSet = true
 	return json.Unmarshal(src, &v.value)
 }
-
-

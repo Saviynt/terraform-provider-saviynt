@@ -1,7 +1,7 @@
 /*
 Entitlement Management API
 
-API for managing entitlements in Saviynt/SSM. - **Create Entitlement**: Creates a new entitlement. - **Update Entitlement**: Updates an existing entitlement. - **Get Entitlement List**: Returns a list of entitlement based on search criteria. 
+API for managing entitlements in Saviynt/SSM. - **Create Entitlement**: Creates a new entitlement. - **Update Entitlement**: Updates an existing entitlement. - **Get Entitlement List**: Returns a list of entitlement based on search criteria.
 
 API version: 1.0.0
 */
@@ -11,8 +11,8 @@ API version: 1.0.0
 package entitlements
 
 import (
-	"encoding/json"
 	"bytes"
+	"encoding/json"
 	"fmt"
 )
 
@@ -146,33 +146,33 @@ type CreateUpdateEntitlementRequest struct {
 	// Primary entitlement owners.
 	Entitlementowner1 []string `json:"entitlementowner1,omitempty"`
 	// Secondary entitlement owners.
-	Entitlementowner2 []string `json:"entitlementowner2,omitempty"`
-	Entitlementowner3 []string `json:"entitlementowner3,omitempty"`
-	Entitlementowner4 []string `json:"entitlementowner4,omitempty"`
-	Entitlementowner5 []string `json:"entitlementowner5,omitempty"`
-	Entitlementowner6 []string `json:"entitlementowner6,omitempty"`
-	Entitlementowner7 []string `json:"entitlementowner7,omitempty"`
-	Entitlementowner8 []string `json:"entitlementowner8,omitempty"`
-	Entitlementowner9 []string `json:"entitlementowner9,omitempty"`
-	Entitlementowner10 []string `json:"entitlementowner10,omitempty"`
-	Entitlementowner11 []string `json:"entitlementowner11,omitempty"`
-	Entitlementowner12 []string `json:"entitlementowner12,omitempty"`
-	Entitlementowner13 []string `json:"entitlementowner13,omitempty"`
-	Entitlementowner14 []string `json:"entitlementowner14,omitempty"`
-	Entitlementowner15 []string `json:"entitlementowner15,omitempty"`
-	Entitlementowner16 []string `json:"entitlementowner16,omitempty"`
-	Entitlementowner17 []string `json:"entitlementowner17,omitempty"`
-	Entitlementowner18 []string `json:"entitlementowner18,omitempty"`
-	Entitlementowner19 []string `json:"entitlementowner19,omitempty"`
-	Entitlementowner20 []string `json:"entitlementowner20,omitempty"`
-	Entitlementowner21 []string `json:"entitlementowner21,omitempty"`
-	Entitlementowner22 []string `json:"entitlementowner22,omitempty"`
-	Entitlementowner23 []string `json:"entitlementowner23,omitempty"`
-	Entitlementowner24 []string `json:"entitlementowner24,omitempty"`
-	Entitlementowner25 []string `json:"entitlementowner25,omitempty"`
-	Entitlementowner26 []string `json:"entitlementowner26,omitempty"`
-	Entitlementowner27 []string `json:"entitlementowner27,omitempty"`
-	Entitlementmap []CreateUpdateEntitlementRequestEntitlementmapInner `json:"entitlementmap,omitempty"`
+	Entitlementowner2  []string                                            `json:"entitlementowner2,omitempty"`
+	Entitlementowner3  []string                                            `json:"entitlementowner3,omitempty"`
+	Entitlementowner4  []string                                            `json:"entitlementowner4,omitempty"`
+	Entitlementowner5  []string                                            `json:"entitlementowner5,omitempty"`
+	Entitlementowner6  []string                                            `json:"entitlementowner6,omitempty"`
+	Entitlementowner7  []string                                            `json:"entitlementowner7,omitempty"`
+	Entitlementowner8  []string                                            `json:"entitlementowner8,omitempty"`
+	Entitlementowner9  []string                                            `json:"entitlementowner9,omitempty"`
+	Entitlementowner10 []string                                            `json:"entitlementowner10,omitempty"`
+	Entitlementowner11 []string                                            `json:"entitlementowner11,omitempty"`
+	Entitlementowner12 []string                                            `json:"entitlementowner12,omitempty"`
+	Entitlementowner13 []string                                            `json:"entitlementowner13,omitempty"`
+	Entitlementowner14 []string                                            `json:"entitlementowner14,omitempty"`
+	Entitlementowner15 []string                                            `json:"entitlementowner15,omitempty"`
+	Entitlementowner16 []string                                            `json:"entitlementowner16,omitempty"`
+	Entitlementowner17 []string                                            `json:"entitlementowner17,omitempty"`
+	Entitlementowner18 []string                                            `json:"entitlementowner18,omitempty"`
+	Entitlementowner19 []string                                            `json:"entitlementowner19,omitempty"`
+	Entitlementowner20 []string                                            `json:"entitlementowner20,omitempty"`
+	Entitlementowner21 []string                                            `json:"entitlementowner21,omitempty"`
+	Entitlementowner22 []string                                            `json:"entitlementowner22,omitempty"`
+	Entitlementowner23 []string                                            `json:"entitlementowner23,omitempty"`
+	Entitlementowner24 []string                                            `json:"entitlementowner24,omitempty"`
+	Entitlementowner25 []string                                            `json:"entitlementowner25,omitempty"`
+	Entitlementowner26 []string                                            `json:"entitlementowner26,omitempty"`
+	Entitlementowner27 []string                                            `json:"entitlementowner27,omitempty"`
+	Entitlementmap     []CreateUpdateEntitlementRequestEntitlementmapInner `json:"entitlementmap,omitempty"`
 }
 
 type _CreateUpdateEntitlementRequest CreateUpdateEntitlementRequest
@@ -3022,7 +3022,7 @@ func (o *CreateUpdateEntitlementRequest) SetEntitlementmap(v []CreateUpdateEntit
 }
 
 func (o CreateUpdateEntitlementRequest) MarshalJSON() ([]byte, error) {
-	toSerialize,err := o.ToMap()
+	toSerialize, err := o.ToMap()
 	if err != nil {
 		return []byte{}, err
 	}
@@ -3310,10 +3310,10 @@ func (o *CreateUpdateEntitlementRequest) UnmarshalJSON(data []byte) (err error) 
 	err = json.Unmarshal(data, &allProperties)
 
 	if err != nil {
-		return err;
+		return err
 	}
 
-	for _, requiredProperty := range(requiredProperties) {
+	for _, requiredProperty := range requiredProperties {
 		if _, exists := allProperties[requiredProperty]; !exists {
 			return fmt.Errorf("no value given for required property %v", requiredProperty)
 		}
@@ -3369,5 +3369,3 @@ func (v *NullableCreateUpdateEntitlementRequest) UnmarshalJSON(src []byte) error
 	v.isSet = true
 	return json.Unmarshal(src, &v.value)
 }
-
-

@@ -1,7 +1,7 @@
 /*
 Entitlement Management API
 
-API for managing entitlements in Saviynt/SSM. - **Create Entitlement**: Creates a new entitlement. - **Update Entitlement**: Updates an existing entitlement. - **Get Entitlement List**: Returns a list of entitlement based on search criteria. 
+API for managing entitlements in Saviynt/SSM. - **Create Entitlement**: Creates a new entitlement. - **Update Entitlement**: Updates an existing entitlement. - **Get Entitlement List**: Returns a list of entitlement based on search criteria.
 
 API version: 1.0.0
 */
@@ -18,13 +18,12 @@ import (
 	"net/url"
 )
 
-
 // EntitlementAPIService EntitlementAPI service
 type EntitlementAPIService service
 
 type ApiCreateUpdateEntitlementRequest struct {
-	ctx context.Context
-	ApiService *EntitlementAPIService
+	ctx                            context.Context
+	ApiService                     *EntitlementAPIService
 	createUpdateEntitlementRequest *CreateUpdateEntitlementRequest
 }
 
@@ -41,24 +40,25 @@ func (r ApiCreateUpdateEntitlementRequest) Execute() (*CreateOrUpdateEntitlement
 /*
 CreateUpdateEntitlement Create and update an entitlement
 
- @param ctx context.Context - for authentication, logging, cancellation, deadlines, tracing, etc. Passed from http.Request or context.Background().
- @return ApiCreateUpdateEntitlementRequest
+	@param ctx context.Context - for authentication, logging, cancellation, deadlines, tracing, etc. Passed from http.Request or context.Background().
+	@return ApiCreateUpdateEntitlementRequest
 */
 func (a *EntitlementAPIService) CreateUpdateEntitlement(ctx context.Context) ApiCreateUpdateEntitlementRequest {
 	return ApiCreateUpdateEntitlementRequest{
 		ApiService: a,
-		ctx: ctx,
+		ctx:        ctx,
 	}
 }
 
 // Execute executes the request
-//  @return CreateOrUpdateEntitlementResponse
+//
+//	@return CreateOrUpdateEntitlementResponse
 func (a *EntitlementAPIService) CreateUpdateEntitlementExecute(r ApiCreateUpdateEntitlementRequest) (*CreateOrUpdateEntitlementResponse, *http.Response, error) {
 	var (
-		localVarHTTPMethod   = http.MethodPost
-		localVarPostBody     interface{}
-		formFiles            []formFile
-		localVarReturnValue  *CreateOrUpdateEntitlementResponse
+		localVarHTTPMethod  = http.MethodPost
+		localVarPostBody    interface{}
+		formFiles           []formFile
+		localVarReturnValue *CreateOrUpdateEntitlementResponse
 	)
 
 	localBasePath, err := a.client.cfg.ServerURLWithContext(r.ctx, "EntitlementAPIService.CreateUpdateEntitlement")
@@ -132,8 +132,8 @@ func (a *EntitlementAPIService) CreateUpdateEntitlementExecute(r ApiCreateUpdate
 }
 
 type ApiGetEntitlementsRequest struct {
-	ctx context.Context
-	ApiService *EntitlementAPIService
+	ctx                   context.Context
+	ApiService            *EntitlementAPIService
 	getEntitlementRequest *GetEntitlementRequest
 }
 
@@ -150,24 +150,25 @@ func (r ApiGetEntitlementsRequest) Execute() (*GetEntitlementResponse, *http.Res
 /*
 GetEntitlements Get list of entitlements
 
- @param ctx context.Context - for authentication, logging, cancellation, deadlines, tracing, etc. Passed from http.Request or context.Background().
- @return ApiGetEntitlementsRequest
+	@param ctx context.Context - for authentication, logging, cancellation, deadlines, tracing, etc. Passed from http.Request or context.Background().
+	@return ApiGetEntitlementsRequest
 */
 func (a *EntitlementAPIService) GetEntitlements(ctx context.Context) ApiGetEntitlementsRequest {
 	return ApiGetEntitlementsRequest{
 		ApiService: a,
-		ctx: ctx,
+		ctx:        ctx,
 	}
 }
 
 // Execute executes the request
-//  @return GetEntitlementResponse
+//
+//	@return GetEntitlementResponse
 func (a *EntitlementAPIService) GetEntitlementsExecute(r ApiGetEntitlementsRequest) (*GetEntitlementResponse, *http.Response, error) {
 	var (
-		localVarHTTPMethod   = http.MethodPost
-		localVarPostBody     interface{}
-		formFiles            []formFile
-		localVarReturnValue  *GetEntitlementResponse
+		localVarHTTPMethod  = http.MethodPost
+		localVarPostBody    interface{}
+		formFiles           []formFile
+		localVarReturnValue *GetEntitlementResponse
 	)
 
 	localBasePath, err := a.client.cfg.ServerURLWithContext(r.ctx, "EntitlementAPIService.GetEntitlements")

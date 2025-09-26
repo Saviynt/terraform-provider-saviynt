@@ -11,8 +11,8 @@ API version: 1.0.0
 package roles
 
 import (
-	"encoding/json"
 	"bytes"
+	"encoding/json"
 	"fmt"
 )
 
@@ -21,36 +21,36 @@ var _ MappedNullable = &UpdateEnterpriseRoleRequest{}
 
 // UpdateEnterpriseRoleRequest struct for UpdateEnterpriseRoleRequest
 type UpdateEnterpriseRoleRequest struct {
-	Roletype string `json:"roletype"`
-	RoleName string `json:"role_name"`
-	Requestor *string `json:"requestor,omitempty"`
-	Owner []UpdateRoleOwnerPayload `json:"owner,omitempty"`
-	ChildRoles []UpdateChildRolePayload `json:"childRoles,omitempty"`
-	Endpointname *string `json:"endpointname,omitempty"`
-	Entitlements []UpdateEntitlementPayload `json:"entitlements,omitempty"`
-	Defaulttimeframe *string `json:"defaulttimeframe,omitempty"`
-	Description *string `json:"description,omitempty"`
-	Displayname *string `json:"displayname,omitempty"`
-	Glossary *string `json:"glossary,omitempty"`
-	Risk *string `json:"risk,omitempty"`
-	Level *string `json:"level,omitempty"`
-	Soxcritical *string `json:"soxcritical,omitempty"`
-	Syscritical *string `json:"syscritical,omitempty"`
-	Priviliged *string `json:"priviliged,omitempty"`
-	Confidentiality *string `json:"confidentiality,omitempty"`
-	Requestable *string `json:"requestable,omitempty"`
-	ShowDynamicAttrs *string `json:"showDynamicAttrs,omitempty"`
+	Roletype         string                     `json:"roletype"`
+	RoleName         string                     `json:"role_name"`
+	Requestor        *string                    `json:"requestor,omitempty"`
+	Owner            []UpdateRoleOwnerPayload   `json:"owner,omitempty"`
+	ChildRoles       []UpdateChildRolePayload   `json:"childRoles,omitempty"`
+	Endpointname     *string                    `json:"endpointname,omitempty"`
+	Entitlements     []UpdateEntitlementPayload `json:"entitlements,omitempty"`
+	Defaulttimeframe *string                    `json:"defaulttimeframe,omitempty"`
+	Description      *string                    `json:"description,omitempty"`
+	Displayname      *string                    `json:"displayname,omitempty"`
+	Glossary         *string                    `json:"glossary,omitempty"`
+	Risk             *string                    `json:"risk,omitempty"`
+	Level            *string                    `json:"level,omitempty"`
+	Soxcritical      *string                    `json:"soxcritical,omitempty"`
+	Syscritical      *string                    `json:"syscritical,omitempty"`
+	Priviliged       *string                    `json:"priviliged,omitempty"`
+	Confidentiality  *string                    `json:"confidentiality,omitempty"`
+	Requestable      *string                    `json:"requestable,omitempty"`
+	ShowDynamicAttrs *string                    `json:"showDynamicAttrs,omitempty"`
 	// Evaluate Segregation of Duties (SOD) violations. Defaults to false.
-	Checksod *bool `json:"checksod,omitempty"`
-	Customproperty1 *string `json:"customproperty1,omitempty"`
-	Customproperty2 *string `json:"customproperty2,omitempty"`
-	Customproperty3 *string `json:"customproperty3,omitempty"`
-	Customproperty4 *string `json:"customproperty4,omitempty"`
-	Customproperty5 *string `json:"customproperty5,omitempty"`
-	Customproperty6 *string `json:"customproperty6,omitempty"`
-	Customproperty7 *string `json:"customproperty7,omitempty"`
-	Customproperty8 *string `json:"customproperty8,omitempty"`
-	Customproperty9 *string `json:"customproperty9,omitempty"`
+	Checksod         *bool   `json:"checksod,omitempty"`
+	Customproperty1  *string `json:"customproperty1,omitempty"`
+	Customproperty2  *string `json:"customproperty2,omitempty"`
+	Customproperty3  *string `json:"customproperty3,omitempty"`
+	Customproperty4  *string `json:"customproperty4,omitempty"`
+	Customproperty5  *string `json:"customproperty5,omitempty"`
+	Customproperty6  *string `json:"customproperty6,omitempty"`
+	Customproperty7  *string `json:"customproperty7,omitempty"`
+	Customproperty8  *string `json:"customproperty8,omitempty"`
+	Customproperty9  *string `json:"customproperty9,omitempty"`
 	Customproperty10 *string `json:"customproperty10,omitempty"`
 	Customproperty11 *string `json:"customproperty11,omitempty"`
 	Customproperty12 *string `json:"customproperty12,omitempty"`
@@ -2670,7 +2670,7 @@ func (o *UpdateEnterpriseRoleRequest) SetCustomproperty60(v string) {
 }
 
 func (o UpdateEnterpriseRoleRequest) MarshalJSON() ([]byte, error) {
-	toSerialize,err := o.ToMap()
+	toSerialize, err := o.ToMap()
 	if err != nil {
 		return []byte{}, err
 	}
@@ -2932,10 +2932,10 @@ func (o *UpdateEnterpriseRoleRequest) UnmarshalJSON(data []byte) (err error) {
 	err = json.Unmarshal(data, &allProperties)
 
 	if err != nil {
-		return err;
+		return err
 	}
 
-	for _, requiredProperty := range(requiredProperties) {
+	for _, requiredProperty := range requiredProperties {
 		if _, exists := allProperties[requiredProperty]; !exists {
 			return fmt.Errorf("no value given for required property %v", requiredProperty)
 		}
@@ -2991,5 +2991,3 @@ func (v *NullableUpdateEnterpriseRoleRequest) UnmarshalJSON(src []byte) error {
 	v.isSet = true
 	return json.Unmarshal(src, &v.value)
 }
-
-

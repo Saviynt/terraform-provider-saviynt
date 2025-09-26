@@ -11,8 +11,8 @@ API version: 1.0.0
 package connections
 
 import (
-	"encoding/json"
 	"bytes"
+	"encoding/json"
 	"fmt"
 )
 
@@ -56,7 +56,7 @@ type ADConnector struct {
 	ACCOUNT_ATTRIBUTE *string `json:"ACCOUNT_ATTRIBUTE,omitempty"`
 	// Rule to generate account name.
 	ACCOUNTNAMERULE *string `json:"ACCOUNTNAMERULE,omitempty"`
-	ADVSEARCH *string `json:"ADVSEARCH,omitempty"`
+	ADVSEARCH       *string `json:"ADVSEARCH,omitempty"`
 	// Set default page size for LDAP queries.
 	SETDEFAULTPAGESIZE *string `json:"SETDEFAULTPAGESIZE,omitempty"`
 	// JSON actions for password reset/change.
@@ -87,7 +87,7 @@ type ADConnector struct {
 	REUSEACCOUNTJSON *string `json:"REUSEACCOUNTJSON,omitempty"`
 	// Enforce tree deletion in LDAP.
 	ENFORCE_TREE_DELETION *string `json:"ENFORCE_TREE_DELETION,omitempty"`
-	ADVANCE_FILTER_JSON *string `json:"ADVANCE_FILTER_JSON,omitempty"`
+	ADVANCE_FILTER_JSON   *string `json:"ADVANCE_FILTER_JSON,omitempty"`
 	// Filters the objects that will be returned.
 	FILTER *string `json:"FILTER,omitempty"`
 	// LDAP object filter.
@@ -126,13 +126,13 @@ type ADConnector struct {
 	ORG_BASE *string `json:"ORG_BASE,omitempty"`
 	// Organization Attributes.
 	ORGANIZATION_ATTRIBUTE *string `json:"ORGANIZATION_ATTRIBUTE,omitempty"`
-	ORGIMPORTJSON *string `json:"ORGIMPORTJSON,omitempty"`
+	ORGIMPORTJSON          *string `json:"ORGIMPORTJSON,omitempty"`
 	// JSON to specify different attributes for Organization Create Provisioning Job.
 	CREATEORGJSON *string `json:"CREATEORGJSON,omitempty"`
 	// JSON to specify different attributes for Organization Update Provisioning Job.
 	UPDATEORGJSON *string `json:"UPDATEORGJSON,omitempty"`
 	// We can use this attribute to define the connectionTimeoutConfig.
-	ConfigJSON *string `json:"ConfigJSON,omitempty"`
+	ConfigJSON       *string `json:"ConfigJSON,omitempty"`
 	LAST_IMPORT_TIME *string `json:"LAST_IMPORT_TIME,omitempty"`
 	// JSON to specify Bootstrap Config.
 	PAM_CONFIG *string `json:"PAM_CONFIG,omitempty"`
@@ -2041,7 +2041,7 @@ func (o *ADConnector) SetPAM_CONFIG(v string) {
 }
 
 func (o ADConnector) MarshalJSON() ([]byte, error) {
-	toSerialize,err := o.ToMap()
+	toSerialize, err := o.ToMap()
 	if err != nil {
 		return []byte{}, err
 	}
@@ -2251,10 +2251,10 @@ func (o *ADConnector) UnmarshalJSON(data []byte) (err error) {
 	err = json.Unmarshal(data, &allProperties)
 
 	if err != nil {
-		return err;
+		return err
 	}
 
-	for _, requiredProperty := range(requiredProperties) {
+	for _, requiredProperty := range requiredProperties {
 		if _, exists := allProperties[requiredProperty]; !exists {
 			return fmt.Errorf("no value given for required property %v", requiredProperty)
 		}
@@ -2310,5 +2310,3 @@ func (v *NullableADConnector) UnmarshalJSON(src []byte) error {
 	v.isSet = true
 	return json.Unmarshal(src, &v.value)
 }
-
-

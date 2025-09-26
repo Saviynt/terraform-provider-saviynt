@@ -20,99 +20,99 @@ var _ MappedNullable = &GetFireFighterRole{}
 
 // GetFireFighterRole struct for GetFireFighterRole
 type GetFireFighterRole struct {
-	Id *int32 `json:"id,omitempty"`
-	Class *string `json:"class,omitempty"`
-	RoleName *string `json:"role_name,omitempty"`
-	Description *string `json:"description,omitempty"`
-	Displayname *string `json:"displayname,omitempty"`
-	Confidentiality *int32 `json:"confidentiality,omitempty"`
-	AccessControlEntitlements interface{} `json:"accessControlEntitlements,omitempty"`
-	EntitlementValueKey interface{} `json:"entitlement_valueKey,omitempty"`
-	LastReviewedBy *string `json:"lastReviewedBy,omitempty"`
-	LastReviewedCampaignName *string `json:"lastReviewedCampaignName,omitempty"`
-	LastReviewedDate *time.Time `json:"lastReviewedDate,omitempty"`
-	RoleState *string `json:"roleState,omitempty"`
-	DefaultTimeFrameHrs *int32 `json:"defaultTimeFrameHrs,omitempty"`
-	Endpointkey *int32 `json:"endpointkey,omitempty"`
-	FlagexportedtoOIA *bool `json:"flagexportedtoOIA,omitempty"`
-	Glossary *string `json:"glossary,omitempty"`
-	Level *string `json:"level,omitempty"`
-	MaxTimeFrameHrs *int32 `json:"maxTimeFrameHrs,omitempty"`
-	Mininginstance *string `json:"mininginstance,omitempty"`
-	Parentroles *string `json:"parentroles,omitempty"`
-	Priviliged *int32 `json:"priviliged,omitempty"`
-	Requestable *bool `json:"requestable,omitempty"`
-	Risk *string `json:"risk,omitempty"`
-	Roletype *int32 `json:"roletype,omitempty"`
-	ShowDynamicAttrs *bool `json:"showDynamicAttrs,omitempty"`
-	Sodflag *bool `json:"sodflag,omitempty"`
-	Soxcritical *int32 `json:"soxcritical,omitempty"`
-	Status *int32 `json:"status,omitempty"`
-	Syscritical *int32 `json:"syscritical,omitempty"`
-	Systemid *int32 `json:"systemid,omitempty"`
-	Updatedate *time.Time `json:"updatedate,omitempty"`
-	Updateuser *int32 `json:"updateuser,omitempty"`
-	RoleUserAccounts []RoleUserAccount `json:"role_user_accounts,omitempty"`
-	Customproperty1 *string `json:"customproperty1,omitempty"`
-	Customproperty2 *string `json:"customproperty2,omitempty"`
-	Customproperty3 *string `json:"customproperty3,omitempty"`
-	Customproperty4 *string `json:"customproperty4,omitempty"`
-	Customproperty5 *string `json:"customproperty5,omitempty"`
-	Customproperty6 *string `json:"customproperty6,omitempty"`
-	Customproperty7 *string `json:"customproperty7,omitempty"`
-	Customproperty8 *string `json:"customproperty8,omitempty"`
-	Customproperty9 *string `json:"customproperty9,omitempty"`
-	Customproperty10 *string `json:"customproperty10,omitempty"`
-	Customproperty11 *string `json:"customproperty11,omitempty"`
-	Customproperty12 *string `json:"customproperty12,omitempty"`
-	Customproperty13 *string `json:"customproperty13,omitempty"`
-	Customproperty14 *string `json:"customproperty14,omitempty"`
-	Customproperty15 *string `json:"customproperty15,omitempty"`
-	Customproperty16 *string `json:"customproperty16,omitempty"`
-	Customproperty17 *string `json:"customproperty17,omitempty"`
-	Customproperty18 *string `json:"customproperty18,omitempty"`
-	Customproperty19 *string `json:"customproperty19,omitempty"`
-	Customproperty20 *string `json:"customproperty20,omitempty"`
-	Customproperty21 *string `json:"customproperty21,omitempty"`
-	Customproperty22 *string `json:"customproperty22,omitempty"`
-	Customproperty23 *string `json:"customproperty23,omitempty"`
-	Customproperty24 *string `json:"customproperty24,omitempty"`
-	Customproperty25 *string `json:"customproperty25,omitempty"`
-	Customproperty26 *string `json:"customproperty26,omitempty"`
-	Customproperty27 *string `json:"customproperty27,omitempty"`
-	Customproperty28 *string `json:"customproperty28,omitempty"`
-	Customproperty29 *string `json:"customproperty29,omitempty"`
-	Customproperty30 *string `json:"customproperty30,omitempty"`
-	Customproperty31 *string `json:"customproperty31,omitempty"`
-	Customproperty32 *string `json:"customproperty32,omitempty"`
-	Customproperty33 *string `json:"customproperty33,omitempty"`
-	Customproperty34 *string `json:"customproperty34,omitempty"`
-	Customproperty35 *string `json:"customproperty35,omitempty"`
-	Customproperty36 *string `json:"customproperty36,omitempty"`
-	Customproperty37 *string `json:"customproperty37,omitempty"`
-	Customproperty38 *string `json:"customproperty38,omitempty"`
-	Customproperty39 *string `json:"customproperty39,omitempty"`
-	Customproperty40 *string `json:"customproperty40,omitempty"`
-	Customproperty41 *string `json:"customproperty41,omitempty"`
-	Customproperty42 *string `json:"customproperty42,omitempty"`
-	Customproperty43 *string `json:"customproperty43,omitempty"`
-	Customproperty44 *string `json:"customproperty44,omitempty"`
-	Customproperty45 *string `json:"customproperty45,omitempty"`
-	Customproperty46 *string `json:"customproperty46,omitempty"`
-	Customproperty47 *string `json:"customproperty47,omitempty"`
-	Customproperty48 *string `json:"customproperty48,omitempty"`
-	Customproperty49 *string `json:"customproperty49,omitempty"`
-	Customproperty50 *string `json:"customproperty50,omitempty"`
-	Customproperty51 *string `json:"customproperty51,omitempty"`
-	Customproperty52 *string `json:"customproperty52,omitempty"`
-	Customproperty53 *string `json:"customproperty53,omitempty"`
-	Customproperty54 *string `json:"customproperty54,omitempty"`
-	Customproperty55 *string `json:"customproperty55,omitempty"`
-	Customproperty56 *string `json:"customproperty56,omitempty"`
-	Customproperty57 *string `json:"customproperty57,omitempty"`
-	Customproperty58 *string `json:"customproperty58,omitempty"`
-	Customproperty59 *string `json:"customproperty59,omitempty"`
-	Customproperty60 *string `json:"customproperty60,omitempty"`
+	Id                        *int32            `json:"id,omitempty"`
+	Class                     *string           `json:"class,omitempty"`
+	RoleName                  *string           `json:"role_name,omitempty"`
+	Description               *string           `json:"description,omitempty"`
+	Displayname               *string           `json:"displayname,omitempty"`
+	Confidentiality           *int32            `json:"confidentiality,omitempty"`
+	AccessControlEntitlements interface{}       `json:"accessControlEntitlements,omitempty"`
+	EntitlementValueKey       interface{}       `json:"entitlement_valueKey,omitempty"`
+	LastReviewedBy            *string           `json:"lastReviewedBy,omitempty"`
+	LastReviewedCampaignName  *string           `json:"lastReviewedCampaignName,omitempty"`
+	LastReviewedDate          *time.Time        `json:"lastReviewedDate,omitempty"`
+	RoleState                 *string           `json:"roleState,omitempty"`
+	DefaultTimeFrameHrs       *int32            `json:"defaultTimeFrameHrs,omitempty"`
+	Endpointkey               *int32            `json:"endpointkey,omitempty"`
+	FlagexportedtoOIA         *bool             `json:"flagexportedtoOIA,omitempty"`
+	Glossary                  *string           `json:"glossary,omitempty"`
+	Level                     *string           `json:"level,omitempty"`
+	MaxTimeFrameHrs           *int32            `json:"maxTimeFrameHrs,omitempty"`
+	Mininginstance            *string           `json:"mininginstance,omitempty"`
+	Parentroles               *string           `json:"parentroles,omitempty"`
+	Priviliged                *int32            `json:"priviliged,omitempty"`
+	Requestable               *bool             `json:"requestable,omitempty"`
+	Risk                      *string           `json:"risk,omitempty"`
+	Roletype                  *int32            `json:"roletype,omitempty"`
+	ShowDynamicAttrs          *bool             `json:"showDynamicAttrs,omitempty"`
+	Sodflag                   *bool             `json:"sodflag,omitempty"`
+	Soxcritical               *int32            `json:"soxcritical,omitempty"`
+	Status                    *int32            `json:"status,omitempty"`
+	Syscritical               *int32            `json:"syscritical,omitempty"`
+	Systemid                  *int32            `json:"systemid,omitempty"`
+	Updatedate                *time.Time        `json:"updatedate,omitempty"`
+	Updateuser                *int32            `json:"updateuser,omitempty"`
+	RoleUserAccounts          []RoleUserAccount `json:"role_user_accounts,omitempty"`
+	Customproperty1           *string           `json:"customproperty1,omitempty"`
+	Customproperty2           *string           `json:"customproperty2,omitempty"`
+	Customproperty3           *string           `json:"customproperty3,omitempty"`
+	Customproperty4           *string           `json:"customproperty4,omitempty"`
+	Customproperty5           *string           `json:"customproperty5,omitempty"`
+	Customproperty6           *string           `json:"customproperty6,omitempty"`
+	Customproperty7           *string           `json:"customproperty7,omitempty"`
+	Customproperty8           *string           `json:"customproperty8,omitempty"`
+	Customproperty9           *string           `json:"customproperty9,omitempty"`
+	Customproperty10          *string           `json:"customproperty10,omitempty"`
+	Customproperty11          *string           `json:"customproperty11,omitempty"`
+	Customproperty12          *string           `json:"customproperty12,omitempty"`
+	Customproperty13          *string           `json:"customproperty13,omitempty"`
+	Customproperty14          *string           `json:"customproperty14,omitempty"`
+	Customproperty15          *string           `json:"customproperty15,omitempty"`
+	Customproperty16          *string           `json:"customproperty16,omitempty"`
+	Customproperty17          *string           `json:"customproperty17,omitempty"`
+	Customproperty18          *string           `json:"customproperty18,omitempty"`
+	Customproperty19          *string           `json:"customproperty19,omitempty"`
+	Customproperty20          *string           `json:"customproperty20,omitempty"`
+	Customproperty21          *string           `json:"customproperty21,omitempty"`
+	Customproperty22          *string           `json:"customproperty22,omitempty"`
+	Customproperty23          *string           `json:"customproperty23,omitempty"`
+	Customproperty24          *string           `json:"customproperty24,omitempty"`
+	Customproperty25          *string           `json:"customproperty25,omitempty"`
+	Customproperty26          *string           `json:"customproperty26,omitempty"`
+	Customproperty27          *string           `json:"customproperty27,omitempty"`
+	Customproperty28          *string           `json:"customproperty28,omitempty"`
+	Customproperty29          *string           `json:"customproperty29,omitempty"`
+	Customproperty30          *string           `json:"customproperty30,omitempty"`
+	Customproperty31          *string           `json:"customproperty31,omitempty"`
+	Customproperty32          *string           `json:"customproperty32,omitempty"`
+	Customproperty33          *string           `json:"customproperty33,omitempty"`
+	Customproperty34          *string           `json:"customproperty34,omitempty"`
+	Customproperty35          *string           `json:"customproperty35,omitempty"`
+	Customproperty36          *string           `json:"customproperty36,omitempty"`
+	Customproperty37          *string           `json:"customproperty37,omitempty"`
+	Customproperty38          *string           `json:"customproperty38,omitempty"`
+	Customproperty39          *string           `json:"customproperty39,omitempty"`
+	Customproperty40          *string           `json:"customproperty40,omitempty"`
+	Customproperty41          *string           `json:"customproperty41,omitempty"`
+	Customproperty42          *string           `json:"customproperty42,omitempty"`
+	Customproperty43          *string           `json:"customproperty43,omitempty"`
+	Customproperty44          *string           `json:"customproperty44,omitempty"`
+	Customproperty45          *string           `json:"customproperty45,omitempty"`
+	Customproperty46          *string           `json:"customproperty46,omitempty"`
+	Customproperty47          *string           `json:"customproperty47,omitempty"`
+	Customproperty48          *string           `json:"customproperty48,omitempty"`
+	Customproperty49          *string           `json:"customproperty49,omitempty"`
+	Customproperty50          *string           `json:"customproperty50,omitempty"`
+	Customproperty51          *string           `json:"customproperty51,omitempty"`
+	Customproperty52          *string           `json:"customproperty52,omitempty"`
+	Customproperty53          *string           `json:"customproperty53,omitempty"`
+	Customproperty54          *string           `json:"customproperty54,omitempty"`
+	Customproperty55          *string           `json:"customproperty55,omitempty"`
+	Customproperty56          *string           `json:"customproperty56,omitempty"`
+	Customproperty57          *string           `json:"customproperty57,omitempty"`
+	Customproperty58          *string           `json:"customproperty58,omitempty"`
+	Customproperty59          *string           `json:"customproperty59,omitempty"`
+	Customproperty60          *string           `json:"customproperty60,omitempty"`
 }
 
 // NewGetFireFighterRole instantiates a new GetFireFighterRole object
@@ -3111,7 +3111,7 @@ func (o *GetFireFighterRole) SetCustomproperty60(v string) {
 }
 
 func (o GetFireFighterRole) MarshalJSON() ([]byte, error) {
-	toSerialize,err := o.ToMap()
+	toSerialize, err := o.ToMap()
 	if err != nil {
 		return []byte{}, err
 	}
@@ -3437,5 +3437,3 @@ func (v *NullableGetFireFighterRole) UnmarshalJSON(src []byte) error {
 	v.isSet = true
 	return json.Unmarshal(src, &v.value)
 }
-
-

@@ -140,7 +140,7 @@ type ADConnectionAttributes struct {
 	// Configuration for incremental data sync.
 	INCREMENTAL_CONFIG *string `json:"INCREMENTAL_CONFIG,omitempty"`
 	// Rules for checking unique users in JSON format.
-	CHECKFORUNIQUE *string `json:"CHECKFORUNIQUE,omitempty"`
+	CHECKFORUNIQUE          *string                  `json:"CHECKFORUNIQUE,omitempty"`
 	ConnectionTimeoutConfig *ConnectionTimeoutConfig `json:"connectionTimeoutConfig,omitempty"`
 	// Indicates if timeout configuration is validated.
 	IsTimeoutConfigValidated *bool `json:"isTimeoutConfigValidated,omitempty"`
@@ -2180,7 +2180,7 @@ func (o *ADConnectionAttributes) SetIsTimeoutConfigValidated(v bool) {
 }
 
 func (o ADConnectionAttributes) MarshalJSON() ([]byte, error) {
-	toSerialize,err := o.ToMap()
+	toSerialize, err := o.ToMap()
 	if err != nil {
 		return []byte{}, err
 	}
@@ -2416,5 +2416,3 @@ func (v *NullableADConnectionAttributes) UnmarshalJSON(src []byte) error {
 	v.isSet = true
 	return json.Unmarshal(src, &v.value)
 }
-
-

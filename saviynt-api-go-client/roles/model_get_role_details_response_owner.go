@@ -19,7 +19,7 @@ import (
 // GetRoleDetailsResponseOwner - struct for GetRoleDetailsResponseOwner
 type GetRoleDetailsResponseOwner struct {
 	ArrayOfGetRoleOwnersResponse *[]GetRoleOwnersResponse
-	String *string
+	String                       *string
 }
 
 // []GetRoleOwnersResponseAsGetRoleDetailsResponseOwner is a convenience function that returns []GetRoleOwnersResponse wrapped in GetRoleDetailsResponseOwner
@@ -35,7 +35,6 @@ func StringAsGetRoleDetailsResponseOwner(v *string) GetRoleDetailsResponseOwner 
 		String: v,
 	}
 }
-
 
 // Unmarshal JSON data into one of the pointers in the struct
 func (dst *GetRoleDetailsResponseOwner) UnmarshalJSON(data []byte) error {
@@ -102,7 +101,7 @@ func (src GetRoleDetailsResponseOwner) MarshalJSON() ([]byte, error) {
 }
 
 // Get the actual instance
-func (obj *GetRoleDetailsResponseOwner) GetActualInstance() (interface{}) {
+func (obj *GetRoleDetailsResponseOwner) GetActualInstance() interface{} {
 	if obj == nil {
 		return nil
 	}
@@ -119,7 +118,7 @@ func (obj *GetRoleDetailsResponseOwner) GetActualInstance() (interface{}) {
 }
 
 // Get the actual instance value
-func (obj GetRoleDetailsResponseOwner) GetActualInstanceValue() (interface{}) {
+func (obj GetRoleDetailsResponseOwner) GetActualInstanceValue() interface{} {
 	if obj.ArrayOfGetRoleOwnersResponse != nil {
 		return *obj.ArrayOfGetRoleOwnersResponse
 	}
@@ -167,5 +166,3 @@ func (v *NullableGetRoleDetailsResponseOwner) UnmarshalJSON(src []byte) error {
 	v.isSet = true
 	return json.Unmarshal(src, &v.value)
 }
-
-

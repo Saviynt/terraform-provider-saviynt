@@ -18,13 +18,12 @@ import (
 	"net/url"
 )
 
-
 // RolesAPIService RolesAPI service
 type RolesAPIService service
 
 type ApiAddroleRequest struct {
-	ctx context.Context
-	ApiService *RolesAPIService
+	ctx                    context.Context
+	ApiService             *RolesAPIService
 	addOrRemoveRoleRequest *AddOrRemoveRoleRequest
 }
 
@@ -40,24 +39,25 @@ func (r ApiAddroleRequest) Execute() (*AddOrRemoveRoleResponse, *http.Response, 
 /*
 Addrole This API adds role to user.
 
- @param ctx context.Context - for authentication, logging, cancellation, deadlines, tracing, etc. Passed from http.Request or context.Background().
- @return ApiAddroleRequest
+	@param ctx context.Context - for authentication, logging, cancellation, deadlines, tracing, etc. Passed from http.Request or context.Background().
+	@return ApiAddroleRequest
 */
 func (a *RolesAPIService) Addrole(ctx context.Context) ApiAddroleRequest {
 	return ApiAddroleRequest{
 		ApiService: a,
-		ctx: ctx,
+		ctx:        ctx,
 	}
 }
 
 // Execute executes the request
-//  @return AddOrRemoveRoleResponse
+//
+//	@return AddOrRemoveRoleResponse
 func (a *RolesAPIService) AddroleExecute(r ApiAddroleRequest) (*AddOrRemoveRoleResponse, *http.Response, error) {
 	var (
-		localVarHTTPMethod   = http.MethodPost
-		localVarPostBody     interface{}
-		formFiles            []formFile
-		localVarReturnValue  *AddOrRemoveRoleResponse
+		localVarHTTPMethod  = http.MethodPost
+		localVarPostBody    interface{}
+		formFiles           []formFile
+		localVarReturnValue *AddOrRemoveRoleResponse
 	)
 
 	localBasePath, err := a.client.cfg.ServerURLWithContext(r.ctx, "RolesAPIService.Addrole")
@@ -131,8 +131,8 @@ func (a *RolesAPIService) AddroleExecute(r ApiAddroleRequest) (*AddOrRemoveRoleR
 }
 
 type ApiCreateEnterpriseRoleRequestRequest struct {
-	ctx context.Context
-	ApiService *RolesAPIService
+	ctx                         context.Context
+	ApiService                  *RolesAPIService
 	createEnterpriseRoleRequest *CreateEnterpriseRoleRequest
 }
 
@@ -148,24 +148,25 @@ func (r ApiCreateEnterpriseRoleRequestRequest) Execute() (*CreateEnterpriseRoleR
 /*
 CreateEnterpriseRoleRequest This API call can be used for creating a new role and assigning an owner to the role
 
- @param ctx context.Context - for authentication, logging, cancellation, deadlines, tracing, etc. Passed from http.Request or context.Background().
- @return ApiCreateEnterpriseRoleRequestRequest
+	@param ctx context.Context - for authentication, logging, cancellation, deadlines, tracing, etc. Passed from http.Request or context.Background().
+	@return ApiCreateEnterpriseRoleRequestRequest
 */
 func (a *RolesAPIService) CreateEnterpriseRoleRequest(ctx context.Context) ApiCreateEnterpriseRoleRequestRequest {
 	return ApiCreateEnterpriseRoleRequestRequest{
 		ApiService: a,
-		ctx: ctx,
+		ctx:        ctx,
 	}
 }
 
 // Execute executes the request
-//  @return CreateEnterpriseRoleResponse
+//
+//	@return CreateEnterpriseRoleResponse
 func (a *RolesAPIService) CreateEnterpriseRoleRequestExecute(r ApiCreateEnterpriseRoleRequestRequest) (*CreateEnterpriseRoleResponse, *http.Response, error) {
 	var (
-		localVarHTTPMethod   = http.MethodPost
-		localVarPostBody     interface{}
-		formFiles            []formFile
-		localVarReturnValue  *CreateEnterpriseRoleResponse
+		localVarHTTPMethod  = http.MethodPost
+		localVarPostBody    interface{}
+		formFiles           []formFile
+		localVarReturnValue *CreateEnterpriseRoleResponse
 	)
 
 	localBasePath, err := a.client.cfg.ServerURLWithContext(r.ctx, "RolesAPIService.CreateEnterpriseRoleRequest")
@@ -239,7 +240,7 @@ func (a *RolesAPIService) CreateEnterpriseRoleRequestExecute(r ApiCreateEnterpri
 }
 
 type ApiGetFireFighterRolesRequest struct {
-	ctx context.Context
+	ctx        context.Context
 	ApiService *RolesAPIService
 }
 
@@ -250,24 +251,25 @@ func (r ApiGetFireFighterRolesRequest) Execute() ([]GetFireFighterRole, *http.Re
 /*
 GetFireFighterRoles Get FireFighter Roles
 
- @param ctx context.Context - for authentication, logging, cancellation, deadlines, tracing, etc. Passed from http.Request or context.Background().
- @return ApiGetFireFighterRolesRequest
+	@param ctx context.Context - for authentication, logging, cancellation, deadlines, tracing, etc. Passed from http.Request or context.Background().
+	@return ApiGetFireFighterRolesRequest
 */
 func (a *RolesAPIService) GetFireFighterRoles(ctx context.Context) ApiGetFireFighterRolesRequest {
 	return ApiGetFireFighterRolesRequest{
 		ApiService: a,
-		ctx: ctx,
+		ctx:        ctx,
 	}
 }
 
 // Execute executes the request
-//  @return []GetFireFighterRole
+//
+//	@return []GetFireFighterRole
 func (a *RolesAPIService) GetFireFighterRolesExecute(r ApiGetFireFighterRolesRequest) ([]GetFireFighterRole, *http.Response, error) {
 	var (
-		localVarHTTPMethod   = http.MethodPost
-		localVarPostBody     interface{}
-		formFiles            []formFile
-		localVarReturnValue  []GetFireFighterRole
+		localVarHTTPMethod  = http.MethodPost
+		localVarPostBody    interface{}
+		formFiles           []formFile
+		localVarReturnValue []GetFireFighterRole
 	)
 
 	localBasePath, err := a.client.cfg.ServerURLWithContext(r.ctx, "RolesAPIService.GetFireFighterRoles")
@@ -336,8 +338,8 @@ func (a *RolesAPIService) GetFireFighterRolesExecute(r ApiGetFireFighterRolesReq
 }
 
 type ApiGetRolesRequest struct {
-	ctx context.Context
-	ApiService *RolesAPIService
+	ctx             context.Context
+	ApiService      *RolesAPIService
 	getRolesRequest *GetRolesRequest
 }
 
@@ -353,24 +355,25 @@ func (r ApiGetRolesRequest) Execute() (*GetRolesResponse, *http.Response, error)
 /*
 GetRoles This API can be used to get the list of all the roles
 
- @param ctx context.Context - for authentication, logging, cancellation, deadlines, tracing, etc. Passed from http.Request or context.Background().
- @return ApiGetRolesRequest
+	@param ctx context.Context - for authentication, logging, cancellation, deadlines, tracing, etc. Passed from http.Request or context.Background().
+	@return ApiGetRolesRequest
 */
 func (a *RolesAPIService) GetRoles(ctx context.Context) ApiGetRolesRequest {
 	return ApiGetRolesRequest{
 		ApiService: a,
-		ctx: ctx,
+		ctx:        ctx,
 	}
 }
 
 // Execute executes the request
-//  @return GetRolesResponse
+//
+//	@return GetRolesResponse
 func (a *RolesAPIService) GetRolesExecute(r ApiGetRolesRequest) (*GetRolesResponse, *http.Response, error) {
 	var (
-		localVarHTTPMethod   = http.MethodPost
-		localVarPostBody     interface{}
-		formFiles            []formFile
-		localVarReturnValue  *GetRolesResponse
+		localVarHTTPMethod  = http.MethodPost
+		localVarPostBody    interface{}
+		formFiles           []formFile
+		localVarReturnValue *GetRolesResponse
 	)
 
 	localBasePath, err := a.client.cfg.ServerURLWithContext(r.ctx, "RolesAPIService.GetRoles")
@@ -444,8 +447,8 @@ func (a *RolesAPIService) GetRolesExecute(r ApiGetRolesRequest) (*GetRolesRespon
 }
 
 type ApiRemoveroleRequest struct {
-	ctx context.Context
-	ApiService *RolesAPIService
+	ctx                    context.Context
+	ApiService             *RolesAPIService
 	addOrRemoveRoleRequest *AddOrRemoveRoleRequest
 }
 
@@ -461,24 +464,25 @@ func (r ApiRemoveroleRequest) Execute() (*AddOrRemoveRoleResponse, *http.Respons
 /*
 Removerole This API removes role from user.
 
- @param ctx context.Context - for authentication, logging, cancellation, deadlines, tracing, etc. Passed from http.Request or context.Background().
- @return ApiRemoveroleRequest
+	@param ctx context.Context - for authentication, logging, cancellation, deadlines, tracing, etc. Passed from http.Request or context.Background().
+	@return ApiRemoveroleRequest
 */
 func (a *RolesAPIService) Removerole(ctx context.Context) ApiRemoveroleRequest {
 	return ApiRemoveroleRequest{
 		ApiService: a,
-		ctx: ctx,
+		ctx:        ctx,
 	}
 }
 
 // Execute executes the request
-//  @return AddOrRemoveRoleResponse
+//
+//	@return AddOrRemoveRoleResponse
 func (a *RolesAPIService) RemoveroleExecute(r ApiRemoveroleRequest) (*AddOrRemoveRoleResponse, *http.Response, error) {
 	var (
-		localVarHTTPMethod   = http.MethodPost
-		localVarPostBody     interface{}
-		formFiles            []formFile
-		localVarReturnValue  *AddOrRemoveRoleResponse
+		localVarHTTPMethod  = http.MethodPost
+		localVarPostBody    interface{}
+		formFiles           []formFile
+		localVarReturnValue *AddOrRemoveRoleResponse
 	)
 
 	localBasePath, err := a.client.cfg.ServerURLWithContext(r.ctx, "RolesAPIService.Removerole")
@@ -552,8 +556,8 @@ func (a *RolesAPIService) RemoveroleExecute(r ApiRemoveroleRequest) (*AddOrRemov
 }
 
 type ApiUpdateEnterpriseRoleRequestRequest struct {
-	ctx context.Context
-	ApiService *RolesAPIService
+	ctx                         context.Context
+	ApiService                  *RolesAPIService
 	updateEnterpriseRoleRequest *UpdateEnterpriseRoleRequest
 }
 
@@ -569,24 +573,25 @@ func (r ApiUpdateEnterpriseRoleRequestRequest) Execute() (*UpdateEnterpriseRoleR
 /*
 UpdateEnterpriseRoleRequest This API call can be used for creating a new role and assigning an owner to the role
 
- @param ctx context.Context - for authentication, logging, cancellation, deadlines, tracing, etc. Passed from http.Request or context.Background().
- @return ApiUpdateEnterpriseRoleRequestRequest
+	@param ctx context.Context - for authentication, logging, cancellation, deadlines, tracing, etc. Passed from http.Request or context.Background().
+	@return ApiUpdateEnterpriseRoleRequestRequest
 */
 func (a *RolesAPIService) UpdateEnterpriseRoleRequest(ctx context.Context) ApiUpdateEnterpriseRoleRequestRequest {
 	return ApiUpdateEnterpriseRoleRequestRequest{
 		ApiService: a,
-		ctx: ctx,
+		ctx:        ctx,
 	}
 }
 
 // Execute executes the request
-//  @return UpdateEnterpriseRoleResponse
+//
+//	@return UpdateEnterpriseRoleResponse
 func (a *RolesAPIService) UpdateEnterpriseRoleRequestExecute(r ApiUpdateEnterpriseRoleRequestRequest) (*UpdateEnterpriseRoleResponse, *http.Response, error) {
 	var (
-		localVarHTTPMethod   = http.MethodPost
-		localVarPostBody     interface{}
-		formFiles            []formFile
-		localVarReturnValue  *UpdateEnterpriseRoleResponse
+		localVarHTTPMethod  = http.MethodPost
+		localVarPostBody    interface{}
+		formFiles           []formFile
+		localVarReturnValue *UpdateEnterpriseRoleResponse
 	)
 
 	localBasePath, err := a.client.cfg.ServerURLWithContext(r.ctx, "RolesAPIService.UpdateEnterpriseRoleRequest")

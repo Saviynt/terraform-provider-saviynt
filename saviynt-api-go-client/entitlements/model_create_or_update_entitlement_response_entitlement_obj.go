@@ -1,7 +1,7 @@
 /*
 Entitlement Management API
 
-API for managing entitlements in Saviynt/SSM. - **Create Entitlement**: Creates a new entitlement. - **Update Entitlement**: Updates an existing entitlement. - **Get Entitlement List**: Returns a list of entitlement based on search criteria. 
+API for managing entitlements in Saviynt/SSM. - **Create Entitlement**: Creates a new entitlement. - **Update Entitlement**: Updates an existing entitlement. - **Get Entitlement List**: Returns a list of entitlement based on search criteria.
 
 API version: 1.0.0
 */
@@ -19,70 +19,70 @@ var _ MappedNullable = &CreateOrUpdateEntitlementResponseEntitlementObj{}
 
 // CreateOrUpdateEntitlementResponseEntitlementObj The created or updated entitlement object.
 type CreateOrUpdateEntitlementResponseEntitlementObj struct {
-	Access *string `json:"access,omitempty"`
-	Customproperty1 *string `json:"customproperty1,omitempty"`
-	Customproperty2 *string `json:"customproperty2,omitempty"`
-	Customproperty3 *string `json:"customproperty3,omitempty"`
-	Customproperty4 *string `json:"customproperty4,omitempty"`
-	Customproperty5 *string `json:"customproperty5,omitempty"`
-	Customproperty6 *string `json:"customproperty6,omitempty"`
-	Customproperty7 *string `json:"customproperty7,omitempty"`
-	Customproperty8 *string `json:"customproperty8,omitempty"`
-	Customproperty9 *string `json:"customproperty9,omitempty"`
-	Customproperty10 *string `json:"customproperty10,omitempty"`
-	Customproperty11 *string `json:"customproperty11,omitempty"`
-	Customproperty12 *string `json:"customproperty12,omitempty"`
-	Customproperty13 *string `json:"customproperty13,omitempty"`
-	Customproperty14 *string `json:"customproperty14,omitempty"`
-	Customproperty15 *string `json:"customproperty15,omitempty"`
-	Customproperty16 *string `json:"customproperty16,omitempty"`
-	Customproperty17 *string `json:"customproperty17,omitempty"`
-	Customproperty18 *string `json:"customproperty18,omitempty"`
-	Customproperty19 *string `json:"customproperty19,omitempty"`
-	Customproperty20 *string `json:"customproperty20,omitempty"`
-	Customproperty21 *string `json:"customproperty21,omitempty"`
-	Customproperty22 *string `json:"customproperty22,omitempty"`
-	Customproperty23 *string `json:"customproperty23,omitempty"`
-	Customproperty24 *string `json:"customproperty24,omitempty"`
-	Customproperty25 *string `json:"customproperty25,omitempty"`
-	Customproperty26 *string `json:"customproperty26,omitempty"`
-	Customproperty27 *string `json:"customproperty27,omitempty"`
-	Customproperty28 *string `json:"customproperty28,omitempty"`
-	Customproperty29 *string `json:"customproperty29,omitempty"`
-	Customproperty30 *string `json:"customproperty30,omitempty"`
-	Customproperty31 *string `json:"customproperty31,omitempty"`
-	Customproperty32 *string `json:"customproperty32,omitempty"`
-	Customproperty33 *string `json:"customproperty33,omitempty"`
-	Customproperty34 *string `json:"customproperty34,omitempty"`
-	Customproperty35 *string `json:"customproperty35,omitempty"`
-	Customproperty36 *string `json:"customproperty36,omitempty"`
-	Customproperty37 *string `json:"customproperty37,omitempty"`
-	Customproperty38 *string `json:"customproperty38,omitempty"`
-	Customproperty39 *string `json:"customproperty39,omitempty"`
-	Customproperty40 *string `json:"customproperty40,omitempty"`
-	EndpointKey *int32 `json:"endpointKey,omitempty"`
-	Confidentiality *string `json:"confidentiality,omitempty"`
-	Createdate *string `json:"createdate,omitempty"`
-	Description *string `json:"description,omitempty"`
-	EntitlementGlossary *string `json:"entitlement_glossary,omitempty"`
-	Endpoint *string `json:"endpoint,omitempty"`
-	Updatedate *string `json:"updatedate,omitempty"`
-	EntitlementValue *string `json:"entitlement_value,omitempty"`
-	Syscritical *string `json:"syscritical,omitempty"`
-	EntitlementValuekey *string `json:"entitlement_valuekey,omitempty"`
-	Module *string `json:"module,omitempty"`
-	EntitlementOwner *CreateOrUpdateEntitlementResponseEntitlementObjEntitlementOwner `json:"entitlementOwner,omitempty"`
-	Priviliged *string `json:"priviliged,omitempty"`
-	EntitlementTypeName *string `json:"entitlementTypeName,omitempty"`
-	EntitlementType *string `json:"entitlementType,omitempty"`
-	Priority *string `json:"priority,omitempty"`
-	EntitlementTypeKey *int32 `json:"entitlementTypeKey,omitempty"`
-	RequestForm *string `json:"requestForm,omitempty"`
-	Displayname *string `json:"displayname,omitempty"`
-	Soxcritical *string `json:"soxcritical,omitempty"`
-	Risk *string `json:"risk,omitempty"`
-	Status *string `json:"status,omitempty"`
-	Updateuser *string `json:"updateuser,omitempty"`
+	Access              *string                                                          `json:"access,omitempty"`
+	Customproperty1     *string                                                          `json:"customproperty1,omitempty"`
+	Customproperty2     *string                                                          `json:"customproperty2,omitempty"`
+	Customproperty3     *string                                                          `json:"customproperty3,omitempty"`
+	Customproperty4     *string                                                          `json:"customproperty4,omitempty"`
+	Customproperty5     *string                                                          `json:"customproperty5,omitempty"`
+	Customproperty6     *string                                                          `json:"customproperty6,omitempty"`
+	Customproperty7     *string                                                          `json:"customproperty7,omitempty"`
+	Customproperty8     *string                                                          `json:"customproperty8,omitempty"`
+	Customproperty9     *string                                                          `json:"customproperty9,omitempty"`
+	Customproperty10    *string                                                          `json:"customproperty10,omitempty"`
+	Customproperty11    *string                                                          `json:"customproperty11,omitempty"`
+	Customproperty12    *string                                                          `json:"customproperty12,omitempty"`
+	Customproperty13    *string                                                          `json:"customproperty13,omitempty"`
+	Customproperty14    *string                                                          `json:"customproperty14,omitempty"`
+	Customproperty15    *string                                                          `json:"customproperty15,omitempty"`
+	Customproperty16    *string                                                          `json:"customproperty16,omitempty"`
+	Customproperty17    *string                                                          `json:"customproperty17,omitempty"`
+	Customproperty18    *string                                                          `json:"customproperty18,omitempty"`
+	Customproperty19    *string                                                          `json:"customproperty19,omitempty"`
+	Customproperty20    *string                                                          `json:"customproperty20,omitempty"`
+	Customproperty21    *string                                                          `json:"customproperty21,omitempty"`
+	Customproperty22    *string                                                          `json:"customproperty22,omitempty"`
+	Customproperty23    *string                                                          `json:"customproperty23,omitempty"`
+	Customproperty24    *string                                                          `json:"customproperty24,omitempty"`
+	Customproperty25    *string                                                          `json:"customproperty25,omitempty"`
+	Customproperty26    *string                                                          `json:"customproperty26,omitempty"`
+	Customproperty27    *string                                                          `json:"customproperty27,omitempty"`
+	Customproperty28    *string                                                          `json:"customproperty28,omitempty"`
+	Customproperty29    *string                                                          `json:"customproperty29,omitempty"`
+	Customproperty30    *string                                                          `json:"customproperty30,omitempty"`
+	Customproperty31    *string                                                          `json:"customproperty31,omitempty"`
+	Customproperty32    *string                                                          `json:"customproperty32,omitempty"`
+	Customproperty33    *string                                                          `json:"customproperty33,omitempty"`
+	Customproperty34    *string                                                          `json:"customproperty34,omitempty"`
+	Customproperty35    *string                                                          `json:"customproperty35,omitempty"`
+	Customproperty36    *string                                                          `json:"customproperty36,omitempty"`
+	Customproperty37    *string                                                          `json:"customproperty37,omitempty"`
+	Customproperty38    *string                                                          `json:"customproperty38,omitempty"`
+	Customproperty39    *string                                                          `json:"customproperty39,omitempty"`
+	Customproperty40    *string                                                          `json:"customproperty40,omitempty"`
+	EndpointKey         *int32                                                           `json:"endpointKey,omitempty"`
+	Confidentiality     *string                                                          `json:"confidentiality,omitempty"`
+	Createdate          *string                                                          `json:"createdate,omitempty"`
+	Description         *string                                                          `json:"description,omitempty"`
+	EntitlementGlossary *string                                                          `json:"entitlement_glossary,omitempty"`
+	Endpoint            *string                                                          `json:"endpoint,omitempty"`
+	Updatedate          *string                                                          `json:"updatedate,omitempty"`
+	EntitlementValue    *string                                                          `json:"entitlement_value,omitempty"`
+	Syscritical         *string                                                          `json:"syscritical,omitempty"`
+	EntitlementValuekey *string                                                          `json:"entitlement_valuekey,omitempty"`
+	Module              *string                                                          `json:"module,omitempty"`
+	EntitlementOwner    *CreateOrUpdateEntitlementResponseEntitlementObjEntitlementOwner `json:"entitlementOwner,omitempty"`
+	Priviliged          *string                                                          `json:"priviliged,omitempty"`
+	EntitlementTypeName *string                                                          `json:"entitlementTypeName,omitempty"`
+	EntitlementType     *string                                                          `json:"entitlementType,omitempty"`
+	Priority            *string                                                          `json:"priority,omitempty"`
+	EntitlementTypeKey  *int32                                                           `json:"entitlementTypeKey,omitempty"`
+	RequestForm         *string                                                          `json:"requestForm,omitempty"`
+	Displayname         *string                                                          `json:"displayname,omitempty"`
+	Soxcritical         *string                                                          `json:"soxcritical,omitempty"`
+	Risk                *string                                                          `json:"risk,omitempty"`
+	Status              *string                                                          `json:"status,omitempty"`
+	Updateuser          *string                                                          `json:"updateuser,omitempty"`
 }
 
 // NewCreateOrUpdateEntitlementResponseEntitlementObj instantiates a new CreateOrUpdateEntitlementResponseEntitlementObj object
@@ -2151,7 +2151,7 @@ func (o *CreateOrUpdateEntitlementResponseEntitlementObj) SetUpdateuser(v string
 }
 
 func (o CreateOrUpdateEntitlementResponseEntitlementObj) MarshalJSON() ([]byte, error) {
-	toSerialize,err := o.ToMap()
+	toSerialize, err := o.ToMap()
 	if err != nil {
 		return []byte{}, err
 	}
@@ -2390,5 +2390,3 @@ func (v *NullableCreateOrUpdateEntitlementResponseEntitlementObj) UnmarshalJSON(
 	v.isSet = true
 	return json.Unmarshal(src, &v.value)
 }
-
-

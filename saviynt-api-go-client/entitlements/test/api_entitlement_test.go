@@ -28,7 +28,7 @@ func Test_entitlements_EntitlementAPIService(t *testing.T) {
 
 	t.Run("Test EntitlementAPIService CreateUpdateEntitlement", func(t *testing.T) {
 
-		t.Skip("skip test")  // remove to run test
+		t.Skip("skip test") // remove to run test
 
 		resp, httpRes, err := apiClient.EntitlementAPI.CreateUpdateEntitlement(context.Background()).Execute()
 
@@ -40,7 +40,7 @@ func Test_entitlements_EntitlementAPIService(t *testing.T) {
 
 	t.Run("Test EntitlementAPIService GetEntitlements", func(t *testing.T) {
 
-		t.Skip("skip test")  // remove to run test
+		t.Skip("skip test") // remove to run test
 
 		resp, httpRes, err := apiClient.EntitlementAPI.GetEntitlements(context.Background()).Execute()
 

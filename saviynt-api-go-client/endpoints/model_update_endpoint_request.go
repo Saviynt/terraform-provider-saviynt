@@ -1,7 +1,7 @@
 /*
 Account Management API
 
-API for managing accounts in Saviynt/SSM. - **Create Endpoint**: Creates a new endpoint. - **Update Endpoint**: Updates an existing endpoint based on its name and roletype. - **Get Endpoint List**: Returns a list of endpoints based on search criteria. 
+API for managing accounts in Saviynt/SSM. - **Create Endpoint**: Creates a new endpoint. - **Update Endpoint**: Updates an existing endpoint based on its name and roletype. - **Get Endpoint List**: Returns a list of endpoints based on search criteria.
 
 API version: 1.0.0
 */
@@ -11,8 +11,8 @@ API version: 1.0.0
 package endpoints
 
 import (
-	"encoding/json"
 	"bytes"
+	"encoding/json"
 	"fmt"
 )
 
@@ -22,8 +22,8 @@ var _ MappedNullable = &UpdateEndpointRequest{}
 // UpdateEndpointRequest struct for UpdateEndpointRequest
 type UpdateEndpointRequest struct {
 	// Specify a name for the endpoint. Provide a logical name that will help you easily identify it.
-	Endpointname string `json:"endpointname"`
-	PrimaryAccountType *string `json:"primaryAccountType,omitempty"`
+	Endpointname                string  `json:"endpointname"`
+	PrimaryAccountType          *string `json:"primaryAccountType,omitempty"`
 	AccountTypeNoPasswordChange *string `json:"accountTypeNoPasswordChange,omitempty"`
 	// Enter a user-friendly display name for the endpoint that will be displayed in the user interface. Display Name can be different from Endpoint Name.
 	DisplayName *string `json:"displayName,omitempty"`
@@ -60,10 +60,10 @@ type UpdateEndpointRequest struct {
 	// Specify true to prevent users from raising duplicate requests for the same applications.
 	BlockInflightRequest *string `json:"blockInflightRequest,omitempty"`
 	// Use this parameter to determine if you need to remove the accesses which were granted outside Saviynt.
-	Outofbandaction *string `json:"outofbandaction,omitempty"`
+	Outofbandaction     *string                                         `json:"outofbandaction,omitempty"`
 	RequestableRoleType []UpdateEndpointRequestRequestableRoleTypeInner `json:"requestableRoleType,omitempty"`
-	Taskemailtemplates []CreateEndpointRequestEmailTemplateInner `json:"taskemailtemplates,omitempty"`
-	MappedEndpoints []UpdateEndpointRequestMappedEndpointsInner `json:"mappedEndpoints,omitempty"`
+	Taskemailtemplates  []CreateEndpointRequestEmailTemplateInner       `json:"taskemailtemplates,omitempty"`
+	MappedEndpoints     []UpdateEndpointRequestMappedEndpointsInner     `json:"mappedEndpoints,omitempty"`
 	// Specify rule to generate an account name for this endpoint while creating a new account.
 	AccountNameRule *string `json:"accountNameRule,omitempty"`
 	// SQL query to configure the accounts for which you can change passwords.
@@ -73,7 +73,7 @@ type UpdateEndpointRequest struct {
 	// Specify the parent and child relationship for the Active Directory endpoint. The specified value is used to filter the parent and child objects in the Request Access tile.
 	ParentAccountPattern *string `json:"parentAccountPattern,omitempty"`
 	// Rule to generate a name for this endpoint while creating a new service account.
-	ServiceAccountNameRule *string `json:"serviceAccountNameRule,omitempty"`
+	ServiceAccountNameRule    *string `json:"serviceAccountNameRule,omitempty"`
 	ServiceAccountAccessQuery *string `json:"serviceAccountAccessQuery,omitempty"`
 	// Specify query to restrict the access for changing the account password of the endpoint.
 	ChangePasswordAccessQuery *string `json:"changePasswordAccessQuery,omitempty"`
@@ -4824,7 +4824,7 @@ func (o *UpdateEndpointRequest) SetAllowRemoveAllRoleOnRequest(v bool) {
 }
 
 func (o UpdateEndpointRequest) MarshalJSON() ([]byte, error) {
-	toSerialize,err := o.ToMap()
+	toSerialize, err := o.ToMap()
 	if err != nil {
 		return []byte{}, err
 	}
@@ -5270,10 +5270,10 @@ func (o *UpdateEndpointRequest) UnmarshalJSON(data []byte) (err error) {
 	err = json.Unmarshal(data, &allProperties)
 
 	if err != nil {
-		return err;
+		return err
 	}
 
-	for _, requiredProperty := range(requiredProperties) {
+	for _, requiredProperty := range requiredProperties {
 		if _, exists := allProperties[requiredProperty]; !exists {
 			return fmt.Errorf("no value given for required property %v", requiredProperty)
 		}
@@ -5329,5 +5329,3 @@ func (v *NullableUpdateEndpointRequest) UnmarshalJSON(src []byte) error {
 	v.isSet = true
 	return json.Unmarshal(src, &v.value)
 }
-
-

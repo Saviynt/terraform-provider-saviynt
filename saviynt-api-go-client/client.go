@@ -24,7 +24,7 @@ import (
 	"github.com/saviynt/saviynt-api-go-client/entitlements"
 	"github.com/saviynt/saviynt-api-go-client/entitlementtype"
 	"github.com/saviynt/saviynt-api-go-client/filedirectory"
-	"github.com/saviynt/saviynt-api-go-client/jobcontrol"
+	"github.com/saviynt/saviynt-api-go-client/job_control"
 	"github.com/saviynt/saviynt-api-go-client/mtlsauthentication"
 	"github.com/saviynt/saviynt-api-go-client/privileges"
 	"github.com/saviynt/saviynt-api-go-client/roles"
@@ -66,8 +66,8 @@ type Client struct {
 	entitlementTypeClient         *entitlementtype.APIClient
 	FileDirectory                 *filedirectory.FileDirectoryAPIService
 	fileDirectoryClient           *filedirectory.APIClient
-	JobControl                    *jobcontrol.JobControlAPIService
-	jobControlClient              *jobcontrol.APIClient
+	JobControl                    *job_control.JobControlAPIService
+	jobControlClient              *job_control.APIClient
 	MTLSAuthentication            *mtlsauthentication.MTLSAuthenticationAPIService
 	mtlsAuthenticationClient      *mtlsauthentication.APIClient
 	Privileges                    *privileges.PrivilegeAPIService
@@ -236,11 +236,11 @@ func newClientFileDirectory(apiBaseURL string, httpClient *http.Client) *filedir
 	return filedirectory.NewAPIClient(cfg)
 }
 
-func newClientJobControl(apiBaseURL string, httpClient *http.Client) *jobcontrol.APIClient {
-	cfg := jobcontrol.NewConfiguration()
+func newClientJobControl(apiBaseURL string, httpClient *http.Client) *job_control.APIClient {
+	cfg := job_control.NewConfiguration()
 	cfg.HTTPClient = httpClient
-	cfg.Servers = jobcontrol.ServerConfigurations{{URL: apiBaseURL}}
-	return jobcontrol.NewAPIClient(cfg)
+	cfg.Servers = job_control.ServerConfigurations{{URL: apiBaseURL}}
+	return job_control.NewAPIClient(cfg)
 }
 
 func newClientMTLSAuthentication(apiBaseURL string, httpClient *http.Client) *mtlsauthentication.APIClient {

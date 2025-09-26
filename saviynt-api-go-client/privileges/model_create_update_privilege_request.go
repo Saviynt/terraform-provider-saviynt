@@ -1,7 +1,7 @@
 /*
 Privilege Management API
 
-API for managing privileges in Saviynt/SSM. - **Create Privilege**: Creates a new privilege. - **Update Privilege**: Updates an existing privilege. - **Get Privilege List**: Returns a list of privileges based on search criteria. - **Delete Privilege**: Delete a privilege 
+API for managing privileges in Saviynt/SSM. - **Create Privilege**: Creates a new privilege. - **Update Privilege**: Updates an existing privilege. - **Get Privilege List**: Returns a list of privileges based on search criteria. - **Delete Privilege**: Delete a privilege
 
 API version: 1.0.0
 */
@@ -11,8 +11,8 @@ API version: 1.0.0
 package privileges
 
 import (
-	"encoding/json"
 	"bytes"
+	"encoding/json"
 	"fmt"
 )
 
@@ -26,8 +26,8 @@ type CreateUpdatePrivilegeRequest struct {
 	// Name of the endpoint to which the entitlement type belongs
 	Endpoint string `json:"endpoint"`
 	// Name of the entitlement type for the privilege
-	Entitlementtype string `json:"entitlementtype"`
-	Privilege CreateUpdatePrivilegeRequestPrivilege `json:"privilege"`
+	Entitlementtype string                                `json:"entitlementtype"`
+	Privilege       CreateUpdatePrivilegeRequestPrivilege `json:"privilege"`
 }
 
 type _CreateUpdatePrivilegeRequest CreateUpdatePrivilegeRequest
@@ -150,7 +150,7 @@ func (o *CreateUpdatePrivilegeRequest) SetPrivilege(v CreateUpdatePrivilegeReque
 }
 
 func (o CreateUpdatePrivilegeRequest) MarshalJSON() ([]byte, error) {
-	toSerialize,err := o.ToMap()
+	toSerialize, err := o.ToMap()
 	if err != nil {
 		return []byte{}, err
 	}
@@ -182,10 +182,10 @@ func (o *CreateUpdatePrivilegeRequest) UnmarshalJSON(data []byte) (err error) {
 	err = json.Unmarshal(data, &allProperties)
 
 	if err != nil {
-		return err;
+		return err
 	}
 
-	for _, requiredProperty := range(requiredProperties) {
+	for _, requiredProperty := range requiredProperties {
 		if _, exists := allProperties[requiredProperty]; !exists {
 			return fmt.Errorf("no value given for required property %v", requiredProperty)
 		}
@@ -241,5 +241,3 @@ func (v *NullableCreateUpdatePrivilegeRequest) UnmarshalJSON(src []byte) error {
 	v.isSet = true
 	return json.Unmarshal(src, &v.value)
 }
-
-

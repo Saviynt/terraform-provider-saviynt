@@ -1,7 +1,7 @@
 /*
 Privilege Management API
 
-API for managing privileges in Saviynt/SSM. - **Create Privilege**: Creates a new privilege. - **Update Privilege**: Updates an existing privilege. - **Get Privilege List**: Returns a list of privileges based on search criteria. - **Delete Privilege**: Delete a privilege 
+API for managing privileges in Saviynt/SSM. - **Create Privilege**: Creates a new privilege. - **Update Privilege**: Updates an existing privilege. - **Get Privilege List**: Returns a list of privileges based on search criteria. - **Delete Privilege**: Delete a privilege
 
 API version: 1.0.0
 */
@@ -26,7 +26,7 @@ type GetPrivilegeListResponse struct {
 	// Number of results returned
 	DisplayCount *int32 `json:"displayCount,omitempty"`
 	// Total number of privileges for the given filter
-	TotalCount *int32 `json:"totalCount,omitempty"`
+	TotalCount       *int32               `json:"totalCount,omitempty"`
 	PrivilegeDetails []GetPrivilegeDetail `json:"PrivilegeDetails,omitempty"`
 }
 
@@ -208,7 +208,7 @@ func (o *GetPrivilegeListResponse) SetPrivilegeDetails(v []GetPrivilegeDetail) {
 }
 
 func (o GetPrivilegeListResponse) MarshalJSON() ([]byte, error) {
-	toSerialize,err := o.ToMap()
+	toSerialize, err := o.ToMap()
 	if err != nil {
 		return []byte{}, err
 	}
@@ -270,5 +270,3 @@ func (v *NullableGetPrivilegeListResponse) UnmarshalJSON(src []byte) error {
 	v.isSet = true
 	return json.Unmarshal(src, &v.value)
 }
-
-

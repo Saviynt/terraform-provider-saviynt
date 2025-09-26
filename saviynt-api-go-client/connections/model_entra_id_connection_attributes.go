@@ -19,57 +19,57 @@ var _ MappedNullable = &EntraIDConnectionAttributes{}
 
 // EntraIDConnectionAttributes struct for EntraIDConnectionAttributes
 type EntraIDConnectionAttributes struct {
-	UpdateUserJSON *string `json:"UpdateUserJSON,omitempty"`
-	MICROSOFT_GRAPH_ENDPOINT *string `json:"MICROSOFT_GRAPH_ENDPOINT,omitempty"`
-	ENDPOINTS_FILTER *string `json:"ENDPOINTS_FILTER,omitempty"`
-	ImportUserJSON *string `json:"ImportUserJSON,omitempty"`
-	ConnectionType *string `json:"connectionType,omitempty"`
-	EnableAccountJSON *string `json:"EnableAccountJSON,omitempty"`
-	ConnectionJSON *string `json:"ConnectionJSON,omitempty"`
-	CLIENT_ID *string `json:"CLIENT_ID,omitempty"`
-	DeleteGroupJSON *string `json:"DeleteGroupJSON,omitempty"`
-	ConfigJSON *string `json:"ConfigJSON,omitempty"`
-	ACCESS_TOKEN *string `json:"ACCESS_TOKEN,omitempty"`
-	AddAccessJSON *string `json:"AddAccessJSON,omitempty"`
-	CreateChannelJSON *string `json:"CreateChannelJSON,omitempty"`
-	UpdateAccountJSON *string `json:"UpdateAccountJSON,omitempty"`
-	IsTimeoutSupported *bool `json:"isTimeoutSupported,omitempty"`
-	RemoveServicePrincipalJSON *string `json:"RemoveServicePrincipalJSON,omitempty"`
-	IMPORT_DEPTH *string `json:"IMPORT_DEPTH,omitempty"`
-	CreateAccountJSON *string `json:"CreateAccountJSON,omitempty"`
-	PAM_CONFIG *string `json:"PAM_CONFIG,omitempty"`
-	UpdateServicePrincipalJSON *string `json:"UpdateServicePrincipalJSON,omitempty"`
-	AZURE_MANAGEMENT_ENDPOINT *string `json:"AZURE_MANAGEMENT_ENDPOINT,omitempty"`
-	ENTITLEMENT_ATTRIBUTE *string `json:"ENTITLEMENT_ATTRIBUTE,omitempty"`
-	ACCOUNTS_FILTER *string `json:"ACCOUNTS_FILTER,omitempty"`
-	WINDOWS_CONNECTOR_JSON *string `json:"WINDOWS_CONNECTOR_JSON,omitempty"`
-	DELTATOKENSJSON *string `json:"DELTATOKENSJSON,omitempty"`
-	AZURE_MGMT_ACCESS_TOKEN *string `json:"AZURE_MGMT_ACCESS_TOKEN,omitempty"`
-	CreateTeamJSON *string `json:"CreateTeamJSON,omitempty"`
-	ConnectionTimeoutConfig *ConnectionTimeoutConfig `json:"connectionTimeoutConfig,omitempty"`
-	ENHANCEDDIRECTORYROLES *string `json:"ENHANCEDDIRECTORYROLES,omitempty"`
-	STATUS_THRESHOLD_CONFIG *string `json:"STATUS_THRESHOLD_CONFIG,omitempty"`
-	ACCOUNT_IMPORT_FIELDS *string `json:"ACCOUNT_IMPORT_FIELDS,omitempty"`
-	RemoveAccountJSON *string `json:"RemoveAccountJSON,omitempty"`
-	ChangePassJSON *string `json:"ChangePassJSON,omitempty"`
-	CLIENT_SECRET *string `json:"CLIENT_SECRET,omitempty"`
-	ENTITLEMENT_FILTER_JSON *string `json:"ENTITLEMENT_FILTER_JSON,omitempty"`
-	SERVICE_ACCOUNT_ATTRIBUTES *string `json:"SERVICE_ACCOUNT_ATTRIBUTES,omitempty"`
-	AddAccessToEntitlementJSON *string `json:"AddAccessToEntitlementJSON,omitempty"`
-	AUTHENTICATION_ENDPOINT *string `json:"AUTHENTICATION_ENDPOINT,omitempty"`
-	CreateServicePrincipalJSON *string `json:"CreateServicePrincipalJSON,omitempty"`
-	MODIFYUSERDATAJSON *string `json:"MODIFYUSERDATAJSON,omitempty"`
-	IsTimeoutConfigValidated *bool `json:"isTimeoutConfigValidated,omitempty"`
-	RemoveAccessJSON *string `json:"RemoveAccessJSON,omitempty"`
-	CREATEUSERS *string `json:"CREATEUSERS,omitempty"`
-	RemoveAccessFromEntitlementJSON *string `json:"RemoveAccessFromEntitlementJSON,omitempty"`
-	DisableAccountJSON *string `json:"DisableAccountJSON,omitempty"`
-	CREATE_NEW_ENDPOINTS *string `json:"CREATE_NEW_ENDPOINTS,omitempty"`
-	MANAGED_ACCOUNT_TYPE *string `json:"MANAGED_ACCOUNT_TYPE,omitempty"`
-	ACCOUNT_ATTRIBUTES *string `json:"ACCOUNT_ATTRIBUTES,omitempty"`
-	AAD_TENANT_ID *string `json:"AAD_TENANT_ID,omitempty"`
-	UpdateGroupJSON *string `json:"UpdateGroupJSON,omitempty"`
-	CreateGroupJSON *string `json:"CreateGroupJSON,omitempty"`
+	UpdateUserJSON                  *string                  `json:"UpdateUserJSON,omitempty"`
+	MICROSOFT_GRAPH_ENDPOINT        *string                  `json:"MICROSOFT_GRAPH_ENDPOINT,omitempty"`
+	ENDPOINTS_FILTER                *string                  `json:"ENDPOINTS_FILTER,omitempty"`
+	ImportUserJSON                  *string                  `json:"ImportUserJSON,omitempty"`
+	ConnectionType                  *string                  `json:"connectionType,omitempty"`
+	EnableAccountJSON               *string                  `json:"EnableAccountJSON,omitempty"`
+	ConnectionJSON                  *string                  `json:"ConnectionJSON,omitempty"`
+	CLIENT_ID                       *string                  `json:"CLIENT_ID,omitempty"`
+	DeleteGroupJSON                 *string                  `json:"DeleteGroupJSON,omitempty"`
+	ConfigJSON                      *string                  `json:"ConfigJSON,omitempty"`
+	ACCESS_TOKEN                    *string                  `json:"ACCESS_TOKEN,omitempty"`
+	AddAccessJSON                   *string                  `json:"AddAccessJSON,omitempty"`
+	CreateChannelJSON               *string                  `json:"CreateChannelJSON,omitempty"`
+	UpdateAccountJSON               *string                  `json:"UpdateAccountJSON,omitempty"`
+	IsTimeoutSupported              *bool                    `json:"isTimeoutSupported,omitempty"`
+	RemoveServicePrincipalJSON      *string                  `json:"RemoveServicePrincipalJSON,omitempty"`
+	IMPORT_DEPTH                    *string                  `json:"IMPORT_DEPTH,omitempty"`
+	CreateAccountJSON               *string                  `json:"CreateAccountJSON,omitempty"`
+	PAM_CONFIG                      *string                  `json:"PAM_CONFIG,omitempty"`
+	UpdateServicePrincipalJSON      *string                  `json:"UpdateServicePrincipalJSON,omitempty"`
+	AZURE_MANAGEMENT_ENDPOINT       *string                  `json:"AZURE_MANAGEMENT_ENDPOINT,omitempty"`
+	ENTITLEMENT_ATTRIBUTE           *string                  `json:"ENTITLEMENT_ATTRIBUTE,omitempty"`
+	ACCOUNTS_FILTER                 *string                  `json:"ACCOUNTS_FILTER,omitempty"`
+	WINDOWS_CONNECTOR_JSON          *string                  `json:"WINDOWS_CONNECTOR_JSON,omitempty"`
+	DELTATOKENSJSON                 *string                  `json:"DELTATOKENSJSON,omitempty"`
+	AZURE_MGMT_ACCESS_TOKEN         *string                  `json:"AZURE_MGMT_ACCESS_TOKEN,omitempty"`
+	CreateTeamJSON                  *string                  `json:"CreateTeamJSON,omitempty"`
+	ConnectionTimeoutConfig         *ConnectionTimeoutConfig `json:"connectionTimeoutConfig,omitempty"`
+	ENHANCEDDIRECTORYROLES          *string                  `json:"ENHANCEDDIRECTORYROLES,omitempty"`
+	STATUS_THRESHOLD_CONFIG         *string                  `json:"STATUS_THRESHOLD_CONFIG,omitempty"`
+	ACCOUNT_IMPORT_FIELDS           *string                  `json:"ACCOUNT_IMPORT_FIELDS,omitempty"`
+	RemoveAccountJSON               *string                  `json:"RemoveAccountJSON,omitempty"`
+	ChangePassJSON                  *string                  `json:"ChangePassJSON,omitempty"`
+	CLIENT_SECRET                   *string                  `json:"CLIENT_SECRET,omitempty"`
+	ENTITLEMENT_FILTER_JSON         *string                  `json:"ENTITLEMENT_FILTER_JSON,omitempty"`
+	SERVICE_ACCOUNT_ATTRIBUTES      *string                  `json:"SERVICE_ACCOUNT_ATTRIBUTES,omitempty"`
+	AddAccessToEntitlementJSON      *string                  `json:"AddAccessToEntitlementJSON,omitempty"`
+	AUTHENTICATION_ENDPOINT         *string                  `json:"AUTHENTICATION_ENDPOINT,omitempty"`
+	CreateServicePrincipalJSON      *string                  `json:"CreateServicePrincipalJSON,omitempty"`
+	MODIFYUSERDATAJSON              *string                  `json:"MODIFYUSERDATAJSON,omitempty"`
+	IsTimeoutConfigValidated        *bool                    `json:"isTimeoutConfigValidated,omitempty"`
+	RemoveAccessJSON                *string                  `json:"RemoveAccessJSON,omitempty"`
+	CREATEUSERS                     *string                  `json:"CREATEUSERS,omitempty"`
+	RemoveAccessFromEntitlementJSON *string                  `json:"RemoveAccessFromEntitlementJSON,omitempty"`
+	DisableAccountJSON              *string                  `json:"DisableAccountJSON,omitempty"`
+	CREATE_NEW_ENDPOINTS            *string                  `json:"CREATE_NEW_ENDPOINTS,omitempty"`
+	MANAGED_ACCOUNT_TYPE            *string                  `json:"MANAGED_ACCOUNT_TYPE,omitempty"`
+	ACCOUNT_ATTRIBUTES              *string                  `json:"ACCOUNT_ATTRIBUTES,omitempty"`
+	AAD_TENANT_ID                   *string                  `json:"AAD_TENANT_ID,omitempty"`
+	UpdateGroupJSON                 *string                  `json:"UpdateGroupJSON,omitempty"`
+	CreateGroupJSON                 *string                  `json:"CreateGroupJSON,omitempty"`
 }
 
 // NewEntraIDConnectionAttributes instantiates a new EntraIDConnectionAttributes object
@@ -1722,7 +1722,7 @@ func (o *EntraIDConnectionAttributes) SetCreateGroupJSON(v string) {
 }
 
 func (o EntraIDConnectionAttributes) MarshalJSON() ([]byte, error) {
-	toSerialize,err := o.ToMap()
+	toSerialize, err := o.ToMap()
 	if err != nil {
 		return []byte{}, err
 	}
@@ -1922,5 +1922,3 @@ func (v *NullableEntraIDConnectionAttributes) UnmarshalJSON(src []byte) error {
 	v.isSet = true
 	return json.Unmarshal(src, &v.value)
 }
-
-
