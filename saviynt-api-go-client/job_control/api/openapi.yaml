@@ -1,0 +1,853 @@
+openapi: 3.1.0
+info:
+  description: API for managing jobs in Saviynt.
+  title: Saviynt API
+  version: 1.0.0
+servers:
+- url: http://localhost:3000
+paths:
+  /ECM/api/v5/createUpdateTrigger:
+    post:
+      operationId: createUpdateTrigger
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateOrUpdateTriggersRequest"
+        required: true
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CreateOrUpdateTriggersResponse"
+          description: Role request created successfully
+      summary: This API call can be used for create and update a trigger for a particular
+        jobgroup in EIC.
+      tags:
+      - job_control
+  /ECM/api/v5/checkJobStatus:
+    post:
+      operationId: checkJobStatus
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CheckJobStatusRequest"
+        required: true
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CheckJobStatusResponse"
+          description: Job status fetched successfully
+      summary: This API is used to fetch the status of any job other that Data Import
+        Job.
+      tags:
+      - job_control
+  /ECM/api/v5/deleteTrigger:
+    post:
+      operationId: deleteTrigger
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/DeleteTriggerRequest"
+        required: true
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DeleteTriggerResponse"
+          description: Trigger deleted successfully
+      summary: This API call can be used to delete a trigger for a particular "jobgroup"
+        in SSM.
+      tags:
+      - job_control
+  /ECM/api/v5/runJobTrigger:
+    post:
+      operationId: runJobTrigger
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/RunJobTriggerRequest"
+        required: true
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/RunJobTriggerResponse"
+          description: Job trigger executed successfully
+      summary: This API call can be used to run a job trigger in SSM.
+      tags:
+      - job_control
+  /ECM/api/v5/fetchJobMetadata:
+    post:
+      operationId: fetchJobMetadata
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/FetchJobMetadataRequest"
+        required: true
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/FetchJobMetadataResponse"
+          description: Job metadata fetched successfully
+      summary: This API call return job metadata for the last run of a job in SSM.
+      tags:
+      - job_control
+  /ECM/api/v5/resumePauseJobs:
+    post:
+      operationId: resumePauseJobs
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/PauseResumeJobsRequest"
+        required: true
+      responses:
+        "200":
+          content:
+            text/plain:
+              schema:
+                example: Job(s) Paused successfully
+                type: string
+          description: Jobs paused successfully
+      summary: "The resumePauseJobs API enables you to pause jobs based on their job\
+        \ type and job name.When a job is paused, its status is displayed as Paused\
+        \ on the Job Control Panel page."
+      tags:
+      - job_control
+  /ECM/api/v5/jobs/pause-all:
+    put:
+      operationId: pauseAllJobs
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PauseResumeJobsResponse"
+          description: All jobs paused successfully
+      summary: Use this API to pause all running jobs.
+      tags:
+      - job_control
+  /ECM/api/v5/jobs/resume-all:
+    put:
+      operationId: resumeAllJobs
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PauseResumeJobsResponse"
+          description: All jobs resumed successfully
+      summary: Use this API to resume all paused jobs.
+      tags:
+      - job_control
+  /ECM/api/v5/jobs/pause:
+    put:
+      operationId: pauseJob
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/PauseResumeJobRequest"
+        required: true
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PauseResumeJobsResponse"
+          description: Job paused successfully
+      summary: Use this API to pause a selected running job.
+      tags:
+      - job_control
+  /ECM/api/v5/jobs/resume:
+    put:
+      operationId: resumeJob
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/PauseResumeJobRequest"
+        required: true
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PauseResumeJobsResponse"
+          description: Job resumed successfully
+      summary: Use this API to resume a selected pause job.
+      tags:
+      - job_control
+  /ECM/api/v5/createTriggers:
+    post:
+      operationId: createTrigger
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateTriggersRequest"
+        required: true
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CreateTriggersResponse"
+          description: Role request created successfully
+      summary: This API call can be used for create and update a trigger for a particular
+        jobgroup in EIC.
+      tags:
+      - job_control
+components:
+  schemas:
+    BaseTrigger:
+      discriminator:
+        mapping:
+          ApplicationDataImportJob: "#/components/schemas/ApplicationDataImportJob"
+          WSRetryJob: "#/components/schemas/WSRetryJob"
+          EcmJob: "#/components/schemas/EcmJob"
+          EcmSapUserJob: "#/components/schemas/EcmSapUserJob"
+          UserImportJob: "#/components/schemas/UserImportJob"
+          AccountsImportFullJob: "#/components/schemas/AccountsImportFullJob"
+        propertyName: jobname
+      properties:
+        triggername:
+          description: Unique name of the trigger
+          example: MyTrigger_001
+          type: string
+        jobname:
+          description: Name of the job associated with the trigger
+          example: WSRetryJob
+          type: string
+        jobgroup:
+          description: Name of the job group associated with the trigger
+          example: utility
+          type: string
+        triggergroup:
+          description: Group classification for the trigger
+          example: GRAILS_JOBS
+          type: string
+        cronexpression:
+          description: Cron expression defining the schedule for the trigger
+          example: 0 0 2 * * ?
+          type: string
+      required:
+      - cronexpression
+      - jobgroup
+      - jobname
+      - triggername
+    ApplicationDataImportJob:
+      allOf:
+      - $ref: "#/components/schemas/BaseTrigger"
+      - properties:
+          valueMap:
+            $ref: "#/components/schemas/ApplicationDataImportJob_allOf_valueMap"
+      example:
+        triggergroup: GRAILS_JOBS
+        cronexpression: 0 0 2 * * ?
+        triggername: MyTrigger_001
+        valueMap:
+          securitysystems:
+          - addescription-test
+          accountsoraccess: access
+          externalconn: "331"
+          fullorincremental: full
+        jobname: WSRetryJob
+        jobgroup: utility
+    WSRetryJob:
+      allOf:
+      - $ref: "#/components/schemas/BaseTrigger"
+      - properties:
+          securitysystems:
+            example:
+            - addescription-test
+            items:
+              type: string
+            type: array
+          tasktypes:
+            example: "1,2,3"
+            type: string
+    EcmJob:
+      allOf:
+      - $ref: "#/components/schemas/BaseTrigger"
+      - properties:
+          valueMap:
+            $ref: "#/components/schemas/EcmJob_allOf_valueMap"
+    EcmSapUserJob:
+      allOf:
+      - $ref: "#/components/schemas/BaseTrigger"
+      - properties:
+          valueMap:
+            $ref: "#/components/schemas/EcmJob_allOf_valueMap"
+    UserImportJob:
+      allOf:
+      - $ref: "#/components/schemas/BaseTrigger"
+      - properties:
+          valueMap:
+            $ref: "#/components/schemas/UserImportJob_allOf_valueMap"
+    Trigger:
+      $ref: "#/components/schemas/BaseTrigger"
+    CreateOrUpdateTriggersRequest:
+      example:
+        triggers:
+        - triggergroup: GRAILS_JOBS
+          cronexpression: 0 0 2 * * ?
+          triggername: MyTrigger_001
+          valueMap:
+            securitysystems:
+            - addescription-test
+            accountsoraccess: access
+            externalconn: "331"
+            fullorincremental: full
+          jobname: WSRetryJob
+          jobgroup: utility
+        - triggergroup: GRAILS_JOBS
+          cronexpression: 0 0 2 * * ?
+          triggername: MyTrigger_001
+          valueMap:
+            securitysystems:
+            - addescription-test
+            accountsoraccess: access
+            externalconn: "331"
+            fullorincremental: full
+          jobname: WSRetryJob
+          jobgroup: utility
+      properties:
+        triggers:
+          items:
+            $ref: "#/components/schemas/TriggerItem"
+          type: array
+      required:
+      - triggers
+    TriggerItem:
+      discriminator:
+        mapping:
+          ApplicationDataImportJob: "#/components/schemas/ApplicationDataImportJob"
+          WSRetryJob: "#/components/schemas/WSRetryJob"
+          EcmJob: "#/components/schemas/EcmJob"
+          EcmSapUserJob: "#/components/schemas/EcmSapUserJob"
+          UserImportJob: "#/components/schemas/UserImportJob"
+          AccountsImportFullJob: "#/components/schemas/AccountsImportFullJob"
+        propertyName: jobname
+      oneOf:
+      - $ref: "#/components/schemas/ApplicationDataImportJob"
+      - $ref: "#/components/schemas/WSRetryJob"
+      - $ref: "#/components/schemas/EcmJob"
+      - $ref: "#/components/schemas/EcmSapUserJob"
+      - $ref: "#/components/schemas/UserImportJob"
+      - $ref: "#/components/schemas/AccountsImportFullJob"
+    CreateOrUpdateTriggersResponse:
+      description: Response for the create or update trigger operation
+      example:
+        msg: Success
+        errorCode: "0"
+      properties:
+        msg:
+          description: Message indicating the result of the operation
+          example: Success
+          type: string
+        errorCode:
+          description: Error code if the operation failed
+          example: "0"
+          type: string
+      required:
+      - errorCode
+      - msg
+    CheckJobStatusRequest:
+      description: Request body for checking the status of a job
+      example:
+        triggername: job_test_ui_1
+        jobname: EcmJob
+        jobgroup: ecmGroup
+      properties:
+        triggername:
+          description: Name of the trigger to check status for
+          example: job_test_ui_1
+          type: string
+        jobname:
+          description: Name of the job to check status for
+          example: EcmJob
+          type: string
+        jobgroup:
+          description: Group of the job to check status for
+          example: ecmGroup
+          type: string
+      required:
+      - jobgroup
+      - jobname
+    CheckJobStatusResponse:
+      description: Response for the check job status operation
+      example:
+        msg: Job status fetched successfully
+        errorCode: "0"
+      properties:
+        msg:
+          description: Message indicating the result of the operation
+          example: Job status fetched successfully
+          type: string
+        errorCode:
+          description: Error code if the operation failed
+          example: "0"
+          type: string
+      required:
+      - errorCode
+      - msg
+    DeleteTriggerRequest:
+      description: Request body for deleting a trigger
+      example:
+        triggername: MyTrigger
+        jobname: MyJobGroup
+        jobgroup: MyJobGroup
+      properties:
+        jobname:
+          description: Group of the job associated with the trigger
+          example: MyJobGroup
+          type: string
+        triggername:
+          description: Name of the trigger to delete
+          example: MyTrigger
+          type: string
+        jobgroup:
+          description: Group of the job associated with the trigger
+          example: MyJobGroup
+          type: string
+      required:
+      - jobgroup
+      - jobname
+      - triggername
+    DeleteTriggerResponse:
+      description: Response for the delete trigger operation
+      example:
+        msg: Trigger deleted successfully
+        errorCode: 0
+      properties:
+        msg:
+          description: Message indicating the result of the operation
+          example: Trigger deleted successfully
+          type: string
+        errorCode:
+          description: Error code if the operation failed
+          example: 0
+          type: integer
+      required:
+      - errorCode
+      - msg
+    ConnectionValueMap:
+      description: Key/value map of additional trigger parameters
+      properties:
+        connectionname:
+          description: One or more connection names
+          example:
+          - DBTest000
+          - Dbdb2
+          items:
+            type: string
+          type: array
+      required:
+      - connectionname
+    RunJobTriggerRequest:
+      description: Request body for running a job trigger
+      example:
+        triggername: DataImportTrigger
+        jobname: DataImportJob
+        jobgroup: DataImportGroup
+      properties:
+        jobname:
+          description: Name of the job to run
+          example: DataImportJob
+          type: string
+        triggername:
+          description: Name of the trigger to run
+          example: DataImportTrigger
+          type: string
+        jobgroup:
+          description: Group of the job to run
+          example: DataImportGroup
+          type: string
+      required:
+      - jobgroup
+      - jobname
+      - triggername
+    RunJobTriggerResponse:
+      description: Response for the run job trigger operation
+      example:
+        msg: Job trigger executed successfully
+        errorCode: "0"
+        timestamp: 2020-01-17 07:57:34
+      properties:
+        msg:
+          description: Message indicating the result of the operation
+          example: Job trigger executed successfully
+          type: string
+        errorCode:
+          description: Error code if the operation failed
+          example: "0"
+          type: string
+        timestamp:
+          description: Timestamp of when the job was triggered
+          example: 2020-01-17 07:57:34
+          type: string
+      required:
+      - errorCode
+      - msg
+    FetchJobMetadataRequest:
+      description: Request body for fetching job metadata
+      example:
+        jobstartdate: 2020-01-17 07:57:34
+        triggername: DataImportTrigger
+        jobname: DataImportJob
+        jobgroup: DataImportGroup
+      properties:
+        jobname:
+          description: Name of the job to fetch metadata for
+          example: DataImportJob
+          type: string
+        triggername:
+          description: Name of the trigger to fetch metadata for
+          example: DataImportTrigger
+          type: string
+        jobgroup:
+          description: Group of the job to fetch metadata for
+          example: DataImportGroup
+          type: string
+        jobstartdate:
+          description: Start date for the job run
+          example: 2020-01-17 07:57:34
+          type: string
+      required:
+      - jobname
+    FetchJobMetadataResponse:
+      description: Response for the fetch job metadata operation
+      example:
+        msg: Job metadata fetched successfully
+        result:
+          key: ""
+        errorCode: 0
+      properties:
+        msg:
+          description: Message indicating the result of the operation
+          example: Job metadata fetched successfully
+          type: string
+        errorCode:
+          description: Error code if the operation failed
+          example: 0
+          type: integer
+        result:
+          additionalProperties: true
+          description: Metadata of the job run
+          type: object
+      required:
+      - errorCode
+      - msg
+    PauseResumeJobsRequest:
+      description: Request body for pausing or resuming jobs
+      example:
+        triggername: GDPR
+        action: PAUSE
+        jobname: "ArchiveJob,TriggerChainJob"
+      properties:
+        action:
+          description: Action to perform on the job (Pause or Resume)
+          example: PAUSE
+          type: string
+        triggername:
+          description: Name of the trigger to pause or resume
+          example: GDPR
+          type: string
+        jobname:
+          description: Name of the job to pause or resume
+          example: "ArchiveJob,TriggerChainJob"
+          type: string
+      required:
+      - action
+    PauseResumeJobsResponse:
+      description: Response for the resume or pause jobs operation
+      example:
+        message: All triggers are paused successfully
+      properties:
+        message:
+          description: Message indicating the result of the operation
+          example: All triggers are paused successfully
+          type: string
+      required:
+      - message
+    PauseResumeJobRequest:
+      description: Request body for pausing or resuming a job
+      example:
+        triggername: Job_Name
+      properties:
+        triggername:
+          description: Name of the trigger to pause or resume
+          example: Job_Name
+          type: string
+      required:
+      - triggername
+    BaseJobTrigger:
+      discriminator:
+        mapping:
+          SchemaUserJob: "#/components/schemas/SchemaUserJob"
+          AccountsImportIncrementalJob: "#/components/schemas/AccountsImportIncrementalJob"
+        propertyName: jobName
+      properties:
+        name:
+          description: Unique name of the trigger
+          example: TestSB71
+          type: string
+        jobName:
+          description: Name of the job associated with the trigger
+          example: SchemaUserJob
+          type: string
+        jobGroup:
+          description: Name of the job group associated with the trigger
+          example: Schema
+          type: string
+        group:
+          description: Group classification
+          example: GRAILS_JOBS
+          type: string
+        cronExp:
+          description: Cron expression defining the schedule for the trigger
+          example: 0 33 14 * * ? 2060
+          type: string
+      required:
+      - cronExp
+      - group
+      - jobGroup
+      - jobName
+      - name
+    SchemaUserJob:
+      allOf:
+      - $ref: "#/components/schemas/BaseJobTrigger"
+      - properties:
+          valueMap:
+            $ref: "#/components/schemas/SchemaUserJob_allOf_valueMap"
+      example:
+        jobName: SchemaUserJob
+        name: TestSB71
+        valueMap:
+          schemaFileNames: Users.sav
+        jobGroup: Schema
+        group: GRAILS_JOBS
+        cronExp: 0 33 14 * * ? 2060
+    SchemaAccountJob:
+      allOf:
+      - $ref: "#/components/schemas/BaseJobTrigger"
+      - properties:
+          valueMap:
+            $ref: "#/components/schemas/SchemaAccountJob_allOf_valueMap"
+    SchemaRoleJob:
+      allOf:
+      - $ref: "#/components/schemas/BaseJobTrigger"
+      - properties:
+          valueMap:
+            $ref: "#/components/schemas/SchemaRoleJob_allOf_valueMap"
+    CreateTriggersRequest:
+      items:
+        $ref: "#/components/schemas/JobTriggerRequest"
+      type: array
+    JobTriggerRequest:
+      example:
+        triggers:
+        - jobName: SchemaUserJob
+          name: TestSB71
+          valueMap:
+            schemaFileNames: Users.sav
+          jobGroup: Schema
+          group: GRAILS_JOBS
+          cronExp: 0 33 14 * * ? 2060
+        - jobName: SchemaUserJob
+          name: TestSB71
+          valueMap:
+            schemaFileNames: Users.sav
+          jobGroup: Schema
+          group: GRAILS_JOBS
+          cronExp: 0 33 14 * * ? 2060
+      properties:
+        triggers:
+          items:
+            $ref: "#/components/schemas/JobTriggerItem"
+          type: array
+      required:
+      - triggers
+    JobTriggerItem:
+      discriminator:
+        mapping:
+          SchemaUserJob: "#/components/schemas/SchemaUserJob"
+          SchemaAccountJob: "#/components/schemas/SchemaAccountJob"
+          SchemaRoleJob: "#/components/schemas/SchemaRoleJob"
+          AccountsImportIncrementalJob: "#/components/schemas/AccountsImportIncrementalJob"
+        propertyName: jobName
+      oneOf:
+      - $ref: "#/components/schemas/SchemaUserJob"
+      - $ref: "#/components/schemas/SchemaAccountJob"
+      - $ref: "#/components/schemas/SchemaRoleJob"
+      - $ref: "#/components/schemas/AccountsImportIncrementalJob"
+    CreateTriggersResponse:
+      oneOf:
+      - $ref: "#/components/schemas/CreateTriggersResponse_oneOf"
+      - additionalProperties:
+          example:
+          - success
+          items:
+            description: Success or field-specific error messages
+            type: string
+        example:
+          test_schema_user_12:
+          - success
+    AccountsImportFullJob:
+      allOf:
+      - $ref: "#/components/schemas/BaseTrigger"
+      - properties:
+          valueMap:
+            $ref: "#/components/schemas/AccountsImportFullJob_allOf_valueMap"
+    AccountsImportIncrementalJob:
+      allOf:
+      - $ref: "#/components/schemas/BaseJobTrigger"
+      - properties:
+          valueMap:
+            $ref: "#/components/schemas/AccountsImportIncrementalJob_allOf_valueMap"
+    ApplicationDataImportJob_allOf_valueMap:
+      example:
+        securitysystems:
+        - addescription-test
+        accountsoraccess: access
+        externalconn: "331"
+        fullorincremental: full
+      properties:
+        securitysystems:
+          example:
+          - addescription-test
+          items:
+            type: string
+          type: array
+        accountsoraccess:
+          example: access
+          type: string
+        externalconn:
+          example: "331"
+          type: string
+        fullorincremental:
+          example: full
+          type: string
+      required:
+      - accountsoraccess
+      - externalconn
+      - fullorincremental
+      - securitysystems
+    EcmJob_allOf_valueMap:
+      properties:
+        onFailure:
+          example: continue
+          type: string
+    UserImportJob_allOf_valueMap:
+      properties:
+        externalconn:
+          example: "331"
+          type: string
+        fullorincremental:
+          example: full
+          type: string
+        userNotInFeedAction:
+          example: suspend
+          type: string
+        userOperationsAllowed:
+          example: "CREATE,UPDATE"
+          type: string
+        zeroDayProvisioning:
+          example: "true"
+          type: string
+        generateSystemUsername:
+          example: "true"
+          type: string
+        generateEmail:
+          example: "true"
+          type: string
+        checkRules:
+          example: "true"
+          type: string
+        buildUserMap:
+          example: "true"
+          type: string
+        userThreshold:
+          example: "1000"
+          type: string
+        onFailure:
+          example: continue
+          type: string
+        zeroDayLimit:
+          example: "100"
+          type: string
+        termUserLimit:
+          example: "50"
+          type: string
+        importsavconnect:
+          example: "true"
+          type: string
+        exporttosavcloud:
+          example: "false"
+          type: string
+        userReconcillationField:
+          example: username
+          type: string
+        userDefaultSavRole:
+          example: DefaultRole
+          type: string
+        userStatusConfig:
+          example: active
+          type: string
+        endpointsToAssociateOrphanAccounts:
+          example: "endpoint1,endpoint2"
+          type: string
+      required:
+      - externalconn
+    SchemaUserJob_allOf_valueMap:
+      example:
+        schemaFileNames: Users.sav
+      properties:
+        schemaFileNames:
+          example: Users.sav
+          type: string
+    SchemaAccountJob_allOf_valueMap:
+      properties:
+        schemaFileNames:
+          example: ConnScrumACCOUNTS.sav
+          type: string
+    SchemaRoleJob_allOf_valueMap:
+      properties:
+        schemaFileNames:
+          example: ROLES.sav
+          type: string
+    CreateTriggersResponse_oneOf:
+      example:
+        Error: "JSONObject[\"name\"] not found."
+      properties:
+        Error:
+          description: Global error message when required top-level fields are missing
+          example: "JSONObject[\"name\"] not found."
+          type: string
+      required:
+      - Error
+    AccountsImportFullJob_allOf_valueMap:
+      properties:
+        connectionname:
+          example: 12345dss
+          type: string
+      required:
+      - connectionname
+    AccountsImportIncrementalJob_allOf_valueMap:
+      properties:
+        CONNECTION:
+          example: AAD_1109
+          type: string
