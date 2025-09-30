@@ -60,12 +60,10 @@ func BaseConnectorResourceSchema() map[string]schema.Attribute {
 			Description: "Flag indicating whether the encrypted attribute should be saved in the configured vault. Example: \"false\"",
 		},
 		"msg": schema.StringAttribute{
-			Optional:    true,
 			Computed:    true,
 			Description: "A message indicating the outcome of the operation.",
 		},
 		"error_code": schema.StringAttribute{
-			Optional:    true,
 			Computed:    true,
 			Description: "An error code where '0' signifies success and '1' signifies an unsuccessful operation.",
 		},

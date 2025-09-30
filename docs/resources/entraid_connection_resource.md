@@ -456,13 +456,11 @@ resource "saviynt_entraid_connection_resource" "example" {
 - `enhanced_directory_roles` (String) Configuration for enhanced directory roles.
 - `entitlement_attribute` (String) Attribute used for entitlement.
 - `entitlement_filter_json` (String) Filter JSON for entitlements.
-- `error_code` (String) An error code where '0' signifies success and '1' signifies an unsuccessful operation.
 - `import_depth` (String) Depth level for import.
 - `import_user_json` (String) JSON configuration for importing users.
 - `managed_account_type` (String) Type of managed accounts.
 - `microsoft_graph_endpoint` (String) Microsoft Graph API endpoint.
 - `modify_user_data_json` (String) JSON to modify user data.
-- `msg` (String) A message indicating the outcome of the operation.
 - `pam_config` (String) PAM configuration.
 - `remove_access_from_entitlement_json` (String) JSON to remove access from entitlement.
 - `remove_access_json` (String) JSON template to remove access.
@@ -482,4 +480,6 @@ resource "saviynt_entraid_connection_resource" "example" {
 ### Read-Only
 
 - `connection_key` (Number) Unique identifier of the connection returned by the API. Example: 1909
+- `error_code` (String) An error code where '0' signifies success and '1' signifies an unsuccessful operation.
 - `id` (String) Resource ID.
+- `msg` (String) A message indicating the outcome of the operation.

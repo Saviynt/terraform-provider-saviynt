@@ -448,12 +448,10 @@ resource "saviynt_adsi_connection_resource" "example" {
 - `enableaccountjson` (String) Specify the actions and attribute updates to be performed for enabling an account.
 - `endpoints_filter` (String) Provide the configuration to create Child Endpoints and import associated accounts and entitlements
 - `entitlement_attribute` (String) Account attribute that contains group membership
-- `error_code` (String) An error code where '0' signifies success and '1' signifies an unsuccessful operation.
 - `group_import_mapping` (String) Map AD group attribute to EIC entitlement attribute for import
 - `group_search_base_dn` (String) Group Search Filter to specify the starting point of the directory from where the groups needs to be imported. You can have multiple BaseDNs here separated by ###.
 - `import_nested_membership` (String) Specify if you want the connector to import all indirect or nested membership of an account or a group during access import
 - `modifyuserdatajson` (String) Specify this parameter to transform the data during user import.
-- `msg` (String) A message indicating the outcome of the operation.
 - `objectfilter` (String) Object Filter is used to filter the objects that will be returned.This filter will be same for all domains.
 - `page_size` (String) Page size defines the number of objects to be returned from each AD operation.
 - `pam_config` (String) JSON to specify Bootstrap Config.
@@ -479,4 +477,6 @@ resource "saviynt_adsi_connection_resource" "example" {
 ### Read-Only
 
 - `connection_key` (Number) Unique identifier of the connection returned by the API. Example: 1909
+- `error_code` (String) An error code where '0' signifies success and '1' signifies an unsuccessful operation.
 - `id` (String) Resource ID.
+- `msg` (String) A message indicating the outcome of the operation.

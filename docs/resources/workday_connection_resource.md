@@ -419,10 +419,8 @@ resource "saviynt_workday_connection_resource" "soap" {
 - `defaultsavroles` (String) Default SAV roles for managing the connection. Example: "ROLE_ORG"
 - `description` (String) Description for the connection. Example: "ORG_AD"
 - `email_template` (String) Email template for notifications. Example: "New Account Task Creation"
-- `error_code` (String) An error code where '0' signifies success and '1' signifies an unsuccessful operation.
 - `include_reference_descriptors` (String) Include descriptor attribute in response if set to TRUE.
 - `modify_user_data_json` (String) Payload for modifying user data.
-- `msg` (String) A message indicating the outcome of the operation.
 - `orgrole_import_payload` (String) Custom SOAP body for organization role import.
 - `page_size` (String) Number of objects to return per page during import.
 - `pam_config` (String) Privileged Access Management configuration.
@@ -452,4 +450,6 @@ resource "saviynt_workday_connection_resource" "soap" {
 ### Read-Only
 
 - `connection_key` (Number) Unique identifier of the connection returned by the API. Example: 1909
+- `error_code` (String) An error code where '0' signifies success and '1' signifies an unsuccessful operation.
 - `id` (String) Resource ID.
+- `msg` (String) A message indicating the outcome of the operation.

@@ -50,14 +50,12 @@ resource "saviynt_security_system_resource" "example" {
 - `automated_provisioning` (String) Specify true to enable automated provisioning.
 - `connection_parameters` (String) Query to filter the access and display of the endpoint to specific users. If you do not define a query, the endpoint is displayed for all users
 - `connectionname` (String) Select the connection name for performing reconciliation of identity objects from third-party application.
-- `error_code` (String) An error code where '0' signifies success and '1' signifies an unsuccessful operation.
 - `external_risk_connection_json` (String) Contains JSON configuration for external risk connections and is applicable only for a few connections like SAP.
 - `firefighterid_request_access_workflow` (String) Firefighter ID Request Access Workflow.
 - `firefighterid_workflow` (String) Firefighter ID Workflow.
 - `hostname` (String) Security system for which you want to create an endpoint.
 - `inherent_sod_report_fields` (Set of String) You can use this option used to filter out columns in SOD.
 - `instant_provision` (String) Use this flag to prevent users from raising duplicate requests for the same applications.
-- `msg` (String) A message indicating the outcome of the operation.
 - `policy_rule` (String) Use this setting to assign the password policy for the security system.
 - `policy_rule_service_account` (String) Use this setting to assign the password policy which will be used to set the service account passwords for the security system.
 - `port` (String) Description for the endpoint.
@@ -72,4 +70,6 @@ resource "saviynt_security_system_resource" "example" {
 
 ### Read-Only
 
+- `error_code` (String) An error code where '0' signifies success and '1' signifies an unsuccessful operation.
 - `id` (String, Sensitive) The unique ID of the resource.
+- `msg` (String) A message indicating the outcome of the operation.

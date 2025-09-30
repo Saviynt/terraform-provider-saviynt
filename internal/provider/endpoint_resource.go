@@ -413,12 +413,10 @@ func (r *EndpointResource) Schema(ctx context.Context, req resource.SchemaReques
 				Computed: true,
 			},
 			"msg": schema.StringAttribute{
-				Optional:    true,
 				Computed:    true,
 				Description: "A message indicating the outcome of the operation.",
 			},
 			"error_code": schema.StringAttribute{
-				Optional:    true,
 				Computed:    true,
 				Description: "An error code where '0' signifies success and '1' signifies an unsuccessful operation.",
 			},
@@ -1451,7 +1449,7 @@ func (r *EndpointResource) CreateEndpoint(ctx context.Context, plan *EndpointRes
 		return nil, fmt.Errorf("Error Creating Endpoint In CreateEndpoint Block: %w", err)
 	}
 
-	if apiResp != nil && *apiResp.ErrorCode != "0" {
+	if apiResp != nil && apiResp.ErrorCode != nil && *apiResp.ErrorCode != "0" {
 		log.Printf("[ERROR]:API error In CreateEndpoint Block: %s", *apiResp.Msg)
 		return nil, fmt.Errorf("API error In CreateEndpoint Block: %s", *apiResp.Msg)
 	}
@@ -1470,7 +1468,7 @@ func (r *EndpointResource) GetEndpoints(ctx context.Context, plan *EndpointResou
 		log.Printf("Problem with the get function in GetEndpoints block. Error: %v", err)
 		return nil, fmt.Errorf("API Read Failed In GetEndpoints Block: %w", err)
 	}
-	if apiResp != nil && *apiResp.ErrorCode != "0" {
+	if apiResp != nil && apiResp.ErrorCode != nil && *apiResp.ErrorCode != "0" {
 		log.Printf("Error Reading Endpoint In GetEndpoints Block: %v, Error code: %v", *apiResp.Message, *apiResp.ErrorCode)
 		return nil, fmt.Errorf("Reading of Endpoint resource failed In GetEndpoints Block: %s,", *apiResp.Message)
 	}

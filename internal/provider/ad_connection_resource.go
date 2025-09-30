@@ -649,7 +649,7 @@ func (r *AdConnectionResource) CreateADConnection(ctx context.Context, plan *ADC
 		return nil, errorsutil.CreateStandardError(errorsutil.ConnectorTypeAD, errorCode, "create", connectionName, err)
 	}
 
-	if apiResp != nil && *apiResp.ErrorCode != "0" {
+	if apiResp != nil && apiResp.ErrorCode != nil && *apiResp.ErrorCode != "0" {
 		apiErr := fmt.Errorf("API returned error code %s: %s", *apiResp.ErrorCode, errorsutil.SanitizeMessage(apiResp.Msg))
 		errorCode := adErrorCodes.APIError()
 		opCtx.LogOperationError(ctx, "AD connection creation failed with API error", errorCode, apiErr,
@@ -690,7 +690,7 @@ func (r *AdConnectionResource) ReadADConnection(ctx context.Context, connectionN
 		return nil, errorsutil.CreateStandardError(errorsutil.ConnectorTypeAD, errorCode, "read", connectionName, err)
 	}
 
-	if apiResp != nil && apiResp.ADConnectionResponse != nil && *apiResp.ADConnectionResponse.Errorcode != 0 {
+	if apiResp != nil && apiResp.ADConnectionResponse != nil && apiResp.ADConnectionResponse.Errorcode != nil && *apiResp.ADConnectionResponse.Errorcode != 0 {
 		apiErr := fmt.Errorf("API returned error code %d: %s", *apiResp.ADConnectionResponse.Errorcode, errorsutil.SanitizeMessage(apiResp.ADConnectionResponse.Msg))
 		errorCode := adErrorCodes.APIError()
 		opCtx.LogOperationError(ctx, "AD connection read failed with API error", errorCode, apiErr,
@@ -750,7 +750,7 @@ func (r *AdConnectionResource) UpdateADConnection(ctx context.Context, plan *ADC
 		return nil, errorsutil.CreateStandardError(errorsutil.ConnectorTypeAD, errorCode, "update", connectionName, err)
 	}
 
-	if apiResp != nil && *apiResp.ErrorCode != "0" {
+	if apiResp != nil && apiResp.ErrorCode != nil && *apiResp.ErrorCode != "0" {
 		apiErr := fmt.Errorf("API returned error code %s: %s", *apiResp.ErrorCode, errorsutil.SanitizeMessage(apiResp.Msg))
 		errorCode := adErrorCodes.APIError()
 		opCtx.LogOperationError(logCtx, "AD connection update failed with API error", errorCode, apiErr,

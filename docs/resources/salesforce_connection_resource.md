@@ -117,12 +117,10 @@ resource "saviynt_salesforce_connection_resource" "ss" {
 - `defaultsavroles` (String) Default SAV roles for managing the connection. Example: "ROLE_ORG"
 - `description` (String) Description for the connection. Example: "ORG_AD"
 - `email_template` (String) Email template for notifications. Example: "New Account Task Creation"
-- `error_code` (String) An error code where '0' signifies success and '1' signifies an unsuccessful operation.
 - `feature_license_json` (String) JSON mapping of feature licenses to permission fields in Salesforce.
 - `field_mapping_json` (String) JSON mapping of local fields to Salesforce fields with data types.
 - `instance_url` (String) Salesforce instance base URL. Example: https://@INSTANCE_NAME@.salesforce.com
 - `modifyaccountjson` (String) JSON template used for modifying Salesforce accounts.
-- `msg` (String) A message indicating the outcome of the operation.
 - `object_to_be_imported` (String) Comma-separated list of Salesforce objects to import. Example: "Profile,Role,Group,PermissionSet"
 - `pam_config` (String) Privileged Access Management (PAM) configuration in JSON format.
 - `redirect_uri` (String) The redirect URI used in OAuth flows. Example: https://@INSTANCE_NAME@.salesforce.com/services/oauth2/success
@@ -135,4 +133,6 @@ resource "saviynt_salesforce_connection_resource" "ss" {
 ### Read-Only
 
 - `connection_key` (Number) Unique identifier of the connection returned by the API. Example: 1909
+- `error_code` (String) An error code where '0' signifies success and '1' signifies an unsuccessful operation.
 - `id` (String) Resource ID.
+- `msg` (String) A message indicating the outcome of the operation.

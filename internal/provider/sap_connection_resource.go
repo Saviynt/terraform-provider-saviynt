@@ -528,7 +528,7 @@ func (r *SapConnectionResource) CreateSAPConnection(ctx context.Context, plan *S
 		return nil, errorsutil.CreateStandardError(errorsutil.ConnectorTypeSAP, errorCode, "create", connectionName, err)
 	}
 
-	if apiResp != nil && *apiResp.ErrorCode != "0" {
+	if apiResp != nil && apiResp.ErrorCode != nil && *apiResp.ErrorCode != "0" {
 		apiErr := fmt.Errorf("API returned error code %s: %s", *apiResp.ErrorCode, errorsutil.SanitizeMessage(apiResp.Msg))
 		errorCode := sapErrorCodes.APIError()
 		opCtx.LogOperationError(ctx, "SAP connection creation failed with API error", errorCode, apiErr,
@@ -720,7 +720,7 @@ func (r *SapConnectionResource) ReadSAPConnection(ctx context.Context, connectio
 		return nil, errorsutil.CreateStandardError(errorsutil.ConnectorTypeSAP, errorCode, "read", connectionName, err)
 	}
 
-	if apiResp != nil && apiResp.SAPConnectionResponse != nil && *apiResp.SAPConnectionResponse.Errorcode != 0 {
+	if apiResp != nil && apiResp.SAPConnectionResponse != nil && apiResp.SAPConnectionResponse.Errorcode != nil && *apiResp.SAPConnectionResponse.Errorcode != 0 {
 		apiErr := fmt.Errorf("API returned error code %d: %s", *apiResp.SAPConnectionResponse.Errorcode, errorsutil.SanitizeMessage(apiResp.SAPConnectionResponse.Msg))
 		errorCode := sapErrorCodes.APIError()
 		opCtx.LogOperationError(ctx, "SAP connection read failed with API error", errorCode, apiErr,
@@ -858,7 +858,7 @@ func (r *SapConnectionResource) UpdateSAPConnection(ctx context.Context, plan *S
 		return nil, errorsutil.CreateStandardError(errorsutil.ConnectorTypeSAP, errorCode, "update", connectionName, err)
 	}
 
-	if apiResp != nil && *apiResp.ErrorCode != "0" {
+	if apiResp != nil && apiResp.ErrorCode != nil && *apiResp.ErrorCode != "0" {
 		apiErr := fmt.Errorf("API returned error code %s: %s", *apiResp.ErrorCode, errorsutil.SanitizeMessage(apiResp.Msg))
 		errorCode := sapErrorCodes.APIError()
 		opCtx.LogOperationError(logCtx, "SAP connection update failed with API error", errorCode, apiErr,

@@ -499,9 +499,7 @@ resource "saviynt_github_rest_connection_resource" "example" {
 - `defaultsavroles` (String) Default SAV roles for managing the connection. Example: "ROLE_ORG"
 - `description` (String) Description for the connection. Example: "ORG_AD"
 - `email_template` (String) Email template for notifications. Example: "New Account Task Creation"
-- `error_code` (String) An error code where '0' signifies success and '1' signifies an unsuccessful operation.
 - `import_account_ent_json` (String) Property for ImportAccountEntJSON
-- `msg` (String) A message indicating the outcome of the operation.
 - `organization_list` (String) Property for ORGANIZATION_LIST
 - `save_in_vault` (String) Flag indicating whether the encrypted attribute should be saved in the configured vault. Example: "false"
 - `status_threshold_config` (String) Property for STATUS_THRESHOLD_CONFIG
@@ -511,4 +509,6 @@ resource "saviynt_github_rest_connection_resource" "example" {
 ### Read-Only
 
 - `connection_key` (Number) Unique identifier of the connection returned by the API. Example: 1909
+- `error_code` (String) An error code where '0' signifies success and '1' signifies an unsuccessful operation.
 - `id` (String) Resource ID.
+- `msg` (String) A message indicating the outcome of the operation.

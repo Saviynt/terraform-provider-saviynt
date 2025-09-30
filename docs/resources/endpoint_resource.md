@@ -198,9 +198,7 @@ resource "saviynt_endpoint_resource" "endpoint" {
 - `email_templates` (List of Object) (see [below for nested schema](#nestedatt--email_templates))
 - `enable_copy_access` (String) Specify true to display the Copy Access from User option in the Request pages.
 - `endpoint_config` (String) Option to copy data in Step 3 of the service account request will be enabled.
-- `error_code` (String) An error code where '0' signifies success and '1' signifies an unsuccessful operation.
 - `mapped_endpoints` (List of Object) (see [below for nested schema](#nestedatt--mapped_endpoints))
-- `msg` (String) A message indicating the outcome of the operation.
 - `out_of_band_action` (String) Use this parameter to determine if you need to remove the accesses which were granted outside Saviynt.
 - `owner` (String) Specify the owner of the endpoint. If the ownerType is User, then specify the username of the owner, and If it is is Usergroup then specify the name of the user group.
 - `owner_type` (String) Specify the owner type for the endpoint. An endpoint can be owned by a User or Usergroup.
@@ -218,7 +216,9 @@ resource "saviynt_endpoint_resource" "endpoint" {
 
 ### Read-Only
 
+- `error_code` (String) An error code where '0' signifies success and '1' signifies an unsuccessful operation.
 - `id` (String) The unique ID of the resource.
+- `msg` (String) A message indicating the outcome of the operation.
 
 <a id="nestedatt--email_templates"></a>
 ### Nested Schema for `email_templates`

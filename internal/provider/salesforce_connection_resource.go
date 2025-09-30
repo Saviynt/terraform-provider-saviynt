@@ -263,7 +263,7 @@ func (r *SalesforceConnectionResource) CreateSalesforceConnection(ctx context.Co
 		return nil, errorsutil.CreateStandardError(errorsutil.ConnectorTypeSalesforce, errorCode, "create", connectionName, err)
 	}
 
-	if apiResp != nil && *apiResp.ErrorCode != "0" {
+	if apiResp != nil && apiResp.ErrorCode != nil && *apiResp.ErrorCode != "0" {
 		apiErr := fmt.Errorf("API returned error code %s: %s", *apiResp.ErrorCode, errorsutil.SanitizeMessage(apiResp.Msg))
 		errorCode := salesforceErrorCodes.APIError()
 		opCtx.LogOperationError(ctx, "Salesforce connection creation failed with API error", errorCode, apiErr,
@@ -367,7 +367,7 @@ func (r *SalesforceConnectionResource) ReadSalesforceConnection(ctx context.Cont
 		return nil, errorsutil.CreateStandardError(errorsutil.ConnectorTypeSalesforce, errorCode, "read", connectionName, err)
 	}
 
-	if apiResp != nil && apiResp.SalesforceConnectionResponse != nil && *apiResp.SalesforceConnectionResponse.Errorcode != 0 {
+	if apiResp != nil && apiResp.SalesforceConnectionResponse != nil && apiResp.SalesforceConnectionResponse.Errorcode != nil && *apiResp.SalesforceConnectionResponse.Errorcode != 0 {
 		apiErr := fmt.Errorf("API returned error code %d: %s", *apiResp.SalesforceConnectionResponse.Errorcode, errorsutil.SanitizeMessage(apiResp.SalesforceConnectionResponse.Msg))
 		errorCode := salesforceErrorCodes.APIError()
 		opCtx.LogOperationError(ctx, "Salesforce connection read failed with API error", errorCode, apiErr,
@@ -461,7 +461,7 @@ func (r *SalesforceConnectionResource) UpdateSalesforceConnection(ctx context.Co
 		return nil, errorsutil.CreateStandardError(errorsutil.ConnectorTypeSalesforce, errorCode, "update", connectionName, err)
 	}
 
-	if apiResp != nil && *apiResp.ErrorCode != "0" {
+	if apiResp != nil && apiResp.ErrorCode != nil && *apiResp.ErrorCode != "0" {
 		apiErr := fmt.Errorf("API returned error code %s: %s", *apiResp.ErrorCode, errorsutil.SanitizeMessage(apiResp.Msg))
 		errorCode := salesforceErrorCodes.APIError()
 		opCtx.LogOperationError(logCtx, "Salesforce connection update failed with API error", errorCode, apiErr,

@@ -332,7 +332,7 @@ func (r *RestConnectionResource) CreateRESTConnection(ctx context.Context, plan 
 		return nil, errorsutil.CreateStandardError(errorsutil.ConnectorTypeREST, errorCode, "create", connectionName, err)
 	}
 
-	if apiResp != nil && *apiResp.ErrorCode != "0" {
+	if apiResp != nil && apiResp.ErrorCode != nil && *apiResp.ErrorCode != "0" {
 		apiErr := fmt.Errorf("API returned error code %s: %s", *apiResp.ErrorCode, errorsutil.SanitizeMessage(apiResp.Msg))
 		errorCode := restErrorCodes.APIError()
 		opCtx.LogOperationError(ctx, "REST connection creation failed with API error", errorCode, apiErr,
@@ -466,7 +466,7 @@ func (r *RestConnectionResource) ReadRESTConnection(ctx context.Context, connect
 		return nil, errorsutil.CreateStandardError(errorsutil.ConnectorTypeREST, errorCode, "read", connectionName, err)
 	}
 
-	if apiResp != nil && apiResp.RESTConnectionResponse != nil && *apiResp.RESTConnectionResponse.Errorcode != 0 {
+	if apiResp != nil && apiResp.RESTConnectionResponse != nil && apiResp.RESTConnectionResponse.Errorcode != nil && *apiResp.RESTConnectionResponse.Errorcode != 0 {
 		apiErr := fmt.Errorf("API returned error code %d: %s", *apiResp.RESTConnectionResponse.Errorcode, errorsutil.SanitizeMessage(apiResp.RESTConnectionResponse.Msg))
 		errorCode := restErrorCodes.APIError()
 		opCtx.LogOperationError(ctx, "REST connection read failed with API error", errorCode, apiErr,
@@ -573,7 +573,7 @@ func (r *RestConnectionResource) UpdateRESTConnection(ctx context.Context, plan 
 		return nil, errorsutil.CreateStandardError(errorsutil.ConnectorTypeREST, errorCode, "update", connectionName, err)
 	}
 
-	if apiResp != nil && *apiResp.ErrorCode != "0" {
+	if apiResp != nil && apiResp.ErrorCode != nil && *apiResp.ErrorCode != "0" {
 		apiErr := fmt.Errorf("API returned error code %s: %s", *apiResp.ErrorCode, errorsutil.SanitizeMessage(apiResp.Msg))
 		errorCode := restErrorCodes.APIError()
 		opCtx.LogOperationError(logCtx, "REST connection update failed with API error", errorCode, apiErr,

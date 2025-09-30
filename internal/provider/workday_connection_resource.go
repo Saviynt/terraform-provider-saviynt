@@ -399,7 +399,7 @@ func (r *WorkdayConnectionResource) CreateWorkdayConnection(ctx context.Context,
 		return nil, errorsutil.CreateStandardError(errorsutil.ConnectorTypeWorkday, errorCode, "create", connectionName, err)
 	}
 
-	if apiResp != nil && *apiResp.ErrorCode != "0" {
+	if apiResp != nil && apiResp.ErrorCode != nil && *apiResp.ErrorCode != "0" {
 		apiErr := fmt.Errorf("API returned error code %s: %s", *apiResp.ErrorCode, errorsutil.SanitizeMessage(apiResp.Msg))
 		errorCode := workdayErrorCodes.APIError()
 		opCtx.LogOperationError(ctx, "Workday connection creation failed with API error", errorCode, apiErr,
@@ -551,7 +551,7 @@ func (r *WorkdayConnectionResource) ReadWorkdayConnection(ctx context.Context, c
 		return nil, errorsutil.CreateStandardError(errorsutil.ConnectorTypeWorkday, errorCode, "read", connectionName, err)
 	}
 
-	if apiResp != nil && apiResp.WorkdayConnectionResponse != nil && *apiResp.WorkdayConnectionResponse.Errorcode != 0 {
+	if apiResp != nil && apiResp.WorkdayConnectionResponse != nil && apiResp.WorkdayConnectionResponse.Errorcode != nil && *apiResp.WorkdayConnectionResponse.Errorcode != 0 {
 		apiErr := fmt.Errorf("API returned error code %d: %s", *apiResp.WorkdayConnectionResponse.Errorcode, errorsutil.SanitizeMessage(apiResp.WorkdayConnectionResponse.Msg))
 		errorCode := workdayErrorCodes.APIError()
 		opCtx.LogOperationError(ctx, "Workday connection read failed with API error", errorCode, apiErr,
@@ -663,7 +663,7 @@ func (r *WorkdayConnectionResource) UpdateWorkdayConnection(ctx context.Context,
 		return nil, errorsutil.CreateStandardError(errorsutil.ConnectorTypeWorkday, errorCode, "update", connectionName, err)
 	}
 
-	if apiResp != nil && *apiResp.ErrorCode != "0" {
+	if apiResp != nil && apiResp.ErrorCode != nil && *apiResp.ErrorCode != "0" {
 		apiErr := fmt.Errorf("API returned error code %s: %s", *apiResp.ErrorCode, errorsutil.SanitizeMessage(apiResp.Msg))
 		errorCode := workdayErrorCodes.APIError()
 		opCtx.LogOperationError(logCtx, "Workday connection update failed with API error", errorCode, apiErr,

@@ -61,11 +61,9 @@ resource "saviynt_rest_connection_resource" "example" {
 - `email_template` (String) Email template for notifications. Example: "New Account Task Creation"
 - `enable_account_json` (String) JSON configuration to enable an account.
 - `endpoints_filter` (String) Filter criteria for endpoints.
-- `error_code` (String) An error code where '0' signifies success and '1' signifies an unsuccessful operation.
 - `import_account_ent_json` (String) JSON for importing accounts and entitlements.
 - `import_user_json` (String) JSON for importing users.
 - `modify_user_data_json` (String) JSON for modifying user data.
-- `msg` (String) A message indicating the outcome of the operation.
 - `pam_config` (String) PAM configuration JSON.
 - `passwd_policy_json` (String) JSON defining the password policy.
 - `remove_access_json` (String) JSON to remove access.
@@ -85,4 +83,6 @@ resource "saviynt_rest_connection_resource" "example" {
 ### Read-Only
 
 - `connection_key` (Number) Unique identifier of the connection returned by the API. Example: 1909
+- `error_code` (String) An error code where '0' signifies success and '1' signifies an unsuccessful operation.
 - `id` (String) Resource ID.
+- `msg` (String) A message indicating the outcome of the operation.

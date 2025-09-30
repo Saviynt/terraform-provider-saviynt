@@ -426,7 +426,7 @@ func (r *DBConnectionResource) CreateDBConnection(ctx context.Context, plan *DBC
 		return nil, errorsutil.CreateStandardError(errorsutil.ConnectorTypeDB, errorCode, "create", connectionName, err)
 	}
 
-	if apiResp != nil && *apiResp.ErrorCode != "0" {
+	if apiResp != nil && apiResp.ErrorCode != nil && *apiResp.ErrorCode != "0" {
 		apiErr := fmt.Errorf("API returned error code %s: %s", *apiResp.ErrorCode, errorsutil.SanitizeMessage(apiResp.Msg))
 		errorCode := dbErrorCodes.APIError()
 		opCtx.LogOperationError(ctx, "DB connection creation failed with API error", errorCode, apiErr,
@@ -632,7 +632,7 @@ func (r *DBConnectionResource) ReadDBConnection(ctx context.Context, connectionN
 		return nil, errorsutil.CreateStandardError(errorsutil.ConnectorTypeDB, errorCode, "read", connectionName, err)
 	}
 
-	if apiResp != nil && apiResp.DBConnectionResponse != nil && *apiResp.DBConnectionResponse.Errorcode != 0 {
+	if apiResp != nil && apiResp.DBConnectionResponse != nil && apiResp.DBConnectionResponse.Errorcode != nil && *apiResp.DBConnectionResponse.Errorcode != 0 {
 		apiErr := fmt.Errorf("API returned error code %d: %s", *apiResp.DBConnectionResponse.Errorcode, errorsutil.SanitizeMessage(apiResp.DBConnectionResponse.Msg))
 		errorCode := dbErrorCodes.APIError()
 		opCtx.LogOperationError(ctx, "DB connection read failed with API error", errorCode, apiErr,
@@ -875,7 +875,7 @@ func (r *DBConnectionResource) UpdateDBConnection(ctx context.Context, plan *DBC
 		return nil, errorsutil.CreateStandardError(errorsutil.ConnectorTypeDB, errorCode, "update", connectionName, err)
 	}
 
-	if apiResp != nil && *apiResp.ErrorCode != "0" {
+	if apiResp != nil && apiResp.ErrorCode != nil && *apiResp.ErrorCode != "0" {
 		apiErr := fmt.Errorf("API returned error code %s: %s", *apiResp.ErrorCode, errorsutil.SanitizeMessage(apiResp.Msg))
 		errorCode := dbErrorCodes.APIError()
 		opCtx.LogOperationError(logCtx, "DB connection update failed with API error", errorCode, apiErr,
