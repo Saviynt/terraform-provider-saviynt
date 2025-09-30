@@ -1,6 +1,13 @@
 // Copyright (c) 2025 Saviynt Inc.
 // SPDX-License-Identifier: MPL-2.0
 
+// saviynt_adsi_connection_resource manages ADSI connectors in the Saviynt Security Manager.
+// The resource implements the full Terraform lifecycle:
+//   - Create: provisions a new ADSI connector using the supplied configuration.
+//   - Read: fetches the current connector state from Saviynt to keep Terraform’s state in sync.
+//   - Update: applies any configuration changes to an existing connector.
+//   - Import: brings an existing connector under Terraform management by its name.
+
 package provider
 
 import (
@@ -405,7 +412,7 @@ func (r *AdsiConnectionResource) CreateADSIConnection(ctx context.Context, plan 
 		return nil, errorsutil.CreateStandardError(errorsutil.ConnectorTypeADSI, errorCode, "create", connectionName, err)
 	}
 
-	if apiResp != nil && *apiResp.ErrorCode != "0" {
+	if apiResp != nil && apiResp.ErrorCode != nil && *apiResp.ErrorCode != "0" {
 		apiErr := fmt.Errorf("API returned error code %s: %s", *apiResp.ErrorCode, errorsutil.SanitizeMessage(apiResp.Msg))
 		errorCode := adsiErrorCodes.APIError()
 		opCtx.LogOperationError(ctx, "ADSI connection creation failed with API error", errorCode, apiErr,
@@ -560,7 +567,7 @@ func (r *AdsiConnectionResource) ReadADSIConnection(ctx context.Context, connect
 		return nil, errorsutil.CreateStandardError(errorsutil.ConnectorTypeADSI, errorCode, "read", connectionName, err)
 	}
 
-	if apiResp != nil && apiResp.ADSIConnectionResponse != nil && *apiResp.ADSIConnectionResponse.Errorcode != 0 {
+	if apiResp != nil && apiResp.ADSIConnectionResponse != nil && apiResp.ADSIConnectionResponse.Errorcode != nil && *apiResp.ADSIConnectionResponse.Errorcode != 0 {
 		apiErr := fmt.Errorf("API returned error code %d: %s", *apiResp.ADSIConnectionResponse.Errorcode, errorsutil.SanitizeMessage(apiResp.ADSIConnectionResponse.Msg))
 		errorCode := adsiErrorCodes.APIError()
 		opCtx.LogOperationError(ctx, "ADSI connection read failed with API error", errorCode, apiErr,
@@ -679,7 +686,7 @@ func (r *AdsiConnectionResource) UpdateADSIConnection(ctx context.Context, plan 
 		return nil, errorsutil.CreateStandardError(errorsutil.ConnectorTypeADSI, errorCode, "update", connectionName, err)
 	}
 
-	if apiResp != nil && *apiResp.ErrorCode != "0" {
+	if apiResp != nil && apiResp.ErrorCode != nil && *apiResp.ErrorCode != "0" {
 		apiErr := fmt.Errorf("API returned error code %s: %s", *apiResp.ErrorCode, errorsutil.SanitizeMessage(apiResp.Msg))
 		errorCode := adsiErrorCodes.APIError()
 		opCtx.LogOperationError(logCtx, "ADSI connection update failed with API error", errorCode, apiErr,

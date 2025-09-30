@@ -264,11 +264,9 @@ EOF
 - `enable_account_json` (String) JSON to specify the queries/stored procedures used to enable an account
 - `entitlement_exist_json` (String) JSON to specify the Query which will be used to check whether an entitlement exists. Objects Exposed - (entitlementMgmtObj, task, user, endpoint and all the objects defined in Dynamic Attributes).
 - `entitlement_value_import` (String) Entitlement Value Import XML file content
-- `error_code` (String) An error code where '0' signifies success and '1' signifies an unsuccessful operation.
 - `grant_access_json` (String) JSON to specify the queries/stored procedures used to provide access
 - `max_pagination_size` (String) Defines the maximum number of records to be processed per page
 - `modify_user_data_json` (String) Property for MODIFYUSERDATAJSON
-- `msg` (String) A message indicating the outcome of the operation.
 - `password_max_length` (String) Specify the maximum length for the random password
 - `password_min_length` (String) Specify the minimum length for the random password
 - `password_no_of_caps_alpha` (String) Specify the number of uppercase alphabets required for the random password
@@ -290,4 +288,6 @@ EOF
 ### Read-Only
 
 - `connection_key` (Number) Unique identifier of the connection returned by the API. Example: 1909
+- `error_code` (String) An error code where '0' signifies success and '1' signifies an unsuccessful operation.
 - `id` (String) Resource ID.
+- `msg` (String) A message indicating the outcome of the operation.

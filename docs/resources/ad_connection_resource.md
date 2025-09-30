@@ -302,7 +302,6 @@ resource "saviynt_ad_connection_resource" "example" {
 - `endpoints_filter` (String) Configuration for child endpoints.
 - `enforce_tree_deletion` (String) Enforce tree deletion flag. Example: "TRUE"
 - `entitlement_attribute` (String) Attribute used for entitlements. Example: "memberOf"
-- `error_code` (String) An error code where '0' signifies success and '1' signifies an unsuccessful operation.
 - `filter` (String) Simple filter string.
 - `group_import_mapping` (String) JSON mapping for LDAP groups. Example: '{"entitlementTypeName":"memberOf", ...}'
 - `group_search_base_dn` (String) Base DN for group search. Example: "CN=Users,DC=Saviynt,DC=ABC,DC=Com"
@@ -311,7 +310,6 @@ resource "saviynt_ad_connection_resource" "example" {
 - `ldap_or_ad` (String) Type of Endpoint - LDAP or AD. Default is 'AD'. Example: "AD"
 - `max_changenumber` (String) Maximum change number. Example: "4"
 - `modify_user_data_json` (String) JSON for inline user data transformation.
-- `msg` (String) A message indicating the outcome of the operation.
 - `objectfilter` (String) LDAP object filter. Example: "(objectClass=inetorgperson)"
 - `org_base` (String) Organization BASE for provisioning.
 - `org_import_json` (String) JSON for organization import configuration.
@@ -348,4 +346,6 @@ resource "saviynt_ad_connection_resource" "example" {
 ### Read-Only
 
 - `connection_key` (Number) Unique identifier of the connection returned by the API. Example: 1909
+- `error_code` (String) An error code where '0' signifies success and '1' signifies an unsuccessful operation.
 - `id` (String) Resource ID.
+- `msg` (String) A message indicating the outcome of the operation.

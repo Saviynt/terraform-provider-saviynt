@@ -217,12 +217,10 @@ func (r *SecuritySystemResource) Schema(ctx context.Context, req resource.Schema
 				Description: "You can use this option used to filter out columns in SOD.",
 			},
 			"msg": schema.StringAttribute{
-				Optional:    true,
 				Computed:    true,
 				Description: "A message indicating the outcome of the operation.",
 			},
 			"error_code": schema.StringAttribute{
-				Optional:    true,
 				Computed:    true,
 				Description: "An error code where '0' signifies success and '1' signifies an unsuccessful operation.",
 			},
@@ -300,7 +298,7 @@ func (r *SecuritySystemResource) CreateSecuritySystem(ctx context.Context, plan 
 		return nil, fmt.Errorf("API call failed: %w", err)
 	}
 
-	if apiResp != nil && *apiResp.ErrorCode != "0" {
+	if apiResp != nil && apiResp.ErrorCode != nil && *apiResp.ErrorCode != "0" {
 		log.Printf("[ERROR]: Error in creating Security system resource. Errorcode: %v, Message: %v", *apiResp.ErrorCode, *apiResp.Msg)
 		return nil, fmt.Errorf("Creating of Security System resource failed In CreateSecuritySystem Block: %s", *apiResp.Msg)
 	}
@@ -485,7 +483,7 @@ func (r *SecuritySystemResource) UpdateSecuritySystem(ctx context.Context, plan 
 		return nil, fmt.Errorf("API call failed: %w", err)
 	}
 
-	if apiResp != nil && *apiResp.ErrorCode != "0" {
+	if apiResp != nil && apiResp.ErrorCode != nil && *apiResp.ErrorCode != "0" {
 		return nil, fmt.Errorf("API error: %s", *apiResp.Msg)
 	}
 
@@ -504,9 +502,9 @@ func (r *SecuritySystemResource) ReadSecuritySystem(ctx context.Context, systemn
 		return nil, fmt.Errorf("API Read Failed In ReadSecuritySystem Block: %w", err)
 	}
 
-	if apiResp != nil && *apiResp.ErrorCode != "0" {
+	if apiResp != nil && apiResp.ErrorCode != nil && *apiResp.ErrorCode != "0" {
 		log.Printf("[ERROR]: Error in reading Security system resource In ReadSecuritySystem Block. Errorcode: %v, Message: %v", *apiResp.ErrorCode, *apiResp.Msg)
-		return nil, fmt.Errorf("Reading of Security System resource failed In ReadSecuritySystem Block: %s", *apiResp.Msg)
+		return nil, fmt.Errorf("reading of Security System resource failed In ReadSecuritySystem Block: %s", *apiResp.Msg)
 	}
 
 	return apiResp, nil
@@ -514,7 +512,10 @@ func (r *SecuritySystemResource) ReadSecuritySystem(ctx context.Context, systemn
 
 // UpdateModelFromReadResponse - Extracted state management logic for read operations
 func (r *SecuritySystemResource) UpdateModelFromReadResponse(plan *SecuritySystemResourceModel, apiResp *openapi.GetSecuritySystems200Response) {
-	if apiResp.SecuritySystemDetails == nil || len(apiResp.SecuritySystemDetails) == 0 {
+	// Check any security system details are returned. 
+	// Same as the condition:
+	// apiResp != nil || len(apiResp.SecuritySystemDetails) == 0
+	if len(apiResp.SecuritySystemDetails) == 0 {
 		return
 	}
 

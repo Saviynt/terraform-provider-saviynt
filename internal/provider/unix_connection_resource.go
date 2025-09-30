@@ -247,7 +247,7 @@ func (r *UnixConnectionResource) CreateUnixConnection(ctx context.Context, plan 
 		return nil, errorsutil.CreateStandardError(errorsutil.ConnectorTypeUnix, errorCode, "create", connectionName, err)
 	}
 
-	if apiResp != nil && *apiResp.ErrorCode != "0" {
+	if apiResp != nil && apiResp.ErrorCode != nil && *apiResp.ErrorCode != "0" {
 		apiErr := fmt.Errorf("API returned error code %s: %s", *apiResp.ErrorCode, errorsutil.SanitizeMessage(apiResp.Msg))
 		errorCode := unixErrorCodes.APIError()
 		opCtx.LogOperationError(ctx, "Unix connection creation failed with API error", errorCode, apiErr,
@@ -288,7 +288,7 @@ func (r *UnixConnectionResource) ReadUnixConnection(ctx context.Context, connect
 		return nil, errorsutil.CreateStandardError(errorsutil.ConnectorTypeUnix, errorCode, "read", connectionName, err)
 	}
 
-	if apiResp != nil && apiResp.UNIXConnectionResponse != nil && *apiResp.UNIXConnectionResponse.Errorcode != 0 {
+	if apiResp != nil && apiResp.UNIXConnectionResponse != nil && apiResp.UNIXConnectionResponse.Errorcode != nil && *apiResp.UNIXConnectionResponse.Errorcode != 0 {
 		apiErr := fmt.Errorf("API returned error code %d: %s", *apiResp.UNIXConnectionResponse.Errorcode, errorsutil.SanitizeMessage(apiResp.UNIXConnectionResponse.Msg))
 		errorCode := unixErrorCodes.APIError()
 		opCtx.LogOperationError(ctx, "Unix connection read failed with API error", errorCode, apiErr,
@@ -398,7 +398,7 @@ func (r *UnixConnectionResource) UpdateUnixConnection(ctx context.Context, plan 
 		return nil, errorsutil.CreateStandardError(errorsutil.ConnectorTypeUnix, errorCode, "update", connectionName, err)
 	}
 
-	if apiResp != nil && *apiResp.ErrorCode != "0" {
+	if apiResp != nil && apiResp.ErrorCode != nil && *apiResp.ErrorCode != "0" {
 		apiErr := fmt.Errorf("API returned error code %s: %s", *apiResp.ErrorCode, errorsutil.SanitizeMessage(apiResp.Msg))
 		errorCode := unixErrorCodes.APIError()
 		opCtx.LogOperationError(logCtx, "Unix connection update failed with API error", errorCode, apiErr,

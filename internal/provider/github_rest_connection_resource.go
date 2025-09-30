@@ -238,7 +238,7 @@ func (r *githubRestConnectionResource) CreateGithubRestConnection(ctx context.Co
 	}
 
 	// Check for API business logic errors
-	if apiResp != nil && *apiResp.ErrorCode != "0" {
+	if apiResp != nil && apiResp.ErrorCode != nil && *apiResp.ErrorCode != "0" {
 		apiErr := fmt.Errorf("API returned error code %s: %s", *apiResp.ErrorCode, errorsutil.SanitizeMessage(apiResp.Msg))
 		errorCode := githubRestErrorCodes.APIError()
 		opCtx.LogOperationError(ctx, "GitHub REST connection creation failed with API error", errorCode, apiErr,
@@ -378,7 +378,7 @@ func (r *githubRestConnectionResource) ReadGithubRestConnection(ctx context.Cont
 	}
 
 	// Check for API business logic errors
-	if apiResp != nil && apiResp.GithubRESTConnectionResponse != nil && *apiResp.GithubRESTConnectionResponse.Errorcode != 0 {
+	if apiResp != nil && apiResp.GithubRESTConnectionResponse != nil && apiResp.GithubRESTConnectionResponse.Errorcode != nil && *apiResp.GithubRESTConnectionResponse.Errorcode != 0 {
 		apiErr := fmt.Errorf("API returned error code %d: %s", *apiResp.GithubRESTConnectionResponse.Errorcode, errorsutil.SanitizeMessage(apiResp.GithubRESTConnectionResponse.Msg))
 		errorCode := githubRestErrorCodes.APIError()
 		opCtx.LogOperationError(ctx, "GitHub REST connection read failed with API error", errorCode, apiErr,
@@ -564,7 +564,7 @@ func (r *githubRestConnectionResource) UpdateGithubRestConnection(ctx context.Co
 	}
 
 	// Check for API business logic errors
-	if apiResp != nil && *apiResp.ErrorCode != "0" {
+	if apiResp != nil && apiResp.ErrorCode != nil && *apiResp.ErrorCode != "0" {
 		apiErr := fmt.Errorf("API returned error code %s: %s", *apiResp.ErrorCode, errorsutil.SanitizeMessage(apiResp.Msg))
 		errorCode := githubRestErrorCodes.APIError()
 		opCtx.LogOperationError(logCtx, "GitHub REST connection update failed with API error", errorCode, apiErr,

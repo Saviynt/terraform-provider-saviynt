@@ -216,7 +216,6 @@ resource "saviynt_sap_connection_resource" "ss" {
 - `email_template` (String) Email template for notifications. Example: "New Account Task Creation"
 - `enable_account_json` (String) Enableaccountjson.
 - `enforce_password_change` (String) Enforcepasswordchange.
-- `error_code` (String) An error code where '0' signifies success and '1' signifies an unsuccessful operation.
 - `external_sod_eval_json` (String) Externalsodevaljson.
 - `external_sod_eval_json_detail` (String) Externalsodevaljsondetail.
 - `fire_fighter_id_grant_access_json` (String) Firefighteridgrantaccessjson.
@@ -239,7 +238,6 @@ resource "saviynt_sap_connection_resource" "ss" {
 - `logs_table_filter` (String) Logstablefilter.
 - `message_server` (String) Messageserver.
 - `modify_user_data_json` (String) Modifyuserdatajson.
-- `msg` (String) A message indicating the outcome of the operation.
 - `pam_config` (String) Pamconfig.
 - `password` (String) Password.
 - `password_max_length` (String) Passwordmaxlength.
@@ -277,4 +275,6 @@ resource "saviynt_sap_connection_resource" "ss" {
 ### Read-Only
 
 - `connection_key` (Number) Unique identifier of the connection returned by the API. Example: 1909
+- `error_code` (String) An error code where '0' signifies success and '1' signifies an unsuccessful operation.
 - `id` (String) Resource ID.
+- `msg` (String) A message indicating the outcome of the operation.

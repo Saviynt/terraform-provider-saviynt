@@ -171,10 +171,8 @@ resource "saviynt_okta_connection_resource" "example" {
 - `description` (String) Description for the connection. Example: "ORG_AD"
 - `email_template` (String) Email template for notifications. Example: "New Account Task Creation"
 - `entitlement_types_mappings` (String) Maps Okta entitlements to Saviynt entitlement types.
-- `error_code` (String) An error code where '0' signifies success and '1' signifies an unsuccessful operation.
 - `import_inactive_apps` (String) Controls import of inactive/disabled Okta applications.
 - `modify_user_data_json` (String) JSON configuration for user data modification operations during provisioning.
-- `msg` (String) A message indicating the outcome of the operation.
 - `okta_groups_filter` (String) Filter criteria for selective group import from Okta.
 - `pam_config` (String) Privileged Access Management configuration for PAM operations and bootstrap processes.
 - `save_in_vault` (String) Flag indicating whether the encrypted attribute should be saved in the configured vault. Example: "false"
@@ -186,4 +184,6 @@ resource "saviynt_okta_connection_resource" "example" {
 ### Read-Only
 
 - `connection_key` (Number) Unique identifier of the connection returned by the API. Example: 1909
+- `error_code` (String) An error code where '0' signifies success and '1' signifies an unsuccessful operation.
 - `id` (String) Resource ID.
+- `msg` (String) A message indicating the outcome of the operation.

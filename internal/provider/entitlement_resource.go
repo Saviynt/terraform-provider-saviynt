@@ -20,10 +20,6 @@ import (
 	"regexp"
 	"strings"
 
-	"terraform-provider-Saviynt/internal/client"
-	"terraform-provider-Saviynt/util"
-	"terraform-provider-Saviynt/util/errorsutil"
-
 	"github.com/hashicorp/terraform-plugin-framework-validators/mapvalidator"
 	"github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
 	"github.com/hashicorp/terraform-plugin-framework/attr"
@@ -32,6 +28,9 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema"
 	"github.com/hashicorp/terraform-plugin-framework/schema/validator"
 	"github.com/hashicorp/terraform-plugin-framework/types"
+	"terraform-provider-Saviynt/internal/client"
+	"terraform-provider-Saviynt/util"
+	"terraform-provider-Saviynt/util/errorsutil"
 
 	openapi "github.com/saviynt/saviynt-api-go-client/entitlements"
 )
@@ -587,7 +586,7 @@ func (r *EntitlementResource) ReadEntitlement(ctx context.Context, state *Entitl
 		err = errorsutil.HandleHTTPError(readHttpResp, err, "Read")
 		return nil, fmt.Errorf("error reading entitlement: %v", err)
 	}
-	if readResp != nil && *readResp.ErrorCode != "0" {
+	if readResp != nil && readResp.ErrorCode != nil && *readResp.ErrorCode != "0" {
 		log.Printf("[ERROR] Entitlements: API returned error code 1: %v", *readResp.Msg)
 		return nil, fmt.Errorf("error reading entitlement. Error code: %v, Msg: %v", *readResp.ErrorCode, *readResp.Msg)
 	}

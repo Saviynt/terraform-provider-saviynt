@@ -227,7 +227,7 @@ func (r *EntraIdConnectionResource) CreateEntraIdConnection(ctx context.Context,
 		return nil, errorsutil.CreateStandardError(errorsutil.ConnectorTypeEntraID, errorCode, "create", connectionName, err)
 	}
 
-	if apiResp != nil && *apiResp.ErrorCode != "0" {
+	if apiResp != nil && apiResp.ErrorCode != nil && *apiResp.ErrorCode != "0" {
 		apiErr := fmt.Errorf("API returned error code %s: %s", *apiResp.ErrorCode, errorsutil.SanitizeMessage(apiResp.Msg))
 		errorCode := entraIdErrorCodes.APIError()
 		opCtx.LogOperationError(logCtx, "EntraID connection creation failed with API error", errorCode, apiErr,
@@ -266,7 +266,7 @@ func (r *EntraIdConnectionResource) ReadEntraIdConnection(ctx context.Context, c
 		return nil, errorsutil.CreateStandardError(errorsutil.ConnectorTypeEntraID, errorCode, "read", connectionName, err)
 	}
 
-	if apiResp != nil && apiResp.EntraIDConnectionResponse != nil && *apiResp.EntraIDConnectionResponse.Errorcode != 0 {
+	if apiResp != nil && apiResp.EntraIDConnectionResponse != nil && apiResp.EntraIDConnectionResponse.Errorcode != nil && *apiResp.EntraIDConnectionResponse.Errorcode != 0 {
 		apiErr := fmt.Errorf("API returned error code %d: %s", *apiResp.EntraIDConnectionResponse.Errorcode, errorsutil.SanitizeMessage(apiResp.EntraIDConnectionResponse.Msg))
 		errorCode := entraIdErrorCodes.APIError()
 		opCtx.LogOperationError(logCtx, "EntraID connection read failed with API error", errorCode, apiErr,
@@ -312,7 +312,7 @@ func (r *EntraIdConnectionResource) UpdateEntraIdConnection(ctx context.Context,
 		return nil, errorsutil.CreateStandardError(errorsutil.ConnectorTypeEntraID, errorCode, "update", connectionName, err)
 	}
 
-	if apiResp != nil && *apiResp.ErrorCode != "0" {
+	if apiResp != nil && apiResp.ErrorCode != nil && *apiResp.ErrorCode != "0" {
 		apiErr := fmt.Errorf("API returned error code %s: %s", *apiResp.ErrorCode, errorsutil.SanitizeMessage(apiResp.Msg))
 		errorCode := entraIdErrorCodes.APIError()
 		opCtx.LogOperationError(logCtx, "EntraID connection update failed with API error", errorCode, apiErr,

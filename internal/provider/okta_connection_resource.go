@@ -319,7 +319,7 @@ func (r *OktaConnectionResource) CreateOktaConnection(ctx context.Context, plan 
 		return nil, errorsutil.CreateStandardError(errorsutil.ConnectorTypeOkta, errorCode, "create", connectionName, err)
 	}
 
-	if apiResp != nil && *apiResp.ErrorCode != "0" {
+	if apiResp != nil && apiResp.ErrorCode != nil && *apiResp.ErrorCode != "0" {
 		apiErr := fmt.Errorf("API returned error code %s: %s", *apiResp.ErrorCode, errorsutil.SanitizeMessage(apiResp.Msg))
 		errorCode := oktaErrorCodes.APIError()
 		opCtx.LogOperationError(ctx, "Okta connection creation failed with API error", errorCode, apiErr,
@@ -360,7 +360,7 @@ func (r *OktaConnectionResource) ReadOktaConnection(ctx context.Context, connect
 		return nil, errorsutil.CreateStandardError(errorsutil.ConnectorTypeOkta, errorCode, "read", connectionName, err)
 	}
 
-	if apiResp != nil && apiResp.OktaConnectionResponse != nil && *apiResp.OktaConnectionResponse.Errorcode != 0 {
+	if apiResp != nil && apiResp.OktaConnectionResponse != nil && apiResp.OktaConnectionResponse.Errorcode != nil && *apiResp.OktaConnectionResponse.Errorcode != 0 {
 		apiErr := fmt.Errorf("API returned error code %d: %s", *apiResp.OktaConnectionResponse.Errorcode, errorsutil.SanitizeMessage(apiResp.OktaConnectionResponse.Msg))
 		errorCode := oktaErrorCodes.APIError()
 		opCtx.LogOperationError(ctx, "Okta connection read failed with API error", errorCode, apiErr,
@@ -420,7 +420,7 @@ func (r *OktaConnectionResource) UpdateOktaConnection(ctx context.Context, plan 
 		return nil, errorsutil.CreateStandardError(errorsutil.ConnectorTypeOkta, errorCode, "update", connectionName, err)
 	}
 
-	if apiResp != nil && *apiResp.ErrorCode != "0" {
+	if apiResp != nil && apiResp.ErrorCode != nil && *apiResp.ErrorCode != "0" {
 		apiErr := fmt.Errorf("API returned error code %s: %s", *apiResp.ErrorCode, errorsutil.SanitizeMessage(apiResp.Msg))
 		errorCode := oktaErrorCodes.APIError()
 		opCtx.LogOperationError(logCtx, "Okta connection update failed with API error", errorCode, apiErr,
