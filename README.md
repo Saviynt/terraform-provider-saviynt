@@ -733,6 +733,10 @@ The following limitations are present in the latest version of the provider. The
   - `ResourceOwner`
   - `OutOfBandAccess`
 
+- For `resource_owner_type` and `owner_type`, the allowed values are:
+  - `User`
+  - `Usergroup`
+
 - The `MappedEndpoints` field **cannot be configured during endpoint creation**; it must be managed after the endpoint is created.
 
 - The `RequestableRoleType` attribute **can only be set during updates**, since the role must be assigned to the endpoint beforehand.
