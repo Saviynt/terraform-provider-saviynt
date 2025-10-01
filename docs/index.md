@@ -330,6 +330,9 @@ The following limitations are present in the latest version of the provider. The
   - `Owner`
   - `ResourceOwner`
   - `OutOfBandAccess`
+- For `resource_owner_type` and `owner_type`, the allowed values are:
+  - `User`
+  - `Usergroup`
 - For`saviynt_endpoint_resource.requestable_role_types.request_option`, the supported values for proper state tracking are:
   - `DropdownSingle`
   - `Table`
