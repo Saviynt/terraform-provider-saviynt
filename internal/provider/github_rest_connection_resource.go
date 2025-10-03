@@ -28,8 +28,8 @@ import (
 )
 
 // Ensure provider defined types fully satisfy framework interfaces.
-var _ resource.Resource = &githubRestConnectionResource{}
-var _ resource.ResourceWithImportState = &githubRestConnectionResource{}
+var _ resource.Resource = &GithubRestConnectionResource{}
+var _ resource.ResourceWithImportState = &GithubRestConnectionResource{}
 
 // Initialize error codes for GitHub REST Connection operations
 var githubRestErrorCodes = errorsutil.NewConnectorErrorCodes(errorsutil.ConnectorTypeGithubREST)
@@ -44,7 +44,7 @@ type GithubRestConnectorResourceModel struct {
 	Status_Threshold_Config types.String `tfsdk:"status_threshold_config"`
 }
 
-type githubRestConnectionResource struct {
+type GithubRestConnectionResource struct {
 	client            client.SaviyntClientInterface
 	token             string
 	provider          client.SaviyntProviderInterface
@@ -52,18 +52,18 @@ type githubRestConnectionResource struct {
 }
 
 func NewGithubRestConnectionResource() resource.Resource {
-	return &githubRestConnectionResource{
+	return &GithubRestConnectionResource{
 		connectionFactory: &client.DefaultConnectionFactory{},
 	}
 }
 
 func NewGithubRestConnectionResourceWithFactory(factory client.ConnectionFactoryInterface) resource.Resource {
-	return &githubRestConnectionResource{
+	return &GithubRestConnectionResource{
 		connectionFactory: factory,
 	}
 }
 
-func (r *githubRestConnectionResource) Metadata(ctx context.Context, req resource.MetadataRequest, resp *resource.MetadataResponse) {
+func (r *GithubRestConnectionResource) Metadata(ctx context.Context, req resource.MetadataRequest, resp *resource.MetadataResponse) {
 	resp.TypeName = "saviynt_github_rest_connection_resource"
 }
 
@@ -101,14 +101,14 @@ func GithubRestConnectorResourceSchema() map[string]schema.Attribute {
 	}
 }
 
-func (r *githubRestConnectionResource) Schema(ctx context.Context, req resource.SchemaRequest, resp *resource.SchemaResponse) {
+func (r *GithubRestConnectionResource) Schema(ctx context.Context, req resource.SchemaRequest, resp *resource.SchemaResponse) {
 	resp.Schema = schema.Schema{
 		Description: util.GithubRestConnDescription,
 		Attributes:  connectionsutil.MergeResourceAttributes(BaseConnectorResourceSchema(), GithubRestConnectorResourceSchema()),
 	}
 }
 
-func (r *githubRestConnectionResource) Configure(ctx context.Context, req resource.ConfigureRequest, resp *resource.ConfigureResponse) {
+func (r *GithubRestConnectionResource) Configure(ctx context.Context, req resource.ConfigureRequest, resp *resource.ConfigureResponse) {
 	opCtx := errorsutil.CreateOperationContext(errorsutil.ConnectorTypeGithubREST, "configure", "")
 	ctx = opCtx.AddContextToLogger(ctx)
 
@@ -137,21 +137,21 @@ func (r *githubRestConnectionResource) Configure(ctx context.Context, req resour
 }
 
 // SetClient sets the client for testing purposes
-func (r *githubRestConnectionResource) SetClient(client client.SaviyntClientInterface) {
+func (r *GithubRestConnectionResource) SetClient(client client.SaviyntClientInterface) {
 	r.client = client
 }
 
 // SetToken sets the token for testing purposes
-func (r *githubRestConnectionResource) SetToken(token string) {
+func (r *GithubRestConnectionResource) SetToken(token string) {
 	r.token = token
 }
 
 // SetProvider sets the provider for testing purposes
-func (r *githubRestConnectionResource) SetProvider(provider client.SaviyntProviderInterface) {
+func (r *GithubRestConnectionResource) SetProvider(provider client.SaviyntProviderInterface) {
 	r.provider = provider
 }
 
-func (r *githubRestConnectionResource) Create(ctx context.Context, req resource.CreateRequest, resp *resource.CreateResponse) {
+func (r *GithubRestConnectionResource) Create(ctx context.Context, req resource.CreateRequest, resp *resource.CreateResponse) {
 	var plan, config GithubRestConnectorResourceModel
 
 	opCtx := errorsutil.CreateOperationContext(errorsutil.ConnectorTypeGithubREST, "terraform_create", "")
@@ -208,7 +208,7 @@ func (r *githubRestConnectionResource) Create(ctx context.Context, req resource.
 		map[string]interface{}{"connection_key": plan.ConnectionKey.ValueInt64()})
 }
 
-func (r *githubRestConnectionResource) CreateGithubRestConnection(ctx context.Context, plan *GithubRestConnectorResourceModel, config *GithubRestConnectorResourceModel) (*openapi.CreateOrUpdateResponse, error) {
+func (r *GithubRestConnectionResource) CreateGithubRestConnection(ctx context.Context, plan *GithubRestConnectorResourceModel, config *GithubRestConnectorResourceModel) (*openapi.CreateOrUpdateResponse, error) {
 	connectionName := plan.ConnectionName.ValueString()
 	opCtx := errorsutil.CreateOperationContext(errorsutil.ConnectorTypeGithubREST, "create", connectionName)
 
@@ -296,7 +296,7 @@ func (r *githubRestConnectionResource) CreateGithubRestConnection(ctx context.Co
 	return apiResp, nil
 }
 
-func (r *githubRestConnectionResource) BuildGithubRestConnector(plan *GithubRestConnectorResourceModel, config *GithubRestConnectorResourceModel) openapi.GithubRESTConnector {
+func (r *GithubRestConnectionResource) BuildGithubRestConnector(plan *GithubRestConnectorResourceModel, config *GithubRestConnectorResourceModel) openapi.GithubRESTConnector {
 	githubRestConn := openapi.GithubRESTConnector{
 		BaseConnector: openapi.BaseConnector{
 			Connectiontype:  "GithubRest",
@@ -321,7 +321,7 @@ func (r *githubRestConnectionResource) BuildGithubRestConnector(plan *GithubRest
 	return githubRestConn
 }
 
-func (r *githubRestConnectionResource) UpdateModelFromCreateResponse(plan *GithubRestConnectorResourceModel, apiResp *openapi.CreateOrUpdateResponse) {
+func (r *GithubRestConnectionResource) UpdateModelFromCreateResponse(plan *GithubRestConnectorResourceModel, apiResp *openapi.CreateOrUpdateResponse) {
 	if apiResp != nil && apiResp.ConnectionKey != nil {
 		plan.ID = types.StringValue(fmt.Sprintf("%d", *apiResp.ConnectionKey))
 		plan.ConnectionKey = types.Int64Value(int64(*apiResp.ConnectionKey))
@@ -341,7 +341,7 @@ func (r *githubRestConnectionResource) UpdateModelFromCreateResponse(plan *Githu
 	}
 }
 
-func (r *githubRestConnectionResource) Read(ctx context.Context, req resource.ReadRequest, resp *resource.ReadResponse) {
+func (r *GithubRestConnectionResource) Read(ctx context.Context, req resource.ReadRequest, resp *resource.ReadResponse) {
 	var state GithubRestConnectorResourceModel
 
 	opCtx := errorsutil.CreateOperationContext(errorsutil.ConnectorTypeGithubREST, "terraform_read", "")
@@ -395,7 +395,7 @@ func (r *githubRestConnectionResource) Read(ctx context.Context, req resource.Re
 	opCtx.LogOperationEnd(ctx, "GitHub REST connection resource read completed successfully")
 }
 
-func (r *githubRestConnectionResource) ReadGithubRestConnection(ctx context.Context, connectionName string) (*openapi.GetConnectionDetailsResponse, error) {
+func (r *GithubRestConnectionResource) ReadGithubRestConnection(ctx context.Context, connectionName string) (*openapi.GetConnectionDetailsResponse, error) {
 	opCtx := errorsutil.CreateOperationContext(errorsutil.ConnectorTypeGithubREST, "read", connectionName)
 
 	// Create logging context (separate from API context)
@@ -422,6 +422,12 @@ func (r *githubRestConnectionResource) ReadGithubRestConnection(ctx context.Cont
 		return nil, errorsutil.CreateStandardError(errorsutil.ConnectorTypeGithubREST, errorCode, "read", connectionName, err)
 	}
 
+	if err := r.ValidateGithubRestConnectionResponse(apiResp); err != nil {
+		errorCode := githubRestErrorCodes.APIError()
+		opCtx.LogOperationError(ctx, "Invalid connection type for GithubREST datasource", errorCode, err)
+		return nil, fmt.Errorf("[%s] Unable to verify connection type for connection %q. The provider could not determine the type of this connection. Please ensure the connection name is correct and belongs to a supported connector type", errorCode, connectionName)
+	}
+
 	// Check for API business logic errors
 	if apiResp != nil && apiResp.GithubRESTConnectionResponse != nil && apiResp.GithubRESTConnectionResponse.Errorcode != nil && *apiResp.GithubRESTConnectionResponse.Errorcode != 0 {
 		apiErr := fmt.Errorf("API returned error code %d: %s", *apiResp.GithubRESTConnectionResponse.Errorcode, errorsutil.SanitizeMessage(apiResp.GithubRESTConnectionResponse.Msg))
@@ -445,7 +451,7 @@ func (r *githubRestConnectionResource) ReadGithubRestConnection(ctx context.Cont
 	return apiResp, nil
 }
 
-func (r *githubRestConnectionResource) UpdateModelFromReadResponse(state *GithubRestConnectorResourceModel, apiResp *openapi.GetConnectionDetailsResponse) {
+func (r *GithubRestConnectionResource) UpdateModelFromReadResponse(state *GithubRestConnectorResourceModel, apiResp *openapi.GetConnectionDetailsResponse) {
 	state.ConnectionKey = types.Int64Value(int64(*apiResp.GithubRESTConnectionResponse.Connectionkey))
 	state.ID = types.StringValue(fmt.Sprintf("%d", *apiResp.GithubRESTConnectionResponse.Connectionkey))
 
@@ -467,7 +473,14 @@ func (r *githubRestConnectionResource) UpdateModelFromReadResponse(state *Github
 	state.ErrorCode = util.Int32PtrToTFString(apiResp.GithubRESTConnectionResponse.Errorcode)
 }
 
-func (r *githubRestConnectionResource) Update(ctx context.Context, req resource.UpdateRequest, resp *resource.UpdateResponse) {
+func (r *GithubRestConnectionResource) ValidateGithubRestConnectionResponse(apiResp *openapi.GetConnectionDetailsResponse) error {
+	if apiResp != nil && apiResp.GithubRESTConnectionResponse == nil {
+		return fmt.Errorf("verify the connection type - GithubREST connection response is nil")
+	}
+	return nil
+}
+
+func (r *GithubRestConnectionResource) Update(ctx context.Context, req resource.UpdateRequest, resp *resource.UpdateResponse) {
 	var plan, state, config GithubRestConnectorResourceModel
 
 	opCtx := errorsutil.CreateOperationContext(errorsutil.ConnectorTypeGithubREST, "terraform_update", "")
@@ -576,7 +589,7 @@ func (r *githubRestConnectionResource) Update(ctx context.Context, req resource.
 		map[string]interface{}{"connection_key": plan.ConnectionKey.ValueInt64()})
 }
 
-func (r *githubRestConnectionResource) UpdateGithubRestConnection(ctx context.Context, plan *GithubRestConnectorResourceModel, config *GithubRestConnectorResourceModel) (*openapi.CreateOrUpdateResponse, error) {
+func (r *GithubRestConnectionResource) UpdateGithubRestConnection(ctx context.Context, plan *GithubRestConnectorResourceModel, config *GithubRestConnectorResourceModel) (*openapi.CreateOrUpdateResponse, error) {
 	connectionName := plan.ConnectionName.ValueString()
 	opCtx := errorsutil.CreateOperationContext(errorsutil.ConnectorTypeGithubREST, "update", connectionName)
 
@@ -640,7 +653,7 @@ func (r *githubRestConnectionResource) UpdateGithubRestConnection(ctx context.Co
 	return apiResp, nil
 }
 
-func (r *githubRestConnectionResource) Delete(ctx context.Context, req resource.DeleteRequest, resp *resource.DeleteResponse) {
+func (r *GithubRestConnectionResource) Delete(ctx context.Context, req resource.DeleteRequest, resp *resource.DeleteResponse) {
 	// resp.State.RemoveResource(ctx)
 	if os.Getenv("TF_ACC") == "1" {
 		resp.State.RemoveResource(ctx)
@@ -652,7 +665,7 @@ func (r *githubRestConnectionResource) Delete(ctx context.Context, req resource.
 	)
 }
 
-func (r *githubRestConnectionResource) ImportState(ctx context.Context, req resource.ImportStateRequest, resp *resource.ImportStateResponse) {
+func (r *GithubRestConnectionResource) ImportState(ctx context.Context, req resource.ImportStateRequest, resp *resource.ImportStateResponse) {
 	// Importing an GithubRest connection resource requires the connection name
 	connectionName := req.ID
 	opCtx := errorsutil.CreateOperationContext(errorsutil.ConnectorTypeGithubREST, "terraform_import", connectionName)

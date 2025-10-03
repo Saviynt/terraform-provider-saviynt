@@ -591,6 +591,12 @@ func (r *WorkdayConnectionResource) ReadWorkdayConnection(ctx context.Context, c
 		return nil, errorsutil.CreateStandardError(errorsutil.ConnectorTypeWorkday, errorCode, "read", connectionName, err)
 	}
 
+	if err := r.ValidateWorkdayConnectionResponse(apiResp); err != nil {
+		errorCode := workdayErrorCodes.APIError()
+		opCtx.LogOperationError(ctx, "Invalid connection type for Workday datasource", errorCode, err)
+		return nil, fmt.Errorf("[%s] Unable to verify connection type for connection %q. The provider could not determine the type of this connection. Please ensure the connection name is correct and belongs to a supported connector type", errorCode, connectionName)
+	}
+
 	if apiResp != nil && apiResp.WorkdayConnectionResponse != nil && apiResp.WorkdayConnectionResponse.Errorcode != nil && *apiResp.WorkdayConnectionResponse.Errorcode != 0 {
 		apiErr := fmt.Errorf("API returned error code %d: %s", *apiResp.WorkdayConnectionResponse.Errorcode, errorsutil.SanitizeMessage(apiResp.WorkdayConnectionResponse.Msg))
 		errorCode := workdayErrorCodes.APIError()
@@ -663,6 +669,13 @@ func (r *WorkdayConnectionResource) UpdateModelFromReadResponse(state *WorkdayCo
 		state.Msg = types.StringValue(apiMessage)
 	}
 	state.ErrorCode = util.Int32PtrToTFString(apiResp.WorkdayConnectionResponse.Errorcode)
+}
+
+func (r *WorkdayConnectionResource) ValidateWorkdayConnectionResponse(apiResp *openapi.GetConnectionDetailsResponse) error {
+	if apiResp != nil && apiResp.WorkdayConnectionResponse == nil {
+		return fmt.Errorf("verify the connection type - Workday connection response is nil")
+	}
+	return nil
 }
 
 func (r *WorkdayConnectionResource) UpdateWorkdayConnection(ctx context.Context, plan *WorkdayConnectorResourceModel, config *WorkdayConnectorResourceModel) (*openapi.CreateOrUpdateResponse, error) {
