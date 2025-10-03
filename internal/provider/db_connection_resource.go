@@ -390,6 +390,13 @@ func (r *DBConnectionResource) Create(ctx context.Context, req resource.CreateRe
 		map[string]interface{}{"connection_name": connectionName})
 }
 
+func (r *DBConnectionResource) ValidateDBConnectionResponse(apiResp *openapi.GetConnectionDetailsResponse) error {
+	if apiResp != nil && apiResp.DBConnectionResponse == nil {
+		return fmt.Errorf("verify the connection type - DB connection response is nil")
+	}
+	return nil
+}
+
 // CreateDBConnection creates a new DB connection
 func (r *DBConnectionResource) CreateDBConnection(ctx context.Context, plan *DBConnectorResourceModel, config *DBConnectorResourceModel) (*openapi.CreateOrUpdateResponse, error) {
 	connectionName := plan.ConnectionName.ValueString()
@@ -671,6 +678,12 @@ func (r *DBConnectionResource) ReadDBConnection(ctx context.Context, connectionN
 		errorCode := dbErrorCodes.ReadFailed()
 		opCtx.LogOperationError(logCtx, "Failed to read DB connection", errorCode, err)
 		return nil, errorsutil.CreateStandardError(errorsutil.ConnectorTypeDB, errorCode, "read", connectionName, err)
+	}
+
+	if err := r.ValidateDBConnectionResponse(apiResp); err != nil {
+		errorCode := dbErrorCodes.APIError()
+		opCtx.LogOperationError(ctx, "Invalid connection type for DB datasource", errorCode, err)
+		return nil, fmt.Errorf("[%s] Unable to verify connection type for connection %q. The provider could not determine the type of this connection. Please ensure the connection name is correct and belongs to a supported connector type", errorCode, connectionName)
 	}
 
 	if apiResp != nil && apiResp.DBConnectionResponse != nil && apiResp.DBConnectionResponse.Errorcode != nil && *apiResp.DBConnectionResponse.Errorcode != 0 {

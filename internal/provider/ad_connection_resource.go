@@ -729,6 +729,12 @@ func (r *AdConnectionResource) ReadADConnection(ctx context.Context, connectionN
 		return nil, errorsutil.CreateStandardError(errorsutil.ConnectorTypeAD, errorCode, "read", connectionName, err)
 	}
 
+	if err := r.ValidateADConnectionResponse(apiResp); err != nil {
+		errorCode := adErrorCodes.APIError()
+		opCtx.LogOperationError(ctx, "Invalid connection type for AD datasource", errorCode, err)
+		return nil, fmt.Errorf("[%s] Unable to verify connection type for connection %q. The provider could not determine the type of this connection. Please ensure the connection name is correct and belongs to a supported connector type", errorCode, connectionName)
+	}
+
 	if apiResp != nil && apiResp.ADConnectionResponse != nil && apiResp.ADConnectionResponse.Errorcode != nil && *apiResp.ADConnectionResponse.Errorcode != 0 {
 		apiErr := fmt.Errorf("API returned error code %d: %s", *apiResp.ADConnectionResponse.Errorcode, errorsutil.SanitizeMessage(apiResp.ADConnectionResponse.Msg))
 		errorCode := adErrorCodes.APIError()
@@ -887,6 +893,13 @@ func (r *AdConnectionResource) UpdateModelFromReadResponse(state *ADConnectorRes
 		state.Msg = types.StringValue(apiMessage)
 	}
 	state.ErrorCode = util.Int32PtrToTFString(apiResp.ADConnectionResponse.Errorcode)
+}
+
+func (r *AdConnectionResource) ValidateADConnectionResponse(apiResp *openapi.GetConnectionDetailsResponse) error {
+	if apiResp != nil && apiResp.ADConnectionResponse == nil {
+		return fmt.Errorf("verify the connection type - AD connection response is nil")
+	}
+	return nil
 }
 
 func (r *AdConnectionResource) Create(ctx context.Context, req resource.CreateRequest, resp *resource.CreateResponse) {

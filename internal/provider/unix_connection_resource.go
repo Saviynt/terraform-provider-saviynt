@@ -328,6 +328,12 @@ func (r *UnixConnectionResource) ReadUnixConnection(ctx context.Context, connect
 		return nil, errorsutil.CreateStandardError(errorsutil.ConnectorTypeUnix, errorCode, "read", connectionName, err)
 	}
 
+	if err := r.ValidateUnixConnectionResponse(apiResp); err != nil {
+		errorCode := unixErrorCodes.APIError()
+		opCtx.LogOperationError(ctx, "Invalid connection type for Unix datasource", errorCode, err)
+		return nil, fmt.Errorf("[%s] Unable to verify connection type for connection %q. The provider could not determine the type of this connection. Please ensure the connection name is correct and belongs to a supported connector type", errorCode, connectionName)
+	}
+
 	if apiResp != nil && apiResp.UNIXConnectionResponse != nil && apiResp.UNIXConnectionResponse.Errorcode != nil && *apiResp.UNIXConnectionResponse.Errorcode != 0 {
 		apiErr := fmt.Errorf("API returned error code %d: %s", *apiResp.UNIXConnectionResponse.Errorcode, errorsutil.SanitizeMessage(apiResp.UNIXConnectionResponse.Msg))
 		errorCode := unixErrorCodes.APIError()
@@ -398,6 +404,13 @@ func (r *UnixConnectionResource) UpdateModelFromReadResponse(state *UnixConnecto
 		state.Msg = types.StringValue(apiMessage)
 	}
 	state.ErrorCode = util.Int32PtrToTFString(apiResp.UNIXConnectionResponse.Errorcode)
+}
+
+func (r *UnixConnectionResource) ValidateUnixConnectionResponse(apiResp *openapi.GetConnectionDetailsResponse) error {
+	if apiResp != nil && apiResp.UNIXConnectionResponse == nil {
+		return fmt.Errorf("verify the connection type - Unix connection response is nil")
+	}
+	return nil
 }
 
 func (r *UnixConnectionResource) UpdateUnixConnection(ctx context.Context, plan *UnixConnectorResourceModel, config *UnixConnectorResourceModel) (*openapi.CreateOrUpdateResponse, error) {
