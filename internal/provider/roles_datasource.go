@@ -1,13 +1,14 @@
 // Copyright (c) Saviynt Inc.
 // SPDX-License-Identifier: MPL-2.0
 
-// saviynt_roles_datasource retrieves role details from the Saviynt Security Manager.
+// saviynt_roles_datasource retrieves role details from the Savi ynt Security Manager.
 // The data source supports a single Read operation to look up existing roles with various filters.
 package provider
 
 import (
 	"context"
 	"fmt"
+	"net/http"
 	"reflect"
 	"strconv"
 	"terraform-provider-Saviynt/internal/client"
@@ -91,6 +92,7 @@ type CustomPropertiesModel struct {
 type RolesDataSource struct {
 	client      client.SaviyntClientInterface
 	token       string
+	provider    client.SaviyntProviderInterface
 	roleFactory client.RoleFactoryInterface
 }
 
@@ -119,6 +121,11 @@ func (d *RolesDataSource) SetClient(client client.SaviyntClientInterface) {
 // SetToken sets the token for testing purposes
 func (d *RolesDataSource) SetToken(token string) {
 	d.token = token
+}
+
+// SetProvider sets the provider for testing purposes
+func (r *RolesDataSource) SetProvider(provider client.SaviyntProviderInterface) {
+	r.provider = provider
 }
 
 // setCustomPropertiesOnRequest sets custom properties on the API request using reflection
@@ -179,8 +186,11 @@ func (d *RolesDataSource) mapCustomPropertiesFromResponse(roleState *Role, item 
 			continue
 		}
 
-		// Get the string pointer from the API response
-		stringPtr := itemField.Interface().(*string)
+		// Get the string pointer from the API response with safe type assertion
+		stringPtr, ok := itemField.Interface().(*string)
+		if !ok {
+			continue // Skip if not a *string
+		}
 
 		// Use util.SafeString to convert to types.String and set on role state
 		safeString := util.SafeString(stringPtr)
@@ -665,12 +675,12 @@ func (d *RolesDataSource) Configure(ctx context.Context, req datasource.Configur
 	}
 
 	// Cast provider data to your provider type.
-	prov, ok := req.ProviderData.(*saviyntProvider)
+	prov, ok := req.ProviderData.(*SaviyntProvider)
 	if !ok {
-		tflog.Error(ctx, "Provider configuration failed - expected *saviyntProvider, got different type")
+		tflog.Error(ctx, "Provider configuration failed - expected *SaviyntProvider, got different type")
 		resp.Diagnostics.AddError(
 			"Unexpected Provider Data",
-			"Expected *saviyntProvider, got different type",
+			"Expected *SaviyntProvider, got different type",
 		)
 		return
 	}
@@ -678,7 +688,7 @@ func (d *RolesDataSource) Configure(ctx context.Context, req datasource.Configur
 	// Set the client and token from the provider state using interface wrapper.
 	d.client = &client.SaviyntClientWrapper{Client: prov.client}
 	d.token = prov.accessToken
-
+	d.provider = &client.SaviyntProviderWrapper{Provider: prov}
 	tflog.Debug(ctx, "Roles datasource configured successfully")
 }
 
@@ -747,9 +757,6 @@ func (d *RolesDataSource) Read(ctx context.Context, req datasource.ReadRequest, 
 func (d *RolesDataSource) ReadRolesDetails(ctx context.Context, state *RolesDataSourceModel) (*openapi.GetRolesResponse, error) {
 	tflog.Debug(ctx, "Starting roles API business logic")
 
-	// Use the factory to create role operations
-	roleOps := d.roleFactory.CreateRoleOperations(d.client.APIBaseURL(), d.token)
-
 	areq := openapi.GetRolesRequest{}
 
 	// Set all request parameters using reflection-based helper
@@ -761,10 +768,21 @@ func (d *RolesDataSource) ReadRolesDetails(ctx context.Context, state *RolesData
 	d.setCustomPropertiesOnRequest(state, &areq)
 
 	tflog.Debug(ctx, "Executing roles API request")
-	rolesResponse, httpResp, err := roleOps.GetRoles(ctx, areq)
+	var rolesResponse *openapi.GetRolesResponse
+	var finalHttpResp *http.Response
+	err := d.provider.AuthenticatedAPICallWithRetry(ctx, "get_roles_datasource", func(token string) error {
+		roleOps := d.roleFactory.CreateRoleOperations(d.client.APIBaseURL(), token)
+		resp, httpResp, err := roleOps.GetRoles(ctx, areq)
+		if httpResp != nil && httpResp.StatusCode == 401 {
+			return fmt.Errorf("401 unauthorized")
+		}
+		rolesResponse = resp
+		finalHttpResp = httpResp  // Capture final HTTP response
+		return err
+	})
 
 	// Handle errors using helper functions
-	if rolesutil.RoleHandleHTTPError(ctx, httpResp, err, "reading roles", &diag.Diagnostics{}) {
+	if rolesutil.RoleHandleHTTPError(ctx, finalHttpResp, err, "reading roles", &diag.Diagnostics{}) {
 		return nil, fmt.Errorf("HTTP error during roles read")
 	}
 
@@ -780,8 +798,8 @@ func (d *RolesDataSource) ReadRolesDetails(ctx context.Context, state *RolesData
 	logData := map[string]interface{}{
 		"role_count": roleCount,
 	}
-	if httpResp != nil {
-		logData["status_code"] = httpResp.StatusCode
+	if finalHttpResp != nil {
+		logData["status_code"] = finalHttpResp.StatusCode
 	}
 
 	tflog.Debug(ctx, "Roles API request completed successfully", logData)
@@ -1055,7 +1073,7 @@ func (d *RolesDataSource) HandleConditionalCustomProperties(config *RolesDataSou
 // When authenticate=true, all roledetails are returned in state
 func (d *RolesDataSource) HandleRolesAuthenticationLogic(state *RolesDataSourceModel, resp *datasource.ReadResponse) {
 	// Check if role details are empty regardless of authenticate value
-	if state.Roledetails == nil || len(state.Roledetails) == 0 {
+	if len(state.Roledetails) == 0 {
 		tflog.Warn(context.Background(), "No role details found from API")
 
 		// Use API message if available, otherwise use default message

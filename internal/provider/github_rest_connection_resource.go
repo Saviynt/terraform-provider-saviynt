@@ -12,6 +12,7 @@ package provider
 import (
 	"context"
 	"fmt"
+	"net/http"
 	"os"
 	"terraform-provider-Saviynt/internal/client"
 	"terraform-provider-Saviynt/util"
@@ -46,6 +47,7 @@ type GithubRestConnectorResourceModel struct {
 type githubRestConnectionResource struct {
 	client            client.SaviyntClientInterface
 	token             string
+	provider          client.SaviyntProviderInterface
 	connectionFactory client.ConnectionFactoryInterface
 }
 
@@ -117,18 +119,19 @@ func (r *githubRestConnectionResource) Configure(ctx context.Context, req resour
 		return
 	}
 
-	prov, ok := req.ProviderData.(*saviyntProvider)
+	prov, ok := req.ProviderData.(*SaviyntProvider)
 	if !ok {
 		errorCode := githubRestErrorCodes.ProviderConfig()
 		opCtx.LogOperationError(ctx, "Provider configuration failed", errorCode,
-			fmt.Errorf("expected *saviyntProvider, got different type"),
-			map[string]interface{}{"expected_type": "*saviyntProvider"})
-		resp.Diagnostics.AddError("Unexpected Provider Data", "Expected *saviyntProvider")
+			fmt.Errorf("expected *SaviyntProvider, got different type"),
+			map[string]interface{}{"expected_type": "*SaviyntProvider"})
+		resp.Diagnostics.AddError("Unexpected Provider Data", "Expected *SaviyntProvider")
 		return
 	}
 
 	r.client = &client.SaviyntClientWrapper{Client: prov.client}
 	r.token = prov.accessToken
+	r.provider = &client.SaviyntProviderWrapper{Provider: prov} // Store provider reference for retry logic
 
 	opCtx.LogOperationEnd(ctx, "GitHub REST connection resource configured successfully")
 }
@@ -141,6 +144,11 @@ func (r *githubRestConnectionResource) SetClient(client client.SaviyntClientInte
 // SetToken sets the token for testing purposes
 func (r *githubRestConnectionResource) SetToken(token string) {
 	r.token = token
+}
+
+// SetProvider sets the provider for testing purposes
+func (r *githubRestConnectionResource) SetProvider(provider client.SaviyntProviderInterface) {
+	r.provider = provider
 }
 
 func (r *githubRestConnectionResource) Create(ctx context.Context, req resource.CreateRequest, resp *resource.CreateResponse) {
@@ -209,11 +217,27 @@ func (r *githubRestConnectionResource) CreateGithubRestConnection(ctx context.Co
 
 	opCtx.LogOperationStart(logCtx, "Starting GitHub REST connection creation")
 
-	// Use the factory to create connection operations
-	connectionOps := r.connectionFactory.CreateConnectionOperations(r.client.APIBaseURL(), r.token)
+	// Check if connection already exists with retry logic
+	var existingResource *openapi.GetConnectionDetailsResponse
+	var finalHttpResp *http.Response
 
-	// Check if connection already exists
-	existingResource, _, _ := connectionOps.GetConnectionDetails(ctx, connectionName)
+	err := r.provider.AuthenticatedAPICallWithRetry(ctx, "get_connection_details_idempotency", func(token string) error {
+		connectionOps := r.connectionFactory.CreateConnectionOperations(r.client.APIBaseURL(), token)
+		resp, httpResp, err := connectionOps.GetConnectionDetails(ctx, connectionName)
+		if httpResp != nil && httpResp.StatusCode == 401 {
+			return fmt.Errorf("401 unauthorized")
+		}
+		existingResource = resp
+		finalHttpResp = httpResp // Update on every call including retries
+		return err
+	})
+
+	if err != nil && finalHttpResp != nil && finalHttpResp.StatusCode != 412 {
+		errorCode := githubRestErrorCodes.ReadFailed()
+		opCtx.LogOperationError(logCtx, "Failed to check existing connection", errorCode, err)
+		return nil, errorsutil.CreateStandardError(errorsutil.ConnectorTypeGithubREST, errorCode, "create", connectionName, err)
+	}
+
 	if existingResource != nil &&
 		existingResource.GithubRESTConnectionResponse != nil &&
 		existingResource.GithubRESTConnectionResponse.Errorcode != nil &&
@@ -230,7 +254,19 @@ func (r *githubRestConnectionResource) CreateGithubRestConnection(ctx context.Co
 		GithubRESTConnector: &githubRestConn,
 	}
 
-	apiResp, _, err := connectionOps.CreateOrUpdateConnection(ctx, githubRestConnRequest)
+	// Execute create operation with retry logic
+	var apiResp *openapi.CreateOrUpdateResponse
+
+	err = r.provider.AuthenticatedAPICallWithRetry(ctx, "create_githubrest_connection", func(token string) error {
+		connectionOps := r.connectionFactory.CreateConnectionOperations(r.client.APIBaseURL(), token)
+		resp, httpResp, err := connectionOps.CreateOrUpdateConnection(ctx, githubRestConnRequest)
+		if httpResp != nil && httpResp.StatusCode == 401 {
+			return fmt.Errorf("401 unauthorized")
+		}
+		apiResp = resp
+		return err
+	})
+
 	if err != nil {
 		errorCode := githubRestErrorCodes.CreateFailed()
 		opCtx.LogOperationError(ctx, "Failed to create GitHub REST connection", errorCode, err)
@@ -367,10 +403,19 @@ func (r *githubRestConnectionResource) ReadGithubRestConnection(ctx context.Cont
 
 	opCtx.LogOperationStart(logCtx, "Starting GitHub REST connection read operation")
 
-	// Use the factory to create connection operations
-	connectionOps := r.connectionFactory.CreateConnectionOperations(r.client.APIBaseURL(), r.token)
+	// Execute read operation with retry logic
+	var apiResp *openapi.GetConnectionDetailsResponse
 
-	apiResp, _, err := connectionOps.GetConnectionDetails(ctx, connectionName)
+	err := r.provider.AuthenticatedAPICallWithRetry(ctx, "read_githubrest_connection", func(token string) error {
+		connectionOps := r.connectionFactory.CreateConnectionOperations(r.client.APIBaseURL(), token)
+		resp, httpResp, err := connectionOps.GetConnectionDetails(ctx, connectionName)
+		if httpResp != nil && httpResp.StatusCode == 401 {
+			return fmt.Errorf("401 unauthorized")
+		}
+		apiResp = resp
+		return err
+	})
+
 	if err != nil {
 		errorCode := githubRestErrorCodes.ReadFailed()
 		opCtx.LogOperationError(logCtx, "Failed to read GitHub REST connection", errorCode, err)
@@ -540,9 +585,6 @@ func (r *githubRestConnectionResource) UpdateGithubRestConnection(ctx context.Co
 
 	opCtx.LogOperationStart(logCtx, "Starting GitHub REST connection update")
 
-	// Use the factory to create connection operations
-	connectionOps := r.connectionFactory.CreateConnectionOperations(r.client.APIBaseURL(), r.token)
-
 	githubRestConn := r.BuildGithubRestConnector(plan, config)
 
 	if plan.VaultConnection.ValueString() == "" {
@@ -556,7 +598,19 @@ func (r *githubRestConnectionResource) UpdateGithubRestConnection(ctx context.Co
 		GithubRESTConnector: &githubRestConn,
 	}
 
-	apiResp, _, err := connectionOps.CreateOrUpdateConnection(ctx, githubRestConnRequest)
+	// Execute update operation with retry logic
+	var apiResp *openapi.CreateOrUpdateResponse
+
+	err := r.provider.AuthenticatedAPICallWithRetry(ctx, "update_githubrest_connection", func(token string) error {
+		connectionOps := r.connectionFactory.CreateConnectionOperations(r.client.APIBaseURL(), token)
+		resp, httpResp, err := connectionOps.CreateOrUpdateConnection(ctx, githubRestConnRequest)
+		if httpResp != nil && httpResp.StatusCode == 401 {
+			return fmt.Errorf("401 unauthorized")
+		}
+		apiResp = resp
+		return err
+	})
+
 	if err != nil {
 		errorCode := githubRestErrorCodes.UpdateFailed()
 		opCtx.LogOperationError(logCtx, "Failed to update GitHub REST connection", errorCode, err)

@@ -11,6 +11,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"log"
+	"net/http"
 	"terraform-provider-Saviynt/internal/client"
 	"terraform-provider-Saviynt/util"
 	"terraform-provider-Saviynt/util/errorsutil"
@@ -26,6 +27,7 @@ import (
 type privilegeDatasource struct {
 	client           client.SaviyntClientInterface
 	token            string
+	provider         client.SaviyntProviderInterface
 	privilegeFactory client.PrivilegeFactoryInterface
 }
 
@@ -54,6 +56,11 @@ func (d *privilegeDatasource) SetClient(client client.SaviyntClientInterface) {
 // SetToken sets the token for testing purposes
 func (d *privilegeDatasource) SetToken(token string) {
 	d.token = token
+}
+
+// SetProvider sets the provider for testing purposes
+func (r *privilegeDatasource) SetProvider(provider client.SaviyntProviderInterface) {
+	r.provider = provider
 }
 
 type PrivilegeDataSourceModel struct {
@@ -217,7 +224,7 @@ func (d *privilegeDatasource) Configure(ctx context.Context, req datasource.Conf
 	}
 
 	// Cast provider data to your provider type.
-	prov, ok := req.ProviderData.(*saviyntProvider)
+	prov, ok := req.ProviderData.(*SaviyntProvider)
 	if !ok {
 		tflog.Error(ctx, "Provider configuration failed", map[string]interface{}{
 			"expected_type": "*saviyntProvider",
@@ -232,7 +239,7 @@ func (d *privilegeDatasource) Configure(ctx context.Context, req datasource.Conf
 	// Set the client and token from the provider state using interface wrapper.
 	d.client = &client.SaviyntClientWrapper{Client: prov.client}
 	d.token = prov.accessToken
-
+	d.provider = &client.SaviyntProviderWrapper{Provider: prov} // Store provider reference for retry logic
 	tflog.Debug(ctx, "Privilege datasource configured successfully")
 }
 
@@ -293,38 +300,47 @@ func (d *privilegeDatasource) Read(ctx context.Context, req datasource.ReadReque
 }
 
 // ReadPrivilegeDetails retrieves privilege details from Saviynt API
-// Handles parameter preparation and API call execution using factory pattern
+// Handles parameter preparation and API call execution with refresh token retry logic
 func (d *privilegeDatasource) ReadPrivilegeDetails(ctx context.Context, state *PrivilegeDataSourceModel) (*openapi.GetPrivilegeListResponse, error) {
 	tflog.Debug(ctx, "Starting Privilege read API call in ReadPrivilegeDetails")
 
-	// Create privilege operations using the factory
-	privilegeOps := d.privilegeFactory.CreatePrivilegeOperations(d.client.APIBaseURL(), d.token)
+	var readResp *openapi.GetPrivilegeListResponse
+	var finalHttpResp *http.Response
+	// Execute API request with retry logic
+	err := d.provider.AuthenticatedAPICallWithRetry(ctx, "read_privilege_datasource", func(token string) error {
+		privilegeOps := d.privilegeFactory.CreatePrivilegeOperations(d.client.APIBaseURL(), token)
 
-	getReq := openapi.GetPrivilegeListRequest{
-		Endpoint:        util.SafeStringValue(state.Endpoint),
-		Entitlementtype: util.StringPointerOrEmpty(state.Entitlementtype),
-		Max:             util.StringPointerOrEmpty(state.Max),
-		Offset:          util.StringPointerOrEmpty(state.Offset),
-	}
+		getReq := openapi.GetPrivilegeListRequest{
+			Endpoint:        util.SafeStringValue(state.Endpoint),
+			Entitlementtype: util.StringPointerOrEmpty(state.Entitlementtype),
+			Max:             util.StringPointerOrEmpty(state.Max),
+			Offset:          util.StringPointerOrEmpty(state.Offset),
+		}
 
-	getReqJson, _ := json.Marshal(getReq)
-	tflog.Debug(ctx, "Privilege Datasource: Get API REQUEST", map[string]interface{}{
-		"request": string(getReqJson),
+		getReqJson, _ := json.Marshal(getReq)
+		tflog.Debug(ctx, "Privilege Datasource: Get API REQUEST", map[string]interface{}{
+			"request": string(getReqJson),
+		})
+
+		tflog.Debug(ctx, "Executing API request to get privilege details", map[string]interface{}{
+			"endpoint":         state.Endpoint,
+			"entitlement_type": state.Entitlementtype,
+			"max":              state.Max,
+			"offset":           state.Offset,
+		})
+
+		resp, httpResp, err := privilegeOps.GetPrivilege(ctx, getReq)
+		if httpResp != nil && httpResp.StatusCode == 401 {
+			return fmt.Errorf("401 unauthorized")
+		}
+		readResp = resp
+		finalHttpResp = httpResp
+		return err
 	})
-
-	tflog.Debug(ctx, "Executing API request to get privilege details", map[string]interface{}{
-		"endpoint":         state.Endpoint,
-		"entitlement_type": state.Entitlementtype,
-		"max":              state.Max,
-		"offset":           state.Offset,
-	})
-
-	// Execute API call
-	readResp, httpResp, err := privilegeOps.GetPrivilege(ctx, getReq)
 
 	if err != nil {
 		log.Printf("[ERROR] Privileges: Error in reading privilege: %v", err)
-		err = errorsutil.HandleHTTPError(httpResp, err, "ReadPrivilegeDetails")
+		err = errorsutil.HandleHTTPError(finalHttpResp, err, "ReadPrivilegeDetails")
 		return nil, fmt.Errorf("Privilege Datasource: API call failed: %w", err)
 	}
 
@@ -338,7 +354,7 @@ func (d *privilegeDatasource) ReadPrivilegeDetails(ctx context.Context, state *P
 	}
 
 	tflog.Debug(ctx, "Privilege Datasource: API call successful", map[string]interface{}{
-		"status_code": httpResp.StatusCode,
+		"status_code": finalHttpResp.StatusCode,
 	})
 
 	return readResp, nil
