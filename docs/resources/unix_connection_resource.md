@@ -167,22 +167,29 @@ resource "saviynt_unix_connection_resource" "example" {
 - `inactive_lock_account` (String) Property for INACTIVE_LOCK_ACCOUNT
 - `lock_account_command` (String) Property for LOCK_ACCOUNT_COMMAND
 - `pass_through_connection_details` (String) Property for PassThroughConnectionDetails
-- `passphrase` (String) Property for PASSPHRASE
-- `password` (String) Property for PASSWORD
+- `passphrase` (String, Sensitive) Property for PASSPHRASE
+- `passphrase_wo` (String) Passphrase write-only attribute.
+- `password` (String, Sensitive) Property for PASSWORD
+- `password_wo` (String) Password write-only attribute.
 - `pem_key_file` (String) Property for PEM_KEY_FILE
 - `provision_account_command` (String) Property for PROVISION_ACCOUNT_COMMAND
 - `remove_access_command` (String) Property for REMOVE_ACCESS_COMMAND
 - `save_in_vault` (String) Flag indicating whether the encrypted attribute should be saved in the configured vault. Example: "false"
 - `shadow_file` (String) Property for SHADOW_FILE
-- `ssh_key` (String) Property for SSH_KEY
-- `ssh_pass_through_passphrase` (String) Property for SSHPassThroughPassphrase
-- `ssh_pass_through_password` (String) Property for SSHPassThroughPassword
-- `ssh_pass_through_sshkey` (String) Property for SSHPassThroughSSHKEY
+- `ssh_key` (String, Sensitive) Property for SSH_KEY
+- `ssh_key_wo` (String) SSH key write-only attribute.
+- `ssh_pass_through_passphrase` (String, Sensitive) Property for SSHPassThroughPassphrase
+- `ssh_pass_through_passphrase_wo` (String) SSH pass-through passphrase write-only attribute.
+- `ssh_pass_through_password` (String, Sensitive) Property for SSHPassThroughPassword
+- `ssh_pass_through_password_wo` (String) SSH pass-through password write-only attribute.
+- `ssh_pass_through_sshkey` (String, Sensitive) Property for SSHPassThroughSSHKEY
+- `ssh_pass_through_sshkey_wo` (String) SSH pass-through SSH key write-only attribute.
 - `status_threshold_config` (String) Property for STATUS_THRESHOLD_CONFIG
 - `unlock_account_command` (String) Property for UNLOCK_ACCOUNT_COMMAND
 - `update_account_command` (String) Property for UPDATE_ACCOUNT_COMMAND
 - `vault_configuration` (String) JSON string specifying vault configuration.
 - `vault_connection` (String) Specifies the type of vault connection being used (e.g., 'Hashicorp'). Example: "Hashicorp"
+- `wo_version` (String) Add/change the value of this attribute to update the writeonly attributes like username, password etc in connection resources
 
 ### Read-Only
 

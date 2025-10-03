@@ -277,7 +277,6 @@ resource "saviynt_ad_connection_resource" "example" {
 ### Required
 
 - `connection_name` (String) Name of the connection. Example: "Active Directory_Doc"
-- `password` (String) Set the Password.
 
 ### Optional
 
@@ -316,11 +315,13 @@ resource "saviynt_ad_connection_resource" "example" {
 - `organization_attribute` (String) Organization attributes.
 - `page_size` (String) LDAP page size. Example: "1000"
 - `pam_config` (String) JSON for PAM bootstrap configuration. Example: '{"Connection":"AD",...}'
+- `password` (String, Sensitive) Set the Password.
 - `password_max_length` (String) Maximum password length. Example: "12"
 - `password_min_length` (String) Minimum password length. Example: "8"
 - `password_noofcapsalpha` (String) Number of capital letters required. Example: "2"
 - `password_noofdigits` (String) Number of digits required. Example: "5"
 - `password_noofsplchars` (String) Number of special characters required. Example: "1"
+- `password_wo` (String) Set the Password.
 - `read_operational_attributes` (String) Flag for reading operational attributes. Example: "FALSE"
 - `remove_account_action` (String) Action on account removal. Example: '{"removeAction":"DELETE"}'
 - `reset_and_change_passwrd_json` (String) JSON for reset/change password actions. Example: '{"RESET":{"pwdLastSet":"0","title":"password reset"},"CHANGE":{"pwdLastSet":"-1","title":"password changed"}}'
@@ -342,6 +343,7 @@ resource "saviynt_ad_connection_resource" "example" {
 - `username` (String) System admin username.
 - `vault_configuration` (String) JSON string specifying vault configuration.
 - `vault_connection` (String) Specifies the type of vault connection being used (e.g., 'Hashicorp'). Example: "Hashicorp"
+- `wo_version` (String) Add/change the value of this attribute to update the writeonly attributes like username, password etc in connection resources
 
 ### Read-Only
 
