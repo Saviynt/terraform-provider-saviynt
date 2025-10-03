@@ -760,6 +760,12 @@ func (r *SapConnectionResource) ReadSAPConnection(ctx context.Context, connectio
 		return nil, errorsutil.CreateStandardError(errorsutil.ConnectorTypeSAP, errorCode, "read", connectionName, err)
 	}
 
+	if err := r.ValidateSAPConnectionResponse(apiResp); err != nil {
+		errorCode := sapErrorCodes.APIError()
+		opCtx.LogOperationError(ctx, "Invalid connection type for SAP datasource", errorCode, err)
+		return nil, fmt.Errorf("[%s] Unable to verify connection type for connection %q. The provider could not determine the type of this connection. Please ensure the connection name is correct and belongs to a supported connector type", errorCode, connectionName)
+	}
+
 	if apiResp != nil && apiResp.SAPConnectionResponse != nil && apiResp.SAPConnectionResponse.Errorcode != nil && *apiResp.SAPConnectionResponse.Errorcode != 0 {
 		apiErr := fmt.Errorf("API returned error code %d: %s", *apiResp.SAPConnectionResponse.Errorcode, errorsutil.SanitizeMessage(apiResp.SAPConnectionResponse.Msg))
 		errorCode := sapErrorCodes.APIError()
@@ -857,6 +863,13 @@ func (r *SapConnectionResource) UpdateModelFromReadResponse(state *SapConnectorR
 		state.Msg = types.StringValue(apiMessage)
 	}
 	state.ErrorCode = util.Int32PtrToTFString(apiResp.SAPConnectionResponse.Errorcode)
+}
+
+func (r *SapConnectionResource) ValidateSAPConnectionResponse(apiResp *openapi.GetConnectionDetailsResponse) error {
+	if apiResp != nil && apiResp.SAPConnectionResponse == nil {
+		return fmt.Errorf("verify the connection type - SAP connection response is nil")
+	}
+	return nil
 }
 
 func (r *SapConnectionResource) UpdateSAPConnection(ctx context.Context, plan *SapConnectorResourceModel, config *SapConnectorResourceModel) (*openapi.CreateOrUpdateResponse, error) {

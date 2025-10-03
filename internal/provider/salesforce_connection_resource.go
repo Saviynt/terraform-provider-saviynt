@@ -406,6 +406,12 @@ func (r *SalesforceConnectionResource) ReadSalesforceConnection(ctx context.Cont
 		return nil, errorsutil.CreateStandardError(errorsutil.ConnectorTypeSalesforce, errorCode, "read", connectionName, err)
 	}
 
+	if err := r.ValidateSalesforceConnectionResponse(apiResp); err != nil {
+		errorCode := salesforceErrorCodes.APIError()
+		opCtx.LogOperationError(ctx, "Invalid connection type for Salesforce datasource", errorCode, err)
+		return nil, fmt.Errorf("[%s] Unable to verify connection type for connection %q. The provider could not determine the type of this connection. Please ensure the connection name is correct and belongs to a supported connector type", errorCode, connectionName)
+	}
+
 	if apiResp != nil && apiResp.SalesforceConnectionResponse != nil && apiResp.SalesforceConnectionResponse.Errorcode != nil && *apiResp.SalesforceConnectionResponse.Errorcode != 0 {
 		apiErr := fmt.Errorf("API returned error code %d: %s", *apiResp.SalesforceConnectionResponse.Errorcode, errorsutil.SanitizeMessage(apiResp.SalesforceConnectionResponse.Msg))
 		errorCode := salesforceErrorCodes.APIError()
@@ -459,6 +465,13 @@ func (r *SalesforceConnectionResource) UpdateModelFromReadResponse(state *Salesf
 		state.Msg = types.StringValue(apiMessage)
 	}
 	state.ErrorCode = util.Int32PtrToTFString(apiResp.SalesforceConnectionResponse.Errorcode)
+}
+
+func (r *SalesforceConnectionResource) ValidateSalesforceConnectionResponse(apiResp *openapi.GetConnectionDetailsResponse) error {
+	if apiResp != nil && apiResp.SalesforceConnectionResponse == nil {
+		return fmt.Errorf("verify the connection type - Salesforce connection response is nil")
+	}
+	return nil
 }
 
 func (r *SalesforceConnectionResource) UpdateSalesforceConnection(ctx context.Context, plan *SalesforceConnectorResourceModel, config *SalesforceConnectorResourceModel) (*openapi.CreateOrUpdateResponse, error) {
