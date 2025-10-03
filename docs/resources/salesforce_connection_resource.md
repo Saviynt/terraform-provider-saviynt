@@ -110,7 +110,8 @@ resource "saviynt_salesforce_connection_resource" "ss" {
 - `account_field_query` (String) Fields to retrieve for Salesforce accounts. Example: Id, Username, LastName, FirstName, etc.
 - `account_filter_query` (String) Query used to filter Salesforce accounts.
 - `client_id` (String) The OAuth client ID for Salesforce.
-- `client_secret` (String) The OAuth client secret for Salesforce.
+- `client_secret` (String, Sensitive) The OAuth client secret for Salesforce.
+- `client_secret_wo` (String) The OAuth client secret for Salesforce (write-only).
 - `createaccountjson` (String) JSON template used for account creation in Salesforce.
 - `custom_createaccount_url` (String) Custom URL used when creating a Salesforce account.
 - `customconfigjson` (String) Custom configuration options for Salesforce connector.
@@ -124,11 +125,13 @@ resource "saviynt_salesforce_connection_resource" "ss" {
 - `object_to_be_imported` (String) Comma-separated list of Salesforce objects to import. Example: "Profile,Role,Group,PermissionSet"
 - `pam_config` (String) Privileged Access Management (PAM) configuration in JSON format.
 - `redirect_uri` (String) The redirect URI used in OAuth flows. Example: https://@INSTANCE_NAME@.salesforce.com/services/oauth2/success
-- `refresh_token` (String) The OAuth refresh token used to get access tokens from Salesforce.
+- `refresh_token` (String, Sensitive) The OAuth refresh token used to get access tokens from Salesforce.
+- `refresh_token_wo` (String) The OAuth refresh token used to get access tokens from Salesforce (write-only).
 - `save_in_vault` (String) Flag indicating whether the encrypted attribute should be saved in the configured vault. Example: "false"
 - `status_threshold_config` (String) JSON configuration to define active/inactive thresholds and lock statuses.
 - `vault_configuration` (String) JSON string specifying vault configuration.
 - `vault_connection` (String) Specifies the type of vault connection being used (e.g., 'Hashicorp'). Example: "Hashicorp"
+- `wo_version` (String) Add/change the value of this attribute to update the writeonly attributes like username, password etc in connection resources
 
 ### Read-Only
 

@@ -54,8 +54,8 @@ Following connectors are available:
 - Okta
 
 Ephemeral resources available:
-- [File ephemeral resource](#ephemeral-file-credential-resource)
-- [Env ephemeral resource](#ephemeral-env-credential-resource)
+- [File ephemeral resource](#feature-ephemeral-file-credential-resource)
+- [Env ephemeral resource](#feature-ephemeral-env-credential-resource)
 
 ---
 
@@ -647,17 +647,17 @@ The **Ephemeral File Credential Resource** is a transient Terraform resource tha
 
 The following connectors are supported and can consume credentials provided by this resource:
 
-- **AD**: `username`, `password`
-- **ADSI**: `username`, `password`
-- **DB**: `username`, `password`, `change_pass_json`
-- **EntraId**: `client_id`, `client_secret`, `access_token`,`azure_mgmt_access_token`, `windows_connector_json`, `change_pass_json`, `connection_json`
+- **AD**: `password`
+- **ADSI**: `password`
+- **DB**: `password`, `change_pass_json`
+- **EntraId**: `client_secret`, `access_token`, `azure_mgmt_access_token`, `windows_connector_json`, `connection_json`
 - **Github REST**: `connection_json`, `access_tokens`
-- **REST**: `connection_json`, `change_pass_json`
-- **Salesforce**: `client_id`, `client_secret`, `refresh_token`
+- **REST**: `connection_json`
+- **Salesforce**: `client_secret`, `refresh_token`
 - **SAP**: `password`, `prov_password`
-- **Unix**: `username`, `password`, `change_password_json`,  `passphrase`, `ssh_key`, `ssh_pass_through_password`, `ssh_pass_through_sshkey`, `ssh_pass_through_passphrase`
-- **Workday**: `username`, `password`, `client_id`, `client_secret`, `refresh_token`
-- **Okta**: `import_url`, `auth_token`
+- **Unix**: `password`, `passphrase`, `ssh_key`, `ssh_pass_through_password`, `ssh_pass_through_sshkey`, `ssh_pass_through_passphrase`
+- **Workday**: `password`, `client_secret`, `refresh_token`
+- **Okta**: `auth_token`
 
 ### Usage
 
@@ -670,12 +670,31 @@ The ephemeral credential resource reads from a local JSON file structured with t
 - Ensure the credential file is secured and not committed to version control.
 - Avoid using this resource in long-lived plans, as it relies on local files that may change or expire.
 
+## Feature: Ephemeral Env Credential Resource
+
+The **Ephemeral Env Credential Resource** is a transient Terraform resource that provides temporary, in-memory credentials to other connector resources by reading values from the environment variables at apply time. This allows secure and flexible provisioning without persisting sensitive data in the Terraform state.
+
+### Supported Connectors
+
+The following connectors are supported and can consume credentials provided by this resource:
+
+- **AD**: `password`
+- **ADSI**: `password`
+- **DB**: `password`, `change_pass_json`
+- **EntraId**: `client_secret`, `access_token`, `azure_mgmt_access_token`, `windows_connector_json`, `connection_json`
+- **Github REST**: `connection_json`, `access_tokens`
+- **REST**: `connection_json`
+- **Salesforce**: `client_secret`, `refresh_token`
+- **SAP**: `password`, `prov_password`
+- **Unix**: `password`, `passphrase`, `ssh_key`, `ssh_pass_through_password`, `ssh_pass_through_sshkey`, `ssh_pass_through_passphrase`
+- **Workday**: `password`, `client_secret`, `refresh_token`
+- **Okta**: `auth_token`
+
 ### Usage
 
 The ephemeral credential resource reads from environment variables. These fields are then dynamically injected into the respective connector resources during the `apply` phase.
 
 > **Note:** This resource is ephemeral and does not store any state. It is designed for use cases where credentials must remain local and transient.
-
 
 ## Feature: `authenticate` Toggle for All Data Source
 
