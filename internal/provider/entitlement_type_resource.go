@@ -15,6 +15,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"log"
+	"net/http"
 	"os"
 	"strings"
 	"terraform-provider-Saviynt/internal/client"
@@ -107,6 +108,7 @@ type EntitlementTypeResourceModel struct {
 type EntitlementTypeResource struct {
 	client                 client.SaviyntClientInterface
 	token                  string
+	provider               client.SaviyntProviderInterface
 	entitlementTypeFactory client.EntitlementTypeFactoryInterface
 }
 
@@ -478,16 +480,17 @@ func (r *EntitlementTypeResource) Configure(ctx context.Context, req resource.Co
 	}
 
 	// Cast provider data to your provider type.
-	prov, ok := req.ProviderData.(*saviyntProvider)
+	prov, ok := req.ProviderData.(*SaviyntProvider)
 	if !ok {
 		log.Println("[ERROR] Provider: Unexpected provider data")
-		resp.Diagnostics.AddError("Unexpected Provider Data", "Expected *saviyntProvider")
+		resp.Diagnostics.AddError("Unexpected Provider Data", "Expected *SaviyntProvider")
 		return
 	}
 
 	// Set the client and token from the provider state using interface wrapper.
 	r.client = &client.SaviyntClientWrapper{Client: prov.client}
 	r.token = prov.accessToken
+	r.provider = &client.SaviyntProviderWrapper{Provider: prov} // Store provider reference for retry logic
 	log.Println("[DEBUG] EntitlementType: Resource configured successfully")
 }
 
@@ -501,13 +504,32 @@ func (r *EntitlementTypeResource) SetToken(token string) {
 	r.token = token
 }
 
+// SetProvider sets the provider for testing purposes
+func (r *EntitlementTypeResource) SetProvider(provider client.SaviyntProviderInterface) {
+	r.provider = provider
+}
+
 // CreateEntitlementType creates an entitlement type
 func (r *EntitlementTypeResource) CreateEntitlementType(ctx context.Context, plan *EntitlementTypeResourceModel) (*openapi.CreateOrUpdateEntitlementTypeResponse, error) {
 	log.Printf("[DEBUG] EntitlementType: Starting creation for entitlement type: %s", plan.EntitlementName.ValueString())
 
-	entitlementTypeOps := r.entitlementTypeFactory.CreateEntitlementTypeOperations(r.client.APIBaseURL(), r.token)
+	// Check if entitlement type already exists (idempotency check) with retry logic
+	var existingResource *openapi.GetEntitlementTypeResponse
+	err := r.provider.AuthenticatedAPICallWithRetry(ctx, "get_entitlement_type_idempotency", func(token string) error {
+		entitlementTypeOps := r.entitlementTypeFactory.CreateEntitlementTypeOperations(r.client.APIBaseURL(), token)
+		resp, httpResp, err := entitlementTypeOps.GetEntitlementType(ctx, plan.EntitlementName.ValueString(), "", "", plan.EndpointName.ValueString())
+		if httpResp != nil && httpResp.StatusCode == 401 {
+			return fmt.Errorf("401 unauthorized")
+		}
+		existingResource = resp
+		return err
+	})
 
-	existingResource, _, _ := entitlementTypeOps.GetEntitlementType(ctx, plan.EntitlementName.ValueString(), "", "", plan.EndpointName.ValueString())
+	if err != nil {
+		log.Printf("[ERROR] EntitlementType: Failed to check existing entitlement type: %v", err)
+		return nil, fmt.Errorf("failed to check existing entitlement type: %w", err)
+	}
+
 	if existingResource != nil &&
 		existingResource.EntitlementTypeDetails != nil &&
 		len(existingResource.EntitlementTypeDetails) > 0 {
@@ -518,14 +540,27 @@ func (r *EntitlementTypeResource) CreateEntitlementType(ctx context.Context, pla
 	// Build entitlement type create request
 	createReq := r.BuildCreateEntitlementTypeRequest(plan)
 
-	createResp, _, err := entitlementTypeOps.CreateEntitlementType(ctx, createReq)
+	// Execute create operation with retry logic
+	var createResp *openapi.CreateOrUpdateEntitlementTypeResponse
+	err = r.provider.AuthenticatedAPICallWithRetry(ctx, "create_entitlement_type", func(token string) error {
+		entitlementTypeOps := r.entitlementTypeFactory.CreateEntitlementTypeOperations(r.client.APIBaseURL(), token)
+		resp, httpResp, err := entitlementTypeOps.CreateEntitlementType(ctx, createReq)
+		if httpResp != nil && httpResp.StatusCode == 401 {
+			return fmt.Errorf("401 unauthorized")
+		}
+		createResp = resp
+		return err
+	})
+
 	if err != nil {
 		return nil, fmt.Errorf("API call failed: %w", err)
 	}
 
 	if createResp != nil && createResp.ErrorCode != nil && *createResp.ErrorCode != "0" {
-		log.Printf("[ERROR]: Error in creating Entitlement Type resource. Errorcode: %v, Message: %v", *createResp.ErrorCode, *createResp.Msg)
-		return nil, fmt.Errorf("creating of Entitlement Type resource failed: %s", *createResp.Msg)
+		errorCode := util.SafeDeref(createResp.ErrorCode)
+		msg := util.SafeDeref(createResp.Msg)
+		log.Printf("[ERROR]: Error in creating Entitlement Type resource. Errorcode: %v, Message: %v", errorCode, msg)
+		return nil, fmt.Errorf("creating of Entitlement Type resource failed: %s", msg)
 	}
 
 	return createResp, nil
@@ -535,11 +570,20 @@ func (r *EntitlementTypeResource) CreateEntitlementType(ctx context.Context, pla
 func (r *EntitlementTypeResource) UpdateEntitlementType(ctx context.Context, plan *EntitlementTypeResourceModel) (*openapi.CreateOrUpdateEntitlementTypeResponse, error) {
 	log.Printf("[DEBUG] EntitlementType: Starting update for entitlement type: %s in endpoint: %s", plan.EntitlementName.ValueString(), plan.EndpointName.ValueString())
 
-	entitlementTypeOps := r.entitlementTypeFactory.CreateEntitlementTypeOperations(r.client.APIBaseURL(), r.token)
-
 	updateReq := r.BuildUpdateEntitlementTypeRequest(plan)
 
-	updateResp, _, err := entitlementTypeOps.UpdateEntitlementType(ctx, updateReq)
+	// Execute update operation with retry logic
+	var updateResp *openapi.CreateOrUpdateEntitlementTypeResponse
+	err := r.provider.AuthenticatedAPICallWithRetry(ctx, "update_entitlement_type", func(token string) error {
+		entitlementTypeOps := r.entitlementTypeFactory.CreateEntitlementTypeOperations(r.client.APIBaseURL(), token)
+		resp, httpResp, err := entitlementTypeOps.UpdateEntitlementType(ctx, updateReq)
+		if httpResp != nil && httpResp.StatusCode == 401 {
+			return fmt.Errorf("401 unauthorized")
+		}
+		updateResp = resp
+		return err
+	})
+
 	if err != nil {
 		return nil, fmt.Errorf("API call failed: %w", err)
 	}
@@ -549,8 +593,10 @@ func (r *EntitlementTypeResource) UpdateEntitlementType(ctx context.Context, pla
 	}
 
 	if updateResp != nil && updateResp.ErrorCode != nil && *updateResp.ErrorCode != "0" {
-		log.Printf("[ERROR]: Error in updating Entitlement Type resource. Errorcode: %v, Message: %v", *updateResp.ErrorCode, *updateResp.Msg)
-		return nil, fmt.Errorf("updating of Entitlement Type resource failed: %s", *updateResp.Msg)
+		errorCode := util.SafeDeref(updateResp.ErrorCode)
+		msg := util.SafeDeref(updateResp.Msg)
+		log.Printf("[ERROR]: Error in updating Entitlement Type resource. Errorcode: %v, Message: %v", errorCode, msg)
+		return nil, fmt.Errorf("updating of Entitlement Type resource failed: %s", msg)
 	}
 
 	return updateResp, nil
@@ -637,9 +683,18 @@ func (r *EntitlementTypeResource) BuildUpdateEntitlementTypeRequest(plan *Entitl
 
 // ReadEntitlementTypeState reads the current state from the API
 func (r *EntitlementTypeResource) ReadEntitlementTypeState(ctx context.Context, plan *EntitlementTypeResourceModel) error {
-	entitlementTypeOps := r.entitlementTypeFactory.CreateEntitlementTypeOperations(r.client.APIBaseURL(), r.token)
+	// Execute read operation with retry logic
+	var readResp *openapi.GetEntitlementTypeResponse
+	err := r.provider.AuthenticatedAPICallWithRetry(ctx, "read_entitlement_type", func(token string) error {
+		entitlementTypeOps := r.entitlementTypeFactory.CreateEntitlementTypeOperations(r.client.APIBaseURL(), token)
+		resp, httpResp, err := entitlementTypeOps.GetEntitlementType(ctx, plan.EntitlementName.ValueString(), "", "", plan.EndpointName.ValueString())
+		if httpResp != nil && httpResp.StatusCode == 401 {
+			return fmt.Errorf("401 unauthorized")
+		}
+		readResp = resp
+		return err
+	})
 
-	readResp, _, err := entitlementTypeOps.GetEntitlementType(ctx, plan.EntitlementName.ValueString(), "", "", plan.EndpointName.ValueString())
 	if err != nil {
 		return fmt.Errorf("API call failed: %w", err)
 	}
@@ -649,7 +704,9 @@ func (r *EntitlementTypeResource) ReadEntitlementTypeState(ctx context.Context, 
 	}
 
 	if readResp != nil && readResp.ErrorCode != nil && *readResp.ErrorCode != "0" {
-		return fmt.Errorf("API Read Failed with error code %s and message: %s", *readResp.ErrorCode, *readResp.Msg)
+		errorCode := util.SafeDeref(readResp.ErrorCode)
+		msg := util.SafeDeref(readResp.Msg)
+		return fmt.Errorf("API Read Failed with error code %s and message: %s", errorCode, msg)
 	}
 
 	if readResp != nil && len(readResp.EntitlementTypeDetails) == 0 {
@@ -1032,9 +1089,8 @@ func (r *EntitlementTypeResource) HandleFollowUpUpdateForCreate(ctx context.Cont
 	}
 
 	log.Printf("[DEBUG] Entitlement type: Performing follow-up update for create-unsupported attributes")
-	entitlementTypeOps := r.entitlementTypeFactory.CreateEntitlementTypeOperations(r.client.APIBaseURL(), r.token)
 
-	err := r.PerformFollowUpUpdate(ctx, plan, entitlementTypeOps)
+	err := r.PerformFollowUpUpdate(ctx, plan, nil)
 	if err != nil {
 		log.Printf("[WARNING] Follow-up update failed: %v", err)
 		return true, err
@@ -1084,7 +1140,7 @@ func (r *EntitlementTypeResource) HasUpdateOnlyAttributes(plan EntitlementTypeRe
 }
 
 // PerformFollowUpUpdate performs an update operation immediately after create to set update-only attributes
-func (r *EntitlementTypeResource) PerformFollowUpUpdate(ctx context.Context, plan EntitlementTypeResourceModel, entitlementTypeOps client.EntitlementTypeOperationsInterface) error {
+func (r *EntitlementTypeResource) PerformFollowUpUpdate(ctx context.Context, plan EntitlementTypeResourceModel, _ interface{}) error {
 	log.Printf("[DEBUG] Starting performFollowUpUpdate for entitlement type: %s for endpoint: %s", plan.EntitlementName.ValueString(), plan.EndpointName.ValueString())
 
 	if !plan.CreateTaskAction.IsNull() && !plan.CreateTaskAction.IsUnknown() {
@@ -1126,21 +1182,34 @@ func (r *EntitlementTypeResource) PerformFollowUpUpdate(ctx context.Context, pla
 	}
 
 	log.Printf("[DEBUG] Executing follow-up update API call...")
-	updateResp, httpResp, err := entitlementTypeOps.UpdateEntitlementType(ctx, updateReqBody)
+
+	// Execute follow-up update operation with retry logic
+	var updateResp *openapi.CreateOrUpdateEntitlementTypeResponse
+	var finalHttpResp *http.Response
+	err := r.provider.AuthenticatedAPICallWithRetry(ctx, "followup_update_entitlement_type", func(token string) error {
+		entitlementTypeOps := r.entitlementTypeFactory.CreateEntitlementTypeOperations(r.client.APIBaseURL(), token)
+		resp, hResp, err := entitlementTypeOps.UpdateEntitlementType(ctx, updateReqBody)
+		if hResp != nil && hResp.StatusCode == 401 {
+			return fmt.Errorf("401 unauthorized")
+		}
+		updateResp = resp
+		finalHttpResp = hResp  // Update on every call including retries
+		return err
+	})
 
 	if err != nil {
 		log.Printf("[ERROR] Follow-up update API call failed: %v", err)
 		return fmt.Errorf("follow up update API call failed: %v", err)
 	}
 
-	log.Printf("[DEBUG] Follow-up update HTTP status: %d", httpResp.StatusCode)
+	log.Printf("[DEBUG] Follow-up update HTTP status: %d", finalHttpResp.StatusCode)
 
 	if updateResp != nil && updateResp.ErrorCode != nil {
 		log.Printf("[DEBUG] Follow-up update response - ErrorCode: %s, Msg: %s",
 			util.SafeDeref(updateResp.ErrorCode),
 			util.SafeDeref(updateResp.Msg))
 
-		if *updateResp.ErrorCode != "0" {
+		if updateResp.ErrorCode != nil && *updateResp.ErrorCode != "0" {
 			return fmt.Errorf("follow up update returned error: %s - %s", util.SafeDeref(updateResp.ErrorCode), util.SafeDeref(updateResp.Msg))
 		}
 	}

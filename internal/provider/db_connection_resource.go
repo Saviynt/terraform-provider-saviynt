@@ -12,6 +12,7 @@ package provider
 import (
 	"context"
 	"fmt"
+	"net/http"
 	"os"
 	"terraform-provider-Saviynt/internal/client"
 	"terraform-provider-Saviynt/util"
@@ -77,6 +78,7 @@ type DBConnectorResourceModel struct {
 type DBConnectionResource struct {
 	client            client.SaviyntClientInterface
 	token             string
+	provider          client.SaviyntProviderInterface
 	connectionFactory client.ConnectionFactoryInterface
 }
 
@@ -295,16 +297,16 @@ func (r *DBConnectionResource) Configure(ctx context.Context, req resource.Confi
 	}
 
 	// Cast provider data to your provider type.
-	prov, ok := req.ProviderData.(*saviyntProvider)
+	prov, ok := req.ProviderData.(*SaviyntProvider)
 	if !ok {
 		errorCode := dbErrorCodes.ProviderConfig()
 		opCtx.LogOperationError(ctx, "Provider configuration failed", errorCode,
-			fmt.Errorf("expected *saviyntProvider, got different type"),
-			map[string]interface{}{"expected_type": "*saviyntProvider"})
+			fmt.Errorf("expected *SaviyntProvider, got different type"),
+			map[string]interface{}{"expected_type": "*SaviyntProvider"})
 
 		resp.Diagnostics.AddError(
 			errorsutil.GetErrorMessage(errorsutil.ErrProviderConfig),
-			fmt.Sprintf("[%s] Expected *saviyntProvider, got different type", errorCode),
+			fmt.Sprintf("[%s] Expected *SaviyntProvider, got different type", errorCode),
 		)
 		return
 	}
@@ -312,6 +314,7 @@ func (r *DBConnectionResource) Configure(ctx context.Context, req resource.Confi
 	// Set the client and token from the provider state.
 	r.client = &client.SaviyntClientWrapper{Client: prov.client}
 	r.token = prov.accessToken
+	r.provider = &client.SaviyntProviderWrapper{Provider: prov} // Store provider reference for retry logic
 
 	opCtx.LogOperationEnd(ctx, "DB connection resource configuration completed successfully")
 }
@@ -326,6 +329,10 @@ func (r *DBConnectionResource) SetToken(token string) {
 	r.token = token
 }
 
+// SetProvider sets the provider for testing purposes
+func (r *DBConnectionResource) SetProvider(provider client.SaviyntProviderInterface) {
+	r.provider = provider
+}
 func (r *DBConnectionResource) Create(ctx context.Context, req resource.CreateRequest, resp *resource.CreateResponse) {
 	var plan, config DBConnectorResourceModel
 
@@ -394,11 +401,26 @@ func (r *DBConnectionResource) CreateDBConnection(ctx context.Context, plan *DBC
 	opCtx.LogOperationStart(logCtx, "Starting DB connection creation",
 		map[string]interface{}{"connection_name": connectionName})
 
-	// Use the factory to create connection operations
-	connectionOps := r.connectionFactory.CreateConnectionOperations(r.client.APIBaseURL(), r.token)
+	// Check if connection already exists (idempotency check) with retry logic
+	var existingResource *openapi.GetConnectionDetailsResponse
+	var finalHttpResp *http.Response
+	err := r.provider.AuthenticatedAPICallWithRetry(ctx, "get_connection_details_idempotency", func(token string) error {
+		connectionOps := r.connectionFactory.CreateConnectionOperations(r.client.APIBaseURL(), token)
+		resp, httpResp, err := connectionOps.GetConnectionDetails(ctx, connectionName)
+		if httpResp != nil && httpResp.StatusCode == 401 {
+			return fmt.Errorf("401 unauthorized")
+		}
+		existingResource = resp
+		finalHttpResp = httpResp // Update on every call including retries
+		return err
+	})
 
-	// Check if connection already exists (idempotency check)
-	existingResource, _, _ := connectionOps.GetConnectionDetails(ctx, connectionName)
+	if err != nil && finalHttpResp != nil && finalHttpResp.StatusCode != 412 {
+		errorCode := dbErrorCodes.ReadFailed()
+		opCtx.LogOperationError(logCtx, "Failed to check existing connection", errorCode, err)
+		return nil, errorsutil.CreateStandardError(errorsutil.ConnectorTypeDB, errorCode, "create", connectionName, err)
+	}
+
 	if existingResource != nil &&
 		existingResource.DBConnectionResponse != nil &&
 		existingResource.DBConnectionResponse.Errorcode != nil &&
@@ -418,8 +440,19 @@ func (r *DBConnectionResource) CreateDBConnection(ctx context.Context, plan *DBC
 
 	opCtx.LogOperationStart(logCtx, "Executing DB connection create API call")
 
-	// Execute create operation through interface - use original context for API calls
-	apiResp, _, err := connectionOps.CreateOrUpdateConnection(ctx, dbConnRequest)
+	// Execute create operation with retry logic
+	var apiResp *openapi.CreateOrUpdateResponse
+
+	err = r.provider.AuthenticatedAPICallWithRetry(ctx, "create_db_connection", func(token string) error {
+		connectionOps := r.connectionFactory.CreateConnectionOperations(r.client.APIBaseURL(), token)
+		resp, httpResp, err := connectionOps.CreateOrUpdateConnection(ctx, dbConnRequest)
+		if httpResp != nil && httpResp.StatusCode == 401 {
+			return fmt.Errorf("401 unauthorized")
+		}
+		apiResp = resp
+		return err
+	})
+
 	if err != nil {
 		errorCode := dbErrorCodes.CreateFailed()
 		opCtx.LogOperationError(logCtx, "Failed to create DB connection", errorCode, err)
@@ -621,11 +654,19 @@ func (r *DBConnectionResource) ReadDBConnection(ctx context.Context, connectionN
 	opCtx.LogOperationStart(logCtx, "Starting DB connection read",
 		map[string]interface{}{"connection_name": connectionName})
 
-	// Use the factory to create connection operations
-	connectionOps := r.connectionFactory.CreateConnectionOperations(r.client.APIBaseURL(), r.token)
+	// Execute read operation with retry logic
+	var apiResp *openapi.GetConnectionDetailsResponse
 
-	// Execute read operation through interface - use original context for API calls
-	apiResp, _, err := connectionOps.GetConnectionDetails(ctx, connectionName)
+	err := r.provider.AuthenticatedAPICallWithRetry(ctx, "read_db_connection", func(token string) error {
+		connectionOps := r.connectionFactory.CreateConnectionOperations(r.client.APIBaseURL(), token)
+		resp, httpResp, err := connectionOps.GetConnectionDetails(ctx, connectionName)
+		if httpResp != nil && httpResp.StatusCode == 401 {
+			return fmt.Errorf("401 unauthorized")
+		}
+		apiResp = resp
+		return err
+	})
+
 	if err != nil {
 		errorCode := dbErrorCodes.ReadFailed()
 		opCtx.LogOperationError(logCtx, "Failed to read DB connection", errorCode, err)
@@ -848,9 +889,6 @@ func (r *DBConnectionResource) UpdateDBConnection(ctx context.Context, plan *DBC
 	opCtx.LogOperationStart(logCtx, "Starting DB connection update",
 		map[string]interface{}{"connection_name": connectionName})
 
-	// Use the factory to create connection operations
-	connectionOps := r.connectionFactory.CreateConnectionOperations(r.client.APIBaseURL(), r.token)
-
 	// Build DB connector request
 	dbConn := r.BuildDBConnector(plan, config)
 
@@ -867,8 +905,19 @@ func (r *DBConnectionResource) UpdateDBConnection(ctx context.Context, plan *DBC
 
 	opCtx.LogOperationStart(logCtx, "Executing DB connection update API call")
 
-	// Use original context for API calls to maintain test compatibility
-	apiResp, _, err := connectionOps.CreateOrUpdateConnection(ctx, dbConnRequest)
+	// Execute update operation with retry logic
+	var apiResp *openapi.CreateOrUpdateResponse
+
+	err := r.provider.AuthenticatedAPICallWithRetry(ctx, "update_db_connection", func(token string) error {
+		connectionOps := r.connectionFactory.CreateConnectionOperations(r.client.APIBaseURL(), token)
+		resp, httpResp, err := connectionOps.CreateOrUpdateConnection(ctx, dbConnRequest)
+		if httpResp != nil && httpResp.StatusCode == 401 {
+			return fmt.Errorf("401 unauthorized")
+		}
+		apiResp = resp
+		return err
+	})
+
 	if err != nil {
 		errorCode := dbErrorCodes.UpdateFailed()
 		opCtx.LogOperationError(logCtx, "Failed to update DB connection", errorCode, err)

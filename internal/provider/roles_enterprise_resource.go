@@ -12,6 +12,7 @@ package provider
 import (
 	"context"
 	"fmt"
+	"net/http"
 	"os"
 	"strings"
 
@@ -229,6 +230,7 @@ type RolesResource struct {
 	client      client.SaviyntClientInterface
 	token       string
 	requestor   string
+	provider    client.SaviyntProviderInterface
 	roleFactory client.RoleFactoryInterface
 }
 
@@ -411,12 +413,12 @@ func (r *RolesResource) Configure(ctx context.Context, req resource.ConfigureReq
 	}
 
 	// Cast provider data to your provider type.
-	prov, ok := req.ProviderData.(*saviyntProvider)
+	prov, ok := req.ProviderData.(*SaviyntProvider)
 	if !ok {
-		tflog.Error(ctx, "Provider configuration failed - expected *saviyntProvider, got different type")
+		tflog.Error(ctx, "Provider configuration failed - expected *SaviyntProvider, got different type")
 		resp.Diagnostics.AddError(
 			"Unexpected Provider Data",
-			"Expected *saviyntProvider, got different type",
+			"Expected *SaviyntProvider, got different type",
 		)
 		return
 	}
@@ -427,6 +429,7 @@ func (r *RolesResource) Configure(ctx context.Context, req resource.ConfigureReq
 	if prov.client.Username != nil {
 		r.requestor = *prov.client.Username
 	}
+	r.provider = &client.SaviyntProviderWrapper{Provider: prov} // Store provider reference for retry logic
 	tflog.Debug(ctx, "Roles resource configured successfully")
 }
 
@@ -438,6 +441,11 @@ func (r *RolesResource) SetClient(client client.SaviyntClientInterface) {
 // SetToken sets the token for testing purposes
 func (r *RolesResource) SetToken(token string) {
 	r.token = token
+}
+
+// SetProvider sets the provider for testing purposes
+func (r *RolesResource) SetProvider(provider client.SaviyntProviderInterface) {
+	r.provider = provider
 }
 
 // SetRequestor sets the requestor for testing purposes
@@ -1065,9 +1073,6 @@ func (r *RolesResource) CreateRole(ctx context.Context, plan *RolesResourceModel
 	roleName := plan.RoleName.ValueString()
 	tflog.Debug(ctx, "Starting role creation business logic", map[string]interface{}{"role_name": roleName})
 
-	// Use the factory to create role operations
-	roleOps := r.roleFactory.CreateRoleOperations(r.client.APIBaseURL(), r.token)
-
 	// Setting up the owners for the role
 	var owners []openapi.CreateRoleOwnerPayload
 	var tfOwnerTemplates []Owner
@@ -1125,13 +1130,24 @@ func (r *RolesResource) CreateRole(ctx context.Context, plan *RolesResourceModel
 	// Set all custom properties using helper function
 	r.buildCustomPropertiesForCreate(plan, &createReq)
 
-	// Execute the API call
+	// Execute the API call with retry logic
 	tflog.Debug(ctx, "Executing role creation API call")
-	apiResp, httpResp, err := roleOps.CreateEnterpriseRole(ctx, createReq)
+	var apiResp *openapi.CreateEnterpriseRoleResponse
+	var finalHttpResp *http.Response
+	err := r.provider.AuthenticatedAPICallWithRetry(ctx, "create_enterprise_role", func(token string) error {
+		roleOps := r.roleFactory.CreateRoleOperations(r.client.APIBaseURL(), token)
+		resp, httpResp, err := roleOps.CreateEnterpriseRole(ctx, createReq)
+		if httpResp != nil && httpResp.StatusCode == 401 {
+			return fmt.Errorf("401 unauthorized")
+		}
+		apiResp = resp
+		finalHttpResp = httpResp  // Capture final HTTP response
+		return err
+	})
 
 	// Handle errors using helper functions
 	var diags diag.Diagnostics
-	if rolesutil.RoleHandleHTTPError(ctx, httpResp, err, "creating role", &diags) {
+	if rolesutil.RoleHandleHTTPError(ctx, finalHttpResp, err, "creating role", &diags) {
 		return nil, fmt.Errorf("failed to create role: %v", diags.Errors())
 	}
 
@@ -1181,8 +1197,6 @@ func (r *RolesResource) AddUsersToRole(ctx context.Context, plan *RolesResourceM
 		return nil, nil // No users to add
 	}
 
-	roleOps := r.roleFactory.CreateRoleOperations(r.client.APIBaseURL(), r.token)
-
 	// Collect errors and success messages
 	var errors []string
 	var successMessages []string
@@ -1192,11 +1206,23 @@ func (r *RolesResource) AddUsersToRole(ctx context.Context, plan *RolesResourceM
 	// Add each user to the role
 	for _, user := range planUsers {
 		userName := user.UserName.ValueString()
-		apiResp, httpResp, err := roleOps.AddUserToRole(ctx, userName, roleName)
+		
+		var apiResp *openapi.AddOrRemoveRoleResponse
+		var finalHttpResp *http.Response
+		err := r.provider.AuthenticatedAPICallWithRetry(ctx, "add_user_to_role", func(token string) error {
+			roleOps := r.roleFactory.CreateRoleOperations(r.client.APIBaseURL(), token)
+			resp, httpResp, err := roleOps.AddUserToRole(ctx, userName, roleName)
+			if httpResp != nil && httpResp.StatusCode == 401 {
+				return fmt.Errorf("401 unauthorized")
+			}
+			apiResp = resp
+			finalHttpResp = httpResp  // Capture final HTTP response
+			return err
+		})
 
 		// Handle HTTP errors
 		var diags diag.Diagnostics
-		if rolesutil.RoleHandleHTTPError(ctx, httpResp, err, "adding user", &diags) {
+		if rolesutil.RoleHandleHTTPError(ctx, finalHttpResp, err, "adding user", &diags) {
 			errors = append(errors, fmt.Sprintf("User %s: %v", userName, diags.Errors()))
 			continue // Continue with next user
 		}
@@ -1279,19 +1305,27 @@ func (r *RolesResource) AddUsersToRole(ctx context.Context, plan *RolesResourceM
 func (r *RolesResource) ReadRole(ctx context.Context, roleName string) (*openapi.GetRolesResponse, error) {
 	tflog.Debug(ctx, "Starting role read business logic", map[string]interface{}{"role_name": roleName})
 
-	// Use the factory to create role operations
-	roleOps := r.roleFactory.CreateRoleOperations(r.client.APIBaseURL(), r.token)
-
 	reqParams := openapi.GetRolesRequest{}
 	reqParams.SetRoleName(roleName)
 	reqParams.SetRequestedObject("entitlements")
 
 	tflog.Debug(ctx, "Executing role read API call")
-	apiResp, httpResp, err := roleOps.GetRoles(ctx, reqParams)
+	var apiResp *openapi.GetRolesResponse
+	var finalHttpResp *http.Response
+	err := r.provider.AuthenticatedAPICallWithRetry(ctx, "get_roles", func(token string) error {
+		roleOps := r.roleFactory.CreateRoleOperations(r.client.APIBaseURL(), token)
+		resp, httpResp, err := roleOps.GetRoles(ctx, reqParams)
+		if httpResp != nil && httpResp.StatusCode == 401 {
+			return fmt.Errorf("401 unauthorized")
+		}
+		apiResp = resp
+		finalHttpResp = httpResp  // Capture final HTTP response
+		return err
+	})
 
 	// Handle errors using helper functions
 	var diags diag.Diagnostics
-	if rolesutil.RoleHandleHTTPError(ctx, httpResp, err, "reading role", &diags) {
+	if rolesutil.RoleHandleHTTPError(ctx, finalHttpResp, err, "reading role", &diags) {
 		return nil, fmt.Errorf("failed to read role: %v", diags.Errors())
 	}
 
@@ -1301,7 +1335,7 @@ func (r *RolesResource) ReadRole(ctx context.Context, roleName string) (*openapi
 	}
 
 	// Check if we got valid role details
-	if apiResp.Roledetails == nil || len(apiResp.Roledetails) == 0 {
+	if len(apiResp.Roledetails) == 0 {
 		return nil, fmt.Errorf("API returned empty role details list")
 	}
 
@@ -1316,9 +1350,6 @@ func (r *RolesResource) ReadRole(ctx context.Context, roleName string) (*openapi
 func (r *RolesResource) UpdateRole(ctx context.Context, plan *RolesResourceModel, state *RolesResourceModel, diagnostics *diag.Diagnostics) (*openapi.UpdateEnterpriseRoleResponse, error) {
 	roleName := plan.RoleName.ValueString()
 	tflog.Debug(ctx, "Starting role update business logic", map[string]interface{}{"role_name": roleName})
-
-	// Use the factory to create role operations
-	roleOps := r.roleFactory.CreateRoleOperations(r.client.APIBaseURL(), r.token)
 
 	// Process entitlements, owners, and child roles changes
 	entitlements, err := r.RoleResourceProcessEntitlementChanges(ctx, plan, state)
@@ -1377,11 +1408,22 @@ func (r *RolesResource) UpdateRole(ctx context.Context, plan *RolesResourceModel
 
 	// Execute the update API call
 	tflog.Debug(ctx, "Executing role update API call")
-	apiResp, httpResp, err := roleOps.UpdateEnterpriseRole(ctx, updateReq)
+	var apiResp *openapi.UpdateEnterpriseRoleResponse
+	var finalHttpResp *http.Response
+	retryErr := r.provider.AuthenticatedAPICallWithRetry(ctx, "update_enterprise_role", func(token string) error {
+		roleOps := r.roleFactory.CreateRoleOperations(r.client.APIBaseURL(), token)
+		resp, httpResp, err := roleOps.UpdateEnterpriseRole(ctx, updateReq)
+		if httpResp != nil && httpResp.StatusCode == 401 {
+			return fmt.Errorf("401 unauthorized")
+		}
+		apiResp = resp
+		finalHttpResp = httpResp  // Capture final HTTP response
+		return err
+	})
 
 	// Handle errors using helper functions
 	var diags diag.Diagnostics
-	if rolesutil.RoleHandleHTTPError(ctx, httpResp, err, "updating role", &diags) {
+	if rolesutil.RoleHandleHTTPError(ctx, finalHttpResp, retryErr, "updating role", &diags) {
 		return nil, fmt.Errorf("failed to update role: %v", diags.Errors())
 	}
 
@@ -1401,9 +1443,9 @@ func (r *RolesResource) UpdateRole(ctx context.Context, plan *RolesResourceModel
 	tflog.Info(ctx, "Role updated successfully", logData)
 
 	// Process user changes using specific APIs
-	_, err = r.RoleResourceProcessUserChanges(ctx, plan, state, diagnostics)
-	if err != nil {
-		return nil, fmt.Errorf("failed to process user changes: %v", err)
+	_, userErr := r.RoleResourceProcessUserChanges(ctx, plan, state, diagnostics)
+	if userErr != nil {
+		return nil, fmt.Errorf("failed to process user changes: %v", userErr)
 	}
 	return apiResp, nil
 }
@@ -1412,9 +1454,6 @@ func (r *RolesResource) UpdateRole(ctx context.Context, plan *RolesResourceModel
 func (r *RolesResource) AddEntitlementsAndChildRoles(ctx context.Context, plan *RolesResourceModel) (*openapi.UpdateEnterpriseRoleResponse, error) {
 	roleName := plan.RoleName.ValueString()
 	tflog.Debug(ctx, "Adding entitlements and child roles", map[string]interface{}{"role_name": roleName})
-
-	// Use the factory to create role operations
-	roleOps := r.roleFactory.CreateRoleOperations(r.client.APIBaseURL(), r.token)
 
 	// Create entitlement payloads directly from plan
 	var entitlements []openapi.UpdateEntitlementPayload
@@ -1460,11 +1499,22 @@ func (r *RolesResource) AddEntitlementsAndChildRoles(ctx context.Context, plan *
 
 	// Execute update API call
 	tflog.Debug(ctx, "Executing entitlements and child roles add API call")
-	apiResp, httpResp, err := roleOps.UpdateEnterpriseRole(ctx, updateReq)
+	var apiResp *openapi.UpdateEnterpriseRoleResponse
+	var finalHttpResp *http.Response
+	err := r.provider.AuthenticatedAPICallWithRetry(ctx, "update_enterprise_role_entitlements", func(token string) error {
+		roleOps := r.roleFactory.CreateRoleOperations(r.client.APIBaseURL(), token)
+		resp, httpResp, err := roleOps.UpdateEnterpriseRole(ctx, updateReq)
+		if httpResp != nil && httpResp.StatusCode == 401 {
+			return fmt.Errorf("401 unauthorized")
+		}
+		apiResp = resp
+		finalHttpResp = httpResp  // Capture final HTTP response
+		return err
+	})
 
 	// Handle errors
 	var diags diag.Diagnostics
-	if rolesutil.RoleHandleHTTPError(ctx, httpResp, err, "adding entitlements/child roles", &diags) {
+	if rolesutil.RoleHandleHTTPError(ctx, finalHttpResp, err, "adding entitlements/child roles", &diags) {
 		return nil, fmt.Errorf("failed to add entitlements/child roles: %v", diags.Errors())
 	}
 
@@ -1571,8 +1621,6 @@ func (r *RolesResource) RoleResourceProcessUserChanges(ctx context.Context, plan
 		planMap[u.UserName.ValueString()] = true
 	}
 
-	roleOps := r.roleFactory.CreateRoleOperations(r.client.APIBaseURL(), r.token)
-
 	// Collect errors and success messages
 	var errors []string
 	var successMessages []string
@@ -1581,12 +1629,23 @@ func (r *RolesResource) RoleResourceProcessUserChanges(ctx context.Context, plan
 	// Remove users (in state but not in plan)
 	for userName := range stateMap {
 		if !planMap[userName] {
-			apiResp, httpResp, err := roleOps.RemoveUserFromRole(ctx, userName, roleName)
+			var apiResp *openapi.AddOrRemoveRoleResponse
+			var finalHttpResp *http.Response
+			err := r.provider.AuthenticatedAPICallWithRetry(ctx, "remove_user_from_role", func(token string) error {
+				roleOps := r.roleFactory.CreateRoleOperations(r.client.APIBaseURL(), token)
+				resp, httpResp, err := roleOps.RemoveUserFromRole(ctx, userName, roleName)
+				if httpResp != nil && httpResp.StatusCode == 401 {
+					return fmt.Errorf("401 unauthorized")
+				}
+				apiResp = resp
+				finalHttpResp = httpResp  // Capture final HTTP response
+				return err
+			})
 			lastApiResp = apiResp // Capture for message/errorcode
 
 			// Handle HTTP errors
 			var diags diag.Diagnostics
-			if rolesutil.RoleHandleHTTPError(ctx, httpResp, err, "removing user", &diags) {
+			if rolesutil.RoleHandleHTTPError(ctx, finalHttpResp, err, "removing user", &diags) {
 				errors = append(errors, fmt.Sprintf("Remove user %s: %v", userName, diags.Errors()))
 				continue
 			}
@@ -1619,12 +1678,23 @@ func (r *RolesResource) RoleResourceProcessUserChanges(ctx context.Context, plan
 	// Add users (in plan but not in state)
 	for userName := range planMap {
 		if !stateMap[userName] {
-			apiResp, httpResp, err := roleOps.AddUserToRole(ctx, userName, roleName)
+			var apiResp *openapi.AddOrRemoveRoleResponse
+			var finalHttpResp *http.Response
+			err := r.provider.AuthenticatedAPICallWithRetry(ctx, "add_user_to_role", func(token string) error {
+				roleOps := r.roleFactory.CreateRoleOperations(r.client.APIBaseURL(), token)
+				resp, httpResp, err := roleOps.AddUserToRole(ctx, userName, roleName)
+				if httpResp != nil && httpResp.StatusCode == 401 {
+					return fmt.Errorf("401 unauthorized")
+				}
+				apiResp = resp
+				finalHttpResp = httpResp  // Capture final HTTP response
+				return err
+			})
 			lastApiResp = apiResp // Capture for message/errorcode
 
 			// Handle HTTP errors
 			var diags diag.Diagnostics
-			if rolesutil.RoleHandleHTTPError(ctx, httpResp, err, "adding user", &diags) {
+			if rolesutil.RoleHandleHTTPError(ctx, finalHttpResp, err, "adding user", &diags) {
 				errors = append(errors, fmt.Sprintf("Add user %s: %v", userName, diags.Errors()))
 				continue
 			}
@@ -1889,10 +1959,10 @@ func (r *RolesResource) Create(ctx context.Context, req resource.CreateRequest, 
 					"⚠️  IMPORTANT: Role creation has generated a pending request that requires manual approval.\n"+
 					"Please log into the Saviynt UI and navigate to the Pending Requests page to approve this role creation.\n"+
 					"The role will not be fully active until the request is approved in the UI.",
-				*apiResp.Message,
-				*apiResp.ErrorCode,
-				*apiResp.Requestid,
-				*apiResp.Requestkey,
+				util.SafeDeref(apiResp.Message),
+				util.SafeDeref(apiResp.ErrorCode),
+				util.SafeDeref(apiResp.Requestid),
+				util.SafeDeref(apiResp.Requestkey),
 			),
 		)
 	} else if apiResp != nil && apiResp.Message != nil && *apiResp.Message != "" && apiResp.ErrorCode != nil && *apiResp.ErrorCode != "" {
@@ -1903,8 +1973,8 @@ func (r *RolesResource) Create(ctx context.Context, req resource.CreateRequest, 
 					"⚠️  IMPORTANT: Role creation has generated a pending request that requires manual approval.\n"+
 					"Please log into the Saviynt UI and navigate to the Pending Requests page to approve this role creation.\n"+
 					"The role will not be fully active until the request is approved in the UI.",
-				*apiResp.Message,
-				*apiResp.ErrorCode,
+				util.SafeDeref(apiResp.Message),
+				util.SafeDeref(apiResp.ErrorCode),
 			),
 		)
 	} else {
@@ -2003,8 +2073,8 @@ func (r *RolesResource) Read(ctx context.Context, req resource.ReadRequest, resp
 		"Info",
 		fmt.Sprintf(
 			"Role read successfully.\nMessage: %s\nErrorCode: %s\n",
-			*apiResp.Msg,
-			*apiResp.ErrorCode,
+			util.SafeDeref(apiResp.Msg),
+			util.SafeDeref(apiResp.ErrorCode),
 		),
 	)
 
@@ -2119,10 +2189,10 @@ func (r *RolesResource) Update(ctx context.Context, req resource.UpdateRequest, 
 					"1. Navigate to the Pending Requests page to approve this role update\n"+
 					"2. Check the Version Management page in the current role to review the new role version and make it active from composing\n"+
 					"The role changes will not be fully active until the request is approved in the UI.",
-				*apiResp.Message,
-				*apiResp.ErrorCode,
-				*apiResp.Requestid,
-				*apiResp.Requestkey,
+				util.SafeDeref(apiResp.Message),
+				util.SafeDeref(apiResp.ErrorCode),
+				util.SafeDeref(apiResp.Requestid),
+				util.SafeDeref(apiResp.Requestkey),
 			),
 		)
 	} else if apiResp != nil && apiResp.Message != nil && *apiResp.Message != "" && apiResp.ErrorCode != nil && *apiResp.ErrorCode != "" {
@@ -2135,8 +2205,8 @@ func (r *RolesResource) Update(ctx context.Context, req resource.UpdateRequest, 
 					"1. Navigate to the Pending Requests page to approve this role update\n"+
 					"2. Check the Version Management page in the current role to review the new role version and make it active from composing\n"+
 					"The role changes will not be fully active until the request is approved in the UI.",
-				*apiResp.Message,
-				*apiResp.ErrorCode,
+				util.SafeDeref(apiResp.Message),
+				util.SafeDeref(apiResp.ErrorCode),
 			),
 		)
 	} else if hasUserChanges && !hasRealNonUserChanges {
