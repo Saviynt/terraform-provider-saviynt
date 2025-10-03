@@ -13,6 +13,7 @@ import (
 	"net/http"
 	"strconv"
 	"strings"
+	"terraform-provider-Saviynt/internal/client"
 	"terraform-provider-Saviynt/util"
 	connectionsutil "terraform-provider-Saviynt/util/connectionsutil"
 
@@ -29,8 +30,9 @@ var _ datasource.DataSource = &dbConnectionsDataSource{}
 
 // DBConnectionsDataSource defines the data source
 type dbConnectionsDataSource struct {
-	client *s.Client
-	token  string
+	client   *s.Client
+	token    string
+	provider client.SaviyntProviderInterface
 }
 
 type DBConnectionDataSourceModel struct {
@@ -157,15 +159,21 @@ func (d *dbConnectionsDataSource) Configure(ctx context.Context, req datasource.
 	}
 
 	// Cast provider data to your provider type.
-	prov, ok := req.ProviderData.(*saviyntProvider)
+	prov, ok := req.ProviderData.(*SaviyntProvider)
 	if !ok {
-		resp.Diagnostics.AddError("Unexpected Provider Data", "Expected *saviyntProvider")
+		resp.Diagnostics.AddError("Unexpected Provider Data", "Expected *SaviyntProvider")
 		return
 	}
 
 	// Set the client and token from the provider state.
 	d.client = prov.client
 	d.token = prov.accessToken
+	d.provider = &client.SaviyntProviderWrapper{Provider: prov}
+}
+
+// SetProvider sets the provider for testing purposes
+func (d *dbConnectionsDataSource) SetProvider(provider client.SaviyntProviderInterface) {
+	d.provider = provider
 }
 
 func (d *dbConnectionsDataSource) Read(ctx context.Context, req datasource.ReadRequest, resp *datasource.ReadResponse) {
@@ -177,15 +185,7 @@ func (d *dbConnectionsDataSource) Read(ctx context.Context, req datasource.ReadR
 		return
 	}
 
-	// Configure API client
-	cfg := openapi.NewConfiguration()
-	apiBaseURL := strings.TrimPrefix(strings.TrimPrefix(d.client.APIBaseURL(), "https://"), "http://")
-	cfg.Host = apiBaseURL
-	cfg.Scheme = "https"
-	cfg.AddDefaultHeader("Authorization", "Bearer "+d.token)
-	cfg.HTTPClient = http.DefaultClient
-
-	apiClient := openapi.NewAPIClient(cfg)
+	// Prepare request parameters
 	reqParams := openapi.GetConnectionDetailsRequest{}
 
 	// Set filters based on provided parameters
@@ -196,21 +196,44 @@ func (d *dbConnectionsDataSource) Read(ctx context.Context, req datasource.ReadR
 		connectionKeyInt := state.ConnectionKey.ValueInt64()
 		reqParams.SetConnectionkey(strconv.FormatInt(connectionKeyInt, 10))
 	}
-	apiReq := apiClient.ConnectionsAPI.GetConnectionDetails(ctx).GetConnectionDetailsRequest(reqParams)
 
-	// Execute API request
-	apiResp, httpResp, err := apiReq.Execute()
+	var apiResp *openapi.GetConnectionDetailsResponse
+	var finalHttpResp *http.Response
+
+	// Execute API call with retry logic
+	err := d.provider.AuthenticatedAPICallWithRetry(ctx, "read_db_connection_datasource", func(token string) error {
+		// Configure API client with current token
+		cfg := openapi.NewConfiguration()
+		apiBaseURL := strings.TrimPrefix(strings.TrimPrefix(d.client.APIBaseURL(), "https://"), "http://")
+		cfg.Host = apiBaseURL
+		cfg.Scheme = "https"
+		cfg.AddDefaultHeader("Authorization", "Bearer "+token)
+		cfg.HTTPClient = http.DefaultClient
+
+		apiClient := openapi.NewAPIClient(cfg)
+		apiReq := apiClient.ConnectionsAPI.GetConnectionDetails(ctx).GetConnectionDetailsRequest(reqParams)
+
+		// Execute API request
+		resp, hResp, err := apiReq.Execute()
+		if hResp != nil && hResp.StatusCode == 401 {
+			return fmt.Errorf("401 unauthorized")
+		}
+		apiResp = resp
+		finalHttpResp = hResp // Update on every call including retries
+		return err
+	})
+
 	if err != nil {
-		if httpResp != nil && httpResp.StatusCode != 200 {
-			log.Printf("[ERROR] HTTP error while creating DB Connector: %s", httpResp.Status)
+		if finalHttpResp != nil && finalHttpResp.StatusCode != 200 {
+			log.Printf("[ERROR] HTTP error while reading DB Connector: %s", finalHttpResp.Status)
 			var fetchResp map[string]interface{}
-			if err := json.NewDecoder(httpResp.Body).Decode(&fetchResp); err != nil {
+			if err := json.NewDecoder(finalHttpResp.Body).Decode(&fetchResp); err != nil {
 				resp.Diagnostics.AddError("Failed to decode error response", err.Error())
 				return
 			}
 			resp.Diagnostics.AddError(
 				"HTTP Error",
-				fmt.Sprintf("HTTP error while creating DB Connector for the reasons: %s", fetchResp["msg"]),
+				fmt.Sprintf("HTTP error while reading DB Connector for the reasons: %s", fetchResp["msg"]),
 			)
 
 		} else {
@@ -225,7 +248,7 @@ func (d *dbConnectionsDataSource) Read(ctx context.Context, req datasource.ReadR
 		resp.Diagnostics.AddError("Read of DB connection failed", error)
 		return
 	}
-	log.Printf("[DEBUG] HTTP Status Code: %d", httpResp.StatusCode)
+	log.Printf("[DEBUG] HTTP Status Code: %d", finalHttpResp.StatusCode)
 
 	state.Msg = util.SafeStringDatasource(apiResp.DBConnectionResponse.Msg)
 	state.ErrorCode = util.SafeInt64(apiResp.DBConnectionResponse.Errorcode)

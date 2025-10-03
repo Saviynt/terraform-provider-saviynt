@@ -12,6 +12,7 @@ package provider
 import (
 	"context"
 	"fmt"
+	"net/http"
 	"os"
 	"terraform-provider-Saviynt/internal/client"
 	"terraform-provider-Saviynt/util"
@@ -89,6 +90,7 @@ type EntraIdConnectorResourceModel struct {
 type EntraIdConnectionResource struct {
 	client            client.SaviyntClientInterface
 	token             string
+	provider          client.SaviyntProviderInterface
 	connectionFactory client.ConnectionFactoryInterface
 }
 
@@ -116,6 +118,11 @@ func (r *EntraIdConnectionResource) SetClient(client client.SaviyntClientInterfa
 // SetToken sets the token for testing purposes
 func (r *EntraIdConnectionResource) SetToken(token string) {
 	r.token = token
+}
+
+// SetProvider sets the provider for testing purposes
+func (r *EntraIdConnectionResource) SetProvider(provider client.SaviyntProviderInterface) {
+	r.provider = provider
 }
 
 func (r *EntraIdConnectionResource) BuildEntraIdConnector(plan *EntraIdConnectorResourceModel, config *EntraIdConnectorResourceModel) openapi.EntraIDConnector {
@@ -196,11 +203,27 @@ func (r *EntraIdConnectionResource) CreateEntraIdConnection(ctx context.Context,
 
 	opCtx.LogOperationStart(logCtx, "Starting EntraID connection creation")
 
-	// Use the factory to create connection operations
-	connectionOps := r.connectionFactory.CreateConnectionOperations(r.client.APIBaseURL(), r.token)
+	// Check if connection already exists (idempotency check) with retry logic
+	var existingResource *openapi.GetConnectionDetailsResponse
+	var finalHttpResp *http.Response
 
-	// Check if connection already exists (idempotency check)
-	existingResource, _, _ := connectionOps.GetConnectionDetails(ctx, connectionName)
+	err := r.provider.AuthenticatedAPICallWithRetry(ctx, "get_connection_details_idempotency", func(token string) error {
+		connectionOps := r.connectionFactory.CreateConnectionOperations(r.client.APIBaseURL(), token)
+		resp, httpResp, err := connectionOps.GetConnectionDetails(ctx, connectionName)
+		if httpResp != nil && httpResp.StatusCode == 401 {
+			return fmt.Errorf("401 unauthorized")
+		}
+		existingResource = resp
+		finalHttpResp = httpResp // Update on every call including retries
+		return err
+	})
+
+	if err != nil && finalHttpResp != nil && finalHttpResp.StatusCode != 412 {
+		errorCode := entraIdErrorCodes.ReadFailed()
+		opCtx.LogOperationError(logCtx, "Failed to check existing connection", errorCode, err)
+		return nil, errorsutil.CreateStandardError(errorsutil.ConnectorTypeEntraID, errorCode, "create", connectionName, err)
+	}
+
 	if existingResource != nil &&
 		existingResource.EntraIDConnectionResponse != nil &&
 		existingResource.EntraIDConnectionResponse.Errorcode != nil &&
@@ -219,8 +242,19 @@ func (r *EntraIdConnectionResource) CreateEntraIdConnection(ctx context.Context,
 		EntraIDConnector: &entraIdConn,
 	}
 
-	// Execute create operation through interface
-	apiResp, _, err := connectionOps.CreateOrUpdateConnection(ctx, createReq)
+	// Execute create operation with retry logic
+	var apiResp *openapi.CreateOrUpdateResponse
+
+	err = r.provider.AuthenticatedAPICallWithRetry(ctx, "create_entraid_connection", func(token string) error {
+		connectionOps := r.connectionFactory.CreateConnectionOperations(r.client.APIBaseURL(), token)
+		resp, httpResp, err := connectionOps.CreateOrUpdateConnection(ctx, createReq)
+		if httpResp != nil && httpResp.StatusCode == 401 {
+			return fmt.Errorf("401 unauthorized")
+		}
+		apiResp = resp
+		return err
+	})
+
 	if err != nil {
 		errorCode := entraIdErrorCodes.CreateFailed()
 		opCtx.LogOperationError(logCtx, "Failed to create EntraID connection", errorCode, err)
@@ -255,11 +289,19 @@ func (r *EntraIdConnectionResource) ReadEntraIdConnection(ctx context.Context, c
 
 	opCtx.LogOperationStart(logCtx, "Starting EntraID connection read")
 
-	// Use the factory to create connection operations
-	connectionOps := r.connectionFactory.CreateConnectionOperations(r.client.APIBaseURL(), r.token)
+	// Execute read operation with retry logic
+	var apiResp *openapi.GetConnectionDetailsResponse
 
-	// Execute read operation through interface
-	apiResp, _, err := connectionOps.GetConnectionDetails(ctx, connectionName)
+	err := r.provider.AuthenticatedAPICallWithRetry(ctx, "read_entraid_connection", func(token string) error {
+		connectionOps := r.connectionFactory.CreateConnectionOperations(r.client.APIBaseURL(), token)
+		resp, httpResp, err := connectionOps.GetConnectionDetails(ctx, connectionName)
+		if httpResp != nil && httpResp.StatusCode == 401 {
+			return fmt.Errorf("401 unauthorized")
+		}
+		apiResp = resp
+		return err
+	})
+
 	if err != nil {
 		errorCode := entraIdErrorCodes.ReadFailed()
 		opCtx.LogOperationError(logCtx, "Failed to read EntraID connection", errorCode, err)
@@ -288,9 +330,6 @@ func (r *EntraIdConnectionResource) UpdateEntraIdConnection(ctx context.Context,
 
 	opCtx.LogOperationStart(logCtx, "Starting EntraID connection update")
 
-	// Use the factory to create connection operations
-	connectionOps := r.connectionFactory.CreateConnectionOperations(r.client.APIBaseURL(), r.token)
-
 	// Build EntraID connection update request
 	tflog.Debug(logCtx, "Building EntraID connection update request")
 	entraIdConn := r.BuildEntraIdConnector(plan, config) // Reuse the same request builder
@@ -304,8 +343,20 @@ func (r *EntraIdConnectionResource) UpdateEntraIdConnection(ctx context.Context,
 	updateReq := openapi.CreateOrUpdateRequest{
 		EntraIDConnector: &entraIdConn,
 	}
-	// Execute update operation through interface
-	apiResp, _, err := connectionOps.CreateOrUpdateConnection(ctx, updateReq)
+
+	// Execute update operation with retry logic
+	var apiResp *openapi.CreateOrUpdateResponse
+
+	err := r.provider.AuthenticatedAPICallWithRetry(ctx, "update_entraid_connection", func(token string) error {
+		connectionOps := r.connectionFactory.CreateConnectionOperations(r.client.APIBaseURL(), token)
+		resp, httpResp, err := connectionOps.CreateOrUpdateConnection(ctx, updateReq)
+		if httpResp != nil && httpResp.StatusCode == 401 {
+			return fmt.Errorf("401 unauthorized")
+		}
+		apiResp = resp
+		return err
+	})
+
 	if err != nil {
 		errorCode := entraIdErrorCodes.UpdateFailed()
 		opCtx.LogOperationError(logCtx, "Failed to update EntraID connection", errorCode, err)
@@ -734,16 +785,16 @@ func (r *EntraIdConnectionResource) Configure(ctx context.Context, req resource.
 	}
 
 	// Cast provider data to your provider type.
-	prov, ok := req.ProviderData.(*saviyntProvider)
+	prov, ok := req.ProviderData.(*SaviyntProvider)
 	if !ok {
 		errorCode := entraIdErrorCodes.ProviderConfig()
 		opCtx.LogOperationError(ctx, "Provider configuration failed", errorCode,
-			fmt.Errorf("expected *saviyntProvider, got different type"),
-			map[string]interface{}{"expected_type": "*saviyntProvider"})
+			fmt.Errorf("expected *SaviyntProvider, got different type"),
+			map[string]interface{}{"expected_type": "*SaviyntProvider"})
 
 		resp.Diagnostics.AddError(
 			errorsutil.GetErrorMessage(errorsutil.ErrProviderConfig),
-			fmt.Sprintf("[%s] Expected *saviyntProvider, got different type", errorCode),
+			fmt.Sprintf("[%s] Expected *SaviyntProvider, got different type", errorCode),
 		)
 		return
 	}
@@ -751,6 +802,7 @@ func (r *EntraIdConnectionResource) Configure(ctx context.Context, req resource.
 	// Set the client and token from the provider state.
 	r.client = &client.SaviyntClientWrapper{Client: prov.client}
 	r.token = prov.accessToken
+	r.provider = &client.SaviyntProviderWrapper{Provider: prov} // Store provider reference for retry logic
 
 	opCtx.LogOperationEnd(ctx, "EntraID connection resource configured successfully")
 }

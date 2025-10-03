@@ -33,6 +33,7 @@ import (
 	"github.com/saviynt/saviynt-api-go-client/tasks"
 	"github.com/saviynt/saviynt-api-go-client/transport"
 	"github.com/saviynt/saviynt-api-go-client/users"
+	"github.com/saviynt/saviynt-api-go-client/utility"
 	"golang.org/x/oauth2"
 )
 
@@ -48,6 +49,8 @@ type Client struct {
 	Username                      *string
 	token                         *oauth2.Token
 	httpClient                    *http.Client
+	Utility                       *utility.UtilityAPIService
+	utilityClient                 *utility.APIClient
 	Connections                   *connections.ConnectionsAPIService
 	connectionsClient             *connections.APIClient
 	Roles                         *roles.RolesAPIService
@@ -91,6 +94,8 @@ func newClientHTTPClient(serverURL string, username *string, httpClient *http.Cl
 	if username != nil {
 		c.Username = Pointer(*username)
 	}
+	c.utilityClient = newClientUtility(c.APIBaseURL(), c.httpClient)
+	c.Utility = c.utilityClient.UtilityAPI
 	c.connectionsClient = newClientConnections(c.APIBaseURL(), c.httpClient)
 	c.Connections = c.connectionsClient.ConnectionsAPI
 	c.rolesClient = newClientRoles(c.APIBaseURL(), c.httpClient)
@@ -171,6 +176,13 @@ func (c *Client) APIBaseURL() string {
 
 func (c *Client) Token() *oauth2.Token {
 	return c.token
+}
+
+func newClientUtility(apiBaseURL string, httpClient *http.Client) *utility.APIClient {
+	cfg := utility.NewConfiguration()
+	cfg.HTTPClient = httpClient
+	cfg.Servers = utility.ServerConfigurations{{URL: apiBaseURL}}
+	return utility.NewAPIClient(cfg)
 }
 
 func newClientConnections(apiBaseURL string, httpClient *http.Client) *connections.APIClient {
