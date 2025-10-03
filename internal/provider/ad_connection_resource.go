@@ -41,6 +41,7 @@ type ADConnectorResourceModel struct {
 	URL                       types.String `tfsdk:"url"`
 	Username                  types.String `tfsdk:"username"`
 	Password                  types.String `tfsdk:"password"`
+	PasswordWo                types.String `tfsdk:"password_wo"`
 	LdapOrAd                  types.String `tfsdk:"ldap_or_ad"`
 	EntitlementAttribute      types.String `tfsdk:"entitlement_attribute"`
 	CheckForUnique            types.String `tfsdk:"check_for_unique"`
@@ -132,11 +133,16 @@ func ADConnectorResourceSchema() map[string]schema.Attribute {
 		},
 		"username": schema.StringAttribute{
 			Optional:    true,
-			WriteOnly:   true,
+			Computed:    true,
 			Description: "System admin username.",
 		},
 		"password": schema.StringAttribute{
-			Required:    true,
+			Optional:    true,
+			Sensitive:   true,
+			Description: "Set the Password.",
+		},
+		"password_wo": schema.StringAttribute{
+			Optional:    true,
 			WriteOnly:   true,
 			Description: "Set the Password.",
 		},
@@ -415,6 +421,17 @@ func (r *AdConnectionResource) Schema(ctx context.Context, req resource.SchemaRe
 	}
 }
 
+func (r *AdConnectionResource) ConfigValidators(ctx context.Context) []resource.ConfigValidator {
+	return []resource.ConfigValidator{
+		&connectionsutil.ExactlyOneOfValidator{
+			Attrs: []path.Expression{
+				path.MatchRoot("password"),
+				path.MatchRoot("password_wo"),
+			},
+		},
+	}
+}
+
 func (r *AdConnectionResource) Configure(ctx context.Context, req resource.ConfigureRequest, resp *resource.ConfigureResponse) {
 	opCtx := errorsutil.CreateOperationContext(errorsutil.ConnectorTypeAD, "configure", "")
 	ctx = opCtx.AddContextToLogger(ctx)
@@ -467,6 +484,13 @@ func (r *AdConnectionResource) SetProvider(provider client.SaviyntProviderInterf
 }
 
 func (r *AdConnectionResource) BuildADConnector(plan *ADConnectorResourceModel, config *ADConnectorResourceModel) openapi.ADConnector {
+	var password string
+	if !config.Password.IsNull() && !config.Password.IsUnknown() {
+		password = config.Password.ValueString()
+	} else if !config.PasswordWo.IsNull() && !config.PasswordWo.IsUnknown() {
+		password = config.PasswordWo.ValueString()
+	}
+
 	adConn := openapi.ADConnector{
 		BaseConnector: openapi.BaseConnector{
 			//required field
@@ -478,10 +502,10 @@ func (r *AdConnectionResource) BuildADConnector(plan *ADConnectorResourceModel, 
 			EmailTemplate:   util.StringPointerOrEmpty(plan.EmailTemplate),
 		},
 		//required field
-		PASSWORD: config.Password.ValueString(),
+		PASSWORD: password,
 		//optional field
 		URL:                         util.StringPointerOrEmpty(plan.URL),
-		USERNAME:                    util.StringPointerOrEmpty(config.Username),
+		USERNAME:                    util.StringPointerOrEmpty(plan.Username),
 		LDAP_OR_AD:                  util.StringPointerOrEmpty(plan.LdapOrAd),
 		ENTITLEMENT_ATTRIBUTE:       util.StringPointerOrEmpty(plan.EntitlementAttribute),
 		CHECKFORUNIQUE:              util.StringPointerOrEmpty(plan.CheckForUnique),
@@ -770,12 +794,6 @@ func (r *AdConnectionResource) UpdateADConnection(ctx context.Context, plan *ADC
 	tflog.Debug(logCtx, "Building AD connection update request")
 
 	adConn := r.BuildADConnector(plan, config)
-	if plan.VaultConnection.ValueString() == "" {
-		emptyStr := ""
-		adConn.BaseConnector.VaultConnection = &emptyStr
-		adConn.BaseConnector.VaultConfiguration = &emptyStr
-		adConn.BaseConnector.Saveinvault = &emptyStr
-	}
 
 	updateReq := openapi.CreateOrUpdateRequest{
 		ADConnector: &adConn,

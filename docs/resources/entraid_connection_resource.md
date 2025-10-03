@@ -421,12 +421,12 @@ resource "saviynt_entraid_connection_resource" "example" {
 
 - `aad_tenant_id` (String) Azure Active Directory tenant ID.
 - `client_id` (String) Client ID for authentication.
-- `client_secret` (String) Client Secret for authentication.
 - `connection_name` (String) Name of the connection. Example: "Active Directory_Doc"
 
 ### Optional
 
-- `access_token` (String) Access token used for API calls.
+- `access_token` (String, Sensitive) Access token used for API calls.
+- `access_token_wo` (String) Access token used for API calls (write-only).
 - `account_attributes` (String) Attributes for account configuration.
 - `account_import_fields` (String) Fields to import for accounts.
 - `accounts_filter` (String) Filter for accounts.
@@ -434,10 +434,14 @@ resource "saviynt_entraid_connection_resource" "example" {
 - `add_access_to_entitlement_json` (String) JSON to add access to entitlement.
 - `authentication_endpoint` (String) Authentication endpoint URL.
 - `azure_management_endpoint` (String) Azure management endpoint URL.
-- `azure_mgmt_access_token` (String) Access token for Azure management APIs.
+- `azure_mgmt_access_token` (String, Sensitive) Access token for Azure management APIs.
+- `azure_mgmt_access_token_wo` (String) Access token for Azure management APIs (write-only).
 - `change_pass_json` (String) JSON template to change password.
+- `client_secret` (String, Sensitive) Client Secret for authentication.
+- `client_secret_wo` (String) Client Secret for authentication (write-only).
 - `config_json` (String) Main config JSON.
-- `connection_json` (String) Connection JSON configuration.
+- `connection_json` (String, Sensitive) Connection JSON configuration.
+- `connection_json_wo` (String) Connection JSON configuration (write-only).
 - `create_account_json` (String) JSON template to create an account.
 - `create_channel_json` (String) JSON to create channel.
 - `create_group_json` (String) JSON to create group.
@@ -475,7 +479,9 @@ resource "saviynt_entraid_connection_resource" "example" {
 - `update_user_json` (String) JSON template to update user.
 - `vault_configuration` (String) JSON string specifying vault configuration.
 - `vault_connection` (String) Specifies the type of vault connection being used (e.g., 'Hashicorp'). Example: "Hashicorp"
-- `windows_connector_json` (String) Windows connector JSON configuration.
+- `windows_connector_json` (String, Sensitive) Windows connector JSON configuration.
+- `windows_connector_json_wo` (String) Windows connector JSON configuration (write-only).
+- `wo_version` (String) Add/change the value of this attribute to update the writeonly attributes like username, password etc in connection resources
 
 ### Read-Only
 

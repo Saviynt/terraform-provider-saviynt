@@ -494,8 +494,10 @@ resource "saviynt_github_rest_connection_resource" "example" {
 
 ### Optional
 
-- `access_tokens` (String) Property for ACCESS_TOKENS
-- `connection_json` (String) Property for ConnectionJSON
+- `access_tokens` (String, Sensitive) Property for ACCESS_TOKENS
+- `access_tokens_wo` (String) Property for ACCESS_TOKENS (write-only)
+- `connection_json` (String, Sensitive) Property for ConnectionJSON
+- `connection_json_wo` (String) Property for ConnectionJSON (write-only)
 - `defaultsavroles` (String) Default SAV roles for managing the connection. Example: "ROLE_ORG"
 - `description` (String) Description for the connection. Example: "ORG_AD"
 - `email_template` (String) Email template for notifications. Example: "New Account Task Creation"
@@ -505,6 +507,7 @@ resource "saviynt_github_rest_connection_resource" "example" {
 - `status_threshold_config` (String) Property for STATUS_THRESHOLD_CONFIG
 - `vault_configuration` (String) JSON string specifying vault configuration.
 - `vault_connection` (String) Specifies the type of vault connection being used (e.g., 'Hashicorp'). Example: "Hashicorp"
+- `wo_version` (String) Add/change the value of this attribute to update the writeonly attributes like username, password etc in connection resources
 
 ### Read-Only
 

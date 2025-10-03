@@ -38,8 +38,10 @@ type GithubRestConnectorResourceModel struct {
 	BaseConnectorResourceModel
 	ID                      types.String `tfsdk:"id"`
 	ConnectionJSON          types.String `tfsdk:"connection_json"`
+	ConnectionJSONWO        types.String `tfsdk:"connection_json_wo"`
 	ImportAccountEntJSON    types.String `tfsdk:"import_account_ent_json"`
 	Access_Tokens           types.String `tfsdk:"access_tokens"`
+	Access_TokensWO         types.String `tfsdk:"access_tokens_wo"`
 	Organization_List       types.String `tfsdk:"organization_list"`
 	Status_Threshold_Config types.String `tfsdk:"status_threshold_config"`
 }
@@ -75,8 +77,13 @@ func GithubRestConnectorResourceSchema() map[string]schema.Attribute {
 		},
 		"connection_json": schema.StringAttribute{
 			Optional:    true,
-			WriteOnly:   true,
+			Sensitive:   true,
 			Description: "Property for ConnectionJSON",
+		},
+		"connection_json_wo": schema.StringAttribute{
+			Optional:    true,
+			WriteOnly:   true,
+			Description: "Property for ConnectionJSON (write-only)",
 		},
 		"import_account_ent_json": schema.StringAttribute{
 			Optional:    true,
@@ -85,8 +92,13 @@ func GithubRestConnectorResourceSchema() map[string]schema.Attribute {
 		},
 		"access_tokens": schema.StringAttribute{
 			Optional:    true,
-			WriteOnly:   true,
+			Sensitive:   true,
 			Description: "Property for ACCESS_TOKENS",
+		},
+		"access_tokens_wo": schema.StringAttribute{
+			Optional:    true,
+			WriteOnly:   true,
+			Description: "Property for ACCESS_TOKENS (write-only)",
 		},
 		"organization_list": schema.StringAttribute{
 			Optional:    true,
@@ -105,6 +117,23 @@ func (r *GithubRestConnectionResource) Schema(ctx context.Context, req resource.
 	resp.Schema = schema.Schema{
 		Description: util.GithubRestConnDescription,
 		Attributes:  connectionsutil.MergeResourceAttributes(BaseConnectorResourceSchema(), GithubRestConnectorResourceSchema()),
+	}
+}
+
+func (r *GithubRestConnectionResource) ConfigValidators(ctx context.Context) []resource.ConfigValidator {
+	return []resource.ConfigValidator{
+		&connectionsutil.AtMostOneOfValidator{
+			Attrs: []path.Expression{
+				path.MatchRoot("connection_json"),
+				path.MatchRoot("connection_json_wo"),
+			},
+		},
+		&connectionsutil.AtMostOneOfValidator{
+			Attrs: []path.Expression{
+				path.MatchRoot("access_tokens"),
+				path.MatchRoot("access_tokens_wo"),
+			},
+		},
 	}
 }
 
@@ -297,6 +326,20 @@ func (r *GithubRestConnectionResource) CreateGithubRestConnection(ctx context.Co
 }
 
 func (r *GithubRestConnectionResource) BuildGithubRestConnector(plan *GithubRestConnectorResourceModel, config *GithubRestConnectorResourceModel) openapi.GithubRESTConnector {
+	var connectionJson string
+	if !config.ConnectionJSON.IsNull() && !config.ConnectionJSON.IsUnknown() {
+		connectionJson = config.ConnectionJSON.ValueString()
+	} else if !config.ConnectionJSONWO.IsNull() && !config.ConnectionJSONWO.IsUnknown() {
+		connectionJson = config.ConnectionJSONWO.ValueString()
+	}
+
+	var accessTokens string
+	if !config.Access_Tokens.IsNull() && !config.Access_Tokens.IsUnknown() {
+		accessTokens = config.Access_Tokens.ValueString()
+	} else if !config.Access_TokensWO.IsNull() && !config.Access_TokensWO.IsUnknown() {
+		accessTokens = config.Access_TokensWO.ValueString()
+	}
+
 	githubRestConn := openapi.GithubRESTConnector{
 		BaseConnector: openapi.BaseConnector{
 			Connectiontype:  "GithubRest",
@@ -305,9 +348,9 @@ func (r *GithubRestConnectionResource) BuildGithubRestConnector(plan *GithubRest
 			Defaultsavroles: util.StringPointerOrEmpty(plan.DefaultSavRoles),
 			EmailTemplate:   util.StringPointerOrEmpty(plan.EmailTemplate),
 		},
-		ConnectionJSON:          util.StringPointerOrEmpty(config.ConnectionJSON),
+		ConnectionJSON:          util.StringPointerOrEmpty(types.StringValue(connectionJson)),
 		ImportAccountEntJSON:    util.StringPointerOrEmpty(plan.ImportAccountEntJSON),
-		ACCESS_TOKENS:           util.StringPointerOrEmpty(config.Access_Tokens),
+		ACCESS_TOKENS:           util.StringPointerOrEmpty(types.StringValue(accessTokens)),
 		ORGANIZATION_LIST:       util.StringPointerOrEmpty(plan.Organization_List),
 		STATUS_THRESHOLD_CONFIG: util.StringPointerOrEmpty(plan.Status_Threshold_Config),
 	}
@@ -599,13 +642,6 @@ func (r *GithubRestConnectionResource) UpdateGithubRestConnection(ctx context.Co
 	opCtx.LogOperationStart(logCtx, "Starting GitHub REST connection update")
 
 	githubRestConn := r.BuildGithubRestConnector(plan, config)
-
-	if plan.VaultConnection.ValueString() == "" {
-		emptyStr := ""
-		githubRestConn.BaseConnector.VaultConnection = &emptyStr
-		githubRestConn.BaseConnector.VaultConfiguration = &emptyStr
-		githubRestConn.BaseConnector.Saveinvault = &emptyStr
-	}
 
 	githubRestConnRequest := openapi.CreateOrUpdateRequest{
 		GithubRESTConnector: &githubRestConn,
