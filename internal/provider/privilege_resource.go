@@ -234,6 +234,9 @@ func (r *PrivilegeResource) ReadPrivilege(ctx context.Context, endpointName, ent
 		Entitlementtype: &entitlementType,
 	}
 
+	getReqJson, _ := json.Marshal(getReq)
+	log.Printf("[DEBUG] Privilege get request: %s", getReqJson)
+
 	log.Printf("[DEBUG] Privilege: Making API call to fetch privileges for endpoint: %s", endpointName)
 	fetchResp, httpResp, err := privilegeOps.GetPrivilege(ctx, getReq)
 
@@ -242,6 +245,9 @@ func (r *PrivilegeResource) ReadPrivilege(ctx context.Context, endpointName, ent
 		err = errorsutil.HandleHTTPError(httpResp, err, "Read")
 		return nil, fmt.Errorf("fetch API call failed: %w", err)
 	}
+
+	getRespJson, _ := json.Marshal(fetchResp)
+	log.Printf("[DEBUG] Privilege get response: %s", getRespJson)
 
 	// Check for API-level errors in the response
 	if fetchResp != nil {
