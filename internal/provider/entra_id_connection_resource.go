@@ -40,15 +40,19 @@ type EntraIdConnectorResourceModel struct {
 	ID                              types.String `tfsdk:"id"`
 	ClientId                        types.String `tfsdk:"client_id"`
 	ClientSecret                    types.String `tfsdk:"client_secret"`
+	ClientSecretWO                  types.String `tfsdk:"client_secret_wo"`
 	AccessToken                     types.String `tfsdk:"access_token"`
+	AccessTokenWO                   types.String `tfsdk:"access_token_wo"`
 	AadTenantId                     types.String `tfsdk:"aad_tenant_id"`
 	AzureMgmtAccessToken            types.String `tfsdk:"azure_mgmt_access_token"`
+	AzureMgmtAccessTokenWO          types.String `tfsdk:"azure_mgmt_access_token_wo"`
 	AuthenticationEndpoint          types.String `tfsdk:"authentication_endpoint"`
 	MicrosoftGraphEndpoint          types.String `tfsdk:"microsoft_graph_endpoint"`
 	AzureManagementEndpoint         types.String `tfsdk:"azure_management_endpoint"`
 	ImportUserJson                  types.String `tfsdk:"import_user_json"`
 	CreateUsers                     types.String `tfsdk:"create_users"`
 	WindowsConnectorJson            types.String `tfsdk:"windows_connector_json"`
+	WindowsConnectorJsonWO          types.String `tfsdk:"windows_connector_json_wo"`
 	CreateNewEndpoints              types.String `tfsdk:"create_new_endpoints"`
 	ManagedAccountType              types.String `tfsdk:"managed_account_type"`
 	AccountAttributes               types.String `tfsdk:"account_attributes"`
@@ -67,6 +71,7 @@ type EntraIdConnectorResourceModel struct {
 	ChangePassJson                  types.String `tfsdk:"change_pass_json"`
 	RemoveAccountJson               types.String `tfsdk:"remove_account_json"`
 	ConnectionJson                  types.String `tfsdk:"connection_json"`
+	ConnectionJsonWO                types.String `tfsdk:"connection_json_wo"`
 	CreateGroupJson                 types.String `tfsdk:"create_group_json"`
 	UpdateGroupJson                 types.String `tfsdk:"update_group_json"`
 	AddAccessToEntitlementJson      types.String `tfsdk:"add_access_to_entitlement_json"`
@@ -110,6 +115,350 @@ func (r *EntraIdConnectionResource) Metadata(ctx context.Context, req resource.M
 	resp.TypeName = "saviynt_entraid_connection_resource"
 }
 
+func EntraIdConnectorResourceSchema() map[string]schema.Attribute {
+	return map[string]schema.Attribute{
+		"id": schema.StringAttribute{
+			Computed:    true,
+			Description: "Resource ID.",
+		},
+		"client_id": schema.StringAttribute{
+			Required:    true,
+			Description: "Client ID for authentication.",
+		},
+		"client_secret": schema.StringAttribute{
+			Optional:    true,
+			Sensitive:   true,
+			Description: "Client Secret for authentication.",
+		},
+		"client_secret_wo": schema.StringAttribute{
+			Optional:    true,
+			WriteOnly:   true,
+			Description: "Client Secret for authentication (write-only).",
+		},
+		"access_token": schema.StringAttribute{
+			Optional:    true,
+			Sensitive:   true,
+			Description: "Access token used for API calls.",
+		},
+		"access_token_wo": schema.StringAttribute{
+			Optional:    true,
+			WriteOnly:   true,
+			Description: "Access token used for API calls (write-only).",
+		},
+		"aad_tenant_id": schema.StringAttribute{
+			Required:    true,
+			Description: "Azure Active Directory tenant ID.",
+		},
+		"azure_mgmt_access_token": schema.StringAttribute{
+			Optional:    true,
+			Sensitive:   true,
+			Description: "Access token for Azure management APIs.",
+		},
+		"azure_mgmt_access_token_wo": schema.StringAttribute{
+			Optional:    true,
+			WriteOnly:   true,
+			Description: "Access token for Azure management APIs (write-only).",
+		},
+		"authentication_endpoint": schema.StringAttribute{
+			Optional:    true,
+			Computed:    true,
+			Description: "Authentication endpoint URL.",
+		},
+		"microsoft_graph_endpoint": schema.StringAttribute{
+			Optional:    true,
+			Computed:    true,
+			Description: "Microsoft Graph API endpoint.",
+		},
+		"azure_management_endpoint": schema.StringAttribute{
+			Optional:    true,
+			Computed:    true,
+			Description: "Azure management endpoint URL.",
+		},
+		"import_user_json": schema.StringAttribute{
+			Optional:    true,
+			Computed:    true,
+			Description: "JSON configuration for importing users.",
+		},
+		"create_users": schema.StringAttribute{
+			Optional:    true,
+			Computed:    true,
+			Description: "Flag or configuration for creating users.",
+		},
+		"windows_connector_json": schema.StringAttribute{
+			Optional:    true,
+			Sensitive:   true,
+			Description: "Windows connector JSON configuration.",
+		},
+		"windows_connector_json_wo": schema.StringAttribute{
+			Optional:    true,
+			WriteOnly:   true,
+			Description: "Windows connector JSON configuration (write-only).",
+		},
+		"create_new_endpoints": schema.StringAttribute{
+			Optional:    true,
+			Computed:    true,
+			Description: "Configuration to create new endpoints.Value accpetd are YES/NO.",
+		},
+		"managed_account_type": schema.StringAttribute{
+			Optional:    true,
+			Computed:    true,
+			Description: "Type of managed accounts.",
+		},
+		"account_attributes": schema.StringAttribute{
+			Optional:    true,
+			Computed:    true,
+			Description: "Attributes for account configuration.",
+		},
+		"service_account_attributes": schema.StringAttribute{
+			Optional:    true,
+			Computed:    true,
+			Description: "Attributes for service account configuration.",
+		},
+		"delta_tokens_json": schema.StringAttribute{
+			Optional:    true,
+			Computed:    true,
+			Description: "Delta tokens JSON data.",
+		},
+		"account_import_fields": schema.StringAttribute{
+			Optional:    true,
+			Computed:    true,
+			Description: "Fields to import for accounts.",
+		},
+		"import_depth": schema.StringAttribute{
+			Optional:    true,
+			Computed:    true,
+			Description: "Depth level for import.",
+		},
+		"entitlement_attribute": schema.StringAttribute{
+			Optional:    true,
+			Computed:    true,
+			Description: "Attribute used for entitlement.",
+		},
+		"create_account_json": schema.StringAttribute{
+			Optional:    true,
+			Computed:    true,
+			Description: "JSON template to create an account.",
+		},
+		"update_account_json": schema.StringAttribute{
+			Optional:    true,
+			Computed:    true,
+			Description: "JSON template to update an account.",
+		},
+		"enable_account_json": schema.StringAttribute{
+			Optional:    true,
+			Computed:    true,
+			Description: "JSON template to enable an account.",
+		},
+		"disable_account_json": schema.StringAttribute{
+			Optional:    true,
+			Computed:    true,
+			Description: "JSON template to disable an account.",
+		},
+		"add_access_json": schema.StringAttribute{
+			Optional:    true,
+			Computed:    true,
+			Description: "JSON template to add access.",
+		},
+		"remove_access_json": schema.StringAttribute{
+			Optional:    true,
+			Computed:    true,
+			Description: "JSON template to remove access.",
+		},
+		"update_user_json": schema.StringAttribute{
+			Optional:    true,
+			Computed:    true,
+			Description: "JSON template to update user.",
+		},
+		"change_pass_json": schema.StringAttribute{
+			Optional:    true,
+			Computed:    true,
+			Description: "JSON template to change password.",
+		},
+		"remove_account_json": schema.StringAttribute{
+			Optional:    true,
+			Computed:    true,
+			Description: "JSON template to remove account.",
+		},
+		"connection_json": schema.StringAttribute{
+			Optional:    true,
+			Sensitive:   true,
+			Description: "Connection JSON configuration.",
+		},
+		"connection_json_wo": schema.StringAttribute{
+			Optional:    true,
+			WriteOnly:   true,
+			Description: "Connection JSON configuration (write-only).",
+		},
+		"create_group_json": schema.StringAttribute{
+			Optional:    true,
+			Computed:    true,
+			Description: "JSON to create group.",
+		},
+		"update_group_json": schema.StringAttribute{
+			Optional:    true,
+			Computed:    true,
+			Description: "JSON to update group.",
+		},
+		"add_access_to_entitlement_json": schema.StringAttribute{
+			Optional:    true,
+			Computed:    true,
+			Description: "JSON to add access to entitlement.",
+		},
+		"remove_access_from_entitlement_json": schema.StringAttribute{
+			Optional:    true,
+			Computed:    true,
+			Description: "JSON to remove access from entitlement.",
+		},
+		"delete_group_json": schema.StringAttribute{
+			Optional:    true,
+			Computed:    true,
+			Description: "JSON to delete group.",
+		},
+		"create_service_principal_json": schema.StringAttribute{
+			Optional:    true,
+			Computed:    true,
+			Description: "JSON to create service principal.",
+		},
+		"update_service_principal_json": schema.StringAttribute{
+			Optional:    true,
+			Computed:    true,
+			Description: "JSON to update service principal.",
+		},
+		"remove_service_principal_json": schema.StringAttribute{
+			Optional:    true,
+			Computed:    true,
+			Description: "JSON to remove service principal.",
+		},
+		"entitlement_filter_json": schema.StringAttribute{
+			Optional:    true,
+			Computed:    true,
+			Description: "Filter JSON for entitlements.",
+		},
+		"create_team_json": schema.StringAttribute{
+			Optional:    true,
+			Computed:    true,
+			Description: "JSON to create team.",
+		},
+		"create_channel_json": schema.StringAttribute{
+			Optional:    true,
+			Computed:    true,
+			Description: "JSON to create channel.",
+		},
+		"status_threshold_config": schema.StringAttribute{
+			Optional:    true,
+			Computed:    true,
+			Description: "Configuration for status thresholds.",
+		},
+		"accounts_filter": schema.StringAttribute{
+			Optional:    true,
+			Computed:    true,
+			Description: "Filter for accounts.",
+		},
+		"pam_config": schema.StringAttribute{
+			Optional:    true,
+			Computed:    true,
+			Description: "PAM configuration.",
+		},
+		"endpoints_filter": schema.StringAttribute{
+			Optional:    true,
+			Computed:    true,
+			Description: "Endpoints filter configuration.",
+		},
+		"config_json": schema.StringAttribute{
+			Optional:    true,
+			Computed:    true,
+			Description: "Main config JSON.",
+		},
+		"modify_user_data_json": schema.StringAttribute{
+			Optional:    true,
+			Computed:    true,
+			Description: "JSON to modify user data.",
+		},
+		"enhanced_directory_roles": schema.StringAttribute{
+			Optional:    true,
+			Computed:    true,
+			Description: "Configuration for enhanced directory roles.",
+		},
+	}
+}
+
+func (r *EntraIdConnectionResource) Schema(ctx context.Context, req resource.SchemaRequest, resp *resource.SchemaResponse) {
+	resp.Schema = schema.Schema{
+		Description: util.EntraIDConnDescription,
+		Attributes:  connectionsutil.MergeResourceAttributes(BaseConnectorResourceSchema(), EntraIdConnectorResourceSchema()),
+	}
+}
+
+func (r *EntraIdConnectionResource) ConfigValidators(ctx context.Context) []resource.ConfigValidator {
+	return []resource.ConfigValidator{
+		&connectionsutil.ExactlyOneOfValidator{
+			Attrs: []path.Expression{
+				path.MatchRoot("client_secret"),
+				path.MatchRoot("client_secret_wo"),
+			},
+		},
+		&connectionsutil.AtMostOneOfValidator{
+			Attrs: []path.Expression{
+				path.MatchRoot("access_token"),
+				path.MatchRoot("access_token_wo"),
+			},
+		},
+		&connectionsutil.AtMostOneOfValidator{
+			Attrs: []path.Expression{
+				path.MatchRoot("azure_mgmt_access_token"),
+				path.MatchRoot("azure_mgmt_access_token_wo"),
+			},
+		},
+		&connectionsutil.AtMostOneOfValidator{
+			Attrs: []path.Expression{
+				path.MatchRoot("windows_connector_json"),
+				path.MatchRoot("windows_connector_json_wo"),
+			},
+		},
+		&connectionsutil.AtMostOneOfValidator{
+			Attrs: []path.Expression{
+				path.MatchRoot("connection_json"),
+				path.MatchRoot("connection_json_wo"),
+			},
+		},
+	}
+}
+
+func (r *EntraIdConnectionResource) Configure(ctx context.Context, req resource.ConfigureRequest, resp *resource.ConfigureResponse) {
+	opCtx := errorsutil.CreateOperationContext(errorsutil.ConnectorTypeEntraID, "configure", "")
+	ctx = opCtx.AddContextToLogger(ctx)
+
+	opCtx.LogOperationStart(ctx, "Starting EntraID connection resource configuration")
+
+	// Check if provider data is available.
+	if req.ProviderData == nil {
+		tflog.Debug(ctx, "ProviderData is nil, returning early")
+		opCtx.LogOperationEnd(ctx, "EntraID connection resource configuration completed - no provider data")
+		return
+	}
+
+	// Cast provider data to your provider type.
+	prov, ok := req.ProviderData.(*SaviyntProvider)
+	if !ok {
+		errorCode := entraIdErrorCodes.ProviderConfig()
+		opCtx.LogOperationError(ctx, "Provider configuration failed", errorCode,
+			fmt.Errorf("expected *saviyntProvider, got different type"),
+			map[string]interface{}{"expected_type": "*saviyntProvider"})
+
+		resp.Diagnostics.AddError(
+			errorsutil.GetErrorMessage(errorsutil.ErrProviderConfig),
+			fmt.Sprintf("[%s] Expected *saviyntProvider, got different type", errorCode),
+		)
+		return
+	}
+
+	// Set the client and token from the provider state.
+	r.client = &client.SaviyntClientWrapper{Client: prov.client}
+	r.token = prov.accessToken
+
+	opCtx.LogOperationEnd(ctx, "EntraID connection resource configured successfully")
+}
+
 // SetClient sets the client for testing purposes
 func (r *EntraIdConnectionResource) SetClient(client client.SaviyntClientInterface) {
 	r.client = client
@@ -126,6 +475,41 @@ func (r *EntraIdConnectionResource) SetProvider(provider client.SaviyntProviderI
 }
 
 func (r *EntraIdConnectionResource) BuildEntraIdConnector(plan *EntraIdConnectorResourceModel, config *EntraIdConnectorResourceModel) openapi.EntraIDConnector {
+	var clientSecret string
+	if !config.ClientSecret.IsNull() && !config.ClientSecret.IsUnknown() {
+		clientSecret = config.ClientSecret.ValueString()
+	} else if !config.ClientSecretWO.IsNull() && !config.ClientSecretWO.IsUnknown() {
+		clientSecret = config.ClientSecretWO.ValueString()
+	}
+
+	var accessToken string
+	if !config.AccessToken.IsNull() && !config.AccessToken.IsUnknown() {
+		accessToken = config.AccessToken.ValueString()
+	} else if !config.AccessTokenWO.IsNull() && !config.AccessTokenWO.IsUnknown() {
+		accessToken = config.AccessTokenWO.ValueString()
+	}
+
+	var azureMgmtAccessToken string
+	if !config.AzureMgmtAccessToken.IsNull() && !config.AzureMgmtAccessToken.IsUnknown() {
+		azureMgmtAccessToken = config.AzureMgmtAccessToken.ValueString()
+	} else if !config.AzureMgmtAccessTokenWO.IsNull() && !config.AzureMgmtAccessTokenWO.IsUnknown() {
+		azureMgmtAccessToken = config.AzureMgmtAccessTokenWO.ValueString()
+	}
+
+	var windowsConnectorJson string
+	if !config.WindowsConnectorJson.IsNull() && !config.WindowsConnectorJson.IsUnknown() {
+		windowsConnectorJson = config.WindowsConnectorJson.ValueString()
+	} else if !config.WindowsConnectorJsonWO.IsNull() && !config.WindowsConnectorJsonWO.IsUnknown() {
+		windowsConnectorJson = config.WindowsConnectorJsonWO.ValueString()
+	}
+
+	var connectionJson string
+	if !config.ConnectionJson.IsNull() && !config.ConnectionJson.IsUnknown() {
+		connectionJson = config.ConnectionJson.ValueString()
+	} else if !config.ConnectionJsonWO.IsNull() && !config.ConnectionJsonWO.IsUnknown() {
+		connectionJson = config.ConnectionJsonWO.ValueString()
+	}
+
 	entraidConn := openapi.EntraIDConnector{
 		BaseConnector: openapi.BaseConnector{
 			//required fields
@@ -137,18 +521,18 @@ func (r *EntraIdConnectionResource) BuildEntraIdConnector(plan *EntraIdConnector
 			EmailTemplate:   util.StringPointerOrEmpty(plan.EmailTemplate),
 		},
 		//required fields
-		CLIENT_ID:     config.ClientId.ValueString(),
-		CLIENT_SECRET: config.ClientSecret.ValueString(),
+		CLIENT_ID:     plan.ClientId.ValueString(),
+		CLIENT_SECRET: clientSecret,
 		AAD_TENANT_ID: plan.AadTenantId.ValueString(),
 		//optional fields
-		ACCESS_TOKEN:                    util.StringPointerOrEmpty(config.AccessToken),
-		AZURE_MGMT_ACCESS_TOKEN:         util.StringPointerOrEmpty(config.AzureMgmtAccessToken),
+		ACCESS_TOKEN:                    util.StringPointerOrEmpty(types.StringValue(accessToken)),
+		AZURE_MGMT_ACCESS_TOKEN:         util.StringPointerOrEmpty(types.StringValue(azureMgmtAccessToken)),
 		AUTHENTICATION_ENDPOINT:         util.StringPointerOrEmpty(plan.AuthenticationEndpoint),
 		MICROSOFT_GRAPH_ENDPOINT:        util.StringPointerOrEmpty(plan.MicrosoftGraphEndpoint),
 		AZURE_MANAGEMENT_ENDPOINT:       util.StringPointerOrEmpty(plan.AzureManagementEndpoint),
 		ImportUserJSON:                  util.StringPointerOrEmpty(plan.ImportUserJson),
 		CREATEUSERS:                     util.StringPointerOrEmpty(plan.CreateUsers),
-		WINDOWS_CONNECTOR_JSON:          util.StringPointerOrEmpty(config.WindowsConnectorJson),
+		WINDOWS_CONNECTOR_JSON:          util.StringPointerOrEmpty(types.StringValue(windowsConnectorJson)),
 		CREATE_NEW_ENDPOINTS:            util.StringPointerOrEmpty(plan.CreateNewEndpoints),
 		MANAGED_ACCOUNT_TYPE:            util.StringPointerOrEmpty(plan.ManagedAccountType),
 		ACCOUNT_ATTRIBUTES:              util.StringPointerOrEmpty(plan.AccountAttributes),
@@ -164,9 +548,9 @@ func (r *EntraIdConnectionResource) BuildEntraIdConnector(plan *EntraIdConnector
 		AddAccessJSON:                   util.StringPointerOrEmpty(plan.AddAccessJson),
 		RemoveAccessJSON:                util.StringPointerOrEmpty(plan.RemoveAccessJson),
 		UpdateUserJSON:                  util.StringPointerOrEmpty(plan.UpdateUserJson),
-		ChangePassJSON:                  util.StringPointerOrEmpty(config.ChangePassJson),
+		ChangePassJSON:                  util.StringPointerOrEmpty(plan.ChangePassJson),
 		RemoveAccountJSON:               util.StringPointerOrEmpty(plan.RemoveAccountJson),
-		ConnectionJSON:                  util.StringPointerOrEmpty(config.ConnectionJson),
+		ConnectionJSON:                  util.StringPointerOrEmpty(types.StringValue(connectionJson)),
 		CreateGroupJSON:                 util.StringPointerOrEmpty(plan.CreateGroupJson),
 		UpdateGroupJSON:                 util.StringPointerOrEmpty(plan.UpdateGroupJson),
 		AddAccessToEntitlementJSON:      util.StringPointerOrEmpty(plan.AddAccessToEntitlementJson),
@@ -339,12 +723,6 @@ func (r *EntraIdConnectionResource) UpdateEntraIdConnection(ctx context.Context,
 	// Build EntraID connection update request
 	tflog.Debug(logCtx, "Building EntraID connection update request")
 	entraIdConn := r.BuildEntraIdConnector(plan, config) // Reuse the same request builder
-	if plan.VaultConnection.ValueString() == "" {
-		emptyStr := ""
-		entraIdConn.BaseConnector.VaultConnection = &emptyStr
-		entraIdConn.BaseConnector.VaultConfiguration = &emptyStr
-		entraIdConn.BaseConnector.Saveinvault = &emptyStr
-	}
 
 	updateReq := openapi.CreateOrUpdateRequest{
 		EntraIDConnector: &entraIdConn,
@@ -437,6 +815,7 @@ func (r *EntraIdConnectionResource) UpdateModelFromCreateResponse(plan *EntraIdC
 	plan.ConfigJson = util.SafeStringDatasource(plan.ConfigJson.ValueStringPointer())
 	plan.ModifyUserdataJson = util.SafeStringDatasource(plan.ModifyUserdataJson.ValueStringPointer())
 	plan.EnhancedDirectoryRoles = util.SafeStringDatasource(plan.EnhancedDirectoryRoles.ValueStringPointer())
+	plan.ChangePassJson = util.SafeStringDatasource(plan.ChangePassJson.ValueStringPointer())
 
 	// Set response fields
 	plan.ErrorCode = util.SafeStringDatasource(apiResp.ErrorCode)
@@ -525,292 +904,6 @@ func (r *EntraIdConnectionResource) UpdateModelFromReadResponse(state *EntraIdCo
 		state.Msg = types.StringValue(apiMessage)
 	}
 	state.ErrorCode = util.Int32PtrToTFString(apiResp.EntraIDConnectionResponse.Errorcode)
-}
-
-func EntraIdConnectorResourceSchema() map[string]schema.Attribute {
-	return map[string]schema.Attribute{
-		"id": schema.StringAttribute{
-			Computed:    true,
-			Description: "Resource ID.",
-		},
-		"client_id": schema.StringAttribute{
-			Required:    true,
-			WriteOnly:   true,
-			Description: "Client ID for authentication.",
-		},
-		"client_secret": schema.StringAttribute{
-			Required:    true,
-			WriteOnly:   true,
-			Description: "Client Secret for authentication.",
-		},
-		"access_token": schema.StringAttribute{
-			Optional:    true,
-			WriteOnly:   true,
-			Description: "Access token used for API calls.",
-		},
-		"aad_tenant_id": schema.StringAttribute{
-			Required:    true,
-			Description: "Azure Active Directory tenant ID.",
-		},
-		"azure_mgmt_access_token": schema.StringAttribute{
-			Optional:    true,
-			WriteOnly:   true,
-			Description: "Access token for Azure management APIs.",
-		},
-		"authentication_endpoint": schema.StringAttribute{
-			Optional:    true,
-			Computed:    true,
-			Description: "Authentication endpoint URL.",
-		},
-		"microsoft_graph_endpoint": schema.StringAttribute{
-			Optional:    true,
-			Computed:    true,
-			Description: "Microsoft Graph API endpoint.",
-		},
-		"azure_management_endpoint": schema.StringAttribute{
-			Optional:    true,
-			Computed:    true,
-			Description: "Azure management endpoint URL.",
-		},
-		"import_user_json": schema.StringAttribute{
-			Optional:    true,
-			Computed:    true,
-			Description: "JSON configuration for importing users.",
-		},
-		"create_users": schema.StringAttribute{
-			Optional:    true,
-			Computed:    true,
-			Description: "Flag or configuration for creating users.",
-		},
-		"windows_connector_json": schema.StringAttribute{
-			Optional:    true,
-			WriteOnly:   true,
-			Description: "Windows connector JSON configuration.",
-		},
-		"create_new_endpoints": schema.StringAttribute{
-			Optional:    true,
-			Computed:    true,
-			Description: "Configuration to create new endpoints.Value accpetd are YES/NO.",
-		},
-		"managed_account_type": schema.StringAttribute{
-			Optional:    true,
-			Computed:    true,
-			Description: "Type of managed accounts.",
-		},
-		"account_attributes": schema.StringAttribute{
-			Optional:    true,
-			Computed:    true,
-			Description: "Attributes for account configuration.",
-		},
-		"service_account_attributes": schema.StringAttribute{
-			Optional:    true,
-			Computed:    true,
-			Description: "Attributes for service account configuration.",
-		},
-		"delta_tokens_json": schema.StringAttribute{
-			Optional:    true,
-			Computed:    true,
-			Description: "Delta tokens JSON data.",
-		},
-		"account_import_fields": schema.StringAttribute{
-			Optional:    true,
-			Computed:    true,
-			Description: "Fields to import for accounts.",
-		},
-		"import_depth": schema.StringAttribute{
-			Optional:    true,
-			Computed:    true,
-			Description: "Depth level for import.",
-		},
-		"entitlement_attribute": schema.StringAttribute{
-			Optional:    true,
-			Computed:    true,
-			Description: "Attribute used for entitlement.",
-		},
-		"create_account_json": schema.StringAttribute{
-			Optional:    true,
-			Computed:    true,
-			Description: "JSON template to create an account.",
-		},
-		"update_account_json": schema.StringAttribute{
-			Optional:    true,
-			Computed:    true,
-			Description: "JSON template to update an account.",
-		},
-		"enable_account_json": schema.StringAttribute{
-			Optional:    true,
-			Computed:    true,
-			Description: "JSON template to enable an account.",
-		},
-		"disable_account_json": schema.StringAttribute{
-			Optional:    true,
-			Computed:    true,
-			Description: "JSON template to disable an account.",
-		},
-		"add_access_json": schema.StringAttribute{
-			Optional:    true,
-			Computed:    true,
-			Description: "JSON template to add access.",
-		},
-		"remove_access_json": schema.StringAttribute{
-			Optional:    true,
-			Computed:    true,
-			Description: "JSON template to remove access.",
-		},
-		"update_user_json": schema.StringAttribute{
-			Optional:    true,
-			Computed:    true,
-			Description: "JSON template to update user.",
-		},
-		"change_pass_json": schema.StringAttribute{
-			Optional:    true,
-			WriteOnly:   true,
-			Description: "JSON template to change password.",
-		},
-		"remove_account_json": schema.StringAttribute{
-			Optional:    true,
-			Computed:    true,
-			Description: "JSON template to remove account.",
-		},
-		"connection_json": schema.StringAttribute{
-			Optional:    true,
-			WriteOnly:   true,
-			Description: "Connection JSON configuration.",
-		},
-		"create_group_json": schema.StringAttribute{
-			Optional:    true,
-			Computed:    true,
-			Description: "JSON to create group.",
-		},
-		"update_group_json": schema.StringAttribute{
-			Optional:    true,
-			Computed:    true,
-			Description: "JSON to update group.",
-		},
-		"add_access_to_entitlement_json": schema.StringAttribute{
-			Optional:    true,
-			Computed:    true,
-			Description: "JSON to add access to entitlement.",
-		},
-		"remove_access_from_entitlement_json": schema.StringAttribute{
-			Optional:    true,
-			Computed:    true,
-			Description: "JSON to remove access from entitlement.",
-		},
-		"delete_group_json": schema.StringAttribute{
-			Optional:    true,
-			Computed:    true,
-			Description: "JSON to delete group.",
-		},
-		"create_service_principal_json": schema.StringAttribute{
-			Optional:    true,
-			Computed:    true,
-			Description: "JSON to create service principal.",
-		},
-		"update_service_principal_json": schema.StringAttribute{
-			Optional:    true,
-			Computed:    true,
-			Description: "JSON to update service principal.",
-		},
-		"remove_service_principal_json": schema.StringAttribute{
-			Optional:    true,
-			Computed:    true,
-			Description: "JSON to remove service principal.",
-		},
-		"entitlement_filter_json": schema.StringAttribute{
-			Optional:    true,
-			Computed:    true,
-			Description: "Filter JSON for entitlements.",
-		},
-		"create_team_json": schema.StringAttribute{
-			Optional:    true,
-			Computed:    true,
-			Description: "JSON to create team.",
-		},
-		"create_channel_json": schema.StringAttribute{
-			Optional:    true,
-			Computed:    true,
-			Description: "JSON to create channel.",
-		},
-		"status_threshold_config": schema.StringAttribute{
-			Optional:    true,
-			Computed:    true,
-			Description: "Configuration for status thresholds.",
-		},
-		"accounts_filter": schema.StringAttribute{
-			Optional:    true,
-			Computed:    true,
-			Description: "Filter for accounts.",
-		},
-		"pam_config": schema.StringAttribute{
-			Optional:    true,
-			Computed:    true,
-			Description: "PAM configuration.",
-		},
-		"endpoints_filter": schema.StringAttribute{
-			Optional:    true,
-			Computed:    true,
-			Description: "Endpoints filter configuration.",
-		},
-		"config_json": schema.StringAttribute{
-			Optional:    true,
-			Computed:    true,
-			Description: "Main config JSON.",
-		},
-		"modify_user_data_json": schema.StringAttribute{
-			Optional:    true,
-			Computed:    true,
-			Description: "JSON to modify user data.",
-		},
-		"enhanced_directory_roles": schema.StringAttribute{
-			Optional:    true,
-			Computed:    true,
-			Description: "Configuration for enhanced directory roles.",
-		},
-	}
-}
-
-func (r *EntraIdConnectionResource) Schema(ctx context.Context, req resource.SchemaRequest, resp *resource.SchemaResponse) {
-	resp.Schema = schema.Schema{
-		Description: util.EntraIDConnDescription,
-		Attributes:  connectionsutil.MergeResourceAttributes(BaseConnectorResourceSchema(), EntraIdConnectorResourceSchema()),
-	}
-}
-
-func (r *EntraIdConnectionResource) Configure(ctx context.Context, req resource.ConfigureRequest, resp *resource.ConfigureResponse) {
-	opCtx := errorsutil.CreateOperationContext(errorsutil.ConnectorTypeEntraID, "configure", "")
-	ctx = opCtx.AddContextToLogger(ctx)
-
-	opCtx.LogOperationStart(ctx, "Starting EntraID connection resource configuration")
-
-	// Check if provider data is available.
-	if req.ProviderData == nil {
-		tflog.Debug(ctx, "ProviderData is nil, returning early")
-		opCtx.LogOperationEnd(ctx, "EntraID connection resource configuration completed - no provider data")
-		return
-	}
-
-	// Cast provider data to your provider type.
-	prov, ok := req.ProviderData.(*SaviyntProvider)
-	if !ok {
-		errorCode := entraIdErrorCodes.ProviderConfig()
-		opCtx.LogOperationError(ctx, "Provider configuration failed", errorCode,
-			fmt.Errorf("expected *SaviyntProvider, got different type"),
-			map[string]interface{}{"expected_type": "*SaviyntProvider"})
-
-		resp.Diagnostics.AddError(
-			errorsutil.GetErrorMessage(errorsutil.ErrProviderConfig),
-			fmt.Sprintf("[%s] Expected *SaviyntProvider, got different type", errorCode),
-		)
-		return
-	}
-
-	// Set the client and token from the provider state.
-	r.client = &client.SaviyntClientWrapper{Client: prov.client}
-	r.token = prov.accessToken
-	r.provider = &client.SaviyntProviderWrapper{Provider: prov} // Store provider reference for retry logic
-
-	opCtx.LogOperationEnd(ctx, "EntraID connection resource configured successfully")
 }
 
 func (r *EntraIdConnectionResource) ValidateEntraIdConnectionResponse(apiResp *openapi.GetConnectionDetailsResponse) error {

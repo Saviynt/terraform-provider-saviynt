@@ -18,6 +18,7 @@ type BaseConnectorResourceModel struct {
 	VaultConnection    types.String `tfsdk:"vault_connection"`
 	VaultConfiguration types.String `tfsdk:"vault_configuration"`
 	SaveInVault        types.String `tfsdk:"save_in_vault"`
+	WriteOnlyVersion   types.String `tfsdk:"wo_version"`
 	Msg                types.String `tfsdk:"msg"`
 	ErrorCode          types.String `tfsdk:"error_code"`
 }
@@ -58,6 +59,10 @@ func BaseConnectorResourceSchema() map[string]schema.Attribute {
 		"save_in_vault": schema.StringAttribute{
 			Optional:    true,
 			Description: "Flag indicating whether the encrypted attribute should be saved in the configured vault. Example: \"false\"",
+		},
+		"wo_version": schema.StringAttribute{
+			Optional:    true,
+			Description: "Add/change the value of this attribute to update the writeonly attributes like username, password etc in connection resources",
 		},
 		"msg": schema.StringAttribute{
 			Computed:    true,

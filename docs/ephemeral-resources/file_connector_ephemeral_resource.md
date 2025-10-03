@@ -41,8 +41,7 @@ resource "saviynt_ad_connection_resource" "example" {
 - `access_token` (String, Sensitive) access_token read from the file.
 - `auth_token` (String, Sensitive) Authentication token read from the file.
 - `azure_mgmt_access_token` (String, Sensitive) azure_mgmt_access_token read from the file.
-- `change_pass_json` (String, Sensitive) change_pass_json read from the file.
-- `client_id` (String, Sensitive) client_id read from the file.
+- `change_pass_json` (String, Sensitive) change_pass_json read from the file. Available for DB connection only
 - `client_secret` (String, Sensitive) client_secret read from the file.
 - `connection_json` (String, Sensitive) connection_json read from the file.
 - `passphrase` (String, Sensitive) passphrase read from the file.
@@ -53,5 +52,4 @@ resource "saviynt_ad_connection_resource" "example" {
 - `ssh_pass_through_passphrase` (String, Sensitive) ssh_pass_through_passphrase read from the file.
 - `ssh_pass_through_password` (String, Sensitive) ssh_pass_through_password read from the file.
 - `ssh_pass_through_ssh_key` (String, Sensitive) ssh_pass_through_ssh_key read from the file.
-- `username` (String, Sensitive) Username read from the file.
 - `windows_connector_json` (String, Sensitive) windows_connector_json read from the file.
