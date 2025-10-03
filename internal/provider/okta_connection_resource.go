@@ -409,6 +409,12 @@ func (r *OktaConnectionResource) ReadOktaConnection(ctx context.Context, connect
 		return nil, errorsutil.CreateStandardError(errorsutil.ConnectorTypeOkta, errorCode, "read", connectionName, err)
 	}
 
+	if err := r.ValidateOktaConnectionResponse(apiResp); err != nil {
+		errorCode := oktaErrorCodes.APIError()
+		opCtx.LogOperationError(ctx, "Invalid connection type for Okta datasource", errorCode, err)
+		return nil, fmt.Errorf("[%s] Unable to verify connection type for connection %q. The provider could not determine the type of this connection. Please ensure the connection name is correct and belongs to a supported connector type", errorCode, connectionName)
+	}
+
 	if apiResp != nil && apiResp.OktaConnectionResponse != nil && apiResp.OktaConnectionResponse.Errorcode != nil && *apiResp.OktaConnectionResponse.Errorcode != 0 {
 		apiErr := fmt.Errorf("API returned error code %d: %s", *apiResp.OktaConnectionResponse.Errorcode, errorsutil.SanitizeMessage(apiResp.OktaConnectionResponse.Msg))
 		errorCode := oktaErrorCodes.APIError()
@@ -526,6 +532,13 @@ func (r *OktaConnectionResource) UpdateModelFromReadResponse(state *OktaConnecto
 		state.Msg = types.StringValue(apiMessage)
 	}
 	state.ErrorCode = util.Int32PtrToTFString(apiResp.OktaConnectionResponse.Errorcode)
+}
+
+func (r *OktaConnectionResource) ValidateOktaConnectionResponse(apiResp *openapi.GetConnectionDetailsResponse) error {
+	if apiResp != nil && apiResp.OktaConnectionResponse == nil {
+		return fmt.Errorf("verify the connection type - Okta connection response is nil")
+	}
+	return nil
 }
 
 func (r *OktaConnectionResource) Create(ctx context.Context, req resource.CreateRequest, resp *resource.CreateResponse) {

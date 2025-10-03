@@ -606,6 +606,12 @@ func (r *AdsiConnectionResource) ReadADSIConnection(ctx context.Context, connect
 		return nil, errorsutil.CreateStandardError(errorsutil.ConnectorTypeADSI, errorCode, "read", connectionName, err)
 	}
 
+	if err := r.ValidateADSIConnectionResponse(apiResp); err != nil {
+		errorCode := adsiErrorCodes.APIError()
+		opCtx.LogOperationError(ctx, "Invalid connection type for ADSI datasource", errorCode, err)
+		return nil, fmt.Errorf("[%s] Unable to verify connection type for connection %q. The provider could not determine the type of this connection. Please ensure the connection name is correct and belongs to a supported connector type", errorCode, connectionName)
+	}
+
 	if apiResp != nil && apiResp.ADSIConnectionResponse != nil && apiResp.ADSIConnectionResponse.Errorcode != nil && *apiResp.ADSIConnectionResponse.Errorcode != 0 {
 		apiErr := fmt.Errorf("API returned error code %d: %s", *apiResp.ADSIConnectionResponse.Errorcode, errorsutil.SanitizeMessage(apiResp.ADSIConnectionResponse.Msg))
 		errorCode := adsiErrorCodes.APIError()
@@ -751,6 +757,13 @@ func (r *AdsiConnectionResource) UpdateADSIConnection(ctx context.Context, plan 
 		}()})
 
 	return apiResp, nil
+}
+
+func (r *AdsiConnectionResource) ValidateADSIConnectionResponse(apiResp *openapi.GetConnectionDetailsResponse) error {
+	if apiResp != nil && apiResp.ADSIConnectionResponse == nil {
+		return fmt.Errorf("verify the connection type - ADSI connection response is nil")
+	}
+	return nil
 }
 
 func (r *AdsiConnectionResource) Create(ctx context.Context, req resource.CreateRequest, resp *resource.CreateResponse) {
