@@ -41,6 +41,7 @@ type UnixConnectorResourceModel struct {
 	PortNumber                    types.String `tfsdk:"port_number"`
 	Username                      types.String `tfsdk:"username"`
 	Password                      types.String `tfsdk:"password"`
+	PasswordWo                    types.String `tfsdk:"password_wo"`
 	GroupsFile                    types.String `tfsdk:"groups_file"`
 	AccountsFile                  types.String `tfsdk:"accounts_file"`
 	ShadowFile                    types.String `tfsdk:"shadow_file"`
@@ -54,6 +55,7 @@ type UnixConnectorResourceModel struct {
 	DisableAccountCommand         types.String `tfsdk:"disable_account_command"`
 	AccountEntitlementMappingCmd  types.String `tfsdk:"account_entitlement_mapping_command"`
 	Passphrase                    types.String `tfsdk:"passphrase"`
+	PassphraseWo                  types.String `tfsdk:"passphrase_wo"`
 	UpdateAccountCommand          types.String `tfsdk:"update_account_command"`
 	CreateGroupCommand            types.String `tfsdk:"create_group_command"`
 	DeleteGroupCommand            types.String `tfsdk:"delete_group_command"`
@@ -65,12 +67,16 @@ type UnixConnectorResourceModel struct {
 	StatusThresholdConfig         types.String `tfsdk:"status_threshold_config"`
 	CustomConfigJSON              types.String `tfsdk:"custom_config_json"`
 	SSHKey                        types.String `tfsdk:"ssh_key"`
+	SSHKeyWo                      types.String `tfsdk:"ssh_key_wo"`
 	LockAccountCommand            types.String `tfsdk:"lock_account_command"`
 	UnlockAccountCommand          types.String `tfsdk:"unlock_account_command"`
 	PassThroughConnectionDetails  types.String `tfsdk:"pass_through_connection_details"`
 	SSHPassThroughPassword        types.String `tfsdk:"ssh_pass_through_password"`
+	SSHPassThroughPasswordWo      types.String `tfsdk:"ssh_pass_through_password_wo"`
 	SSHPassThroughSSHKEY          types.String `tfsdk:"ssh_pass_through_sshkey"`
+	SSHPassThroughSSHKEYWo        types.String `tfsdk:"ssh_pass_through_sshkey_wo"`
 	SSHPassThroughPassphrase      types.String `tfsdk:"ssh_pass_through_passphrase"`
+	SSHPassThroughPassphraseWo    types.String `tfsdk:"ssh_pass_through_passphrase_wo"`
 }
 
 type UnixConnectionResource struct {
@@ -96,6 +102,295 @@ func (r *UnixConnectionResource) Metadata(ctx context.Context, req resource.Meta
 	resp.TypeName = "saviynt_unix_connection_resource"
 }
 
+func UnixConnectorResourceSchema() map[string]schema.Attribute {
+	return map[string]schema.Attribute{
+		"id": schema.StringAttribute{
+			Computed:    true,
+			Description: "Resource ID.",
+		},
+		"host_name": schema.StringAttribute{
+			Required:    true,
+			Description: "Property for HOST_NAME",
+		},
+		"port_number": schema.StringAttribute{
+			Required:    true,
+			Description: "Property for PORT_NUMBER",
+		},
+		"username": schema.StringAttribute{
+			Required:    true,
+			Description: "Property for USERNAME",
+		},
+		"password": schema.StringAttribute{
+			Optional:    true,
+			Sensitive:   true,
+			Description: "Property for PASSWORD",
+		},
+		"password_wo": schema.StringAttribute{
+			Optional:    true,
+			WriteOnly:   true,
+			Description: "Password write-only attribute.",
+		},
+		"groups_file": schema.StringAttribute{
+			Optional:    true,
+			Computed:    true,
+			Description: "Property for GROUPS_FILE",
+		},
+		"accounts_file": schema.StringAttribute{
+			Optional:    true,
+			Computed:    true,
+			Description: "Property for ACCOUNTS_FILE",
+		},
+		"shadow_file": schema.StringAttribute{
+			Optional:    true,
+			Computed:    true,
+			Description: "Property for SHADOW_FILE",
+		},
+		"provision_account_command": schema.StringAttribute{
+			Optional:    true,
+			Computed:    true,
+			Description: "Property for PROVISION_ACCOUNT_COMMAND",
+		},
+		"deprovision_account_command": schema.StringAttribute{
+			Optional:    true,
+			Computed:    true,
+			Description: "Property for DEPROVISION_ACCOUNT_COMMAND",
+		},
+		"add_access_command": schema.StringAttribute{
+			Optional:    true,
+			Computed:    true,
+			Description: "Property for ADD_ACCESS_COMMAND",
+		},
+		"remove_access_command": schema.StringAttribute{
+			Optional:    true,
+			Computed:    true,
+			Description: "Property for REMOVE_ACCESS_COMMAND",
+		},
+		"change_password_json": schema.StringAttribute{
+			Optional:    true,
+			Computed:    true,
+			Description: "Property for CHANGE_PASSWRD_JSON",
+		},
+		"pem_key_file": schema.StringAttribute{
+			Optional:    true,
+			Computed:    true,
+			Description: "Property for PEM_KEY_FILE",
+		},
+		"enable_account_command": schema.StringAttribute{
+			Optional:    true,
+			Computed:    true,
+			Description: "Property for ENABLE_ACCOUNT_COMMAND",
+		},
+		"disable_account_command": schema.StringAttribute{
+			Optional:    true,
+			Computed:    true,
+			Description: "Property for DISABLE_ACCOUNT_COMMAND",
+		},
+		"account_entitlement_mapping_command": schema.StringAttribute{
+			Optional:    true,
+			Computed:    true,
+			Description: "Property for ACCOUNT_ENTITLEMENT_MAPPING_COMMAND",
+		},
+		"passphrase": schema.StringAttribute{
+			Optional:    true,
+			Sensitive:   true,
+			Description: "Property for PASSPHRASE",
+		},
+		"passphrase_wo": schema.StringAttribute{
+			Optional:    true,
+			WriteOnly:   true,
+			Description: "Passphrase write-only attribute.",
+		},
+		"update_account_command": schema.StringAttribute{
+			Optional:    true,
+			Computed:    true,
+			Description: "Property for UPDATE_ACCOUNT_COMMAND",
+		},
+		"create_group_command": schema.StringAttribute{
+			Optional:    true,
+			Computed:    true,
+			Description: "Property for CREATE_GROUP_COMMAND",
+		},
+		"delete_group_command": schema.StringAttribute{
+			Optional:    true,
+			Computed:    true,
+			Description: "Property for DELETE_GROUP_COMMAND",
+		},
+		"add_group_owner_command": schema.StringAttribute{
+			Optional:    true,
+			Computed:    true,
+			Description: "Property for ADD_GROUP_OWNER_COMMAND",
+		},
+		"add_primary_group_command": schema.StringAttribute{
+			Optional:    true,
+			Computed:    true,
+			Description: "Property for ADD_PRIMARY_GROUP_COMMAND",
+		},
+		"fire_fighter_id_grant_access_command": schema.StringAttribute{
+			Optional:    true,
+			Computed:    true,
+			Description: "Property for FIREFIGHTERID_GRANT_ACCESS_COMMAND",
+		},
+		"fire_fighter_id_revoke_access_command": schema.StringAttribute{
+			Optional:    true,
+			Computed:    true,
+			Description: "Property for FIREFIGHTERID_REVOKE_ACCESS_COMMAND",
+		},
+		"inactive_lock_account": schema.StringAttribute{
+			Optional:    true,
+			Computed:    true,
+			Description: "Property for INACTIVE_LOCK_ACCOUNT",
+		},
+		"status_threshold_config": schema.StringAttribute{
+			Optional:    true,
+			Computed:    true,
+			Description: "Property for STATUS_THRESHOLD_CONFIG",
+		},
+		"custom_config_json": schema.StringAttribute{
+			Optional:    true,
+			Computed:    true,
+			Description: "Property for CUSTOM_CONFIG_JSON",
+		},
+		"ssh_key": schema.StringAttribute{
+			Optional:    true,
+			Sensitive:   true,
+			Description: "Property for SSH_KEY",
+		},
+		"ssh_key_wo": schema.StringAttribute{
+			Optional:    true,
+			WriteOnly:   true,
+			Description: "SSH key write-only attribute.",
+		},
+		"lock_account_command": schema.StringAttribute{
+			Optional:    true,
+			Computed:    true,
+			Description: "Property for LOCK_ACCOUNT_COMMAND",
+		},
+		"unlock_account_command": schema.StringAttribute{
+			Optional:    true,
+			Computed:    true,
+			Description: "Property for UNLOCK_ACCOUNT_COMMAND",
+		},
+		"pass_through_connection_details": schema.StringAttribute{
+			Optional:    true,
+			Computed:    true,
+			Description: "Property for PassThroughConnectionDetails",
+		},
+		"ssh_pass_through_password": schema.StringAttribute{
+			Optional:    true,
+			Sensitive:   true,
+			Description: "Property for SSHPassThroughPassword",
+		},
+		"ssh_pass_through_password_wo": schema.StringAttribute{
+			Optional:    true,
+			WriteOnly:   true,
+			Description: "SSH pass-through password write-only attribute.",
+		},
+		"ssh_pass_through_sshkey": schema.StringAttribute{
+			Optional:    true,
+			Sensitive:   true,
+			Description: "Property for SSHPassThroughSSHKEY",
+		},
+		"ssh_pass_through_sshkey_wo": schema.StringAttribute{
+			Optional:    true,
+			WriteOnly:   true,
+			Description: "SSH pass-through SSH key write-only attribute.",
+		},
+		"ssh_pass_through_passphrase": schema.StringAttribute{
+			Optional:    true,
+			Sensitive:   true,
+			Description: "Property for SSHPassThroughPassphrase",
+		},
+		"ssh_pass_through_passphrase_wo": schema.StringAttribute{
+			Optional:    true,
+			WriteOnly:   true,
+			Description: "SSH pass-through passphrase write-only attribute.",
+		},
+	}
+}
+
+func (r *UnixConnectionResource) Schema(ctx context.Context, req resource.SchemaRequest, resp *resource.SchemaResponse) {
+	resp.Schema = schema.Schema{
+		Description: util.UnixConnDescription,
+		Attributes:  connectionsutil.MergeResourceAttributes(BaseConnectorResourceSchema(), UnixConnectorResourceSchema()),
+	}
+}
+
+func (r *UnixConnectionResource) ConfigValidators(ctx context.Context) []resource.ConfigValidator {
+	return []resource.ConfigValidator{
+		&connectionsutil.AtMostOneOfValidator{
+			Attrs: []path.Expression{
+				path.MatchRoot("password"),
+				path.MatchRoot("password_wo"),
+			},
+		},
+		&connectionsutil.AtMostOneOfValidator{
+			Attrs: []path.Expression{
+				path.MatchRoot("passphrase"),
+				path.MatchRoot("passphrase_wo"),
+			},
+		},
+		&connectionsutil.AtMostOneOfValidator{
+			Attrs: []path.Expression{
+				path.MatchRoot("ssh_key"),
+				path.MatchRoot("ssh_key_wo"),
+			},
+		},
+		&connectionsutil.AtMostOneOfValidator{
+			Attrs: []path.Expression{
+				path.MatchRoot("ssh_pass_through_password"),
+				path.MatchRoot("ssh_pass_through_password_wo"),
+			},
+		},
+		&connectionsutil.AtMostOneOfValidator{
+			Attrs: []path.Expression{
+				path.MatchRoot("ssh_pass_through_sshkey"),
+				path.MatchRoot("ssh_pass_through_sshkey_wo"),
+			},
+		},
+		&connectionsutil.AtMostOneOfValidator{
+			Attrs: []path.Expression{
+				path.MatchRoot("ssh_pass_through_passphrase"),
+				path.MatchRoot("ssh_pass_through_passphrase_wo"),
+			},
+		},
+	}
+}
+
+func (r *UnixConnectionResource) Configure(ctx context.Context, req resource.ConfigureRequest, resp *resource.ConfigureResponse) {
+	opCtx := errorsutil.CreateOperationContext(errorsutil.ConnectorTypeUnix, "configure", "")
+	ctx = opCtx.AddContextToLogger(ctx)
+
+	opCtx.LogOperationStart(ctx, "Starting Unix connection resource configuration")
+
+	// Check if provider data is available.
+	if req.ProviderData == nil {
+		tflog.Debug(ctx, "ProviderData is nil, returning early")
+		opCtx.LogOperationEnd(ctx, "Unix connection resource configuration completed - no provider data")
+		return
+	}
+
+	// Cast provider data to your provider type.
+	prov, ok := req.ProviderData.(*SaviyntProvider)
+	if !ok {
+		errorCode := unixErrorCodes.ProviderConfig()
+		opCtx.LogOperationError(ctx, "Provider configuration failed", errorCode,
+			fmt.Errorf("expected *saviyntProvider, got different type"),
+			map[string]interface{}{"expected_type": "*saviyntProvider"})
+
+		resp.Diagnostics.AddError(
+			errorsutil.GetErrorMessage(errorsutil.ErrProviderConfig),
+			fmt.Sprintf("[%s] Expected *saviyntProvider, got different type", errorCode),
+		)
+		return
+	}
+
+	// Set the client and token from the provider state using interface wrapper.
+	r.client = &client.SaviyntClientWrapper{Client: prov.client}
+	r.token = prov.accessToken
+
+	opCtx.LogOperationEnd(ctx, "Unix connection resource configured successfully")
+}
+
 // SetClient sets the client for testing purposes
 func (r *UnixConnectionResource) SetClient(client client.SaviyntClientInterface) {
 	r.client = client
@@ -112,6 +407,48 @@ func (r *UnixConnectionResource) SetProvider(provider client.SaviyntProviderInte
 }
 
 func (r *UnixConnectionResource) BuildUnixConnector(plan *UnixConnectorResourceModel, config *UnixConnectorResourceModel) openapi.UNIXConnector {
+	var password string
+	if !config.Password.IsNull() && !config.Password.IsUnknown() {
+		password = config.Password.ValueString()
+	} else if !config.PasswordWo.IsNull() && !config.PasswordWo.IsUnknown() {
+		password = config.PasswordWo.ValueString()
+	}
+
+	var passphrase string
+	if !config.Passphrase.IsNull() && !config.Passphrase.IsUnknown() {
+		passphrase = config.Passphrase.ValueString()
+	} else if !config.PassphraseWo.IsNull() && !config.PassphraseWo.IsUnknown() {
+		passphrase = config.PassphraseWo.ValueString()
+	}
+
+	var sshKey string
+	if !config.SSHKey.IsNull() && !config.SSHKey.IsUnknown() {
+		sshKey = config.SSHKey.ValueString()
+	} else if !config.SSHKeyWo.IsNull() && !config.SSHKeyWo.IsUnknown() {
+		sshKey = config.SSHKeyWo.ValueString()
+	}
+
+	var sshPassthroughPassword string
+	if !config.SSHPassThroughPassword.IsNull() && !config.SSHPassThroughPassword.IsUnknown() {
+		sshPassthroughPassword = config.SSHPassThroughPassword.ValueString()
+	} else if !config.SSHPassThroughPasswordWo.IsNull() && !config.SSHPassThroughPasswordWo.IsUnknown() {
+		sshPassthroughPassword = config.SSHPassThroughPasswordWo.ValueString()
+	}
+
+	var SSHPassthroughPassphrase string
+	if !config.SSHPassThroughPassphrase.IsNull() && !config.SSHPassThroughPassphrase.IsUnknown() {
+		SSHPassthroughPassphrase = config.SSHPassThroughPassphrase.ValueString()
+	} else if !config.SSHPassThroughPassphraseWo.IsNull() && !config.SSHPassThroughPassphraseWo.IsUnknown() {
+		SSHPassthroughPassphrase = config.SSHPassThroughPassphraseWo.ValueString()
+	}
+
+	var sshPassthroughSSHKey string
+	if !config.SSHPassThroughSSHKEY.IsNull() && !config.SSHPassThroughSSHKEY.IsUnknown() {
+		sshPassthroughSSHKey = config.SSHPassThroughSSHKEY.ValueString()
+	} else if !config.SSHPassThroughSSHKEYWo.IsNull() && !config.SSHPassThroughSSHKEYWo.IsUnknown() {
+		sshPassthroughSSHKey = config.SSHPassThroughSSHKEYWo.ValueString()
+	}
+
 	unixConn := openapi.UNIXConnector{
 		BaseConnector: openapi.BaseConnector{
 			//required field
@@ -125,9 +462,9 @@ func (r *UnixConnectionResource) BuildUnixConnector(plan *UnixConnectorResourceM
 		//required field
 		HOST_NAME:   plan.HostName.ValueString(),
 		PORT_NUMBER: plan.PortNumber.ValueString(),
-		USERNAME:    config.Username.ValueString(),
+		USERNAME:    plan.Username.ValueString(),
 		//optional field
-		PASSWORD:                            util.StringPointerOrEmpty(config.Password),
+		PASSWORD:                            util.StringPointerOrEmpty(types.StringValue(password)),
 		GROUPS_FILE:                         util.StringPointerOrEmpty(plan.GroupsFile),
 		ACCOUNTS_FILE:                       util.StringPointerOrEmpty(plan.AccountsFile),
 		SHADOW_FILE:                         util.StringPointerOrEmpty(plan.ShadowFile),
@@ -135,12 +472,12 @@ func (r *UnixConnectionResource) BuildUnixConnector(plan *UnixConnectorResourceM
 		DEPROVISION_ACCOUNT_COMMAND:         util.StringPointerOrEmpty(plan.DeprovisionAccountCommand),
 		ADD_ACCESS_COMMAND:                  util.StringPointerOrEmpty(plan.AddAccessCommand),
 		REMOVE_ACCESS_COMMAND:               util.StringPointerOrEmpty(plan.RemoveAccessCommand),
-		CHANGE_PASSWRD_JSON:                 util.StringPointerOrEmpty(config.ChangePasswordJSON),
+		CHANGE_PASSWRD_JSON:                 util.StringPointerOrEmpty(plan.ChangePasswordJSON),
 		PEM_KEY_FILE:                        util.StringPointerOrEmpty(plan.PemKeyFile),
 		ENABLE_ACCOUNT_COMMAND:              util.StringPointerOrEmpty(plan.EnableAccountCommand),
 		DISABLE_ACCOUNT_COMMAND:             util.StringPointerOrEmpty(plan.DisableAccountCommand),
 		ACCOUNT_ENTITLEMENT_MAPPING_COMMAND: util.StringPointerOrEmpty(plan.AccountEntitlementMappingCmd),
-		PASSPHRASE:                          util.StringPointerOrEmpty(config.Passphrase),
+		PASSPHRASE:                          util.StringPointerOrEmpty(types.StringValue(passphrase)),
 		UPDATE_ACCOUNT_COMMAND:              util.StringPointerOrEmpty(plan.UpdateAccountCommand),
 		CREATE_GROUP_COMMAND:                util.StringPointerOrEmpty(plan.CreateGroupCommand),
 		DELETE_GROUP_COMMAND:                util.StringPointerOrEmpty(plan.DeleteGroupCommand),
@@ -151,13 +488,13 @@ func (r *UnixConnectionResource) BuildUnixConnector(plan *UnixConnectorResourceM
 		INACTIVE_LOCK_ACCOUNT:               util.StringPointerOrEmpty(plan.InactiveLockAccount),
 		STATUS_THRESHOLD_CONFIG:             util.StringPointerOrEmpty(plan.StatusThresholdConfig),
 		CUSTOM_CONFIG_JSON:                  util.StringPointerOrEmpty(plan.CustomConfigJSON),
-		SSH_KEY:                             util.StringPointerOrEmpty(config.SSHKey),
+		SSH_KEY:                             util.StringPointerOrEmpty(types.StringValue(sshKey)),
 		LOCK_ACCOUNT_COMMAND:                util.StringPointerOrEmpty(plan.LockAccountCommand),
 		UNLOCK_ACCOUNT_COMMAND:              util.StringPointerOrEmpty(plan.UnlockAccountCommand),
 		PassThroughConnectionDetails:        util.StringPointerOrEmpty(plan.PassThroughConnectionDetails),
-		SSHPassThroughPassword:              util.StringPointerOrEmpty(config.SSHPassThroughPassword),
-		SSHPassThroughSSHKEY:                util.StringPointerOrEmpty(config.SSHPassThroughSSHKEY),
-		SSHPassThroughPassphrase:            util.StringPointerOrEmpty(config.SSHPassThroughPassphrase),
+		SSHPassThroughPassword:              util.StringPointerOrEmpty(types.StringValue(sshPassthroughPassword)),
+		SSHPassThroughSSHKEY:                util.StringPointerOrEmpty(types.StringValue(sshPassthroughSSHKey)),
+		SSHPassThroughPassphrase:            util.StringPointerOrEmpty(types.StringValue(SSHPassthroughPassphrase)),
 	}
 
 	// Handle vault configuration
@@ -426,12 +763,6 @@ func (r *UnixConnectionResource) UpdateUnixConnection(ctx context.Context, plan 
 	tflog.Debug(logCtx, "Building Unix connection update request")
 
 	unixConn := r.BuildUnixConnector(plan, config)
-	if plan.VaultConnection.ValueString() == "" {
-		emptyStr := ""
-		unixConn.BaseConnector.VaultConnection = &emptyStr
-		unixConn.BaseConnector.VaultConfiguration = &emptyStr
-		unixConn.BaseConnector.Saveinvault = &emptyStr
-	}
 
 	updateReq := openapi.CreateOrUpdateRequest{
 		UNIXConnector: &unixConn,
@@ -477,226 +808,6 @@ func (r *UnixConnectionResource) UpdateUnixConnection(ctx context.Context, plan 
 		}()})
 
 	return apiResp, nil
-}
-
-func UnixConnectorResourceSchema() map[string]schema.Attribute {
-	return map[string]schema.Attribute{
-		"id": schema.StringAttribute{
-			Computed:    true,
-			Description: "Resource ID.",
-		},
-		"host_name": schema.StringAttribute{
-			Required:    true,
-			Description: "Property for HOST_NAME",
-		},
-		"port_number": schema.StringAttribute{
-			Required:    true,
-			Description: "Property for PORT_NUMBER",
-		},
-		"username": schema.StringAttribute{
-			Required:    true,
-			WriteOnly:   true,
-			Description: "Property for USERNAME",
-		},
-		"password": schema.StringAttribute{
-			Optional:    true,
-			WriteOnly:   true,
-			Description: "Property for PASSWORD",
-		},
-		"groups_file": schema.StringAttribute{
-			Optional:    true,
-			Computed:    true,
-			Description: "Property for GROUPS_FILE",
-		},
-		"accounts_file": schema.StringAttribute{
-			Optional:    true,
-			Computed:    true,
-			Description: "Property for ACCOUNTS_FILE",
-		},
-		"shadow_file": schema.StringAttribute{
-			Optional:    true,
-			Computed:    true,
-			Description: "Property for SHADOW_FILE",
-		},
-		"provision_account_command": schema.StringAttribute{
-			Optional:    true,
-			Computed:    true,
-			Description: "Property for PROVISION_ACCOUNT_COMMAND",
-		},
-		"deprovision_account_command": schema.StringAttribute{
-			Optional:    true,
-			Computed:    true,
-			Description: "Property for DEPROVISION_ACCOUNT_COMMAND",
-		},
-		"add_access_command": schema.StringAttribute{
-			Optional:    true,
-			Computed:    true,
-			Description: "Property for ADD_ACCESS_COMMAND",
-		},
-		"remove_access_command": schema.StringAttribute{
-			Optional:    true,
-			Computed:    true,
-			Description: "Property for REMOVE_ACCESS_COMMAND",
-		},
-		"change_password_json": schema.StringAttribute{
-			Optional:    true,
-			WriteOnly:   true,
-			Description: "Property for CHANGE_PASSWRD_JSON",
-		},
-		"pem_key_file": schema.StringAttribute{
-			Optional:    true,
-			Computed:    true,
-			Description: "Property for PEM_KEY_FILE",
-		},
-		"enable_account_command": schema.StringAttribute{
-			Optional:    true,
-			Computed:    true,
-			Description: "Property for ENABLE_ACCOUNT_COMMAND",
-		},
-		"disable_account_command": schema.StringAttribute{
-			Optional:    true,
-			Computed:    true,
-			Description: "Property for DISABLE_ACCOUNT_COMMAND",
-		},
-		"account_entitlement_mapping_command": schema.StringAttribute{
-			Optional:    true,
-			Computed:    true,
-			Description: "Property for ACCOUNT_ENTITLEMENT_MAPPING_COMMAND",
-		},
-		"passphrase": schema.StringAttribute{
-			Optional:    true,
-			WriteOnly:   true,
-			Description: "Property for PASSPHRASE",
-		},
-		"update_account_command": schema.StringAttribute{
-			Optional:    true,
-			Computed:    true,
-			Description: "Property for UPDATE_ACCOUNT_COMMAND",
-		},
-		"create_group_command": schema.StringAttribute{
-			Optional:    true,
-			Computed:    true,
-			Description: "Property for CREATE_GROUP_COMMAND",
-		},
-		"delete_group_command": schema.StringAttribute{
-			Optional:    true,
-			Computed:    true,
-			Description: "Property for DELETE_GROUP_COMMAND",
-		},
-		"add_group_owner_command": schema.StringAttribute{
-			Optional:    true,
-			Computed:    true,
-			Description: "Property for ADD_GROUP_OWNER_COMMAND",
-		},
-		"add_primary_group_command": schema.StringAttribute{
-			Optional:    true,
-			Computed:    true,
-			Description: "Property for ADD_PRIMARY_GROUP_COMMAND",
-		},
-		"fire_fighter_id_grant_access_command": schema.StringAttribute{
-			Optional:    true,
-			Computed:    true,
-			Description: "Property for FIREFIGHTERID_GRANT_ACCESS_COMMAND",
-		},
-		"fire_fighter_id_revoke_access_command": schema.StringAttribute{
-			Optional:    true,
-			Computed:    true,
-			Description: "Property for FIREFIGHTERID_REVOKE_ACCESS_COMMAND",
-		},
-		"inactive_lock_account": schema.StringAttribute{
-			Optional:    true,
-			Computed:    true,
-			Description: "Property for INACTIVE_LOCK_ACCOUNT",
-		},
-		"status_threshold_config": schema.StringAttribute{
-			Optional:    true,
-			Computed:    true,
-			Description: "Property for STATUS_THRESHOLD_CONFIG",
-		},
-		"custom_config_json": schema.StringAttribute{
-			Optional:    true,
-			Computed:    true,
-			Description: "Property for CUSTOM_CONFIG_JSON",
-		},
-		"ssh_key": schema.StringAttribute{
-			Optional:    true,
-			WriteOnly:   true,
-			Description: "Property for SSH_KEY",
-		},
-		"lock_account_command": schema.StringAttribute{
-			Optional:    true,
-			Computed:    true,
-			Description: "Property for LOCK_ACCOUNT_COMMAND",
-		},
-		"unlock_account_command": schema.StringAttribute{
-			Optional:    true,
-			Computed:    true,
-			Description: "Property for UNLOCK_ACCOUNT_COMMAND",
-		},
-		"pass_through_connection_details": schema.StringAttribute{
-			Optional:    true,
-			Computed:    true,
-			Description: "Property for PassThroughConnectionDetails",
-		},
-		"ssh_pass_through_password": schema.StringAttribute{
-			Optional:    true,
-			WriteOnly:   true,
-			Description: "Property for SSHPassThroughPassword",
-		},
-		"ssh_pass_through_sshkey": schema.StringAttribute{
-			Optional:    true,
-			WriteOnly:   true,
-			Description: "Property for SSHPassThroughSSHKEY",
-		},
-		"ssh_pass_through_passphrase": schema.StringAttribute{
-			Optional:    true,
-			WriteOnly:   true,
-			Description: "Property for SSHPassThroughPassphrase",
-		},
-	}
-}
-
-func (r *UnixConnectionResource) Schema(ctx context.Context, req resource.SchemaRequest, resp *resource.SchemaResponse) {
-	resp.Schema = schema.Schema{
-		Description: util.UnixConnDescription,
-		Attributes:  connectionsutil.MergeResourceAttributes(BaseConnectorResourceSchema(), UnixConnectorResourceSchema()),
-	}
-}
-
-func (r *UnixConnectionResource) Configure(ctx context.Context, req resource.ConfigureRequest, resp *resource.ConfigureResponse) {
-	opCtx := errorsutil.CreateOperationContext(errorsutil.ConnectorTypeUnix, "configure", "")
-	ctx = opCtx.AddContextToLogger(ctx)
-
-	opCtx.LogOperationStart(ctx, "Starting Unix connection resource configuration")
-
-	// Check if provider data is available.
-	if req.ProviderData == nil {
-		tflog.Debug(ctx, "ProviderData is nil, returning early")
-		opCtx.LogOperationEnd(ctx, "Unix connection resource configuration completed - no provider data")
-		return
-	}
-
-	// Cast provider data to your provider type.
-	prov, ok := req.ProviderData.(*SaviyntProvider)
-	if !ok {
-		errorCode := unixErrorCodes.ProviderConfig()
-		opCtx.LogOperationError(ctx, "Provider configuration failed", errorCode,
-			fmt.Errorf("expected *SaviyntProvider, got different type"),
-			map[string]interface{}{"expected_type": "*SaviyntProvider"})
-
-		resp.Diagnostics.AddError(
-			errorsutil.GetErrorMessage(errorsutil.ErrProviderConfig),
-			fmt.Sprintf("[%s] Expected *SaviyntProvider, got different type", errorCode),
-		)
-		return
-	}
-
-	// Set the client and token from the provider state using interface wrapper.
-	r.client = &client.SaviyntClientWrapper{Client: prov.client}
-	r.token = prov.accessToken
-	r.provider = &client.SaviyntProviderWrapper{Provider: prov} // Store provider reference for retry logic
-
-	opCtx.LogOperationEnd(ctx, "Unix connection resource configured successfully")
 }
 
 func (r *UnixConnectionResource) Create(ctx context.Context, req resource.CreateRequest, resp *resource.CreateResponse) {

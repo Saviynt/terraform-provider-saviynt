@@ -39,7 +39,9 @@ type SalesforceConnectorResourceModel struct {
 	ID                     types.String `tfsdk:"id"`
 	ClientId               types.String `tfsdk:"client_id"`
 	ClientSecret           types.String `tfsdk:"client_secret"`
+	ClientSecretWO         types.String `tfsdk:"client_secret_wo"`
 	RefreshToken           types.String `tfsdk:"refresh_token"`
+	RefreshTokenWO         types.String `tfsdk:"refresh_token_wo"`
 	RedirectUri            types.String `tfsdk:"redirect_uri"`
 	InstanceUrl            types.String `tfsdk:"instance_url"`
 	ObjectToBeImported     types.String `tfsdk:"object_to_be_imported"`
@@ -86,18 +88,28 @@ func SalesforceConnectorResourceSchema() map[string]schema.Attribute {
 		},
 		"client_id": schema.StringAttribute{
 			Optional:    true,
-			WriteOnly:   true,
+			Computed:    true,
 			Description: "The OAuth client ID for Salesforce.",
 		},
 		"client_secret": schema.StringAttribute{
 			Optional:    true,
-			WriteOnly:   true,
+			Sensitive:   true,
 			Description: "The OAuth client secret for Salesforce.",
+		},
+		"client_secret_wo": schema.StringAttribute{
+			Optional:    true,
+			WriteOnly:   true,
+			Description: "The OAuth client secret for Salesforce (write-only).",
 		},
 		"refresh_token": schema.StringAttribute{
 			Optional:    true,
-			WriteOnly:   true,
+			Sensitive:   true,
 			Description: "The OAuth refresh token used to get access tokens from Salesforce.",
+		},
+		"refresh_token_wo": schema.StringAttribute{
+			Optional:    true,
+			WriteOnly:   true,
+			Description: "The OAuth refresh token used to get access tokens from Salesforce (write-only).",
 		},
 		"redirect_uri": schema.StringAttribute{
 			Optional:    true,
@@ -171,6 +183,23 @@ func (r *SalesforceConnectionResource) Schema(ctx context.Context, req resource.
 	resp.Schema = schema.Schema{
 		Description: util.SalesforceConnDescription,
 		Attributes:  connectionsutil.MergeResourceAttributes(BaseConnectorResourceSchema(), SalesforceConnectorResourceSchema()),
+	}
+}
+
+func (r *SalesforceConnectionResource) ConfigValidators(ctx context.Context) []resource.ConfigValidator {
+	return []resource.ConfigValidator{
+		&connectionsutil.AtMostOneOfValidator{
+			Attrs: []path.Expression{
+				path.MatchRoot("client_secret"),
+				path.MatchRoot("client_secret_wo"),
+			},
+		},
+		&connectionsutil.AtMostOneOfValidator{
+			Attrs: []path.Expression{
+				path.MatchRoot("refresh_token"),
+				path.MatchRoot("refresh_token_wo"),
+			},
+		},
 	}
 }
 
@@ -318,6 +347,20 @@ func (r *SalesforceConnectionResource) CreateSalesforceConnection(ctx context.Co
 }
 
 func (r *SalesforceConnectionResource) BuildSalesforceConnector(plan *SalesforceConnectorResourceModel, config *SalesforceConnectorResourceModel) openapi.SalesforceConnector {
+	var clientSecret string
+	if !config.ClientSecret.IsNull() && !config.ClientSecret.IsUnknown() {
+		clientSecret = config.ClientSecret.ValueString()
+	} else if !config.ClientSecretWO.IsNull() && !config.ClientSecretWO.IsUnknown() {
+		clientSecret = config.ClientSecretWO.ValueString()
+	}
+
+	var refreshToken string
+	if !config.RefreshToken.IsNull() && !config.RefreshToken.IsUnknown() {
+		refreshToken = config.RefreshToken.ValueString()
+	} else if !config.RefreshTokenWO.IsNull() && !config.RefreshTokenWO.IsUnknown() {
+		refreshToken = config.RefreshTokenWO.ValueString()
+	}
+
 	salesforceConn := openapi.SalesforceConnector{
 		BaseConnector: openapi.BaseConnector{
 			Connectiontype:  "SalesForce",
@@ -326,9 +369,9 @@ func (r *SalesforceConnectionResource) BuildSalesforceConnector(plan *Salesforce
 			Defaultsavroles: util.StringPointerOrEmpty(plan.DefaultSavRoles),
 			EmailTemplate:   util.StringPointerOrEmpty(plan.EmailTemplate),
 		},
-		CLIENT_ID:                util.StringPointerOrEmpty(config.ClientId),
-		CLIENT_SECRET:            util.StringPointerOrEmpty(config.ClientSecret),
-		REFRESH_TOKEN:            util.StringPointerOrEmpty(config.RefreshToken),
+		CLIENT_ID:                util.StringPointerOrEmpty(plan.ClientId),
+		CLIENT_SECRET:            util.StringPointerOrEmpty(types.StringValue(clientSecret)),
+		REFRESH_TOKEN:            util.StringPointerOrEmpty(types.StringValue(refreshToken)),
 		REDIRECT_URI:             util.StringPointerOrEmpty(plan.RedirectUri),
 		INSTANCE_URL:             util.StringPointerOrEmpty(plan.InstanceUrl),
 		OBJECT_TO_BE_IMPORTED:    util.StringPointerOrEmpty(plan.ObjectToBeImported),
@@ -487,13 +530,6 @@ func (r *SalesforceConnectionResource) UpdateSalesforceConnection(ctx context.Co
 	tflog.Debug(logCtx, "Building Salesforce connection update request")
 
 	salesforceConn := r.BuildSalesforceConnector(plan, config)
-
-	if plan.VaultConnection.ValueString() == "" {
-		emptyStr := ""
-		salesforceConn.BaseConnector.VaultConnection = &emptyStr
-		salesforceConn.BaseConnector.VaultConfiguration = &emptyStr
-		salesforceConn.BaseConnector.Saveinvault = &emptyStr
-	}
 
 	salesforceConnRequest := openapi.CreateOrUpdateRequest{
 		SalesforceConnector: &salesforceConn,

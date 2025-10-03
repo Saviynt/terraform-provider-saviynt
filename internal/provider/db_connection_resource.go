@@ -41,6 +41,7 @@ type DBConnectorResourceModel struct {
 	URL                    types.String `tfsdk:"url"`
 	Username               types.String `tfsdk:"username"`
 	Password               types.String `tfsdk:"password"`
+	PasswordWo             types.String `tfsdk:"password_wo"`
 	DriverName             types.String `tfsdk:"driver_name"`
 	ConnectionProperties   types.String `tfsdk:"connection_properties"`
 	PasswordMinLength      types.String `tfsdk:"password_min_length"`
@@ -53,6 +54,7 @@ type DBConnectorResourceModel struct {
 	GrantAccessJson        types.String `tfsdk:"grant_access_json"`
 	RevokeAccessJson       types.String `tfsdk:"revoke_access_json"`
 	ChangePassJson         types.String `tfsdk:"change_pass_json"`
+	ChangePassJsonWO       types.String `tfsdk:"change_pass_json_wo"`
 	DeleteAccountJson      types.String `tfsdk:"delete_account_json"`
 	EnableAccountJson      types.String `tfsdk:"enable_account_json"`
 	DisableAccountJson     types.String `tfsdk:"disable_account_json"`
@@ -110,13 +112,17 @@ func DBConnectorResourceSchema() map[string]schema.Attribute {
 		},
 		"username": schema.StringAttribute{
 			Required:    true,
-			WriteOnly:   true,
 			Description: "Username for connection",
 		},
 		"password": schema.StringAttribute{
-			Required:    true,
+			Optional:    true,
+			Sensitive:   true,
+			Description: "Set the Password.",
+		},
+		"password_wo": schema.StringAttribute{
+			Optional:    true,
 			WriteOnly:   true,
-			Description: "Password for connection",
+			Description: "Set the Password.",
 		},
 		"driver_name": schema.StringAttribute{
 			Required:    true,
@@ -173,6 +179,11 @@ func DBConnectorResourceSchema() map[string]schema.Attribute {
 			Description: "JSON to specify the queries/stored procedures used to revoke access",
 		},
 		"change_pass_json": schema.StringAttribute{
+			Optional:    true,
+			Sensitive:   true,
+			Description: "JSON to specify the queries/stored procedures used to change a password",
+		},
+		"change_pass_json_wo": schema.StringAttribute{
 			Optional:    true,
 			WriteOnly:   true,
 			Description: "JSON to specify the queries/stored procedures used to change a password",
@@ -280,6 +291,23 @@ func (r *DBConnectionResource) Schema(ctx context.Context, req resource.SchemaRe
 	resp.Schema = schema.Schema{
 		Description: util.DBConnDescription,
 		Attributes:  connectionsutil.MergeResourceAttributes(BaseConnectorResourceSchema(), DBConnectorResourceSchema()),
+	}
+}
+
+func (r *DBConnectionResource) ConfigValidators(ctx context.Context) []resource.ConfigValidator {
+	return []resource.ConfigValidator{
+		&connectionsutil.ExactlyOneOfValidator{
+			Attrs: []path.Expression{
+				path.MatchRoot("password"),
+				path.MatchRoot("password_wo"),
+			},
+		},
+		&connectionsutil.AtMostOneOfValidator{
+			Attrs: []path.Expression{
+				path.MatchRoot("change_pass_json"),
+				path.MatchRoot("change_pass_json_wo"),
+			},
+		},
 	}
 }
 
@@ -488,6 +516,20 @@ func (r *DBConnectionResource) CreateDBConnection(ctx context.Context, plan *DBC
 
 // BuildDBConnector builds the DB connector object
 func (r *DBConnectionResource) BuildDBConnector(plan *DBConnectorResourceModel, config *DBConnectorResourceModel) openapi.DBConnector {
+	var password string
+	if !config.Password.IsNull() && !config.Password.IsUnknown() {
+		password = config.Password.ValueString()
+	} else if !config.PasswordWo.IsNull() && !config.PasswordWo.IsUnknown() {
+		password = config.PasswordWo.ValueString()
+	}
+
+	var changePassJson string
+	if !config.ChangePassJson.IsNull() && !config.ChangePassJson.IsUnknown() {
+		changePassJson = config.ChangePassJson.ValueString()
+	} else if !config.ChangePassJsonWO.IsNull() && !config.ChangePassJsonWO.IsUnknown() {
+		changePassJson = config.ChangePassJsonWO.ValueString()
+	}
+
 	connector := openapi.DBConnector{
 		BaseConnector: openapi.BaseConnector{
 			Connectiontype:  "DB",
@@ -498,8 +540,8 @@ func (r *DBConnectionResource) BuildDBConnector(plan *DBConnectorResourceModel, 
 		},
 		// Required fields
 		URL:        plan.URL.ValueString(),
-		USERNAME:   config.Username.ValueString(),
-		PASSWORD:   config.Password.ValueString(),
+		USERNAME:   plan.Username.ValueString(),
+		PASSWORD:   password,
 		DRIVERNAME: plan.DriverName.ValueString(),
 
 		// Optional configuration fields
@@ -515,7 +557,7 @@ func (r *DBConnectionResource) BuildDBConnector(plan *DBConnectorResourceModel, 
 		UPDATEACCOUNTJSON:  util.StringPointerOrEmpty(plan.UpdateAccountJson),
 		GRANTACCESSJSON:    util.StringPointerOrEmpty(plan.GrantAccessJson),
 		REVOKEACCESSJSON:   util.StringPointerOrEmpty(plan.RevokeAccessJson),
-		CHANGEPASSJSON:     util.StringPointerOrEmpty(config.ChangePassJson),
+		CHANGEPASSJSON:     util.StringPointerOrEmpty(types.StringValue(changePassJson)),
 		DELETEACCOUNTJSON:  util.StringPointerOrEmpty(plan.DeleteAccountJson),
 		ENABLEACCOUNTJSON:  util.StringPointerOrEmpty(plan.EnableAccountJson),
 		DISABLEACCOUNTJSON: util.StringPointerOrEmpty(plan.DisableAccountJson),
@@ -904,13 +946,6 @@ func (r *DBConnectionResource) UpdateDBConnection(ctx context.Context, plan *DBC
 
 	// Build DB connector request
 	dbConn := r.BuildDBConnector(plan, config)
-
-	if plan.VaultConnection.ValueString() == "" {
-		emptyStr := ""
-		dbConn.BaseConnector.VaultConnection = &emptyStr
-		dbConn.BaseConnector.VaultConfiguration = &emptyStr
-		dbConn.BaseConnector.Saveinvault = &emptyStr
-	}
 
 	dbConnRequest := openapi.CreateOrUpdateRequest{
 		DBConnector: &dbConn,

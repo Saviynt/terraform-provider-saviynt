@@ -44,6 +44,7 @@ type SapConnectorResourceModel struct {
 	JcoClient                      types.String `tfsdk:"jco_client"`
 	JcoUser                        types.String `tfsdk:"jco_user"`
 	Password                       types.String `tfsdk:"password"`
+	PasswordWo                     types.String `tfsdk:"password_wo"`
 	JcoLang                        types.String `tfsdk:"jco_lang"`
 	JcoR3Name                      types.String `tfsdk:"jco_r3name"`
 	JcoMshost                      types.String `tfsdk:"jco_mshost"`
@@ -65,6 +66,7 @@ type SapConnectorResourceModel struct {
 	ProvJcoClient                  types.String `tfsdk:"prov_jco_client"`
 	ProvJcoUser                    types.String `tfsdk:"prov_jco_user"`
 	ProvPassword                   types.String `tfsdk:"prov_password"`
+	ProvPasswordWo                 types.String `tfsdk:"prov_password_wo"`
 	ProvJcoLang                    types.String `tfsdk:"prov_jco_lang"`
 	ProvJcoR3Name                  types.String `tfsdk:"prov_jco_r3name"`
 	ProvJcoMshost                  types.String `tfsdk:"prov_jco_mshost"`
@@ -156,8 +158,13 @@ func SapConnectorResourceSchema() map[string]schema.Attribute {
 		},
 		"password": schema.StringAttribute{
 			Optional:    true,
-			WriteOnly:   true,
+			Sensitive:   true,
 			Description: "Password.",
+		},
+		"password_wo": schema.StringAttribute{
+			Optional:    true,
+			WriteOnly:   true,
+			Description: "Password write-only attribute.",
 		},
 		"jco_lang": schema.StringAttribute{
 			Optional:    true,
@@ -261,8 +268,13 @@ func SapConnectorResourceSchema() map[string]schema.Attribute {
 		},
 		"prov_password": schema.StringAttribute{
 			Optional:    true,
-			WriteOnly:   true,
+			Sensitive:   true,
 			Description: "Provpassword.",
+		},
+		"prov_password_wo": schema.StringAttribute{
+			Optional:    true,
+			WriteOnly:   true,
+			Description: "Provpassword write-only attribute.",
 		},
 		"prov_jco_lang": schema.StringAttribute{
 			Optional:    true,
@@ -439,6 +451,23 @@ func (r *SapConnectionResource) Schema(ctx context.Context, req resource.SchemaR
 	}
 }
 
+func (r *SapConnectionResource) ConfigValidators(ctx context.Context) []resource.ConfigValidator {
+	return []resource.ConfigValidator{
+		&connectionsutil.AtMostOneOfValidator{
+			Attrs: []path.Expression{
+				path.MatchRoot("password"),
+				path.MatchRoot("password_wo"),
+			},
+		},
+		&connectionsutil.AtMostOneOfValidator{
+			Attrs: []path.Expression{
+				path.MatchRoot("prov_password"),
+				path.MatchRoot("prov_password_wo"),
+			},
+		},
+	}
+}
+
 func (r *SapConnectionResource) Configure(ctx context.Context, req resource.ConfigureRequest, resp *resource.ConfigureResponse) {
 	opCtx := errorsutil.CreateOperationContext(errorsutil.ConnectorTypeSAP, "configure", "")
 	ctx = opCtx.AddContextToLogger(ctx)
@@ -583,6 +612,20 @@ func (r *SapConnectionResource) CreateSAPConnection(ctx context.Context, plan *S
 }
 
 func (r *SapConnectionResource) BuildSAPConnector(plan *SapConnectorResourceModel, config *SapConnectorResourceModel) openapi.SAPConnector {
+	var password string
+	if !config.Password.IsNull() && !config.Password.IsUnknown() {
+		password = config.Password.ValueString()
+	} else if !config.PasswordWo.IsNull() && !config.PasswordWo.IsUnknown() {
+		password = config.PasswordWo.ValueString()
+	}
+
+	var provPassword string
+	if !config.ProvPassword.IsNull() && !config.ProvPassword.IsUnknown() {
+		provPassword = config.ProvPassword.ValueString()
+	} else if !config.ProvPasswordWo.IsNull() && !config.ProvPasswordWo.IsUnknown() {
+		provPassword = config.ProvPasswordWo.ValueString()
+	}
+
 	sapConn := openapi.SAPConnector{
 		BaseConnector: openapi.BaseConnector{
 			Connectiontype:  "SAP",
@@ -596,7 +639,7 @@ func (r *SapConnectionResource) BuildSAPConnector(plan *SapConnectorResourceMode
 		JCO_SYSNR:                          util.StringPointerOrEmpty(plan.JcoSysnr),
 		JCO_CLIENT:                         util.StringPointerOrEmpty(plan.JcoClient),
 		JCO_USER:                           util.StringPointerOrEmpty(plan.JcoUser),
-		PASSWORD:                           util.StringPointerOrEmpty(config.Password),
+		PASSWORD:                           util.StringPointerOrEmpty(types.StringValue(password)),
 		JCO_LANG:                           util.StringPointerOrEmpty(plan.JcoLang),
 		JCOR3NAME:                          util.StringPointerOrEmpty(plan.JcoR3Name),
 		JCO_MSHOST:                         util.StringPointerOrEmpty(plan.JcoMshost),
@@ -617,7 +660,7 @@ func (r *SapConnectionResource) BuildSAPConnector(plan *SapConnectorResourceMode
 		PROV_JCO_SYSNR:                     util.StringPointerOrEmpty(plan.ProvJcoSysnr),
 		PROV_JCO_CLIENT:                    util.StringPointerOrEmpty(plan.ProvJcoClient),
 		PROV_JCO_USER:                      util.StringPointerOrEmpty(plan.ProvJcoUser),
-		PROV_PASSWORD:                      util.StringPointerOrEmpty(config.ProvPassword),
+		PROV_PASSWORD:                      util.StringPointerOrEmpty(types.StringValue(provPassword)),
 		PROV_JCO_LANG:                      util.StringPointerOrEmpty(plan.ProvJcoLang),
 		PROVJCOR3NAME:                      util.StringPointerOrEmpty(plan.ProvJcoR3Name),
 		PROV_JCO_MSHOST:                    util.StringPointerOrEmpty(plan.ProvJcoMshost),
@@ -885,13 +928,6 @@ func (r *SapConnectionResource) UpdateSAPConnection(ctx context.Context, plan *S
 	tflog.Debug(logCtx, "Building SAP connection update request")
 
 	sapConn := r.BuildSAPConnector(plan, config)
-
-	if plan.VaultConnection.ValueString() == "" {
-		emptyStr := ""
-		sapConn.BaseConnector.VaultConnection = &emptyStr
-		sapConn.BaseConnector.VaultConfiguration = &emptyStr
-		sapConn.BaseConnector.Saveinvault = &emptyStr
-	}
 
 	sapConnRequest := openapi.CreateOrUpdateRequest{
 		SAPConnector: &sapConn,
