@@ -16,6 +16,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"log"
+	"net/http"
 	"strings"
 	"terraform-provider-Saviynt/internal/client"
 	"terraform-provider-Saviynt/util"
@@ -41,6 +42,7 @@ var _ resource.ResourceWithImportState = &PrivilegeResource{}
 type PrivilegeResource struct {
 	client           client.SaviyntClientInterface
 	token            string
+	provider         client.SaviyntProviderInterface
 	privilegeFactory client.PrivilegeFactoryInterface
 }
 
@@ -200,16 +202,17 @@ func (r *PrivilegeResource) Configure(ctx context.Context, req resource.Configur
 	}
 
 	// Cast provider data to your provider type.
-	prov, ok := req.ProviderData.(*saviyntProvider)
+	prov, ok := req.ProviderData.(*SaviyntProvider)
 	if !ok {
 		log.Println("[ERROR] Provider: Unexpected provider data")
-		resp.Diagnostics.AddError("Unexpected Provider Data", "Expected *saviyntProvider")
+		resp.Diagnostics.AddError("Unexpected Provider Data", "Expected *SaviyntProvider")
 		return
 	}
 
 	// Set the client and token from the provider state using interface wrapper.
 	r.client = &client.SaviyntClientWrapper{Client: prov.client}
 	r.token = prov.accessToken
+	r.provider = &client.SaviyntProviderWrapper{Provider: prov} // Store provider reference for retry logic
 	log.Println("[DEBUG] Privilege: Resource configured successfully")
 }
 
@@ -223,11 +226,14 @@ func (r *PrivilegeResource) SetToken(token string) {
 	r.token = token
 }
 
+// SetProvider sets the provider for testing purposes
+func (r *PrivilegeResource) SetProvider(provider client.SaviyntProviderInterface) {
+	r.provider = provider
+}
+
 // ReadPrivilege reads privileges for a specific endpoint and entitlement type
 func (r *PrivilegeResource) ReadPrivilege(ctx context.Context, endpointName, entitlementType string) (*openapi.GetPrivilegeListResponse, error) {
 	log.Printf("[DEBUG] Privilege: Starting read operation for endpoint: %s, entitlement type: %s", endpointName, entitlementType)
-
-	privilegeOps := r.privilegeFactory.CreatePrivilegeOperations(r.client.APIBaseURL(), r.token)
 
 	getReq := openapi.GetPrivilegeListRequest{
 		Endpoint:        endpointName,
@@ -235,11 +241,22 @@ func (r *PrivilegeResource) ReadPrivilege(ctx context.Context, endpointName, ent
 	}
 
 	log.Printf("[DEBUG] Privilege: Making API call to fetch privileges for endpoint: %s", endpointName)
-	fetchResp, httpResp, err := privilegeOps.GetPrivilege(ctx, getReq)
+	var fetchResp *openapi.GetPrivilegeListResponse
+	var finalHttpResp *http.Response
+	err := r.provider.AuthenticatedAPICallWithRetry(ctx, "get_privilege", func(token string) error {
+		privilegeOps := r.privilegeFactory.CreatePrivilegeOperations(r.client.APIBaseURL(), token)
+		resp, httpResp, err := privilegeOps.GetPrivilege(ctx, getReq)
+		if httpResp != nil && httpResp.StatusCode == 401 {
+			return fmt.Errorf("401 unauthorized")
+		}
+		fetchResp = resp
+		finalHttpResp = httpResp // Capture final HTTP response
+		return err
+	})
 
 	if err != nil {
 		log.Printf("[ERROR] Privilege: Problem with the get function in ReadPrivilege. Error: %v", err)
-		err = errorsutil.HandleHTTPError(httpResp, err, "Read")
+		err = errorsutil.HandleHTTPError(finalHttpResp, err, "Read")
 		return nil, fmt.Errorf("fetch API call failed: %w", err)
 	}
 
@@ -474,8 +491,6 @@ func (r *PrivilegeResource) ProcessPrivilegeListErrorResponse(resp *openapi.GetP
 func (r *PrivilegeResource) UpdatePrivilege(ctx context.Context, plan *PrivilegeResourceModel) (map[string]Privilege, []string) {
 	log.Printf("[DEBUG] Privilege: Starting update operation for endpoint: %s", plan.Endpoint.ValueString())
 
-	privilegeOps := r.privilegeFactory.CreatePrivilegeOperations(r.client.APIBaseURL(), r.token)
-
 	// Get planned privileges
 	var planPrivs map[string]Privilege
 	diags := plan.Privileges.ElementsAs(ctx, &planPrivs, false)
@@ -538,13 +553,26 @@ func (r *PrivilegeResource) UpdatePrivilege(ctx context.Context, plan *Privilege
 			log.Printf("[DEBUG] Privilege: Creating new privilege: %s", privName)
 			reqJSON, _ := json.Marshal(req)
 			log.Printf("[DEBUG] Privilege CREATE API REQUEST for '%s': %s", privName, string(reqJSON))
-			createResp, httpResp, err := privilegeOps.CreatePrivilege(ctx, req)
+
+			var createResp *openapi.CreateUpdatePrivilegeResponse
+			var finalHttpResp *http.Response
+			err := r.provider.AuthenticatedAPICallWithRetry(ctx, "create_privilege", func(token string) error {
+				privilegeOps := r.privilegeFactory.CreatePrivilegeOperations(r.client.APIBaseURL(), token)
+				resp, httpResp, err := privilegeOps.CreatePrivilege(ctx, req)
+				if httpResp != nil && httpResp.StatusCode == 401 {
+					return fmt.Errorf("401 unauthorized")
+				}
+				createResp = resp
+				finalHttpResp = httpResp // Capture final HTTP response
+				return err
+			})
+
 			respJSON, _ := json.Marshal(createResp)
 			log.Printf("[DEBUG] Privilege CREATE API RESPONSE for '%s': %s", privName, string(respJSON))
 			if err != nil {
-				if httpResp != nil {
+				if finalHttpResp != nil {
 					var respBody map[string]interface{}
-					json.NewDecoder(httpResp.Body).Decode(&respBody)
+					json.NewDecoder(finalHttpResp.Body).Decode(&respBody)
 					errors = append(errors, fmt.Sprintf("Privilege '%s': %v", privName, respBody))
 				} else {
 					errors = append(errors, fmt.Sprintf("Privilege '%s': %v", privName, err))
@@ -561,13 +589,26 @@ func (r *PrivilegeResource) UpdatePrivilege(ctx context.Context, plan *Privilege
 			log.Printf("[DEBUG] Privilege: Updating existing privilege: %s", privName)
 			reqJSON, _ := json.Marshal(req)
 			log.Printf("[DEBUG] Privilege UPDATE API REQUEST for '%s': %s", privName, string(reqJSON))
-			updateResp, httpResp, err := privilegeOps.UpdatePrivilege(ctx, req)
+
+			var updateResp *openapi.CreateUpdatePrivilegeResponse
+			var finalHttpResp *http.Response
+			err := r.provider.AuthenticatedAPICallWithRetry(ctx, "update_privilege", func(token string) error {
+				privilegeOps := r.privilegeFactory.CreatePrivilegeOperations(r.client.APIBaseURL(), token)
+				resp, httpResp, err := privilegeOps.UpdatePrivilege(ctx, req)
+				if httpResp != nil && httpResp.StatusCode == 401 {
+					return fmt.Errorf("401 unauthorized")
+				}
+				updateResp = resp
+				finalHttpResp = httpResp // Capture final HTTP response
+				return err
+			})
+
 			respJSON, _ := json.Marshal(updateResp)
 			log.Printf("[DEBUG] Privilege UPDATE API RESPONSE for '%s': %s", privName, string(respJSON))
 			if err != nil {
-				if httpResp != nil {
+				if finalHttpResp != nil {
 					var respBody map[string]interface{}
-					json.NewDecoder(httpResp.Body).Decode(&respBody)
+					json.NewDecoder(finalHttpResp.Body).Decode(&respBody)
 					errors = append(errors, fmt.Sprintf("Privilege '%s': %v", privName, respBody))
 				} else {
 					errors = append(errors, fmt.Sprintf("Privilege '%s': %v", privName, err))
@@ -633,8 +674,6 @@ func (r *PrivilegeResource) UpdateModelFromUpdateResponse(plan *PrivilegeResourc
 func (r *PrivilegeResource) UpdatePrivilegeDelete(ctx context.Context, plan *PrivilegeResourceModel, state *PrivilegeResourceModel) (map[string]Privilege, []string) {
 	log.Printf("[DEBUG] Privilege: Starting update-delete operation for endpoint: %s", plan.Endpoint.ValueString())
 
-	privilegeOps := r.privilegeFactory.CreatePrivilegeOperations(r.client.APIBaseURL(), r.token)
-
 	// Get planned privileges
 	var planPrivs map[string]Privilege
 	diags := plan.Privileges.ElementsAs(ctx, &planPrivs, false)
@@ -652,7 +691,9 @@ func (r *PrivilegeResource) UpdatePrivilegeDelete(ctx context.Context, plan *Pri
 
 	existingPrivs := make(map[string]bool)
 	for _, priv := range planPrivs {
-		existingPrivs[*priv.AttributeName.ValueStringPointer()] = true
+		if namePtr := priv.AttributeName.ValueStringPointer(); namePtr != nil {
+			existingPrivs[*namePtr] = true
+		}
 	}
 
 	var errors []string
@@ -675,7 +716,16 @@ func (r *PrivilegeResource) UpdatePrivilegeDelete(ctx context.Context, plan *Pri
 					log.Printf("[DEBUG] UpdatePrivilegeDelete: Delete request for %s: %s", privName, string(deleteReqJson))
 
 					log.Printf("[DEBUG] Privilege: Deleting privilege: %s", privName)
-					deleteResp, _, err := privilegeOps.DeletePrivilege(ctx, deleteReq)
+					var deleteResp *openapi.DeletePrivilegeResponse
+					err := r.provider.AuthenticatedAPICallWithRetry(ctx, "delete_privilege", func(token string) error {
+						privilegeOps := r.privilegeFactory.CreatePrivilegeOperations(r.client.APIBaseURL(), token)
+						resp, httpResp, err := privilegeOps.DeletePrivilege(ctx, deleteReq)
+						if httpResp != nil && httpResp.StatusCode == 401 {
+							return fmt.Errorf("401 unauthorized")
+						}
+						deleteResp = resp
+						return err
+					})
 					if err != nil {
 						log.Printf("[ERROR] Privilege: Problem deleting privilege: %s. Error: %v", privName, err)
 						return nil, errors
@@ -862,8 +912,6 @@ func (r *PrivilegeResource) Update(ctx context.Context, req resource.UpdateReque
 func (r *PrivilegeResource) DeletePrivilege(ctx context.Context, state *PrivilegeResourceModel) error {
 	log.Printf("[DEBUG] Privilege: Starting delete operation for endpoint: %s", state.Endpoint.ValueString())
 
-	privilegeOps := r.privilegeFactory.CreatePrivilegeOperations(r.client.APIBaseURL(), r.token)
-
 	// Get privilege names from the map
 	var statePrivs map[string]Privilege
 	diags := state.Privileges.ElementsAs(ctx, &statePrivs, false)
@@ -887,7 +935,16 @@ func (r *PrivilegeResource) DeletePrivilege(ctx context.Context, state *Privileg
 
 			log.Printf("[DEBUG] Privilege: Deleting privilege: %s", privName)
 
-			deleteResp, _, err := privilegeOps.DeletePrivilege(ctx, deleteReq)
+			var deleteResp *openapi.DeletePrivilegeResponse
+			err := r.provider.AuthenticatedAPICallWithRetry(ctx, "delete_privilege", func(token string) error {
+				privilegeOps := r.privilegeFactory.CreatePrivilegeOperations(r.client.APIBaseURL(), token)
+				resp, httpResp, err := privilegeOps.DeletePrivilege(ctx, deleteReq)
+				if httpResp != nil && httpResp.StatusCode == 401 {
+					return fmt.Errorf("401 unauthorized")
+				}
+				deleteResp = resp
+				return err
+			})
 			if err != nil {
 				log.Printf("[ERROR] Privilege: Problem deleting privilege: %s. Error: %v", privName, err)
 				return fmt.Errorf("failed to delete privilege %s: %w", privName, err)
@@ -926,13 +983,20 @@ func (r *PrivilegeResource) Delete(ctx context.Context, req resource.DeleteReque
 
 // ValidateImportKey validates that the endpoint exists and returns its associated security system
 func (r *PrivilegeResource) ValidateImportKey(ctx context.Context, endpointName string) (string, error) {
-	endpointOps := r.privilegeFactory.CreateEndpointOperations(r.client.APIBaseURL(), r.token)
-
 	// Create the request object for GetEndpoints
 	reqParams := endpoint.GetEndpointsRequest{}
 	reqParams.SetEndpointname(endpointName)
 
-	endpointResp, _, err := endpointOps.GetEndpoints(ctx, reqParams)
+	var endpointResp *endpoint.GetEndpoints200Response
+	err := r.provider.AuthenticatedAPICallWithRetry(ctx, "get_endpoints", func(token string) error {
+		endpointOps := r.privilegeFactory.CreateEndpointOperations(r.client.APIBaseURL(), token)
+		resp, httpResp, err := endpointOps.GetEndpoints(ctx, reqParams)
+		if httpResp != nil && httpResp.StatusCode == 401 {
+			return fmt.Errorf("401 unauthorized")
+		}
+		endpointResp = resp
+		return err
+	})
 	if err != nil {
 		log.Printf("[ERROR] Privilege: API Call failed: Failed to fetch endpoint details. Error: %v", err)
 		return "", fmt.Errorf("API Call failed: Failed to fetch endpoint details. Error: %v", err)

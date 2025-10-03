@@ -13,6 +13,7 @@ package provider
 import (
 	"context"
 	"fmt"
+	"net/http"
 	"os"
 	"terraform-provider-Saviynt/internal/client"
 	"terraform-provider-Saviynt/util"
@@ -84,6 +85,7 @@ type ADSIConnectorResourceModel struct {
 type AdsiConnectionResource struct {
 	client            client.SaviyntClientInterface
 	token             string
+	provider          client.SaviyntProviderInterface
 	connectionFactory client.ConnectionFactoryInterface
 }
 
@@ -335,16 +337,16 @@ func (r *AdsiConnectionResource) Configure(ctx context.Context, req resource.Con
 	}
 
 	// Cast provider data to your provider type.
-	prov, ok := req.ProviderData.(*saviyntProvider)
+	prov, ok := req.ProviderData.(*SaviyntProvider)
 	if !ok {
 		errorCode := adsiErrorCodes.ProviderConfig()
 		opCtx.LogOperationError(ctx, "Provider configuration failed", errorCode,
-			fmt.Errorf("expected *saviyntProvider, got different type"),
-			map[string]interface{}{"expected_type": "*saviyntProvider"})
+			fmt.Errorf("expected *SaviyntProvider, got different type"),
+			map[string]interface{}{"expected_type": "*SaviyntProvider"})
 
 		resp.Diagnostics.AddError(
 			errorsutil.GetErrorMessage(errorsutil.ErrProviderConfig),
-			fmt.Sprintf("[%s] Expected *saviyntProvider, got different type", errorCode),
+			fmt.Sprintf("[%s] Expected *SaviyntProvider, got different type", errorCode),
 		)
 		return
 	}
@@ -352,6 +354,7 @@ func (r *AdsiConnectionResource) Configure(ctx context.Context, req resource.Con
 	// Set the client and token from the provider state using interface wrapper.
 	r.client = &client.SaviyntClientWrapper{Client: prov.client}
 	r.token = prov.accessToken
+	r.provider = &client.SaviyntProviderWrapper{Provider: prov} // Store provider reference for retry logic 
 
 	opCtx.LogOperationEnd(ctx, "ADSI connection resource configured successfully")
 }
@@ -366,6 +369,11 @@ func (r *AdsiConnectionResource) SetToken(token string) {
 	r.token = token
 }
 
+// SetProvider sets the provider for testing purposes
+func (r *AdsiConnectionResource) SetProvider(provider client.SaviyntProviderInterface) {
+	r.provider = provider
+}
+
 func (r *AdsiConnectionResource) CreateADSIConnection(ctx context.Context, plan *ADSIConnectorResourceModel, config *ADSIConnectorResourceModel) (*openapi.CreateOrUpdateResponse, error) {
 	connectionName := plan.ConnectionName.ValueString()
 	opCtx := errorsutil.CreateOperationContext(errorsutil.ConnectorTypeADSI, "create", connectionName)
@@ -375,14 +383,27 @@ func (r *AdsiConnectionResource) CreateADSIConnection(ctx context.Context, plan 
 
 	opCtx.LogOperationStart(logCtx, "Starting ADSI connection creation")
 
-	// Use the factory to create connection operations
-	connectionOps := r.connectionFactory.CreateConnectionOperations(r.client.APIBaseURL(), r.token)
-
-	// Check if connection already exists (idempotency check)
+	// Check if connection already exists (idempotency check) with retry logic
 	tflog.Debug(logCtx, "Checking if connection already exists")
+	var existingResource *openapi.GetConnectionDetailsResponse
+	var httpsResp *http.Response
+	err := r.provider.AuthenticatedAPICallWithRetry(ctx, "get_connection_details_idempotency", func(token string) error {
+		connectionOps := r.connectionFactory.CreateConnectionOperations(r.client.APIBaseURL(), token)
+		resp, httpResp, err := connectionOps.GetConnectionDetails(ctx, connectionName)
+		if httpResp != nil && httpResp.StatusCode == 401 {
+			return fmt.Errorf("401 unauthorized")
+		}
+		existingResource = resp
+		httpsResp = httpResp
+		return err
+	})
 
-	// Use original context for API calls to maintain test compatibility
-	existingResource, _, _ := connectionOps.GetConnectionDetails(ctx, connectionName)
+	if err != nil && httpsResp != nil && httpsResp.StatusCode != 412 {
+		errorCode := adsiErrorCodes.ReadFailed()
+		opCtx.LogOperationError(logCtx, "Failed to check existing connection", errorCode, err, nil)
+		return nil, fmt.Errorf("[%s] Failed to check existing connection: %w", errorCode, err)
+	}
+
 	if existingResource != nil &&
 		existingResource.ADSIConnectionResponse != nil &&
 		existingResource.ADSIConnectionResponse.Errorcode != nil &&
@@ -402,10 +423,20 @@ func (r *AdsiConnectionResource) CreateADSIConnection(ctx context.Context, plan 
 		ADSIConnector: &adsiConn,
 	}
 
-	// Execute create operation through interface
-	tflog.Debug(ctx, "Executing create operation")
+	var apiResp *openapi.CreateOrUpdateResponse
 
-	apiResp, _, err := connectionOps.CreateOrUpdateConnection(ctx, createReq)
+	// Execute create operation with retry logic
+	tflog.Debug(ctx, "Executing create operation")
+	err = r.provider.AuthenticatedAPICallWithRetry(ctx, "create_adsi_connection", func(token string) error {
+		connectionOps := r.connectionFactory.CreateConnectionOperations(r.client.APIBaseURL(), token)
+		resp, httpResp, err := connectionOps.CreateOrUpdateConnection(ctx, createReq)
+		if httpResp != nil && httpResp.StatusCode == 401 {
+			return fmt.Errorf("401 unauthorized")
+		}
+		apiResp = resp
+		return err
+	})
+
 	if err != nil {
 		errorCode := adsiErrorCodes.CreateFailed()
 		opCtx.LogOperationError(ctx, "Failed to create ADSI connection", errorCode, err)
@@ -556,11 +587,19 @@ func (r *AdsiConnectionResource) ReadADSIConnection(ctx context.Context, connect
 
 	opCtx.LogOperationStart(logCtx, "Starting ADSI connection read operation")
 
-	// Use the factory to create connection operations
-	connectionOps := r.connectionFactory.CreateConnectionOperations(r.client.APIBaseURL(), r.token)
+	// Execute read operation with retry logic
+	var apiResp *openapi.GetConnectionDetailsResponse
 
-	// Execute read operation through interface - use original context for API calls
-	apiResp, _, err := connectionOps.GetConnectionDetails(ctx, connectionName)
+	err := r.provider.AuthenticatedAPICallWithRetry(ctx, "read_adsi_connection", func(token string) error {
+		connectionOps := r.connectionFactory.CreateConnectionOperations(r.client.APIBaseURL(), token)
+		resp, httpResp, err := connectionOps.GetConnectionDetails(ctx, connectionName)
+		if httpResp != nil && httpResp.StatusCode == 401 {
+			return fmt.Errorf("401 unauthorized")
+		}
+		apiResp = resp
+		return err
+	})
+
 	if err != nil {
 		errorCode := adsiErrorCodes.ReadFailed()
 		opCtx.LogOperationError(logCtx, "Failed to read ADSI connection", errorCode, err)
@@ -657,9 +696,6 @@ func (r *AdsiConnectionResource) UpdateADSIConnection(ctx context.Context, plan 
 
 	opCtx.LogOperationStart(logCtx, "Starting ADSI connection update")
 
-	// Use the factory to create connection operations
-	connectionOps := r.connectionFactory.CreateConnectionOperations(r.client.APIBaseURL(), r.token)
-
 	// Build ADSI connection update request
 	tflog.Debug(logCtx, "Building ADSI connection update request")
 
@@ -675,11 +711,20 @@ func (r *AdsiConnectionResource) UpdateADSIConnection(ctx context.Context, plan 
 		ADSIConnector: &adsiConn,
 	}
 
-	// Execute update operation through interface
-	tflog.Debug(logCtx, "Executing update operation")
+	var apiResp *openapi.CreateOrUpdateResponse
 
-	// Use original context for API calls to maintain test compatibility
-	apiResp, _, err := connectionOps.CreateOrUpdateConnection(ctx, updateReq)
+	// Execute update operation with retry logic
+	tflog.Debug(logCtx, "Executing update operation")
+	err := r.provider.AuthenticatedAPICallWithRetry(ctx, "update_adsi_connection", func(token string) error {
+		connectionOps := r.connectionFactory.CreateConnectionOperations(r.client.APIBaseURL(), token)
+		resp, httpResp, err := connectionOps.CreateOrUpdateConnection(ctx, updateReq)
+		if httpResp != nil && httpResp.StatusCode == 401 {
+			return fmt.Errorf("401 unauthorized")
+		}
+		apiResp = resp
+		return err
+	})
+
 	if err != nil {
 		errorCode := adsiErrorCodes.UpdateFailed()
 		opCtx.LogOperationError(logCtx, "Failed to update ADSI connection", errorCode, err)

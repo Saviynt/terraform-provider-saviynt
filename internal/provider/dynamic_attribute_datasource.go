@@ -12,6 +12,7 @@ import (
 	"log"
 	"net/http"
 	"strings"
+	"terraform-provider-Saviynt/internal/client"
 	"terraform-provider-Saviynt/util"
 
 	"github.com/hashicorp/terraform-plugin-framework/datasource"
@@ -23,8 +24,9 @@ import (
 )
 
 type DynamicAttributeDataSource struct {
-	client *s.Client
-	token  string
+	client   *s.Client
+	token    string
+	provider client.SaviyntProviderInterface
 }
 
 type DynamicAttributeDataSourceModel struct {
@@ -181,15 +183,16 @@ func (d *DynamicAttributeDataSource) Configure(ctx context.Context, req datasour
 	}
 
 	// Cast provider data to your provider type.
-	prov, ok := req.ProviderData.(*saviyntProvider)
+	prov, ok := req.ProviderData.(*SaviyntProvider)
 	if !ok {
-		resp.Diagnostics.AddError("Unexpected Provider Data", "Expected *saviyntProvider")
+		resp.Diagnostics.AddError("Unexpected Provider Data", "Expected *SaviyntProvider")
 		return
 	}
 
 	// Set the client and token from the provider state.
 	d.client = prov.client
 	d.token = prov.accessToken
+	d.provider = &client.SaviyntProviderWrapper{Provider: prov}
 }
 
 func (d *DynamicAttributeDataSource) Read(ctx context.Context, req datasource.ReadRequest, resp *datasource.ReadResponse) {
@@ -201,15 +204,7 @@ func (d *DynamicAttributeDataSource) Read(ctx context.Context, req datasource.Re
 		return
 	}
 
-	// Configure API client
-	cfg := openapi.NewConfiguration()
-	apiBaseURL := strings.TrimPrefix(strings.TrimPrefix(d.client.APIBaseURL(), "https://"), "http://")
-	cfg.Host = apiBaseURL
-	cfg.Scheme = "https"
-	cfg.AddDefaultHeader("Authorization", "Bearer "+d.token)
-	cfg.HTTPClient = http.DefaultClient
-
-	apiClient := openapi.NewAPIClient(cfg)
+	// Prepare request parameters
 	securitySystems := util.ConvertListToStringSlice(ctx, state.SecuritySystem)
 	endpoints := util.ConvertListToStringSlice(ctx, state.Endpoint)
 	dynamicAttributes := util.ConvertListToStringSlice(ctx, state.DynamicAttributes)
@@ -218,41 +213,72 @@ func (d *DynamicAttributeDataSource) Read(ctx context.Context, req datasource.Re
 	offset := util.StringPointerOrEmpty(state.Offset)
 	max := util.StringPointerOrEmpty(state.Max)
 
-	apiReq := apiClient.DynamicAttributesAPI.FetchDynamicAttribute(ctx)
-	if securitySystems != nil {
-		apiReq = apiReq.Securitysystem(securitySystems)
-	}
-	if endpoints != nil {
-		apiReq = apiReq.Endpoint(endpoints)
-	}
-	if dynamicAttributes != nil {
-		apiReq = apiReq.Dynamicattributes(dynamicAttributes)
-	}
-	if requestTypes != nil {
-		apiReq = apiReq.Requesttype(requestTypes)
-	}
-	if offset != nil {
-		apiReq = apiReq.Offset(*offset)
-	}
-	if max != nil {
-		apiReq = apiReq.Max(*max)
-	}
-	if loggedInUser != nil {
-		apiReq = apiReq.Loggedinuser(*loggedInUser)
-	}
+	// Execute API call with retry logic
+	var apiResp *openapi.FetchDynamicAttributesResponse
+	var finalHttpResp *http.Response
+	err := d.provider.AuthenticatedAPICallWithRetry(ctx, "fetch_dynamic_attributes", func(token string) error {
+		// Configure API client with current token
+		cfg := openapi.NewConfiguration()
+		apiBaseURL := strings.TrimPrefix(strings.TrimPrefix(d.client.APIBaseURL(), "https://"), "http://")
+		cfg.Host = apiBaseURL
+		cfg.Scheme = "https"
+		cfg.AddDefaultHeader("Authorization", "Bearer "+token)
+		cfg.HTTPClient = http.DefaultClient
 
-	apiResp, httpResp, err := apiReq.Execute()
+		apiClient := openapi.NewAPIClient(cfg)
+		apiReq := apiClient.DynamicAttributesAPI.FetchDynamicAttribute(ctx)
+
+		if securitySystems != nil {
+			apiReq = apiReq.Securitysystem(securitySystems)
+		}
+		if endpoints != nil {
+			apiReq = apiReq.Endpoint(endpoints)
+		}
+		if dynamicAttributes != nil {
+			apiReq = apiReq.Dynamicattributes(dynamicAttributes)
+		}
+		if requestTypes != nil {
+			apiReq = apiReq.Requesttype(requestTypes)
+		}
+		if offset != nil {
+			apiReq = apiReq.Offset(*offset)
+		}
+		if max != nil {
+			apiReq = apiReq.Max(*max)
+		}
+		if loggedInUser != nil {
+			apiReq = apiReq.Loggedinuser(*loggedInUser)
+		}
+
+		resp, hResp, err := apiReq.Execute()
+		if hResp != nil && hResp.StatusCode == 401 {
+			return fmt.Errorf("401 unauthorized")
+		}
+		apiResp = resp
+		finalHttpResp = hResp  // Update on every call including retries
+		return err
+	})
+
 	if err != nil {
 		log.Printf("[ERROR] API Call Failed: %v", err)
 		resp.Diagnostics.AddError("API Call Failed", fmt.Sprintf("Error: %v", err))
 		return
 	}
-	log.Printf("[DEBUG] HTTP Status Code: %d", httpResp.StatusCode)
+	log.Printf("[DEBUG] HTTP Status Code: %d", finalHttpResp.StatusCode)
 
 	state.Msg = util.SafeStringDatasource(apiResp.Msg)
 	state.ErrorCode = util.SafeStringDatasource(apiResp.Errorcode)
-	state.DisplayCount = util.SafeInt32(apiResp.Displaycount)
-	state.TotalCount = util.SafeInt32(apiResp.Totalcount)
+	// Default to 0 when API omits count fields (happens when no results found)
+	if apiResp.Displaycount != nil {
+		state.DisplayCount = types.Int32Value(*apiResp.Displaycount)
+	} else {
+		state.DisplayCount = types.Int32Value(0)
+	}
+	if apiResp.Totalcount != nil {
+		state.TotalCount = types.Int32Value(*apiResp.Totalcount)
+	} else {
+		state.TotalCount = types.Int32Value(0)
+	}
 
 	if apiResp.Dynamicattributes != nil {
 		dynamicAttributesList := make([]DynamicAttributes, len(*apiResp.Dynamicattributes.ArrayOfFetchDynamicAttributeResponseInner))

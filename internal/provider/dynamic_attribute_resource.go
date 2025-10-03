@@ -73,6 +73,7 @@ type DynamicAttributeResource struct {
 	client                  client.SaviyntClientInterface
 	token                   string
 	username                string
+	provider                client.SaviyntProviderInterface
 	dynamicAttributeFactory client.DynamicAttributeFactoryInterface
 }
 
@@ -254,16 +255,17 @@ func (r *DynamicAttributeResource) Configure(ctx context.Context, req resource.C
 	}
 
 	// Cast provider data to your provider type.
-	prov, ok := req.ProviderData.(*saviyntProvider)
+	prov, ok := req.ProviderData.(*SaviyntProvider)
 	if !ok {
 		log.Printf("[ERROR] DynamicAttribute: Unexpected Provider Data")
-		resp.Diagnostics.AddError("Unexpected Provider Data", "Expected *saviyntProvider")
+		resp.Diagnostics.AddError("Unexpected Provider Data", "Expected *SaviyntProvider")
 		return
 	}
 
 	// Set the client and token from the provider state.
 	r.client = &client.SaviyntClientWrapper{Client: prov.client}
 	r.token = prov.accessToken
+	r.provider = &client.SaviyntProviderWrapper{Provider: prov}
 	// Store username for import functionality
 	if prov.client.Username != nil {
 		r.username = *prov.client.Username
@@ -279,6 +281,11 @@ func (r *DynamicAttributeResource) SetClient(client client.SaviyntClientInterfac
 // SetToken sets the token for testing purposes
 func (r *DynamicAttributeResource) SetToken(token string) {
 	r.token = token
+}
+
+// SetProvider sets the provider for testing purposes
+func (r *DynamicAttributeResource) SetProvider(provider client.SaviyntProviderInterface) {
+	r.provider = provider
 }
 
 // SetUsername sets the username for testing purposes
@@ -322,8 +329,6 @@ func (r *DynamicAttributeResource) BuildCreateDynamicAttributes(dynamicAttrMap m
 func (r *DynamicAttributeResource) CreateDynamicAttribute(ctx context.Context, plan *DynamicAttributeResourceModel) (*openapi.CreateOrUpdateOrDeleteDynamicAttributeResponse, error) {
 	log.Printf("[DEBUG] DynamicAttribute: Starting creation for endpoint: %s ", plan.Endpoint.ValueString())
 
-	dynAttrOps := r.dynamicAttributeFactory.CreateDynamicAttributeOperations(r.client.APIBaseURL(), r.token)
-
 	// Convert dynamic attributes map to a slice of Dynamicattribute
 	var dynamicAttrMap map[string]Dynamicattribute
 	diags := plan.DynamicAttributes.ElementsAs(ctx, &dynamicAttrMap, false)
@@ -342,12 +347,25 @@ func (r *DynamicAttributeResource) CreateDynamicAttribute(ctx context.Context, p
 		dynamicAttrs,
 	)
 
-	// Execute create operation through interface
+	// Execute create operation with retry logic
 	log.Printf("[DEBUG] DynamicAttribute: Making API call to create %d dynamic attributes for endpoint: %s",
 		len(dynamicAttrs), plan.Endpoint.ValueString())
-	createResp, httpResp, err := dynAttrOps.CreateDynamicAttribute(ctx, *createReq)
+
+	var createResp *openapi.CreateOrUpdateOrDeleteDynamicAttributeResponse
+	var finalHttpResp *http.Response
+	err := r.provider.AuthenticatedAPICallWithRetry(ctx, "create_dynamic_attribute", func(token string) error {
+		dynAttrOps := r.dynamicAttributeFactory.CreateDynamicAttributeOperations(r.client.APIBaseURL(), token)
+		resp, hResp, err := dynAttrOps.CreateDynamicAttribute(ctx, *createReq)
+		if hResp != nil && hResp.StatusCode == 401 {
+			return fmt.Errorf("401 unauthorized")
+		}
+		createResp = resp
+		finalHttpResp = hResp  // Update on every call including retries
+		return err
+	})
+
 	if err != nil {
-		log.Printf("[ERROR] DynamicAttribute: Problem with the creating function in CreateDynamicAttribute. Error: %v, HTTP Response: %v", err, httpResp)
+		log.Printf("[ERROR] DynamicAttribute: Problem with the creating function in CreateDynamicAttribute. Error: %v, HTTP Response: %v", err, finalHttpResp)
 		return nil, fmt.Errorf("API call failed: %w", err)
 	}
 
@@ -487,8 +505,12 @@ func (r *DynamicAttributeResource) UpdateModelFromCreateResponse(plan *DynamicAt
 // ProcessReadErrorResponse processes 412 error response from read operation
 func (r *DynamicAttributeResource) ProcessReadErrorResponse(httpResp *http.Response) error {
 	var fetchResp map[string]interface{}
-	if err := json.NewDecoder(httpResp.Body).Decode(&fetchResp); err != nil {
-		return fmt.Errorf("failed to decode error response: %w", err)
+	if httpResp.Body != nil {
+		if err := json.NewDecoder(httpResp.Body).Decode(&fetchResp); err != nil {
+			return fmt.Errorf("failed to decode error response: %w", err)
+		}
+	} else {
+		return fmt.Errorf("412 Precondition Failed - no response body")
 	}
 
 	var errorMessages []string
@@ -542,19 +564,29 @@ func (r *DynamicAttributeResource) ProcessReadErrorResponse(httpResp *http.Respo
 func (r *DynamicAttributeResource) ReadDynamicAttribute(ctx context.Context, endpointName string) (*openapi.FetchDynamicAttributesResponse, error) {
 	log.Printf("[DEBUG] DynamicAttribute: Starting read operation for endpoint: %s", endpointName)
 
-	dynAttrOps := r.dynamicAttributeFactory.CreateDynamicAttributeOperations(r.client.APIBaseURL(), r.token)
-
 	log.Printf("[DEBUG] DynamicAttribute: Making API call to fetch attributes for endpoint: %s", endpointName)
-	fetchResp, httpResp, err := dynAttrOps.FetchDynamicAttribute(ctx, endpointName)
 
-	if httpResp != nil && httpResp.StatusCode == 412 {
-		log.Printf("[ERROR] DynamicAttribute: Received 412 Precondition Failed for endpoint: %s", endpointName)
-		return nil, r.ProcessReadErrorResponse(httpResp)
-	}
+	var fetchResp *openapi.FetchDynamicAttributesResponse
+	var finalHttpResp *http.Response
+	err := r.provider.AuthenticatedAPICallWithRetry(ctx, "read_dynamic_attribute", func(token string) error {
+		dynAttrOps := r.dynamicAttributeFactory.CreateDynamicAttributeOperations(r.client.APIBaseURL(), token)
+		resp, hResp, err := dynAttrOps.FetchDynamicAttribute(ctx, endpointName)
+		if hResp != nil && hResp.StatusCode == 401 {
+			return fmt.Errorf("401 unauthorized")
+		}
+		fetchResp = resp
+		finalHttpResp = hResp  // Update on every call including retries
+		return err
+	})
 
 	if err != nil {
 		log.Printf("[ERROR] DynamicAttribute: Problem with the get function in ReadDynamicAttribute. Error: %v", err)
 		return nil, fmt.Errorf("fetch API call failed: %w", err)
+	}
+
+	if finalHttpResp != nil && finalHttpResp.StatusCode == 412 {
+		log.Printf("[ERROR] DynamicAttribute: Received 412 Precondition Failed for endpoint: %s", endpointName)
+		return nil, r.ProcessReadErrorResponse(finalHttpResp)
 	}
 
 	log.Printf("[INFO] Dynamic attribute resource read successfully. Endpoint: %s", endpointName)
@@ -742,8 +774,6 @@ func (r *DynamicAttributeResource) BuildUpdateDynamicAttributes(attr Dynamicattr
 func (r *DynamicAttributeResource) UpdateDynamicAttribute(ctx context.Context, plan *DynamicAttributeResourceModel) error {
 	log.Printf("[DEBUG] DynamicAttribute: Starting update operation for endpoint: %s", plan.Endpoint.ValueString())
 
-	dynAttrOps := r.dynamicAttributeFactory.CreateDynamicAttributeOperations(r.client.APIBaseURL(), r.token)
-
 	// Get planned attributes
 	var planAttrs map[string]Dynamicattribute
 	diags := plan.DynamicAttributes.ElementsAs(ctx, &planAttrs, false)
@@ -806,7 +836,17 @@ func (r *DynamicAttributeResource) UpdateDynamicAttribute(ctx context.Context, p
 			newAttrs,
 		)
 
-		createResp, _, err := dynAttrOps.CreateDynamicAttribute(ctx, *createReq)
+		var createResp *openapi.CreateOrUpdateOrDeleteDynamicAttributeResponse
+		err := r.provider.AuthenticatedAPICallWithRetry(ctx, "update_create_dynamic_attribute", func(token string) error {
+			dynAttrOps := r.dynamicAttributeFactory.CreateDynamicAttributeOperations(r.client.APIBaseURL(), token)
+			resp, httpResp, err := dynAttrOps.CreateDynamicAttribute(ctx, *createReq)
+			if httpResp != nil && httpResp.StatusCode == 401 {
+				return fmt.Errorf("401 unauthorized")
+			}
+			createResp = resp
+			return err
+		})
+
 		if err != nil {
 			log.Printf("[ERROR] DynamicAttribute: Failed to create new dynamic attributes: %v", err)
 			return fmt.Errorf("failed to create new dynamic attributes: %w", err)
@@ -826,8 +866,18 @@ func (r *DynamicAttributeResource) UpdateDynamicAttribute(ctx context.Context, p
 			updateAttrs,
 		)
 
-		// Execute update operation through interface
-		updateResp, _, err := dynAttrOps.UpdateDynamicAttribute(ctx, *updateReq)
+		// Execute update operation with retry logic
+		var updateResp *openapi.CreateOrUpdateOrDeleteDynamicAttributeResponse
+		err := r.provider.AuthenticatedAPICallWithRetry(ctx, "update_dynamic_attribute", func(token string) error {
+			dynAttrOps := r.dynamicAttributeFactory.CreateDynamicAttributeOperations(r.client.APIBaseURL(), token)
+			resp, httpResp, err := dynAttrOps.UpdateDynamicAttribute(ctx, *updateReq)
+			if httpResp != nil && httpResp.StatusCode == 401 {
+				return fmt.Errorf("401 unauthorized")
+			}
+			updateResp = resp
+			return err
+		})
+
 		if err != nil {
 			log.Printf("[ERROR]: Problem with the updating function in UpdateDynamicAttribute. Error: %v", err)
 			return fmt.Errorf("failed to update dynamic attributes: %w", err)
@@ -902,8 +952,6 @@ func (r *DynamicAttributeResource) UpdateModelFromUpdateResponse(plan *DynamicAt
 func (r *DynamicAttributeResource) DeleteDynamicAttribute(ctx context.Context, state *DynamicAttributeResourceModel) error {
 	log.Printf("[DEBUG] DynamicAttribute: Starting delete operation for endpoint: %s", state.Endpoint.ValueString())
 
-	dynAttrOps := r.dynamicAttributeFactory.CreateDynamicAttributeOperations(r.client.APIBaseURL(), r.token)
-
 	// Get attribute names from the map
 	var attributeNames []string
 	var stateAttrs map[string]Dynamicattribute
@@ -927,8 +975,20 @@ func (r *DynamicAttributeResource) DeleteDynamicAttribute(ctx context.Context, s
 		Dynamicattributes: attributeNames,
 	}
 
-	// Execute delete operation through interface
-	deleteResp, httpResp, err := dynAttrOps.DeleteDynamicAttribute(ctx, deleteReq)
+	// Execute delete operation with retry logic
+	var deleteResp *openapi.CreateOrUpdateOrDeleteDynamicAttributeResponse
+	var finalHttpResp *http.Response
+	err := r.provider.AuthenticatedAPICallWithRetry(ctx, "delete_dynamic_attribute", func(token string) error {
+		dynAttrOps := r.dynamicAttributeFactory.CreateDynamicAttributeOperations(r.client.APIBaseURL(), token)
+		resp, hResp, err := dynAttrOps.DeleteDynamicAttribute(ctx, deleteReq)
+		if hResp != nil && hResp.StatusCode == 401 {
+			return fmt.Errorf("401 unauthorized")
+		}
+		deleteResp = resp
+		finalHttpResp = hResp  // Update on every call including retries
+		return err
+	})
+
 	if err != nil {
 		log.Printf("[ERROR] DynamicAttribute: Problem with the deleting function in DeleteDynamicAttribute. Error: %v", err)
 		return err
@@ -939,20 +999,28 @@ func (r *DynamicAttributeResource) DeleteDynamicAttribute(ctx context.Context, s
 		return err
 	}
 
-	log.Printf("[DEBUG] Delete HTTP Status Code: %d", httpResp.StatusCode)
+	log.Printf("[DEBUG] Delete HTTP Status Code: %d", finalHttpResp.StatusCode)
 	log.Printf("[DEBUG] Delete API Response: %+v", deleteResp)
 	return nil
 }
 
 // ValidateImportKey validates that the endpoint exists and returns its associated security system
 func (r *DynamicAttributeResource) ValidateImportKey(ctx context.Context, endpointName string) (string, error) {
-	endpointOps := r.dynamicAttributeFactory.CreateEndpointOperations(r.client.APIBaseURL(), r.token)
-
 	// Create the request object for GetEndpoints
 	reqParams := endpoint.GetEndpointsRequest{}
 	reqParams.SetEndpointname(endpointName)
 
-	endpointResp, _, err := endpointOps.GetEndpoints(ctx, reqParams)
+	var endpointResp *endpoint.GetEndpoints200Response
+	err := r.provider.AuthenticatedAPICallWithRetry(ctx, "validate_import_key", func(token string) error {
+		endpointOps := r.dynamicAttributeFactory.CreateEndpointOperations(r.client.APIBaseURL(), token)
+		resp, httpResp, err := endpointOps.GetEndpoints(ctx, reqParams)
+		if httpResp != nil && httpResp.StatusCode == 401 {
+			return fmt.Errorf("401 unauthorized")
+		}
+		endpointResp = resp
+		return err
+	})
+	
 	if err != nil {
 		log.Printf("[ERROR] DynamicAttribute: API Call failed: Failed to fetch endpoint details. Error: %v", err)
 		return "", fmt.Errorf("API Call failed: Failed to fetch endpoint details. Error: %v", err)
