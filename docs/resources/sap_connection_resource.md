@@ -239,12 +239,13 @@ resource "saviynt_sap_connection_resource" "ss" {
 - `message_server` (String) Messageserver.
 - `modify_user_data_json` (String) Modifyuserdatajson.
 - `pam_config` (String) Pamconfig.
-- `password` (String) Password.
+- `password` (String, Sensitive) Password.
 - `password_max_length` (String) Passwordmaxlength.
 - `password_min_length` (String) Passwordminlength.
 - `password_no_of_caps_alpha` (String) Passwordnoofcapsalpha.
 - `password_no_of_digits` (String) Passwordnoofdigits.
 - `password_no_of_spl_chars` (String) Passwordnoofsplchars.
+- `password_wo` (String) Password write-only attribute.
 - `prov_cua_enabled` (String) Provcuaenabled.
 - `prov_cua_snc` (String) Provcuasnc.
 - `prov_jco_ashost` (String) Provjcoashost.
@@ -256,7 +257,8 @@ resource "saviynt_sap_connection_resource" "ss" {
 - `prov_jco_r3name` (String) Provjcor3name.
 - `prov_jco_sysnr` (String) Provjcosysnr.
 - `prov_jco_user` (String) Provjcouser.
-- `prov_password` (String) Provpassword.
+- `prov_password` (String, Sensitive) Provpassword.
+- `prov_password_wo` (String) Provpassword write-only attribute.
 - `reset_pwd_for_newaccount` (String) Resetpwdfornewaccount.
 - `saptable_filter_lang` (String) Saptablefilterlang.
 - `save_in_vault` (String) Flag indicating whether the encrypted attribute should be saved in the configured vault. Example: "false"
@@ -271,6 +273,7 @@ resource "saviynt_sap_connection_resource" "ss" {
 - `user_import_json` (String) Userimportjson.
 - `vault_configuration` (String) JSON string specifying vault configuration.
 - `vault_connection` (String) Specifies the type of vault connection being used (e.g., 'Hashicorp'). Example: "Hashicorp"
+- `wo_version` (String) Add/change the value of this attribute to update the writeonly attributes like username, password etc in connection resources
 
 ### Read-Only
 

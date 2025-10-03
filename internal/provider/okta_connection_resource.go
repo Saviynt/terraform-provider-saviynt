@@ -40,6 +40,7 @@ type OktaConnectorResourceModel struct {
 	ID                            types.String `tfsdk:"id"`
 	ImportUrl                     types.String `tfsdk:"import_url"`
 	AuthToken                     types.String `tfsdk:"auth_token"`
+	AuthTokenWO                   types.String `tfsdk:"auth_token_wo"`
 	AccountFieldMappings          types.String `tfsdk:"account_field_mappings"`
 	UserFieldMappings             types.String `tfsdk:"user_field_mappings"`
 	EntitlementTypesMappings      types.String `tfsdk:"entitlement_types_mappings"`
@@ -89,9 +90,14 @@ func OktaConnectorSchema() map[string]schema.Attribute {
 			Description: "Base URL for Okta API calls.",
 		},
 		"auth_token": schema.StringAttribute{
-			Required:    true,
-			WriteOnly:   true,
+			Optional:    true,
+			Sensitive:   true,
 			Description: "API token for Okta authentication.",
+		},
+		"auth_token_wo": schema.StringAttribute{
+			Optional:    true,
+			WriteOnly:   true,
+			Description: "API token for Okta authentication (write-only).",
 		},
 		"account_field_mappings": schema.StringAttribute{
 			Optional:    true,
@@ -167,6 +173,17 @@ func (r *OktaConnectionResource) Schema(ctx context.Context, req resource.Schema
 	}
 }
 
+func (r *OktaConnectionResource) ConfigValidators(ctx context.Context) []resource.ConfigValidator {
+	return []resource.ConfigValidator{
+		&connectionsutil.ExactlyOneOfValidator{
+			Attrs: []path.Expression{
+				path.MatchRoot("auth_token"),
+				path.MatchRoot("auth_token_wo"),
+			},
+		},
+	}
+}
+
 func (r *OktaConnectionResource) Configure(ctx context.Context, req resource.ConfigureRequest, resp *resource.ConfigureResponse) {
 	opCtx := errorsutil.CreateOperationContext(errorsutil.ConnectorTypeOkta, "configure", "")
 	ctx = opCtx.AddContextToLogger(ctx)
@@ -219,6 +236,13 @@ func (r *OktaConnectionResource) SetProvider(provider client.SaviyntProviderInte
 }
 
 func (r *OktaConnectionResource) BuildOktaConnector(plan *OktaConnectorResourceModel, config *OktaConnectorResourceModel) openapi.OktaConnector {
+	var authToken string
+	if !config.AuthToken.IsNull() && !config.AuthToken.IsUnknown() {
+		authToken = config.AuthToken.ValueString()
+	} else if !config.AuthTokenWO.IsNull() && !config.AuthTokenWO.IsUnknown() {
+		authToken = config.AuthTokenWO.ValueString()
+	}
+
 	oktaConn := openapi.OktaConnector{
 		BaseConnector: openapi.BaseConnector{
 			//required field
@@ -231,7 +255,7 @@ func (r *OktaConnectionResource) BuildOktaConnector(plan *OktaConnectorResourceM
 		},
 		//required field
 		IMPORTURL:                       plan.ImportUrl.ValueString(),
-		AUTHTOKEN:                       config.AuthToken.ValueString(),
+		AUTHTOKEN:                       authToken,
 		OKTA_APPLICATION_SECURITYSYSTEM: plan.OktaApplicationSecuritySystem.ValueString(),
 		//optional field
 		ACCOUNTFIELDMAPPINGS:     util.StringPointerOrEmpty(plan.AccountFieldMappings),
@@ -450,12 +474,6 @@ func (r *OktaConnectionResource) UpdateOktaConnection(ctx context.Context, plan 
 	tflog.Debug(logCtx, "Building Okta connection update request")
 
 	oktaConn := r.BuildOktaConnector(plan, config)
-	if plan.VaultConnection.ValueString() == "" {
-		emptyStr := ""
-		oktaConn.BaseConnector.VaultConnection = &emptyStr
-		oktaConn.BaseConnector.VaultConfiguration = &emptyStr
-		oktaConn.BaseConnector.Saveinvault = &emptyStr
-	}
 
 	updateReq := openapi.CreateOrUpdateRequest{
 		OktaConnector: &oktaConn,

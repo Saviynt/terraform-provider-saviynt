@@ -425,7 +425,6 @@ resource "saviynt_adsi_connection_resource" "example" {
 - `connection_name` (String) Name of the connection. Example: "Active Directory_Doc"
 - `connection_url` (String) ADSI remote agent Connection URL
 - `forestlist` (String) Forest List (Comma Separated) which we need to manage
-- `password` (String) Service account password
 - `url` (String) Primary/root domain URL list (comma Separated)
 - `username` (String) Service account username
 
@@ -455,6 +454,8 @@ resource "saviynt_adsi_connection_resource" "example" {
 - `objectfilter` (String) Object Filter is used to filter the objects that will be returned.This filter will be same for all domains.
 - `page_size` (String) Page size defines the number of objects to be returned from each AD operation.
 - `pam_config` (String) JSON to specify Bootstrap Config.
+- `password` (String, Sensitive) Service account password
+- `password_wo` (String) Service account password
 - `provisioning_url` (String) ADSI remote agent Provisioning URL
 - `removeaccessentitlementjson` (String) Configuration to Remove nested group hierarchy
 - `removeaccessjson` (String) Configuration to REMOVE Access (cross domain/forest group membership) to an account.
@@ -473,6 +474,7 @@ resource "saviynt_adsi_connection_resource" "example" {
 - `user_attribute` (String) Map EIC and AD attributes for user import (AD attributes must be in lower case)
 - `vault_configuration` (String) JSON string specifying vault configuration.
 - `vault_connection` (String) Specifies the type of vault connection being used (e.g., 'Hashicorp'). Example: "Hashicorp"
+- `wo_version` (String) Add/change the value of this attribute to update the writeonly attributes like username, password etc in connection resources
 
 ### Read-Only
 

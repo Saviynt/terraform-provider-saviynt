@@ -42,6 +42,7 @@ type ADSIConnectorResourceModel struct {
 	URL                         types.String `tfsdk:"url"`
 	Username                    types.String `tfsdk:"username"`
 	Password                    types.String `tfsdk:"password"`
+	PasswordWo                  types.String `tfsdk:"password_wo"`
 	ConnectionUrl               types.String `tfsdk:"connection_url"`
 	ProvisioningUrl             types.String `tfsdk:"provisioning_url"`
 	ForestList                  types.String `tfsdk:"forestlist"`
@@ -117,11 +118,15 @@ func ADSIConnectorResourceSchema() map[string]schema.Attribute {
 		},
 		"username": schema.StringAttribute{
 			Required:    true,
-			WriteOnly:   true,
 			Description: "Service account username",
 		},
 		"password": schema.StringAttribute{
-			Required:    true,
+			Optional:    true,
+			Sensitive:   true,
+			Description: "Service account password",
+		},
+		"password_wo": schema.StringAttribute{
+			Optional:    true,
 			WriteOnly:   true,
 			Description: "Service account password",
 		},
@@ -323,6 +328,17 @@ func (r *AdsiConnectionResource) Schema(ctx context.Context, req resource.Schema
 	}
 }
 
+func (r *AdsiConnectionResource) ConfigValidators(ctx context.Context) []resource.ConfigValidator {
+	return []resource.ConfigValidator{
+		&connectionsutil.ExactlyOneOfValidator{
+			Attrs: []path.Expression{
+				path.MatchRoot("password"),
+				path.MatchRoot("password_wo"),
+			},
+		},
+	}
+}
+
 func (r *AdsiConnectionResource) Configure(ctx context.Context, req resource.ConfigureRequest, resp *resource.ConfigureResponse) {
 	opCtx := errorsutil.CreateOperationContext(errorsutil.ConnectorTypeADSI, "configure", "")
 	ctx = opCtx.AddContextToLogger(ctx)
@@ -470,6 +486,13 @@ func (r *AdsiConnectionResource) BuildADSIConnector(plan *ADSIConnectorResourceM
 		plan.EntitlementAttribute = types.StringValue("memberOf")
 	}
 
+	var password string
+	if !config.Password.IsNull() && !config.Password.IsUnknown() {
+		password = config.Password.ValueString()
+	} else if !config.PasswordWo.IsNull() && !config.PasswordWo.IsUnknown() {
+		password = config.PasswordWo.ValueString()
+	}
+
 	adsiConn := openapi.ADSIConnector{
 		BaseConnector: openapi.BaseConnector{
 			Connectiontype:  "ADSI",
@@ -479,8 +502,8 @@ func (r *AdsiConnectionResource) BuildADSIConnector(plan *ADSIConnectorResourceM
 			EmailTemplate:   util.StringPointerOrEmpty(plan.EmailTemplate),
 		},
 		URL:                         plan.URL.ValueString(),
-		USERNAME:                    config.Username.ValueString(),
-		PASSWORD:                    config.Password.ValueString(),
+		USERNAME:                    plan.Username.ValueString(),
+		PASSWORD:                    password,
 		CONNECTION_URL:              plan.ConnectionUrl.ValueString(),
 		FORESTLIST:                  plan.ForestList.ValueString(),
 		PROVISIONING_URL:            util.StringPointerOrEmpty(plan.ProvisioningUrl),
@@ -706,12 +729,6 @@ func (r *AdsiConnectionResource) UpdateADSIConnection(ctx context.Context, plan 
 	tflog.Debug(logCtx, "Building ADSI connection update request")
 
 	adsiConn := r.BuildADSIConnector(plan, config)
-	if plan.VaultConnection.ValueString() == "" {
-		emptyStr := ""
-		adsiConn.BaseConnector.VaultConnection = &emptyStr
-		adsiConn.BaseConnector.VaultConfiguration = &emptyStr
-		adsiConn.BaseConnector.Saveinvault = &emptyStr
-	}
 
 	updateReq := openapi.CreateOrUpdateRequest{
 		ADSIConnector: &adsiConn,
