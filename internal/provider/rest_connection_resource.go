@@ -507,6 +507,12 @@ func (r *RestConnectionResource) ReadRESTConnection(ctx context.Context, connect
 		return nil, errorsutil.CreateStandardError(errorsutil.ConnectorTypeREST, errorCode, "read", connectionName, err)
 	}
 
+	if err := r.ValidateRESTConnectionResponse(apiResp); err != nil {
+		errorCode := restErrorCodes.APIError()
+		opCtx.LogOperationError(ctx, "Invalid connection type for REST datasource", errorCode, err)
+		return nil, fmt.Errorf("[%s] Unable to verify connection type for connection %q. The provider could not determine the type of this connection. Please ensure the connection name is correct and belongs to a supported connector type", errorCode, connectionName)
+	}
+
 	if apiResp != nil && apiResp.RESTConnectionResponse != nil && apiResp.RESTConnectionResponse.Errorcode != nil && *apiResp.RESTConnectionResponse.Errorcode != 0 {
 		apiErr := fmt.Errorf("API returned error code %d: %s", *apiResp.RESTConnectionResponse.Errorcode, errorsutil.SanitizeMessage(apiResp.RESTConnectionResponse.Msg))
 		errorCode := restErrorCodes.APIError()
@@ -574,6 +580,13 @@ func (r *RestConnectionResource) UpdateModelFromReadResponse(state *RestConnecto
 		state.Msg = types.StringValue(apiMessage)
 	}
 	state.ErrorCode = util.Int32PtrToTFString(apiResp.RESTConnectionResponse.Errorcode)
+}
+
+func (r *RestConnectionResource) ValidateRESTConnectionResponse(apiResp *openapi.GetConnectionDetailsResponse) error {
+	if apiResp != nil && apiResp.RESTConnectionResponse == nil {
+		return fmt.Errorf("verify the connection type - REST connection response is nil")
+	}
+	return nil
 }
 
 func (r *RestConnectionResource) UpdateRESTConnection(ctx context.Context, plan *RestConnectorResourceModel, config *RestConnectorResourceModel) (*openapi.CreateOrUpdateResponse, error) {

@@ -308,6 +308,12 @@ func (r *EntraIdConnectionResource) ReadEntraIdConnection(ctx context.Context, c
 		return nil, errorsutil.CreateStandardError(errorsutil.ConnectorTypeEntraID, errorCode, "read", connectionName, err)
 	}
 
+	if err := r.ValidateEntraIdConnectionResponse(apiResp); err != nil {
+		errorCode := entraIdErrorCodes.APIError()
+		opCtx.LogOperationError(ctx, "Invalid connection type for EntraID datasource", errorCode, err)
+		return nil, fmt.Errorf("[%s] Unable to verify connection type for connection %q. The provider could not determine the type of this connection. Please ensure the connection name is correct and belongs to a supported connector type", errorCode, connectionName)
+	}
+
 	if apiResp != nil && apiResp.EntraIDConnectionResponse != nil && apiResp.EntraIDConnectionResponse.Errorcode != nil && *apiResp.EntraIDConnectionResponse.Errorcode != 0 {
 		apiErr := fmt.Errorf("API returned error code %d: %s", *apiResp.EntraIDConnectionResponse.Errorcode, errorsutil.SanitizeMessage(apiResp.EntraIDConnectionResponse.Msg))
 		errorCode := entraIdErrorCodes.APIError()
@@ -805,6 +811,13 @@ func (r *EntraIdConnectionResource) Configure(ctx context.Context, req resource.
 	r.provider = &client.SaviyntProviderWrapper{Provider: prov} // Store provider reference for retry logic
 
 	opCtx.LogOperationEnd(ctx, "EntraID connection resource configured successfully")
+}
+
+func (r *EntraIdConnectionResource) ValidateEntraIdConnectionResponse(apiResp *openapi.GetConnectionDetailsResponse) error {
+	if apiResp != nil && apiResp.EntraIDConnectionResponse == nil {
+		return fmt.Errorf("verify the connection type - EntraId connection response is nil")
+	}
+	return nil
 }
 
 func (r *EntraIdConnectionResource) Create(ctx context.Context, req resource.CreateRequest, resp *resource.CreateResponse) {
