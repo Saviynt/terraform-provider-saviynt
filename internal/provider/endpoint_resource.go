@@ -182,6 +182,7 @@ type EndpointResourceModel struct {
 type EndpointResource struct {
 	client          client.SaviyntClientInterface
 	token           string
+	provider        client.SaviyntProviderInterface
 	endpointFactory client.EndpointFactoryInterface
 }
 
@@ -471,15 +472,16 @@ func (r *EndpointResource) Configure(ctx context.Context, req resource.Configure
 	}
 
 	// Cast provider data to your provider type.
-	prov, ok := req.ProviderData.(*saviyntProvider)
+	prov, ok := req.ProviderData.(*SaviyntProvider)
 	if !ok {
-		resp.Diagnostics.AddError("Unexpected Provider Data", "Expected *saviyntProvider")
+		resp.Diagnostics.AddError("Unexpected Provider Data", "Expected *SaviyntProvider")
 		return
 	}
 
-	// Set the client and token from the provider state.
+	// Set the client, token, and provider reference from the provider state
 	r.client = &client.SaviyntClientWrapper{Client: prov.client}
 	r.token = prov.accessToken
+	r.provider = &client.SaviyntProviderWrapper{Provider: prov} // Store provider reference for retry logic
 }
 
 // SetClient sets the client for testing purposes
@@ -490,6 +492,11 @@ func (r *EndpointResource) SetClient(client client.SaviyntClientInterface) {
 // SetToken sets the token for testing purposes
 func (r *EndpointResource) SetToken(token string) {
 	r.token = token
+}
+
+// SetProvider sets the provider for testing purposes
+func (r *EndpointResource) SetProvider(provider client.SaviyntProviderInterface) {
+	r.provider = provider
 }
 
 func (r *EndpointResource) Create(ctx context.Context, req resource.CreateRequest, resp *resource.CreateResponse) {
@@ -568,9 +575,6 @@ func (r *EndpointResource) Update(ctx context.Context, req resource.UpdateReques
 		return
 	}
 
-	// Use the factory to create endpoint operations
-	endpointOps := r.endpointFactory.CreateEndpointOperations(r.client.APIBaseURL(), r.token)
-
 	// Build UPDATE request using existing helper function with proper diagnostics
 	updateReq := r.BuildEndpointRequest(ctx, &plan, &resp.Diagnostics, false).(openapi.UpdateEndpointRequest)
 	if resp.Diagnostics.HasError() {
@@ -585,6 +589,7 @@ func (r *EndpointResource) Update(ctx context.Context, req resource.UpdateReques
 		log.Printf("[ERROR]: Failed to build mapped endpoints in Update Block: %v", resp.Diagnostics)
 		return
 	}
+
 	if len(mappedEndpoints) > 0 {
 		updateReq.MappedEndpoints = mappedEndpoints
 	}
@@ -596,12 +601,24 @@ func (r *EndpointResource) Update(ctx context.Context, req resource.UpdateReques
 		log.Printf("[ERROR]: Failed to build requestable role types in Update Block: %v", resp.Diagnostics)
 		return
 	}
+
 	if len(requestableRoleTypes) > 0 {
 		updateReq.RequestableRoleType = requestableRoleTypes
 	}
 
-	// Execute the update
-	apiResp, _, err := endpointOps.UpdateEndpoint(ctx, updateReq)
+	var apiResp *openapi.UpdateEndpoint200Response
+
+	// Execute the update with retry logic
+	err := r.provider.AuthenticatedAPICallWithRetry(ctx, "update_endpoint_main", func(token string) error {
+		endpointOps := r.endpointFactory.CreateEndpointOperations(r.client.APIBaseURL(), token)
+		resp, httpResp, err := endpointOps.UpdateEndpoint(ctx, updateReq)
+		if httpResp != nil && httpResp.StatusCode == 401 {
+			return fmt.Errorf("401 unauthorized")
+		}
+		apiResp = resp
+		return err
+	})
+
 	if err != nil {
 		log.Printf("[ERROR]: Problem with update function in Update Block. Error: %v", err)
 		resp.Diagnostics.AddError("API Update Failed In Update Block", fmt.Sprintf("Error: %v", err))
@@ -610,8 +627,10 @@ func (r *EndpointResource) Update(ctx context.Context, req resource.UpdateReques
 
 	// Check API response
 	if apiResp != nil && apiResp.ErrorCode != nil && *apiResp.ErrorCode != "0" {
-		log.Printf("[ERROR]: Error Updating Endpoint: %v, Error code: %v", *apiResp.Msg, *apiResp.ErrorCode)
-		resp.Diagnostics.AddError("Error Updating Endpoint In Update Block", fmt.Sprintf("Error: %v, Error code: %v", *apiResp.Msg, *apiResp.ErrorCode))
+		errorCode := util.SafeDeref(apiResp.ErrorCode)
+		msg := util.SafeDeref(apiResp.Msg)
+		log.Printf("[ERROR]: Error Updating Endpoint: %v, Error code: %v", msg, errorCode)
+		resp.Diagnostics.AddError("Error Updating Endpoint In Update Block", fmt.Sprintf("Error: %v, Error code: %v", msg, errorCode))
 		return
 	}
 
@@ -1413,18 +1432,31 @@ func (r *EndpointResource) BuildRequestableRoleTypesFromAPI(endpoint *openapi.Ge
 
 // CreateEndpoint - Interface method for endpoint creation following Endpoint pattern
 func (r *EndpointResource) CreateEndpoint(ctx context.Context, plan *EndpointResourceModel) (*openapi.UpdateEndpoint200Response, error) {
-	// Use the factory to create endpoint operations
-	endpointOps := r.endpointFactory.CreateEndpointOperations(r.client.APIBaseURL(), r.token)
-
-	// Check if endpoint already exists (idempotency check)
+	// Check if endpoint already exists (idempotency check) with retry logic
 	endpointName := plan.EndpointName.ValueString()
-	getReq := openapi.GetEndpointsRequest{}
-	getReq.SetEndpointname(endpointName)
+	var existingResource *openapi.GetEndpoints200Response
 
-	existingResource, _, _ := endpointOps.GetEndpoints(ctx, getReq)
+	err := r.provider.AuthenticatedAPICallWithRetry(ctx, "get_endpoints_idempotency", func(token string) error {
+		endpointOps := r.endpointFactory.CreateEndpointOperations(r.client.APIBaseURL(), token)
+		getReq := openapi.GetEndpointsRequest{}
+		getReq.SetEndpointname(endpointName)
+
+		resp, httpResp, err := endpointOps.GetEndpoints(ctx, getReq)
+		if httpResp != nil && httpResp.StatusCode == 401 {
+			return fmt.Errorf("401 unauthorized")
+		}
+		existingResource = resp
+		return err
+	})
+
+	if err != nil {
+		return nil, fmt.Errorf("failed to check existing endpoint: %w", err)
+	}
+
 	if existingResource != nil &&
 		existingResource.Endpoints != nil &&
 		len(existingResource.Endpoints) > 0 &&
+		existingResource.ErrorCode != nil &&
 		*existingResource.ErrorCode == "0" {
 		log.Printf("[ERROR]: Endpoint with name '%s' already exists. Skipping creation In CreateEndpoint Block.", endpointName)
 		return nil, fmt.Errorf("Endpoint with name '%s' already exists In CreateEndpoint Block", endpointName)
@@ -1439,50 +1471,74 @@ func (r *EndpointResource) CreateEndpoint(ctx context.Context, plan *EndpointRes
 	// Check if there were any diagnostics errors during request building
 	if localDiags.HasError() {
 		log.Printf("[ERROR]: Failed to build create request In CreateEndpoint Block: %v", localDiags.Errors())
-		return nil, fmt.Errorf("Failed to build create request In CreateEndpoint Block: %v", localDiags.Errors())
+		return nil, fmt.Errorf("failed to build create request In CreateEndpoint Block: %v", localDiags.Errors())
 	}
 
-	// Execute create operation through interface
-	apiResp, _, err := endpointOps.CreateEndpoint(ctx, createReq)
+	var apiResp *openapi.UpdateEndpoint200Response
+
+	// Execute create operation with retry logic
+	err = r.provider.AuthenticatedAPICallWithRetry(ctx, "create_endpoint", func(token string) error {
+		endpointOps := r.endpointFactory.CreateEndpointOperations(r.client.APIBaseURL(), token)
+		resp, httpResp, err := endpointOps.CreateEndpoint(ctx, createReq)
+		if httpResp != nil && httpResp.StatusCode == 401 {
+			return fmt.Errorf("401 unauthorized")
+		}
+		apiResp = resp
+		return err
+	})
+
 	if err != nil {
 		log.Printf("[ERROR]: Error Creating Endpoint In CreateEndpoint Block: %v", err)
-		return nil, fmt.Errorf("Error Creating Endpoint In CreateEndpoint Block: %w", err)
+		return nil, fmt.Errorf("error Creating Endpoint In CreateEndpoint Block: %w", err)
 	}
 
 	if apiResp != nil && apiResp.ErrorCode != nil && *apiResp.ErrorCode != "0" {
-		log.Printf("[ERROR]:API error In CreateEndpoint Block: %s", *apiResp.Msg)
-		return nil, fmt.Errorf("API error In CreateEndpoint Block: %s", *apiResp.Msg)
+		msg := util.SafeDeref(apiResp.Msg)
+		log.Printf("[ERROR]:API error In CreateEndpoint Block: %s", msg)
+		return nil, fmt.Errorf("API error In CreateEndpoint Block: %s", msg)
 	}
 	return apiResp, nil
 }
 
 // GetEndpoints - Interface method for endpoint creation following Endpoint pattern
 func (r *EndpointResource) GetEndpoints(ctx context.Context, plan *EndpointResourceModel) (*openapi.GetEndpoints200Response, error) {
-	// Use the factory to create endpoint operations
-	endpointOps := r.endpointFactory.CreateEndpointOperations(r.client.APIBaseURL(), r.token)
 	endpointName := plan.EndpointName.ValueString()
-	apiReq := openapi.GetEndpointsRequest{}
-	apiReq.SetEndpointname(endpointName)
-	apiResp, _, err := endpointOps.GetEndpoints(ctx, apiReq)
+	var apiResp *openapi.GetEndpoints200Response
+
+	// Execute get operation with retry logic
+	err := r.provider.AuthenticatedAPICallWithRetry(ctx, "get_endpoints", func(token string) error {
+		endpointOps := r.endpointFactory.CreateEndpointOperations(r.client.APIBaseURL(), token)
+		apiReq := openapi.GetEndpointsRequest{}
+		apiReq.SetEndpointname(endpointName)
+
+		resp, httpResp, err := endpointOps.GetEndpoints(ctx, apiReq)
+		if httpResp != nil && httpResp.StatusCode == 401 {
+			return fmt.Errorf("401 unauthorized")
+		}
+		apiResp = resp
+		return err
+	})
+
 	if err != nil {
 		log.Printf("Problem with the get function in GetEndpoints block. Error: %v", err)
 		return nil, fmt.Errorf("API Read Failed In GetEndpoints Block: %w", err)
 	}
+
 	if apiResp != nil && apiResp.ErrorCode != nil && *apiResp.ErrorCode != "0" {
-		log.Printf("Error Reading Endpoint In GetEndpoints Block: %v, Error code: %v", *apiResp.Message, *apiResp.ErrorCode)
-		return nil, fmt.Errorf("Reading of Endpoint resource failed In GetEndpoints Block: %s,", *apiResp.Message)
+		errorCode := util.SafeDeref(apiResp.ErrorCode)
+		message := util.SafeDeref(apiResp.Message)
+		log.Printf("Error Reading Endpoint In GetEndpoints Block: %v, Error code: %v", message, errorCode)
+		return nil, fmt.Errorf("reading of Endpoint resource failed In GetEndpoints Block: %s", message)
 	}
+
 	if len(apiResp.Endpoints) == 0 {
-		return nil, fmt.Errorf("Client Error: API returned empty endpoints list")
+		return nil, fmt.Errorf("client Error: API returned empty endpoints list")
 	}
 	return apiResp, nil
 }
 
 // UpdateEndpoint - Clean business logic method for endpoint updates following clean pattern
 func (r *EndpointResource) UpdateEndpoint(ctx context.Context, plan *EndpointResourceModel) error {
-	// Use the factory to create endpoint operations
-	endpointOps := r.endpointFactory.CreateEndpointOperations(r.client.APIBaseURL(), r.token)
-
 	// Build UPDATE request using existing helper function with proper diagnostics
 	var localDiags diag.Diagnostics
 	updateReq := r.BuildEndpointRequest(ctx, plan, &localDiags, false).(openapi.UpdateEndpointRequest)
@@ -1495,6 +1551,7 @@ func (r *EndpointResource) UpdateEndpoint(ctx context.Context, plan *EndpointRes
 	if err != nil {
 		return fmt.Errorf("failed to build mapped endpoints In UpdateEndpoint Block: %w", err)
 	}
+
 	if len(mappedEndpoints) > 0 {
 		updateReq.MappedEndpoints = mappedEndpoints
 	}
@@ -1504,12 +1561,24 @@ func (r *EndpointResource) UpdateEndpoint(ctx context.Context, plan *EndpointRes
 	if err != nil {
 		return fmt.Errorf("failed to build requestable role types In UpdateEndpoint Block: %w", err)
 	}
+
 	if len(requestableRoleTypes) > 0 {
 		updateReq.RequestableRoleType = requestableRoleTypes
 	}
 
-	// Execute the update
-	apiResp, _, err := endpointOps.UpdateEndpoint(ctx, updateReq)
+	var apiResp *openapi.UpdateEndpoint200Response
+
+	// Execute the update with retry logic
+	err = r.provider.AuthenticatedAPICallWithRetry(ctx, "update_endpoint", func(token string) error {
+		endpointOps := r.endpointFactory.CreateEndpointOperations(r.client.APIBaseURL(), token)
+		resp, httpResp, err := endpointOps.UpdateEndpoint(ctx, updateReq)
+		if httpResp != nil && httpResp.StatusCode == 401 {
+			return fmt.Errorf("401 unauthorized")
+		}
+		apiResp = resp
+		return err
+	})
+
 	if err != nil {
 		log.Printf("[ERROR]: Problem with update function in UpdateEndpoint block. Error: %v", err)
 		return fmt.Errorf("API Update Failed In UpdateEndpoint Block: %w", err)
@@ -1517,8 +1586,10 @@ func (r *EndpointResource) UpdateEndpoint(ctx context.Context, plan *EndpointRes
 
 	// Check API response
 	if apiResp != nil && apiResp.ErrorCode != nil && *apiResp.ErrorCode != "0" {
-		log.Printf("[ERROR]: Error Updating Endpoint In UpdateEndpoint Block: %v, Error code: %v", *apiResp.Msg, *apiResp.ErrorCode)
-		return fmt.Errorf("Update of Endpoint resource failed In UpdateEndpoint Block: %s", *apiResp.Msg)
+		errorCode := util.SafeDeref(apiResp.ErrorCode)
+		msg := util.SafeDeref(apiResp.Msg)
+		log.Printf("[ERROR]: Error Updating Endpoint In UpdateEndpoint Block: %v, Error code: %v", msg, errorCode)
+		return fmt.Errorf("Update of Endpoint resource failed In UpdateEndpoint Block: %s", msg)
 	}
 
 	return nil

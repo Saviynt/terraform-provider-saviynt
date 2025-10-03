@@ -15,10 +15,15 @@ import (
 	"encoding/json"
 	"fmt"
 	"log"
+	"net/http"
 	"os"
 	"reflect"
 	"regexp"
 	"strings"
+
+	"terraform-provider-Saviynt/internal/client"
+	"terraform-provider-Saviynt/util"
+	"terraform-provider-Saviynt/util/errorsutil"
 
 	"github.com/hashicorp/terraform-plugin-framework-validators/mapvalidator"
 	"github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
@@ -28,9 +33,6 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema"
 	"github.com/hashicorp/terraform-plugin-framework/schema/validator"
 	"github.com/hashicorp/terraform-plugin-framework/types"
-	"terraform-provider-Saviynt/internal/client"
-	"terraform-provider-Saviynt/util"
-	"terraform-provider-Saviynt/util/errorsutil"
 
 	openapi "github.com/saviynt/saviynt-api-go-client/entitlements"
 )
@@ -42,6 +44,7 @@ var _ resource.ResourceWithImportState = &EntitlementResource{}
 type EntitlementResource struct {
 	client             client.SaviyntClientInterface
 	token              string
+	provider           client.SaviyntProviderInterface
 	entitlementFactory client.EntitlementFactoryInterface
 }
 
@@ -331,16 +334,17 @@ func (r *EntitlementResource) Configure(ctx context.Context, req resource.Config
 	}
 
 	// Cast provider data to your provider type.
-	prov, ok := req.ProviderData.(*saviyntProvider)
+	prov, ok := req.ProviderData.(*SaviyntProvider)
 	if !ok {
 		log.Printf("[ERROR] Entitlements: Unexpected Provider Data")
-		resp.Diagnostics.AddError("Unexpected Provider Data", "Expected *saviyntProvider")
+		resp.Diagnostics.AddError("Unexpected Provider Data", "Expected *SaviyntProvider")
 		return
 	}
 
 	// Set the client and token from the provider state.
 	r.client = &client.SaviyntClientWrapper{Client: prov.client}
 	r.token = prov.accessToken
+	r.provider = &client.SaviyntProviderWrapper{Provider: prov} // Store provider reference for retry logic
 
 	log.Printf("[DEBUG] Entitlements: Resource configured successfully.")
 }
@@ -353,6 +357,11 @@ func (r *EntitlementResource) SetClient(client client.SaviyntClientInterface) {
 // SetToken sets the token for testing purposes
 func (r *EntitlementResource) SetToken(token string) {
 	r.token = token
+}
+
+// SetProvider sets the provider for testing purposes
+func (r *EntitlementResource) SetProvider(provider client.SaviyntProviderInterface) {
+	r.provider = provider
 }
 
 // BuildCreateEntitlementRequest builds the create request for entitlement
@@ -474,14 +483,26 @@ func (r *EntitlementResource) ProcessEntitlementMapForEntitlementCreate(ctx cont
 func (r *EntitlementResource) CreateEntitlement(ctx context.Context, plan *EntitlementResourceModel) (*openapi.CreateOrUpdateEntitlementResponse, error) {
 	log.Printf("[DEBUG] Entitlements: Starting creation for entitlement: %s", plan.EntitlementValue.ValueString())
 
-	entitlementOps := r.entitlementFactory.CreateEntitlementOperations(r.client.APIBaseURL(), r.token)
-
 	createReq := r.BuildCreateEntitlementRequest(plan)
 	r.ProcessEntitlementOwnersForEntitlementCreatee(ctx, plan, &createReq)
 	r.ProcessEntitlementMapForEntitlementCreate(ctx, plan, &createReq)
 
 	log.Printf("[DEBUG] Entitlements: Final create request JSON: %+v", createReq)
-	createResp, createHttpResp, err := entitlementOps.CreateUpdateEntitlement(ctx, createReq)
+
+	// Execute create operation with retry logic
+	var createResp *openapi.CreateOrUpdateEntitlementResponse
+	var createHttpResp *http.Response
+	err := r.provider.AuthenticatedAPICallWithRetry(ctx, "create_entitlement", func(token string) error {
+		entitlementOps := r.entitlementFactory.CreateEntitlementOperations(r.client.APIBaseURL(), token)
+		resp, hResp, err := entitlementOps.CreateUpdateEntitlement(ctx, createReq)
+		if hResp != nil && hResp.StatusCode == 401 {
+			return fmt.Errorf("401 unauthorized")
+		}
+		createResp = resp
+		createHttpResp = hResp
+		return err
+	})
+
 	if err != nil {
 		// Handle API call failures and HTTP errors during entitlement creation
 		log.Printf("[ERROR] Entitlements: Error in creating entitlement: %v", err)
@@ -489,8 +510,9 @@ func (r *EntitlementResource) CreateEntitlement(ctx context.Context, plan *Entit
 		return nil, fmt.Errorf("error creating entitlement: %v", err)
 	}
 	if createResp != nil && createResp.ErrorCode != nil && *createResp.ErrorCode == "1" {
-		log.Printf("[ERROR] Entitlements: Error in creating entitlement: %v", *createResp.Msg)
-		return nil, fmt.Errorf("error creating entitlement: %v", *createResp.Msg)
+		msg := util.SafeDeref(createResp.Msg)
+		log.Printf("[ERROR] Entitlements: Error in creating entitlement: %v", msg)
+		return nil, fmt.Errorf("error creating entitlement: %v", msg)
 	}
 
 	return createResp, nil
@@ -566,8 +588,6 @@ func (r *EntitlementResource) SetDefaultComputedValues(plan *EntitlementResource
 func (r *EntitlementResource) ReadEntitlement(ctx context.Context, state *EntitlementResourceModel) (*openapi.GetEntitlementResponse, error) {
 	log.Printf("[DEBUG] Entitlements: Starting reading for entitlement id: %s", state.EntitlementValuekey.ValueString())
 
-	entitlementOps := r.entitlementFactory.CreateEntitlementOperations(r.client.APIBaseURL(), r.token)
-
 	readReq := openapi.GetEntitlementRequest{
 		Endpoint:             util.StringPtr(state.Endpoint.ValueString()),
 		Entitlementtype:      util.StringPtr(state.Entitlementtype.ValueString()),
@@ -579,7 +599,20 @@ func (r *EntitlementResource) ReadEntitlement(ctx context.Context, state *Entitl
 	log.Printf("[DEBUG] Read request - Endpoint: %s, EntitlementType: %s, EntitlementValue: %s",
 		state.Endpoint.ValueString(), state.Entitlementtype.ValueString(), state.EntitlementValue.ValueString())
 
-	readResp, readHttpResp, err := entitlementOps.GetEntitlements(ctx, readReq)
+	// Execute read operation with retry logic
+	var readResp *openapi.GetEntitlementResponse
+	var readHttpResp *http.Response
+	err := r.provider.AuthenticatedAPICallWithRetry(ctx, "read_entitlement", func(token string) error {
+		entitlementOps := r.entitlementFactory.CreateEntitlementOperations(r.client.APIBaseURL(), token)
+		resp, hResp, err := entitlementOps.GetEntitlements(ctx, readReq)
+		if hResp != nil && hResp.StatusCode == 401 {
+			return fmt.Errorf("401 unauthorized")
+		}
+		readResp = resp
+		readHttpResp = hResp
+		return err
+	})
+
 	if err != nil {
 		// Handle API call failures and HTTP errors during entitlement read
 		log.Printf("[ERROR] Entitlements: Error in reading entitlement: %v", err)
@@ -587,8 +620,10 @@ func (r *EntitlementResource) ReadEntitlement(ctx context.Context, state *Entitl
 		return nil, fmt.Errorf("error reading entitlement: %v", err)
 	}
 	if readResp != nil && readResp.ErrorCode != nil && *readResp.ErrorCode != "0" {
-		log.Printf("[ERROR] Entitlements: API returned error code 1: %v", *readResp.Msg)
-		return nil, fmt.Errorf("error reading entitlement. Error code: %v, Msg: %v", *readResp.ErrorCode, *readResp.Msg)
+		errorCode := util.SafeDeref(readResp.ErrorCode)
+		msg := util.SafeDeref(readResp.Msg)
+		log.Printf("[ERROR] Entitlements: API returned error code 1: %v", msg)
+		return nil, fmt.Errorf("error reading entitlement. Error code: %v, Msg: %v", errorCode, msg)
 	}
 
 	return readResp, nil
@@ -720,8 +755,6 @@ func (r *EntitlementResource) ProcessEntitlementOwnersForEntitlementRead(ctx con
 
 // ProcessEntitlementMapForEntitlementRead processes entitlement map during read operations
 func (r *EntitlementResource) ProcessEntitlementMapForEntitlementRead(ctx context.Context, state *EntitlementResourceModel, entitlement openapi.GetEntitlementResponseEntitlementdetailsInner, isImportOrPostUpdate bool) error {
-	entitlementOps := r.entitlementFactory.CreateEntitlementOperations(r.client.APIBaseURL(), r.token)
-
 	if isImportOrPostUpdate {
 		// True import: Import all maps from API
 		if len(entitlement.EntitlementMapDetails) > 0 {
@@ -734,11 +767,24 @@ func (r *EntitlementResource) ProcessEntitlementMapForEntitlementRead(ctx contex
 					entReq := openapi.GetEntitlementRequest{
 						EntQuery: &entQuery,
 					}
-					entResp, _, err := entitlementOps.GetEntitlements(ctx, entReq)
-					if err == nil && entResp != nil && len(entResp.Entitlementdetails) > 0 {
-						if entResp.Entitlementdetails[0].Endpoint != nil {
-							endpointValue = *entResp.Entitlementdetails[0].Endpoint
+
+					// Execute validation call with retry logic
+					err := r.provider.AuthenticatedAPICallWithRetry(ctx, "validate_entitlement_map", func(token string) error {
+						entitlementOps := r.entitlementFactory.CreateEntitlementOperations(r.client.APIBaseURL(), token)
+						entResp, httpResp, err := entitlementOps.GetEntitlements(ctx, entReq)
+						if httpResp != nil && httpResp.StatusCode == 401 {
+							return fmt.Errorf("401 unauthorized")
 						}
+						if err == nil && entResp != nil && len(entResp.Entitlementdetails) > 0 {
+							if entResp.Entitlementdetails[0].Endpoint != nil {
+								endpointValue = *entResp.Entitlementdetails[0].Endpoint
+							}
+						}
+						return err
+					})
+
+					if err != nil {
+						log.Printf("[WARNING] Failed to validate entitlement map: %v", err)
 					}
 				}
 
@@ -792,11 +838,24 @@ func (r *EntitlementResource) ProcessEntitlementMapForEntitlementRead(ctx contex
 					entReq := openapi.GetEntitlementRequest{
 						EntQuery: &entQuery,
 					}
-					entResp, _, err := entitlementOps.GetEntitlements(ctx, entReq)
-					if err == nil && entResp != nil && len(entResp.Entitlementdetails) > 0 {
-						if entResp.Entitlementdetails[0].Endpoint != nil {
-							endpointValue = *entResp.Entitlementdetails[0].Endpoint
+
+					// Execute validation call with retry logic
+					err := r.provider.AuthenticatedAPICallWithRetry(ctx, "validate_entitlement_map_2", func(token string) error {
+						entitlementOps := r.entitlementFactory.CreateEntitlementOperations(r.client.APIBaseURL(), token)
+						entResp, httpResp, err := entitlementOps.GetEntitlements(ctx, entReq)
+						if httpResp != nil && httpResp.StatusCode == 401 {
+							return fmt.Errorf("401 unauthorized")
 						}
+						if err == nil && entResp != nil && len(entResp.Entitlementdetails) > 0 {
+							if entResp.Entitlementdetails[0].Endpoint != nil {
+								endpointValue = *entResp.Entitlementdetails[0].Endpoint
+							}
+						}
+						return err
+					})
+
+					if err != nil {
+						log.Printf("[WARNING] Failed to validate entitlement map: %v", err)
 					}
 				}
 
@@ -1034,8 +1093,6 @@ func (r *EntitlementResource) ProcessEntitlementMapForEntitlementUpdate(ctx cont
 func (r *EntitlementResource) UpdateEntitlement(ctx context.Context, plan *EntitlementResourceModel, state *EntitlementResourceModel) (*openapi.CreateOrUpdateEntitlementResponse, error) {
 	log.Printf("[DEBUG] Entitlements: Starting updation for entitlement id: %s", plan.EntitlementValuekey.ValueString())
 
-	entitlementOps := r.entitlementFactory.CreateEntitlementOperations(r.client.APIBaseURL(), r.token)
-
 	updateReq := r.BuildUpdateEntitlementRequest(plan, state)
 	r.ProcessEntitlementOwnersForEntitlementUpdate(ctx, plan, state, updateReq)
 	r.ProcessEntitlementMapForEntitlementUpdate(ctx, plan, state, updateReq)
@@ -1047,7 +1104,20 @@ func (r *EntitlementResource) UpdateEntitlement(ctx context.Context, plan *Entit
 		log.Printf("[DEBUG] Entitlements: Final update request (struct): %+v", updateReq)
 	}
 
-	updateResp, updateHttpResp, err := entitlementOps.CreateUpdateEntitlement(ctx, *updateReq)
+	// Execute update operation with retry logic
+	var updateResp *openapi.CreateOrUpdateEntitlementResponse
+	var updateHttpResp *http.Response
+	err := r.provider.AuthenticatedAPICallWithRetry(ctx, "update_entitlement", func(token string) error {
+		entitlementOps := r.entitlementFactory.CreateEntitlementOperations(r.client.APIBaseURL(), token)
+		resp, hResp, err := entitlementOps.CreateUpdateEntitlement(ctx, *updateReq)
+		if hResp != nil && hResp.StatusCode == 401 {
+			return fmt.Errorf("401 unauthorized")
+		}
+		updateResp = resp
+		updateHttpResp = hResp
+		return err
+	})
+
 	if err != nil {
 		// Handle API call failures and HTTP errors during entitlement update
 		log.Printf("[ERROR] Entitlements: Error in updating entitlement: %v", err)
@@ -1055,8 +1125,9 @@ func (r *EntitlementResource) UpdateEntitlement(ctx context.Context, plan *Entit
 		return nil, fmt.Errorf("error updating entitlement: %v", err)
 	}
 	if updateResp != nil && updateResp.ErrorCode != nil && *updateResp.ErrorCode == "1" {
-		log.Printf("[ERROR] Entitlements: Error in updating entitlement: %v", *updateResp.Msg)
-		return nil, fmt.Errorf("error updating entitlement: %v", *updateResp.Msg)
+		msg := util.SafeDeref(updateResp.Msg)
+		log.Printf("[ERROR] Entitlements: Error in updating entitlement: %v", msg)
+		return nil, fmt.Errorf("error updating entitlement: %v", msg)
 	}
 
 	return updateResp, nil
@@ -1099,8 +1170,6 @@ func (r *EntitlementResource) ReadEntitlementState(ctx context.Context, plan *En
 func (r *EntitlementResource) CheckEntitlementExists(ctx context.Context, plan *EntitlementResourceModel) error {
 	log.Printf("[DEBUG] Checking if entitlement already exists: %s", plan.EntitlementValue.ValueString())
 
-	entitlementOps := r.entitlementFactory.CreateEntitlementOperations(r.client.APIBaseURL(), r.token)
-
 	getReq := openapi.GetEntitlementRequest{
 		Endpoint:             util.StringPtr(plan.Endpoint.ValueString()),
 		Entitlementtype:      util.StringPtr(plan.Entitlementtype.ValueString()),
@@ -1112,7 +1181,18 @@ func (r *EntitlementResource) CheckEntitlementExists(ctx context.Context, plan *
 	log.Printf("[DEBUG] Making API call to check entitlement existence for endpoint: %s, type: %s, value: %s",
 		plan.Endpoint.ValueString(), plan.Entitlementtype.ValueString(), plan.EntitlementValue.ValueString())
 
-	existingEntitlement, _, err := entitlementOps.GetEntitlements(ctx, getReq)
+	// Execute import validation call with retry logic
+	var existingEntitlement *openapi.GetEntitlementResponse
+	err := r.provider.AuthenticatedAPICallWithRetry(ctx, "check_entitlement_exists", func(token string) error {
+		entitlementOps := r.entitlementFactory.CreateEntitlementOperations(r.client.APIBaseURL(), token)
+		resp, httpResp, err := entitlementOps.GetEntitlements(ctx, getReq)
+		if httpResp != nil && httpResp.StatusCode == 401 {
+			return fmt.Errorf("401 unauthorized")
+		}
+		existingEntitlement = resp
+		return err
+	})
+
 	if err != nil {
 		// Suppress API errors during existence check since create/update endpoints are the same
 		log.Printf("[DEBUG] Could not check entitlement existence (suppressed): %v", err)

@@ -8,8 +8,11 @@ package provider
 import (
 	"context"
 	"fmt"
+	"net/http"
 	"terraform-provider-Saviynt/internal/client"
 	"terraform-provider-Saviynt/util"
+
+	"terraform-provider-Saviynt/util/errorsutil"
 
 	"github.com/hashicorp/terraform-plugin-framework/attr"
 	"github.com/hashicorp/terraform-plugin-framework/datasource"
@@ -17,12 +20,12 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/types"
 	"github.com/hashicorp/terraform-plugin-log/tflog"
 	openapi "github.com/saviynt/saviynt-api-go-client/entitlements"
-	"terraform-provider-Saviynt/util/errorsutil"
 )
 
 type entitlementDataSource struct {
 	client             client.SaviyntClientInterface
 	token              string
+	provider           client.SaviyntProviderInterface
 	entitlementFactory client.EntitlementFactoryInterface
 }
 
@@ -52,6 +55,11 @@ func (d *entitlementDataSource) SetClient(client client.SaviyntClientInterface) 
 // SetToken sets the token for testing purposes
 func (d *entitlementDataSource) SetToken(token string) {
 	d.token = token
+}
+
+// SetProvider sets the provider for testing purposes
+func (d *entitlementDataSource) SetProvider(provider client.SaviyntProviderInterface) {
+	d.provider = provider
 }
 
 type EntitlementDataSourceModel struct {
@@ -198,12 +206,12 @@ func (d *entitlementDataSource) Configure(ctx context.Context, req datasource.Co
 	}
 
 	// Cast provider data to your provider type.
-	prov, ok := req.ProviderData.(*saviyntProvider)
+	prov, ok := req.ProviderData.(*SaviyntProvider)
 	if !ok {
 		tflog.Error(ctx, "Provider configuration failed - unexpected provider data type")
 		resp.Diagnostics.AddError(
 			"Unexpected Provider Data",
-			"Expected *saviyntProvider, got different type",
+			"Expected *SaviyntProvider, got different type",
 		)
 		return
 	}
@@ -211,6 +219,7 @@ func (d *entitlementDataSource) Configure(ctx context.Context, req datasource.Co
 	// Set the client and token from the provider state using interface wrapper.
 	d.client = &client.SaviyntClientWrapper{Client: prov.client}
 	d.token = prov.accessToken
+	d.provider = &client.SaviyntProviderWrapper{Provider: prov}
 
 	tflog.Debug(ctx, "Entitlement datasource configured successfully")
 }
@@ -282,9 +291,6 @@ func (d *entitlementDataSource) Read(ctx context.Context, req datasource.ReadReq
 func (d *entitlementDataSource) ReadEntitlementDetails(ctx context.Context, state *EntitlementDataSourceModel) (*openapi.GetEntitlementResponse, error) {
 	tflog.Debug(ctx, "Starting entitlement API call")
 
-	// Create entitlement operations using the factory
-	entitlementOps := d.entitlementFactory.CreateEntitlementOperations(d.client.APIBaseURL(), d.token)
-
 	// Prepare API request
 	getReq := openapi.GetEntitlementRequest{}
 
@@ -306,13 +312,25 @@ func (d *entitlementDataSource) ReadEntitlementDetails(ctx context.Context, stat
 
 	tflog.Debug(ctx, fmt.Sprintf("Executing API request: %+v", getReq))
 
-	// Execute API call
-	getResp, readHttpResp, err := entitlementOps.GetEntitlements(ctx, getReq)
+	// Execute API call with retry logic
+	var getResp *openapi.GetEntitlementResponse
+	var finalHttpResp *http.Response
+	err := d.provider.AuthenticatedAPICallWithRetry(ctx, "read_entitlement_datasource", func(token string) error {
+		entitlementOps := d.entitlementFactory.CreateEntitlementOperations(d.client.APIBaseURL(), token)
+		resp, hResp, err := entitlementOps.GetEntitlements(ctx, getReq)
+		if hResp != nil && hResp.StatusCode == 401 {
+			return fmt.Errorf("401 unauthorized")
+		}
+		getResp = resp
+		finalHttpResp = hResp  // Update on every call including retries
+		return err
+	})
+	
 	if err != nil {
 		tflog.Error(ctx, "API call failed", map[string]interface{}{
 			"error": err.Error(),
 		})
-		err = errorsutil.HandleHTTPError(readHttpResp, err, "Read")
+		err = errorsutil.HandleHTTPError(finalHttpResp, err, "Read")
 		return nil, fmt.Errorf("Entitlement Datasource: API call failed: %w", err)
 	}
 
@@ -322,7 +340,9 @@ func (d *entitlementDataSource) ReadEntitlementDetails(ctx context.Context, stat
 	})
 
 	if getResp != nil && getResp.ErrorCode != nil && *getResp.ErrorCode != "0" {
-		return nil, fmt.Errorf("Entitlement Datasource: API returned error code: %s and error message: %s", *getResp.ErrorCode, *getResp.Msg)
+		errorCode := util.SafeDeref(getResp.ErrorCode)
+		msg := util.SafeDeref(getResp.Msg)
+		return nil, fmt.Errorf("Entitlement Datasource: API returned error code: %s and error message: %s", errorCode, msg)
 	}
 
 	tflog.Debug(ctx, "Entitlement: API call successful")

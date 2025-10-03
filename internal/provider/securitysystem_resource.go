@@ -64,6 +64,7 @@ type SecuritySystemResourceModel struct {
 type SecuritySystemResource struct {
 	client                client.SaviyntClientInterface
 	token                 string
+	provider              client.SaviyntProviderInterface
 	securitySystemFactory client.SecuritySystemFactoryInterface
 }
 
@@ -236,15 +237,16 @@ func (r *SecuritySystemResource) Configure(ctx context.Context, req resource.Con
 	}
 
 	// Cast provider data to your provider type.
-	prov, ok := req.ProviderData.(*saviyntProvider)
+	prov, ok := req.ProviderData.(*SaviyntProvider)
 	if !ok {
-		resp.Diagnostics.AddError("Unexpected Provider Data", "Expected *saviyntProvider")
+		resp.Diagnostics.AddError("Unexpected Provider Data", "Expected *SaviyntProvider")
 		return
 	}
 
-	// Set the client and token from the provider state using interface wrapper.
+	// Set the client, token, and provider reference from the provider state
 	r.client = &client.SaviyntClientWrapper{Client: prov.client}
 	r.token = prov.accessToken
+	r.provider = &client.SaviyntProviderWrapper{Provider: prov} // Store provider reference for retry logic
 }
 
 // SetClient sets the client for testing purposes
@@ -255,6 +257,11 @@ func (r *SecuritySystemResource) SetClient(client client.SaviyntClientInterface)
 // SetToken sets the token for testing purposes
 func (r *SecuritySystemResource) SetToken(token string) {
 	r.token = token
+}
+
+// SetProvider sets the provider for testing purposes
+func (r *SecuritySystemResource) SetProvider(provider client.SaviyntProviderInterface) {
+	r.provider = provider
 }
 
 func (r *SecuritySystemResource) Create(ctx context.Context, req resource.CreateRequest, resp *resource.CreateResponse) {
@@ -277,11 +284,23 @@ func (r *SecuritySystemResource) Create(ctx context.Context, req resource.Create
 }
 
 func (r *SecuritySystemResource) CreateSecuritySystem(ctx context.Context, plan *SecuritySystemResourceModel) (*openapi.CreateSecuritySystem200Response, error) {
-	// Use the factory to create security system operations
-	securitySystemOps := r.securitySystemFactory.CreateSecuritySystemOperations(r.client.APIBaseURL(), r.token)
+	var existingResource *openapi.GetSecuritySystems200Response
 
-	// Check if security system already exists (idempotency check)
-	existingResource, _, _ := securitySystemOps.GetSecuritySystems(ctx, plan.Systemname.ValueString())
+	// Check if security system already exists (idempotency check) with retry logic
+	err := r.provider.AuthenticatedAPICallWithRetry(ctx, "get_security_systems", func(token string) error {
+		securitySystemOps := r.securitySystemFactory.CreateSecuritySystemOperations(r.client.APIBaseURL(), token)
+		resp, httpResp, err := securitySystemOps.GetSecuritySystems(ctx, plan.Systemname.ValueString())
+		if httpResp != nil && httpResp.StatusCode == 401 {
+			return fmt.Errorf("401 unauthorized")
+		}
+		existingResource = resp
+		return err
+	})
+
+	if err != nil {
+		return nil, fmt.Errorf("failed to check existing security system: %w", err)
+	}
+
 	if existingResource != nil &&
 		existingResource.SecuritySystemDetails != nil &&
 		len(existingResource.SecuritySystemDetails) > 0 {
@@ -292,28 +311,58 @@ func (r *SecuritySystemResource) CreateSecuritySystem(ctx context.Context, plan 
 	// Build security system create request
 	createReq := r.BuildCreateSecuritySystemRequest(plan)
 
-	// Execute create operation through interface
-	apiResp, _, err := securitySystemOps.CreateSecuritySystem(ctx, createReq)
+	var apiResp *openapi.CreateSecuritySystem200Response
+
+	// Execute create operation with retry logic
+	err = r.provider.AuthenticatedAPICallWithRetry(ctx, "create_security_system", func(token string) error {
+		securitySystemOps := r.securitySystemFactory.CreateSecuritySystemOperations(r.client.APIBaseURL(), token)
+		resp, httpResp, err := securitySystemOps.CreateSecuritySystem(ctx, createReq)
+		if httpResp != nil && httpResp.StatusCode == 401 {
+			return fmt.Errorf("401 unauthorized")
+		}
+		apiResp = resp
+		return err
+	})
+
 	if err != nil {
 		return nil, fmt.Errorf("API call failed: %w", err)
 	}
 
 	if apiResp != nil && apiResp.ErrorCode != nil && *apiResp.ErrorCode != "0" {
-		log.Printf("[ERROR]: Error in creating Security system resource. Errorcode: %v, Message: %v", *apiResp.ErrorCode, *apiResp.Msg)
-		return nil, fmt.Errorf("Creating of Security System resource failed In CreateSecuritySystem Block: %s", *apiResp.Msg)
+		message := ""
+		if apiResp.Msg != nil {
+			message = *apiResp.Msg
+		}
+		log.Printf("[ERROR]: Error in creating Security system resource. Errorcode: %v, Message: %v", *apiResp.ErrorCode, message)
+		return nil, fmt.Errorf("creating of Security System resource failed In CreateSecuritySystem Block: %s", message)
 	}
 
-	// Execute update operation for additional fields (following original logic)
+	// Execute update operation for additional fields with retry logic
 	updateReq := r.BuildUpdateSecuritySystemRequest(plan)
-	updateResp, _, err := securitySystemOps.UpdateSecuritySystem(ctx, updateReq)
+	var updateResp *openapi.CreateSecuritySystem200Response
+
+	err = r.provider.AuthenticatedAPICallWithRetry(ctx, "update_security_system", func(token string) error {
+		securitySystemOps := r.securitySystemFactory.CreateSecuritySystemOperations(r.client.APIBaseURL(), token)
+		resp, httpResp, err := securitySystemOps.UpdateSecuritySystem(ctx, updateReq)
+		if httpResp != nil && httpResp.StatusCode == 401 {
+			return fmt.Errorf("401 unauthorized")
+		}
+		updateResp = resp
+		return err
+	})
+
 	if err != nil {
 		log.Printf("Problem with the creating function")
 		return nil, fmt.Errorf("API update call failed In CreateSecuritySystem: %w", err)
 	}
 
-	if updateResp != nil && *updateResp.ErrorCode != "0" {
-		log.Printf("[ERROR]: Error in creating Security system resource. Errorcode: %v, Message: %v", *updateResp.ErrorCode, *updateResp.Msg)
-		return nil, fmt.Errorf("API update error In CreateSecuritySystem Block: %s", *updateResp.Msg)
+	if updateResp != nil && updateResp.ErrorCode != nil && *updateResp.ErrorCode != "0" {
+		message := ""
+		if updateResp.Msg != nil {
+			message = *updateResp.Msg
+		}
+		log.Printf("[ERROR]: Error in creating Security system resource. Errorcode: %v, Message: %v", *updateResp.ErrorCode, message)
+		return nil, fmt.Errorf("API update error In CreateSecuritySystem Block: %s", message)
 	}
 
 	return apiResp, nil
@@ -471,20 +520,31 @@ func (r *SecuritySystemResource) Update(ctx context.Context, req resource.Update
 }
 
 func (r *SecuritySystemResource) UpdateSecuritySystem(ctx context.Context, plan *SecuritySystemResourceModel) (*openapi.CreateSecuritySystem200Response, error) {
-	// Use the factory to create security system operations
-	securitySystemOps := r.securitySystemFactory.CreateSecuritySystemOperations(r.client.APIBaseURL(), r.token)
-
 	// Build update request
 	updateReq := r.BuildUpdateSecuritySystemRequest(plan)
+	var apiResp *openapi.CreateSecuritySystem200Response
 
-	// Execute update operation through interface
-	apiResp, _, err := securitySystemOps.UpdateSecuritySystem(ctx, updateReq)
+	// Execute update operation with retry logic
+	err := r.provider.AuthenticatedAPICallWithRetry(ctx, "update_security_system", func(token string) error {
+		securitySystemOps := r.securitySystemFactory.CreateSecuritySystemOperations(r.client.APIBaseURL(), token)
+		resp, httpResp, err := securitySystemOps.UpdateSecuritySystem(ctx, updateReq)
+		if httpResp != nil && httpResp.StatusCode == 401 {
+			return fmt.Errorf("401 unauthorized")
+		}
+		apiResp = resp
+		return err
+	})
+
 	if err != nil {
 		return nil, fmt.Errorf("API call failed: %w", err)
 	}
 
 	if apiResp != nil && apiResp.ErrorCode != nil && *apiResp.ErrorCode != "0" {
-		return nil, fmt.Errorf("API error: %s", *apiResp.Msg)
+		message := ""
+		if apiResp.Msg != nil {
+			message = *apiResp.Msg
+		}
+		return nil, fmt.Errorf("API error: %s", message)
 	}
 
 	log.Printf("[INFO] Security system resource updated successfully. Response: %v", updateReq)
@@ -493,18 +553,31 @@ func (r *SecuritySystemResource) UpdateSecuritySystem(ctx context.Context, plan 
 }
 
 func (r *SecuritySystemResource) ReadSecuritySystem(ctx context.Context, systemname string) (*openapi.GetSecuritySystems200Response, error) {
-	// Use the factory to create security system operations
-	securitySystemOps := r.securitySystemFactory.CreateSecuritySystemOperations(r.client.APIBaseURL(), r.token)
+	var apiResp *openapi.GetSecuritySystems200Response
 
-	apiResp, _, err := securitySystemOps.GetSecuritySystems(ctx, systemname)
+	// Execute read operation with retry logic
+	err := r.provider.AuthenticatedAPICallWithRetry(ctx, "read_security_system", func(token string) error {
+		securitySystemOps := r.securitySystemFactory.CreateSecuritySystemOperations(r.client.APIBaseURL(), token)
+		resp, httpResp, err := securitySystemOps.GetSecuritySystems(ctx, systemname)
+		if httpResp != nil && httpResp.StatusCode == 401 {
+			return fmt.Errorf("401 unauthorized")
+		}
+		apiResp = resp
+		return err
+	})
+
 	if err != nil {
 		log.Printf("[ERROR]: Problem with the get function in read block")
 		return nil, fmt.Errorf("API Read Failed In ReadSecuritySystem Block: %w", err)
 	}
 
 	if apiResp != nil && apiResp.ErrorCode != nil && *apiResp.ErrorCode != "0" {
-		log.Printf("[ERROR]: Error in reading Security system resource In ReadSecuritySystem Block. Errorcode: %v, Message: %v", *apiResp.ErrorCode, *apiResp.Msg)
-		return nil, fmt.Errorf("reading of Security System resource failed In ReadSecuritySystem Block: %s", *apiResp.Msg)
+		message := ""
+		if apiResp.Msg != nil {
+			message = *apiResp.Msg
+		}
+		log.Printf("[ERROR]: Error in reading Security system resource In ReadSecuritySystem Block. Errorcode: %v, Message: %v", *apiResp.ErrorCode, message)
+		return nil, fmt.Errorf("reading of Security System resource failed In ReadSecuritySystem Block: %s", message)
 	}
 
 	return apiResp, nil
@@ -512,9 +585,6 @@ func (r *SecuritySystemResource) ReadSecuritySystem(ctx context.Context, systemn
 
 // UpdateModelFromReadResponse - Extracted state management logic for read operations
 func (r *SecuritySystemResource) UpdateModelFromReadResponse(plan *SecuritySystemResourceModel, apiResp *openapi.GetSecuritySystems200Response) {
-	// Check any security system details are returned. 
-	// Same as the condition:
-	// apiResp != nil || len(apiResp.SecuritySystemDetails) == 0
 	if len(apiResp.SecuritySystemDetails) == 0 {
 		return
 	}

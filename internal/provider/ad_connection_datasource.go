@@ -29,6 +29,7 @@ var adDatasourceErrorCodes = errorsutil.NewConnectorErrorCodes(errorsutil.Connec
 type adConnectionsDataSource struct {
 	client            client.SaviyntClientInterface
 	token             string
+	provider          client.SaviyntProviderInterface
 	connectionFactory client.ConnectionFactoryInterface
 }
 
@@ -125,6 +126,11 @@ func (d *adConnectionsDataSource) SetClient(client client.SaviyntClientInterface
 // SetToken sets the token for testing purposes
 func (d *adConnectionsDataSource) SetToken(token string) {
 	d.token = token
+}
+
+// SetProvider sets the provider for testing purposes
+func (d *adConnectionsDataSource) SetProvider(provider client.SaviyntProviderInterface) {
+	d.provider = provider
 }
 
 // Metadata sets the data source type name for Terraform
@@ -234,16 +240,16 @@ func (d *adConnectionsDataSource) Configure(ctx context.Context, req datasource.
 	}
 
 	// Cast provider data to your provider type.
-	prov, ok := req.ProviderData.(*saviyntProvider)
+	prov, ok := req.ProviderData.(*SaviyntProvider)
 	if !ok {
 		errorCode := adDatasourceErrorCodes.ProviderConfig()
 		opCtx.LogOperationError(ctx, "Provider configuration failed", errorCode,
-			fmt.Errorf("expected *saviyntProvider, got different type"),
-			map[string]interface{}{"expected_type": "*saviyntProvider"})
+			fmt.Errorf("expected *SaviyntProvider, got different type"),
+			map[string]interface{}{"expected_type": "*SaviyntProvider"})
 
 		resp.Diagnostics.AddError(
 			errorsutil.GetErrorMessage(errorsutil.ErrProviderConfig),
-			fmt.Sprintf("[%s] Expected *saviyntProvider, got different type", errorCode),
+			fmt.Sprintf("[%s] Expected *SaviyntProvider, got different type", errorCode),
 		)
 		return
 	}
@@ -251,6 +257,7 @@ func (d *adConnectionsDataSource) Configure(ctx context.Context, req datasource.
 	// Set the client and token from the provider state using interface wrapper.
 	d.client = &client.SaviyntClientWrapper{Client: prov.client}
 	d.token = prov.accessToken
+	d.provider = &client.SaviyntProviderWrapper{Provider: prov}
 
 	opCtx.LogOperationEnd(ctx, "AD connection datasource configured successfully")
 }
@@ -292,6 +299,18 @@ func (d *adConnectionsDataSource) Read(ctx context.Context, req datasource.ReadR
 	if !state.ConnectionKey.IsNull() {
 		keyValue := state.ConnectionKey.ValueInt64()
 		connectionKey = &keyValue
+	}
+
+	// Validate that at least one identifier is provided
+	if connectionName == "" && connectionKey == nil {
+		errorCode := adDatasourceErrorCodes.MissingIdentifier()
+		opCtx.LogOperationError(ctx, "Missing connection identifier", errorCode,
+			fmt.Errorf("either connection_name or connection_key must be provided"))
+		resp.Diagnostics.AddError(
+			errorsutil.GetErrorMessage(errorsutil.ErrMissingIdentifier),
+			fmt.Sprintf("[%s] Either 'connection_name' or 'connection_key' must be provided to look up the AD connection.", errorCode),
+		)
+		return
 	}
 
 	// Execute API call to get AD connection details
@@ -354,13 +373,32 @@ func (d *adConnectionsDataSource) ReadADConnectionDetails(ctx context.Context, c
 
 	opCtx.LogOperationStart(logCtx, "Starting AD connection API call")
 
-	// Use factory pattern instead of direct client creation
-	connectionOps := d.connectionFactory.CreateConnectionOperations(d.client.APIBaseURL(), d.token)
-
 	tflog.Debug(logCtx, "Executing API request to get AD connection details")
 
-	// Execute API request through interface - use original context for API calls
-	apiResp, _, err := connectionOps.GetConnectionDetails(ctx, connectionName)
+	var apiResp *openapi.GetConnectionDetailsResponse
+
+	// Execute API request with retry logic
+	err := d.provider.AuthenticatedAPICallWithRetry(ctx, "read_ad_connection_datasource", func(token string) error {
+		connectionOps := d.connectionFactory.CreateConnectionOperations(d.client.APIBaseURL(), token)
+
+		// Build request with both connectionname and connectionkey
+		req := openapi.GetConnectionDetailsRequest{}
+		if connectionName != "" {
+			req.Connectionname = &connectionName
+		}
+		if connectionKey != nil {
+			keyStr := fmt.Sprintf("%d", *connectionKey)
+			req.Connectionkey = &keyStr
+		}
+
+		resp, httpResp, err := connectionOps.GetConnectionDetailsDataSource(ctx, req)
+		if httpResp != nil && httpResp.StatusCode == 401 {
+			return fmt.Errorf("401 unauthorized")
+		}
+		apiResp = resp
+		return err
+	})
+
 	if err != nil {
 		errorCode := adDatasourceErrorCodes.ReadFailed()
 		opCtx.LogOperationError(logCtx, "Failed to read AD connection details", errorCode, err)
@@ -396,7 +434,8 @@ func (d *adConnectionsDataSource) UpdateModelFromADConnectionResponse(state *ADC
 func (d *adConnectionsDataSource) MapBaseADConnectionFields(state *ADConnectionDataSourceModel, apiResp *openapi.GetConnectionDetailsResponse) {
 	state.Msg = util.SafeStringDatasource(apiResp.ADConnectionResponse.Msg)
 	state.ErrorCode = util.SafeInt64(apiResp.ADConnectionResponse.Errorcode)
-	state.ID = types.StringValue(fmt.Sprintf("ds-ad-%d", *apiResp.ADConnectionResponse.Connectionkey))
+	connectionKey := util.SafeInt64(apiResp.ADConnectionResponse.Connectionkey)
+	state.ID = types.StringValue(fmt.Sprintf("ds-ad-%d", connectionKey.ValueInt64()))
 	state.ConnectionName = util.SafeStringDatasource(apiResp.ADConnectionResponse.Connectionname)
 	state.ConnectionKey = util.SafeInt64(apiResp.ADConnectionResponse.Connectionkey)
 	state.Description = util.SafeStringDatasource(apiResp.ADConnectionResponse.Description)
