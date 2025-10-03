@@ -27,12 +27,12 @@ func NewEnvCredentialsResource() ephemeral.EphemeralResource {
 }
 
 type EnvCredentialsModel struct {
-	Svnt_Username                 types.String `tfsdk:"svnt_username"`
 	Svnt_Auth_Token               types.String `tfsdk:"svnt_auth_token"`
 	Svnt_Password                 types.String `tfsdk:"svnt_password"`
+	Svnt_Change_Pass_Json         types.String `tfsdk:"svnt_change_pass_json"`
+	Svnt_Windows_Connector_Json   types.String `tfsdk:"svnt_windows_connector_json"`
 	Svnt_Connection_Json          types.String `tfsdk:"svnt_connection_json"`
 	Svnt_Azure_Mgmt_Access_Token  types.String `tfsdk:"svnt_azure_mgmt_access_token"`
-	Svnt_Client_Id                types.String `tfsdk:"svnt_client_id"`
 	Svnt_Client_Secret            types.String `tfsdk:"svnt_client_secret"`
 	Svnt_Access_Token             types.String `tfsdk:"svnt_access_token"`
 	Svnt_Refresh_Token            types.String `tfsdk:"svnt_refresh_token"`
@@ -54,11 +54,6 @@ func (r *EnvCredentialsResource) Schema(ctx context.Context, _ ephemeral.SchemaR
 	resp.Schema = schema.Schema{
 		MarkdownDescription: util.EnvEphemeralResourceDescription,
 		Attributes: map[string]schema.Attribute{
-			"svnt_username": schema.StringAttribute{
-				Computed:            true,
-				Sensitive:           true,
-				MarkdownDescription: "Username read from the file.",
-			},
 			"svnt_auth_token": schema.StringAttribute{
 				Computed:            true,
 				Sensitive:           true,
@@ -69,14 +64,19 @@ func (r *EnvCredentialsResource) Schema(ctx context.Context, _ ephemeral.SchemaR
 				Sensitive:           true,
 				MarkdownDescription: "Password read from the file.",
 			},
+			"svnt_change_pass_json": schema.StringAttribute{
+				Computed:            true,
+				MarkdownDescription: "change_pass_json read from the environment. Can be used only with DB connection",
+				Sensitive:           true,
+			},
+			"svnt_windows_connector_json": schema.StringAttribute{
+				Computed:            true,
+				MarkdownDescription: "windows_connector_json read from the environment.",
+				Sensitive:           true,
+			},
 			"svnt_azure_mgmt_access_token": schema.StringAttribute{
 				Computed:            true,
 				MarkdownDescription: "azure_mgmt_access_token read from the file.",
-				Sensitive:           true,
-			},
-			"svnt_client_id": schema.StringAttribute{
-				Computed:            true,
-				MarkdownDescription: "client_id read from the file.",
 				Sensitive:           true,
 			},
 			"svnt_client_secret": schema.StringAttribute{
@@ -139,12 +139,12 @@ func (r *EnvCredentialsResource) Open(ctx context.Context, req ephemeral.OpenReq
 	if resp.Diagnostics.HasError() {
 		return
 	}
-	data.Svnt_Username = types.StringValue(os.Getenv("svnt_username"))
 	data.Svnt_Auth_Token = types.StringValue(os.Getenv("svnt_auth_token"))
 	data.Svnt_Password = types.StringValue(os.Getenv("svnt_password"))
+	data.Svnt_Change_Pass_Json = types.StringValue(os.Getenv("svnt_change_pass_json"))
+	data.Svnt_Windows_Connector_Json = types.StringValue(os.Getenv("svnt_windows_connector_json"))
 	data.Svnt_Connection_Json = types.StringValue(os.Getenv("svnt_connection_json"))
 	data.Svnt_Azure_Mgmt_Access_Token = types.StringValue(os.Getenv("svnt_azure_mgmt_access_token"))
-	data.Svnt_Client_Id = types.StringValue(os.Getenv("svnt_client_id"))
 	data.Svnt_Client_Secret = types.StringValue(os.Getenv("svnt_client_secret"))
 	data.Svnt_Access_Token = types.StringValue(os.Getenv("svnt_access_token"))
 	data.Svnt_Refresh_Token = types.StringValue(os.Getenv("svnt_refresh_token"))

@@ -33,6 +33,7 @@ type RestConnectorResourceModel struct {
 	BaseConnectorResourceModel
 	ID                    types.String `tfsdk:"id"`
 	ConnectionJSON        types.String `tfsdk:"connection_json"`
+	ConnectionJSONWO      types.String `tfsdk:"connection_json_wo"`
 	ImportUserJson        types.String `tfsdk:"import_user_json"`
 	ImportAccountEntJson  types.String `tfsdk:"import_account_ent_json"`
 	StatusThresholdConfig types.String `tfsdk:"status_threshold_config"`
@@ -94,8 +95,13 @@ func RestConnectorResourceSchema() map[string]schema.Attribute {
 		},
 		"connection_json": schema.StringAttribute{
 			Optional:    true,
-			WriteOnly:   true,
+			Sensitive:   true,
 			Description: "Dynamic JSON configuration for the connection. Must be a valid JSON object string.",
+		},
+		"connection_json_wo": schema.StringAttribute{
+			Optional:    true,
+			WriteOnly:   true,
+			Description: "Dynamic JSON configuration for the connection (write-only). Must be a valid JSON object string.",
 		},
 		"import_user_json": schema.StringAttribute{
 			Optional:    true,
@@ -149,7 +155,7 @@ func RestConnectorResourceSchema() map[string]schema.Attribute {
 		},
 		"change_pass_json": schema.StringAttribute{
 			Optional:    true,
-			WriteOnly:   true,
+			Computed:    true,
 			Description: "JSON to change a user's password.",
 		},
 		"remove_account_json": schema.StringAttribute{
@@ -240,6 +246,17 @@ func (r *RestConnectionResource) Schema(ctx context.Context, req resource.Schema
 	resp.Schema = schema.Schema{
 		Description: util.RestConnDescription,
 		Attributes:  connectionsutil.MergeResourceAttributes(BaseConnectorResourceSchema(), RestConnectorResourceSchema()),
+	}
+}
+
+func (r *RestConnectionResource) ConfigValidators(ctx context.Context) []resource.ConfigValidator {
+	return []resource.ConfigValidator{
+		&connectionsutil.AtMostOneOfValidator{
+			Attrs: []path.Expression{
+				path.MatchRoot("connection_json"),
+				path.MatchRoot("connection_json_wo"),
+			},
+		},
 	}
 }
 
@@ -388,6 +405,13 @@ func (r *RestConnectionResource) CreateRESTConnection(ctx context.Context, plan 
 }
 
 func (r *RestConnectionResource) BuildRESTConnector(plan *RestConnectorResourceModel, config *RestConnectorResourceModel) openapi.RESTConnector {
+	var connectionJson string
+	if !config.ConnectionJSON.IsNull() && !config.ConnectionJSON.IsUnknown() {
+		connectionJson = config.ConnectionJSON.ValueString()
+	} else if !config.ConnectionJSONWO.IsNull() && !config.ConnectionJSONWO.IsUnknown() {
+		connectionJson = config.ConnectionJSONWO.ValueString()
+	}
+
 	restConn := openapi.RESTConnector{
 		BaseConnector: openapi.BaseConnector{
 			//required fields
@@ -399,7 +423,7 @@ func (r *RestConnectionResource) BuildRESTConnector(plan *RestConnectorResourceM
 			EmailTemplate:   util.StringPointerOrEmpty(plan.EmailTemplate),
 		},
 		//optional fields
-		ConnectionJSON:          util.StringPointerOrEmpty(config.ConnectionJSON),
+		ConnectionJSON:          util.StringPointerOrEmpty(types.StringValue(connectionJson)),
 		ImportUserJSON:          util.StringPointerOrEmpty(plan.ImportUserJson),
 		ImportAccountEntJSON:    util.StringPointerOrEmpty(plan.ImportAccountEntJson),
 		STATUS_THRESHOLD_CONFIG: util.StringPointerOrEmpty(plan.StatusThresholdConfig),
@@ -410,7 +434,7 @@ func (r *RestConnectionResource) BuildRESTConnector(plan *RestConnectorResourceM
 		AddAccessJSON:           util.StringPointerOrEmpty(plan.AddAccessJson),
 		RemoveAccessJSON:        util.StringPointerOrEmpty(plan.RemoveAccessJson),
 		UpdateUserJSON:          util.StringPointerOrEmpty(plan.UpdateUserJson),
-		ChangePassJSON:          util.StringPointerOrEmpty(config.ChangePassJson),
+		ChangePassJSON:          util.StringPointerOrEmpty(plan.ChangePassJson),
 		RemoveAccountJSON:       util.StringPointerOrEmpty(plan.RemoveAccountJson),
 		TicketStatusJSON:        util.StringPointerOrEmpty(plan.TicketStatusJson),
 		CreateTicketJSON:        util.StringPointerOrEmpty(plan.CreateTicketJson),
@@ -602,12 +626,6 @@ func (r *RestConnectionResource) UpdateRESTConnection(ctx context.Context, plan 
 	tflog.Debug(logCtx, "Building REST connection update request")
 
 	restConn := r.BuildRESTConnector(plan, config)
-	if plan.VaultConnection.ValueString() == "" {
-		emptyStr := ""
-		restConn.BaseConnector.VaultConnection = &emptyStr
-		restConn.BaseConnector.VaultConfiguration = &emptyStr
-		restConn.BaseConnector.Saveinvault = &emptyStr
-	}
 
 	restConnRequest := openapi.CreateOrUpdateRequest{
 		RESTConnector: &restConn,

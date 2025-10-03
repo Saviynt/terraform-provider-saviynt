@@ -31,12 +31,10 @@ func NewFileCredentialsResource() ephemeral.EphemeralResource {
 type FileCredentialsModel struct {
 	FilePath                 types.String `tfsdk:"file_path"`
 	AuthToken                types.String `tfsdk:"auth_token"`
-	Username                 types.String `tfsdk:"username"`
 	Password                 types.String `tfsdk:"password"`
 	Change_Pass_Json         types.String `tfsdk:"change_pass_json"`
 	Window_Connector_Json    types.String `tfsdk:"windows_connector_json"`
 	Azure_Mgmt_Access_Token  types.String `tfsdk:"azure_mgmt_access_token"`
-	Client_Id                types.String `tfsdk:"client_id"`
 	Client_Secret            types.String `tfsdk:"client_secret"`
 	Connection_Json          types.String `tfsdk:"connection_json"`
 	Access_Token             types.String `tfsdk:"access_token"`
@@ -68,11 +66,6 @@ func (r *FileCredentialsResource) Schema(ctx context.Context, _ ephemeral.Schema
 				MarkdownDescription: "Authentication token read from the file.",
 				Sensitive:           true,
 			},
-			"username": schema.StringAttribute{
-				Computed:            true,
-				Sensitive:           true,
-				MarkdownDescription: "Username read from the file.",
-			},
 			"password": schema.StringAttribute{
 				Computed:            true,
 				Sensitive:           true,
@@ -80,7 +73,7 @@ func (r *FileCredentialsResource) Schema(ctx context.Context, _ ephemeral.Schema
 			},
 			"change_pass_json": schema.StringAttribute{
 				Computed:            true,
-				MarkdownDescription: "change_pass_json read from the file.",
+				MarkdownDescription: "change_pass_json read from the file. Available for DB connection only",
 				Sensitive:           true,
 			},
 			"windows_connector_json": schema.StringAttribute{
@@ -91,11 +84,6 @@ func (r *FileCredentialsResource) Schema(ctx context.Context, _ ephemeral.Schema
 			"azure_mgmt_access_token": schema.StringAttribute{
 				Computed:            true,
 				MarkdownDescription: "azure_mgmt_access_token read from the file.",
-				Sensitive:           true,
-			},
-			"client_id": schema.StringAttribute{
-				Computed:            true,
-				MarkdownDescription: "client_id read from the file.",
 				Sensitive:           true,
 			},
 			"client_secret": schema.StringAttribute{
@@ -168,8 +156,6 @@ func (r *FileCredentialsResource) Open(ctx context.Context, req ephemeral.OpenRe
 		key = strings.TrimSpace(key)
 		val = strings.TrimSpace(val)
 		switch key {
-		case "USERNAME":
-			data.Username = types.StringValue(val)
 		case "AUTH_TOKEN":
 			data.AuthToken = types.StringValue(val)
 		case "PASSWORD":
@@ -180,8 +166,6 @@ func (r *FileCredentialsResource) Open(ctx context.Context, req ephemeral.OpenRe
 			data.Window_Connector_Json = types.StringValue(val)
 		case "AZURE_MGMT_ACCESS_TOKEN":
 			data.Azure_Mgmt_Access_Token = types.StringValue(val)
-		case "CLIENT_ID":
-			data.Client_Id = types.StringValue(val)
 		case "CLIENT_SECRET":
 			data.Client_Secret = types.StringValue(val)
 		case "CONNECTION_JSON":

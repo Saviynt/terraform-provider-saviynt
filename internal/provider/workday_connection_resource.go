@@ -53,9 +53,12 @@ type WorkdayConnectorResourceModel struct {
 	X509Cert               types.String `tfsdk:"x509_cert"`
 	Username               types.String `tfsdk:"username"`
 	Password               types.String `tfsdk:"password"`
+	PasswordWo             types.String `tfsdk:"password_wo"`
 	ClientID               types.String `tfsdk:"client_id"`
 	ClientSecret           types.String `tfsdk:"client_secret"`
+	ClientSecretWo         types.String `tfsdk:"client_secret_wo"`
 	RefreshToken           types.String `tfsdk:"refresh_token"`
+	RefreshTokenWo         types.String `tfsdk:"refresh_token_wo"`
 	PageSize               types.String `tfsdk:"page_size"`
 	UserImportPayload      types.String `tfsdk:"user_import_payload"`
 	UserImportMapping      types.String `tfsdk:"user_import_mapping"`
@@ -177,28 +180,43 @@ func WorkdayConnectorResourceSchema() map[string]schema.Attribute {
 		},
 		"username": schema.StringAttribute{
 			Optional:    true,
-			WriteOnly:   true,
+			Computed:    true,
 			Description: "Username for SOAP authentication.",
 		},
 		"password": schema.StringAttribute{
 			Optional:    true,
-			WriteOnly:   true,
+			Sensitive:   true,
 			Description: "Password for SOAP authentication.",
+		},
+		"password_wo": schema.StringAttribute{
+			Optional:    true,
+			WriteOnly:   true,
+			Description: "Password write-only attribute.",
 		},
 		"client_id": schema.StringAttribute{
 			Optional:    true,
-			WriteOnly:   true,
+			Computed:    true,
 			Description: "OAuth client ID.",
 		},
 		"client_secret": schema.StringAttribute{
 			Optional:    true,
-			WriteOnly:   true,
+			Sensitive:   true,
 			Description: "OAuth client secret.",
+		},
+		"client_secret_wo": schema.StringAttribute{
+			Optional:    true,
+			WriteOnly:   true,
+			Description: "Client secret write-only attribute.",
 		},
 		"refresh_token": schema.StringAttribute{
 			Optional:    true,
-			WriteOnly:   true,
+			Sensitive:   true,
 			Description: "OAuth refresh token.",
+		},
+		"refresh_token_wo": schema.StringAttribute{
+			Optional:    true,
+			WriteOnly:   true,
+			Description: "Refresh token write-only attribute.",
 		},
 		"page_size": schema.StringAttribute{
 			Optional:    true,
@@ -307,6 +325,29 @@ func (r *WorkdayConnectionResource) Schema(ctx context.Context, req resource.Sch
 	resp.Schema = schema.Schema{
 		Description: util.WorkdayConnDescription,
 		Attributes:  connectionsutil.MergeResourceAttributes(BaseConnectorResourceSchema(), WorkdayConnectorResourceSchema()),
+	}
+}
+
+func (r *WorkdayConnectionResource) ConfigValidators(ctx context.Context) []resource.ConfigValidator {
+	return []resource.ConfigValidator{
+		&connectionsutil.AtMostOneOfValidator{
+			Attrs: []path.Expression{
+				path.MatchRoot("password"),
+				path.MatchRoot("password_wo"),
+			},
+		},
+		&connectionsutil.AtMostOneOfValidator{
+			Attrs: []path.Expression{
+				path.MatchRoot("client_secret"),
+				path.MatchRoot("client_secret_wo"),
+			},
+		},
+		&connectionsutil.AtMostOneOfValidator{
+			Attrs: []path.Expression{
+				path.MatchRoot("refresh_token"),
+				path.MatchRoot("refresh_token_wo"),
+			},
+		},
 	}
 }
 
@@ -454,6 +495,27 @@ func (r *WorkdayConnectionResource) CreateWorkdayConnection(ctx context.Context,
 }
 
 func (r *WorkdayConnectionResource) BuildWorkdayConnector(plan *WorkdayConnectorResourceModel, config *WorkdayConnectorResourceModel) openapi.WorkdayConnector {
+	var password string
+	if !config.Password.IsNull() && !config.Password.IsUnknown() {
+		password = config.Password.ValueString()
+	} else if !config.PasswordWo.IsNull() && !config.PasswordWo.IsUnknown() {
+		password = config.PasswordWo.ValueString()
+	}
+
+	var clientSecret string
+	if !config.ClientSecret.IsNull() && !config.ClientSecret.IsUnknown() {
+		clientSecret = config.ClientSecret.ValueString()
+	} else if !config.ClientSecretWo.IsNull() && !config.ClientSecretWo.IsUnknown() {
+		clientSecret = config.ClientSecretWo.ValueString()
+	}
+
+	var refreshToken string
+	if !config.RefreshToken.IsNull() && !config.RefreshToken.IsUnknown() {
+		refreshToken = config.RefreshToken.ValueString()
+	} else if !config.RefreshTokenWo.IsNull() && !config.RefreshTokenWo.IsUnknown() {
+		refreshToken = config.RefreshTokenWo.ValueString()
+	}
+
 	workdayConn := openapi.WorkdayConnector{
 		BaseConnector: openapi.BaseConnector{
 			//required fields
@@ -479,11 +541,11 @@ func (r *WorkdayConnectionResource) BuildWorkdayConnector(plan *WorkdayConnector
 		USEX509AUTHFORSOAP:            util.StringPointerOrEmpty(plan.UseX509AuthForSOAP),
 		X509KEY:                       util.StringPointerOrEmpty(plan.X509Key),
 		X509CERT:                      util.StringPointerOrEmpty(plan.X509Cert),
-		USERNAME:                      util.StringPointerOrEmpty(config.Username),
-		PASSWORD:                      util.StringPointerOrEmpty(config.Password),
-		CLIENT_ID:                     util.StringPointerOrEmpty(config.ClientID),
-		CLIENT_SECRET:                 util.StringPointerOrEmpty(config.ClientSecret),
-		REFRESH_TOKEN:                 util.StringPointerOrEmpty(config.RefreshToken),
+		USERNAME:                      util.StringPointerOrEmpty(plan.Username),
+		PASSWORD:                      util.StringPointerOrEmpty(types.StringValue(password)),
+		CLIENT_ID:                     util.StringPointerOrEmpty(plan.ClientID),
+		CLIENT_SECRET:                 util.StringPointerOrEmpty(types.StringValue(clientSecret)),
+		REFRESH_TOKEN:                 util.StringPointerOrEmpty(types.StringValue(refreshToken)),
 		PAGE_SIZE:                     util.StringPointerOrEmpty(plan.PageSize),
 		USER_IMPORT_PAYLOAD:           util.StringPointerOrEmpty(plan.UserImportPayload),
 		USER_IMPORT_MAPPING:           util.StringPointerOrEmpty(plan.UserImportMapping),
@@ -691,12 +753,6 @@ func (r *WorkdayConnectionResource) UpdateWorkdayConnection(ctx context.Context,
 	tflog.Debug(logCtx, "Building Workday connection update request")
 
 	workdayConn := r.BuildWorkdayConnector(plan, config)
-	if plan.VaultConnection.ValueString() == "" {
-		emptyStr := ""
-		workdayConn.BaseConnector.VaultConnection = &emptyStr
-		workdayConn.BaseConnector.VaultConfiguration = &emptyStr
-		workdayConn.BaseConnector.Saveinvault = &emptyStr
-	}
 
 	updateReq := openapi.CreateOrUpdateRequest{
 		WorkdayConnector: &workdayConn,
