@@ -1,3 +1,6 @@
+// Copyright (c) Saviynt Inc.
+// SPDX-License-Identifier: MPL-2.0
+
 /*
 Saviynt API
 

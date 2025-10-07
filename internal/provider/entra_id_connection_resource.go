@@ -20,9 +20,11 @@ import (
 	connectionsutil "terraform-provider-Saviynt/util/connectionsutil"
 	"terraform-provider-Saviynt/util/errorsutil"
 
+	"github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
 	"github.com/hashicorp/terraform-plugin-framework/path"
 	"github.com/hashicorp/terraform-plugin-framework/resource"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema"
+	"github.com/hashicorp/terraform-plugin-framework/schema/validator"
 	"github.com/hashicorp/terraform-plugin-framework/types"
 	"github.com/hashicorp/terraform-plugin-log/tflog"
 	openapi "github.com/saviynt/saviynt-api-go-client/connections"
@@ -128,22 +130,34 @@ func EntraIdConnectorResourceSchema() map[string]schema.Attribute {
 		"client_secret": schema.StringAttribute{
 			Optional:    true,
 			Sensitive:   true,
-			Description: "Client Secret for authentication.",
+			Description: "Client Secret for authentication. Set the client_secret. It is a compulsory field. Either this or client_secret_wo need to be set",
+			Validators: []validator.String{
+				stringvalidator.ConflictsWith(path.MatchRoot("client_secret_wo")),
+			},
 		},
 		"client_secret_wo": schema.StringAttribute{
 			Optional:    true,
 			WriteOnly:   true,
-			Description: "Client Secret for authentication (write-only).",
+			Description: "Client Secret for authentication (write-only). Set the client_secret_wo. It is a compulsory field. Either this or client_secret need to be set",
+			Validators: []validator.String{
+				stringvalidator.ConflictsWith(path.MatchRoot("client_secret")),
+			},
 		},
 		"access_token": schema.StringAttribute{
 			Optional:    true,
 			Sensitive:   true,
 			Description: "Access token used for API calls.",
+			Validators: []validator.String{
+				stringvalidator.ConflictsWith(path.MatchRoot("access_token_wo")),
+			},
 		},
 		"access_token_wo": schema.StringAttribute{
 			Optional:    true,
 			WriteOnly:   true,
 			Description: "Access token used for API calls (write-only).",
+			Validators: []validator.String{
+				stringvalidator.ConflictsWith(path.MatchRoot("access_token")),
+			},
 		},
 		"aad_tenant_id": schema.StringAttribute{
 			Required:    true,
@@ -153,11 +167,17 @@ func EntraIdConnectorResourceSchema() map[string]schema.Attribute {
 			Optional:    true,
 			Sensitive:   true,
 			Description: "Access token for Azure management APIs.",
+			Validators: []validator.String{
+				stringvalidator.ConflictsWith(path.MatchRoot("azure_mgmt_access_token_wo")),
+			},
 		},
 		"azure_mgmt_access_token_wo": schema.StringAttribute{
 			Optional:    true,
 			WriteOnly:   true,
 			Description: "Access token for Azure management APIs (write-only).",
+			Validators: []validator.String{
+				stringvalidator.ConflictsWith(path.MatchRoot("azure_mgmt_access_token")),
+			},
 		},
 		"authentication_endpoint": schema.StringAttribute{
 			Optional:    true,
@@ -188,11 +208,17 @@ func EntraIdConnectorResourceSchema() map[string]schema.Attribute {
 			Optional:    true,
 			Sensitive:   true,
 			Description: "Windows connector JSON configuration.",
+			Validators: []validator.String{
+				stringvalidator.ConflictsWith(path.MatchRoot("windows_connector_json_wo")),
+			},
 		},
 		"windows_connector_json_wo": schema.StringAttribute{
 			Optional:    true,
 			WriteOnly:   true,
 			Description: "Windows connector JSON configuration (write-only).",
+			Validators: []validator.String{
+				stringvalidator.ConflictsWith(path.MatchRoot("windows_connector_json")),
+			},
 		},
 		"create_new_endpoints": schema.StringAttribute{
 			Optional:    true,
@@ -282,12 +308,18 @@ func EntraIdConnectorResourceSchema() map[string]schema.Attribute {
 		"connection_json": schema.StringAttribute{
 			Optional:    true,
 			Sensitive:   true,
-			Description: "Connection JSON configuration.",
+			Description: "Configuration for the connection in JSON format. Either the connection_json field or the connection_json_wo field must be populated to set the connection_json attribute.",
+			Validators: []validator.String{
+				stringvalidator.ConflictsWith(path.MatchRoot("connection_json_wo")),
+			},
 		},
 		"connection_json_wo": schema.StringAttribute{
 			Optional:    true,
 			WriteOnly:   true,
-			Description: "Connection JSON configuration (write-only).",
+			Description: "Connection JSON configuration (write-only). Either the connection_json field or the connection_json_wo field must be populated to set the connection_json attribute.",
+			Validators: []validator.String{
+				stringvalidator.ConflictsWith(path.MatchRoot("connection_json")),
+			},
 		},
 		"create_group_json": schema.StringAttribute{
 			Optional:    true,
@@ -389,41 +421,6 @@ func (r *EntraIdConnectionResource) Schema(ctx context.Context, req resource.Sch
 	}
 }
 
-func (r *EntraIdConnectionResource) ConfigValidators(ctx context.Context) []resource.ConfigValidator {
-	return []resource.ConfigValidator{
-		&connectionsutil.ExactlyOneOfValidator{
-			Attrs: []path.Expression{
-				path.MatchRoot("client_secret"),
-				path.MatchRoot("client_secret_wo"),
-			},
-		},
-		&connectionsutil.AtMostOneOfValidator{
-			Attrs: []path.Expression{
-				path.MatchRoot("access_token"),
-				path.MatchRoot("access_token_wo"),
-			},
-		},
-		&connectionsutil.AtMostOneOfValidator{
-			Attrs: []path.Expression{
-				path.MatchRoot("azure_mgmt_access_token"),
-				path.MatchRoot("azure_mgmt_access_token_wo"),
-			},
-		},
-		&connectionsutil.AtMostOneOfValidator{
-			Attrs: []path.Expression{
-				path.MatchRoot("windows_connector_json"),
-				path.MatchRoot("windows_connector_json_wo"),
-			},
-		},
-		&connectionsutil.AtMostOneOfValidator{
-			Attrs: []path.Expression{
-				path.MatchRoot("connection_json"),
-				path.MatchRoot("connection_json_wo"),
-			},
-		},
-	}
-}
-
 func (r *EntraIdConnectionResource) Configure(ctx context.Context, req resource.ConfigureRequest, resp *resource.ConfigureResponse) {
 	opCtx := errorsutil.CreateOperationContext(errorsutil.ConnectorTypeEntraID, "configure", "")
 	ctx = opCtx.AddContextToLogger(ctx)
@@ -455,6 +452,7 @@ func (r *EntraIdConnectionResource) Configure(ctx context.Context, req resource.
 	// Set the client and token from the provider state.
 	r.client = &client.SaviyntClientWrapper{Client: prov.client}
 	r.token = prov.accessToken
+	r.provider = &client.SaviyntProviderWrapper{Provider: prov} // Store provider reference for retry logic
 
 	opCtx.LogOperationEnd(ctx, "EntraID connection resource configured successfully")
 }
@@ -621,6 +619,11 @@ func (r *EntraIdConnectionResource) CreateEntraIdConnection(ctx context.Context,
 
 	// Build EntraID connection create request
 	tflog.Debug(logCtx, "Building EntraID connection create request")
+
+	if (config.ClientSecret.IsNull() || config.ClientSecret.IsUnknown()) && (config.ClientSecretWO.IsNull() || config.ClientSecretWO.IsUnknown()) {
+		return nil, fmt.Errorf("either client_secret or client_secret_wo must be set")
+	}
+
 	entraIdConn := r.BuildEntraIdConnector(plan, config)
 	createReq := openapi.CreateOrUpdateRequest{
 		EntraIDConnector: &entraIdConn,
@@ -722,6 +725,11 @@ func (r *EntraIdConnectionResource) UpdateEntraIdConnection(ctx context.Context,
 
 	// Build EntraID connection update request
 	tflog.Debug(logCtx, "Building EntraID connection update request")
+
+	if (config.ClientSecret.IsNull() || config.ClientSecret.IsUnknown()) && (config.ClientSecretWO.IsNull() || config.ClientSecretWO.IsUnknown()) {
+		return nil, fmt.Errorf("either client_secret or client_secret_wo must be set")
+	}
+
 	entraIdConn := r.BuildEntraIdConnector(plan, config) // Reuse the same request builder
 
 	updateReq := openapi.CreateOrUpdateRequest{
@@ -895,15 +903,6 @@ func (r *EntraIdConnectionResource) UpdateModelFromReadResponse(state *EntraIdCo
 		state.ConfigJson = util.SafeStringDatasource(attrs.ConfigJSON)
 		state.EnhancedDirectoryRoles = util.SafeStringDatasource(attrs.ENHANCEDDIRECTORYROLES)
 	}
-
-	// Set response message and error code
-	apiMessage := util.SafeDeref(apiResp.EntraIDConnectionResponse.Msg)
-	if apiMessage == "success" {
-		state.Msg = types.StringValue("Connection Successful")
-	} else {
-		state.Msg = types.StringValue(apiMessage)
-	}
-	state.ErrorCode = util.Int32PtrToTFString(apiResp.EntraIDConnectionResponse.Errorcode)
 }
 
 func (r *EntraIdConnectionResource) ValidateEntraIdConnectionResponse(apiResp *openapi.GetConnectionDetailsResponse) error {
@@ -1031,6 +1030,14 @@ func (r *EntraIdConnectionResource) Read(ctx context.Context, req resource.ReadR
 	// Update the model with the response data
 	r.UpdateModelFromReadResponse(&state, apiResp)
 
+	apiMessage := util.SafeDeref(apiResp.EntraIDConnectionResponse.Msg)
+	if apiMessage == "success" {
+		state.Msg = types.StringValue("Connection Read Successful")
+	} else {
+		state.Msg = types.StringValue(apiMessage)
+	}
+	state.ErrorCode = util.Int32PtrToTFString(apiResp.EntraIDConnectionResponse.Errorcode)
+
 	// Set the state
 	resp.Diagnostics.Append(resp.State.Set(ctx, &state)...)
 	if resp.Diagnostics.HasError() {
@@ -1117,7 +1124,7 @@ func (r *EntraIdConnectionResource) Update(ctx context.Context, req resource.Upd
 	}
 
 	// Use the helper method to update the connection
-	_, err := r.UpdateEntraIdConnection(ctx, &plan, &config)
+	updateResp, err := r.UpdateEntraIdConnection(ctx, &plan, &config)
 	if err != nil {
 		opCtx.LogOperationError(ctx, "EntraID connection update failed", "", err)
 		resp.Diagnostics.AddError(
@@ -1140,6 +1147,10 @@ func (r *EntraIdConnectionResource) Update(ctx context.Context, req resource.Upd
 
 	// Update the model with the response data (includes read operation)
 	r.UpdateModelFromReadResponse(&plan, getResp)
+
+	apiMessage := util.SafeDeref(updateResp.Msg)
+	plan.Msg = types.StringValue(apiMessage)
+	plan.ErrorCode = types.StringValue(*updateResp.ErrorCode)
 
 	// Set the state
 	resp.Diagnostics.Append(resp.State.Set(ctx, &plan)...)

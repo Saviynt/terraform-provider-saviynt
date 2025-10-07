@@ -20,9 +20,11 @@ import (
 
 	connectionsutil "terraform-provider-Saviynt/util/connectionsutil"
 
+	"github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
 	"github.com/hashicorp/terraform-plugin-framework/path"
 	"github.com/hashicorp/terraform-plugin-framework/resource"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema"
+	"github.com/hashicorp/terraform-plugin-framework/schema/validator"
 	"github.com/hashicorp/terraform-plugin-framework/types"
 	"github.com/hashicorp/terraform-plugin-log/tflog"
 	openapi "github.com/saviynt/saviynt-api-go-client/connections"
@@ -186,12 +188,18 @@ func WorkdayConnectorResourceSchema() map[string]schema.Attribute {
 		"password": schema.StringAttribute{
 			Optional:    true,
 			Sensitive:   true,
-			Description: "Password for SOAP authentication.",
+			Description: "Password for SOAP authentication. Either this field or the password_wo field must be populated to set the password attribute.",
+			Validators: []validator.String{
+				stringvalidator.ConflictsWith(path.MatchRoot("password_wo")),
+			},
 		},
 		"password_wo": schema.StringAttribute{
 			Optional:    true,
 			WriteOnly:   true,
-			Description: "Password write-only attribute.",
+			Description: "Password write-only attribute. Either this field or the password field must be populated to set the password attribute.",
+			Validators: []validator.String{
+				stringvalidator.ConflictsWith(path.MatchRoot("password")),
+			},
 		},
 		"client_id": schema.StringAttribute{
 			Optional:    true,
@@ -201,22 +209,34 @@ func WorkdayConnectorResourceSchema() map[string]schema.Attribute {
 		"client_secret": schema.StringAttribute{
 			Optional:    true,
 			Sensitive:   true,
-			Description: "OAuth client secret.",
+			Description: "OAuth client secret. Either this field or the client_secret_wo field must be populated to set the client_secret attribute.",
+			Validators: []validator.String{
+				stringvalidator.ConflictsWith(path.MatchRoot("client_secret_wo")),
+			},
 		},
 		"client_secret_wo": schema.StringAttribute{
 			Optional:    true,
 			WriteOnly:   true,
-			Description: "Client secret write-only attribute.",
+			Description: "OAuth client secret. Either this field or the client_secret field must be populated to set the client_secret attribute.",
+			Validators: []validator.String{
+				stringvalidator.ConflictsWith(path.MatchRoot("client_secret")),
+			},
 		},
 		"refresh_token": schema.StringAttribute{
 			Optional:    true,
 			Sensitive:   true,
-			Description: "OAuth refresh token.",
+			Description: "OAuth refresh token. Either this field or the refresh_token_wo field must be populated to set the refresh_token attribute.",
+			Validators: []validator.String{
+				stringvalidator.ConflictsWith(path.MatchRoot("refresh_token_wo")),
+			},
 		},
 		"refresh_token_wo": schema.StringAttribute{
 			Optional:    true,
 			WriteOnly:   true,
-			Description: "Refresh token write-only attribute.",
+			Description: "Refresh token write-only attribute. Either this field or the refresh_token field must be populated to set the refresh_token attribute.",
+			Validators: []validator.String{
+				stringvalidator.ConflictsWith(path.MatchRoot("refresh_token")),
+			},
 		},
 		"page_size": schema.StringAttribute{
 			Optional:    true,
@@ -328,28 +348,7 @@ func (r *WorkdayConnectionResource) Schema(ctx context.Context, req resource.Sch
 	}
 }
 
-func (r *WorkdayConnectionResource) ConfigValidators(ctx context.Context) []resource.ConfigValidator {
-	return []resource.ConfigValidator{
-		&connectionsutil.AtMostOneOfValidator{
-			Attrs: []path.Expression{
-				path.MatchRoot("password"),
-				path.MatchRoot("password_wo"),
-			},
-		},
-		&connectionsutil.AtMostOneOfValidator{
-			Attrs: []path.Expression{
-				path.MatchRoot("client_secret"),
-				path.MatchRoot("client_secret_wo"),
-			},
-		},
-		&connectionsutil.AtMostOneOfValidator{
-			Attrs: []path.Expression{
-				path.MatchRoot("refresh_token"),
-				path.MatchRoot("refresh_token_wo"),
-			},
-		},
-	}
-}
+
 
 func (r *WorkdayConnectionResource) Configure(ctx context.Context, req resource.ConfigureRequest, resp *resource.ConfigureResponse) {
 	opCtx := errorsutil.CreateOperationContext(errorsutil.ConnectorTypeWorkday, "configure", "")
@@ -724,13 +723,6 @@ func (r *WorkdayConnectionResource) UpdateModelFromReadResponse(state *WorkdayCo
 	state.UseEnhancedOrgRole = util.SafeStringDatasource(apiResp.WorkdayConnectionResponse.Connectionattributes.USE_ENHANCED_ORGROLE)
 	state.CreateAccountPayload = util.SafeStringDatasource(apiResp.WorkdayConnectionResponse.Connectionattributes.CREATE_ACCOUNT_PAYLOAD)
 	state.BaseURL = util.SafeStringDatasource(apiResp.WorkdayConnectionResponse.Connectionattributes.BASE_URL)
-	apiMessage := util.SafeDeref(apiResp.WorkdayConnectionResponse.Msg)
-	if apiMessage == "success" {
-		state.Msg = types.StringValue("Connection Successful")
-	} else {
-		state.Msg = types.StringValue(apiMessage)
-	}
-	state.ErrorCode = util.Int32PtrToTFString(apiResp.WorkdayConnectionResponse.Errorcode)
 }
 
 func (r *WorkdayConnectionResource) ValidateWorkdayConnectionResponse(apiResp *openapi.GetConnectionDetailsResponse) error {
@@ -897,6 +889,14 @@ func (r *WorkdayConnectionResource) Read(ctx context.Context, req resource.ReadR
 	// Update model from read response
 	r.UpdateModelFromReadResponse(&state, apiResp)
 
+	apiMessage := util.SafeDeref(apiResp.WorkdayConnectionResponse.Msg)
+	if apiMessage == "success" {
+		state.Msg = types.StringValue("Connection Read Successful")
+	} else {
+		state.Msg = types.StringValue(apiMessage)
+	}
+	state.ErrorCode = util.Int32PtrToTFString(apiResp.WorkdayConnectionResponse.Errorcode)
+
 	stateDiagnostics := resp.State.Set(ctx, &state)
 	resp.Diagnostics.Append(stateDiagnostics...)
 	if resp.Diagnostics.HasError() {
@@ -981,7 +981,7 @@ func (r *WorkdayConnectionResource) Update(ctx context.Context, req resource.Upd
 	ctx = opCtx.AddContextToLogger(ctx)
 
 	// Use interface pattern instead of direct API client creation
-	_, err := r.UpdateWorkdayConnection(ctx, &plan, &config)
+	updateResp, err := r.UpdateWorkdayConnection(ctx, &plan, &config)
 	if err != nil {
 		opCtx.LogOperationError(ctx, "Workday connection update failed", "", err)
 		resp.Diagnostics.AddError(
@@ -1004,6 +1004,10 @@ func (r *WorkdayConnectionResource) Update(ctx context.Context, req resource.Upd
 
 	// Update model from read response
 	r.UpdateModelFromReadResponse(&plan, getResp)
+
+	apiMessage := util.SafeDeref(updateResp.Msg)
+	plan.Msg = types.StringValue(apiMessage)
+	plan.ErrorCode = types.StringValue(*updateResp.ErrorCode)
 
 	stateUpdateDiagnostics := resp.State.Set(ctx, plan)
 	resp.Diagnostics.Append(stateUpdateDiagnostics...)

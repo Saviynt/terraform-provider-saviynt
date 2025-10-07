@@ -20,9 +20,11 @@ import (
 
 	connectionsutil "terraform-provider-Saviynt/util/connectionsutil"
 
+	"github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
 	"github.com/hashicorp/terraform-plugin-framework/path"
 	"github.com/hashicorp/terraform-plugin-framework/resource"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema"
+	"github.com/hashicorp/terraform-plugin-framework/schema/validator"
 	"github.com/hashicorp/terraform-plugin-framework/types"
 	"github.com/hashicorp/terraform-plugin-log/tflog"
 	openapi "github.com/saviynt/saviynt-api-go-client/connections"
@@ -92,12 +94,18 @@ func OktaConnectorSchema() map[string]schema.Attribute {
 		"auth_token": schema.StringAttribute{
 			Optional:    true,
 			Sensitive:   true,
-			Description: "API token for Okta authentication.",
+			Description: "API token for Okta authentication. It is a compulsory field. Either this or auth_token_wo need to be set",
+			Validators: []validator.String{
+				stringvalidator.ConflictsWith(path.MatchRoot("auth_token_wo")),
+			},
 		},
 		"auth_token_wo": schema.StringAttribute{
 			Optional:    true,
 			WriteOnly:   true,
-			Description: "API token for Okta authentication (write-only).",
+			Description: "API token for Okta authentication (write-only). It is a compulsory field. Either this or auth_token need to be set",
+			Validators: []validator.String{
+				stringvalidator.ConflictsWith(path.MatchRoot("auth_token")),
+			},
 		},
 		"account_field_mappings": schema.StringAttribute{
 			Optional:    true,
@@ -170,17 +178,6 @@ func (r *OktaConnectionResource) Schema(ctx context.Context, req resource.Schema
 	resp.Schema = schema.Schema{
 		Description: util.OktaConnDescription,
 		Attributes:  connectionsutil.MergeResourceAttributes(BaseConnectorResourceSchema(), OktaConnectorSchema()),
-	}
-}
-
-func (r *OktaConnectionResource) ConfigValidators(ctx context.Context) []resource.ConfigValidator {
-	return []resource.ConfigValidator{
-		&connectionsutil.ExactlyOneOfValidator{
-			Attrs: []path.Expression{
-				path.MatchRoot("auth_token"),
-				path.MatchRoot("auth_token_wo"),
-			},
-		},
 	}
 }
 
@@ -350,6 +347,10 @@ func (r *OktaConnectionResource) CreateOktaConnection(ctx context.Context, plan 
 	// Build Okta connection create request
 	tflog.Debug(ctx, "Building Okta connection create request")
 
+	if (config.AuthToken.IsNull() || config.AuthToken.IsUnknown()) && (config.AuthTokenWO.IsNull() || config.AuthTokenWO.IsUnknown()) {
+		return nil, fmt.Errorf("either auth_token or auth_token_wo must be set")
+	}
+
 	oktaConn := r.BuildOktaConnector(plan, config)
 	createReq := openapi.CreateOrUpdateRequest{
 		OktaConnector: &oktaConn,
@@ -473,6 +474,10 @@ func (r *OktaConnectionResource) UpdateOktaConnection(ctx context.Context, plan 
 	// Build Okta connection update request
 	tflog.Debug(logCtx, "Building Okta connection update request")
 
+	if (config.AuthToken.IsNull() || config.AuthToken.IsUnknown()) && (config.AuthTokenWO.IsNull() || config.AuthTokenWO.IsUnknown()) {
+		return nil, fmt.Errorf("either auth_token or auth_token_wo must be set")
+	}
+
 	oktaConn := r.BuildOktaConnector(plan, config)
 
 	updateReq := openapi.CreateOrUpdateRequest{
@@ -542,14 +547,6 @@ func (r *OktaConnectionResource) UpdateModelFromReadResponse(state *OktaConnecto
 	state.ActivateEndpoint = util.SafeStringDatasource(apiResp.OktaConnectionResponse.Connectionattributes.ACTIVATE_ENDPOINT)
 	state.ConfigJson = util.SafeStringDatasource(apiResp.OktaConnectionResponse.Connectionattributes.ConfigJSON)
 	state.PamConfig = util.SafeStringDatasource(apiResp.OktaConnectionResponse.Connectionattributes.PAM_CONFIG)
-
-	apiMessage := util.SafeDeref(apiResp.OktaConnectionResponse.Msg)
-	if apiMessage == "success" {
-		state.Msg = types.StringValue("Connection Successful")
-	} else {
-		state.Msg = types.StringValue(apiMessage)
-	}
-	state.ErrorCode = util.Int32PtrToTFString(apiResp.OktaConnectionResponse.Errorcode)
 }
 
 func (r *OktaConnectionResource) ValidateOktaConnectionResponse(apiResp *openapi.GetConnectionDetailsResponse) error {
@@ -656,6 +653,14 @@ func (r *OktaConnectionResource) Read(ctx context.Context, req resource.ReadRequ
 	// Update model from read response
 	r.UpdateModelFromReadResponse(&state, apiResp)
 
+	apiMessage := util.SafeDeref(apiResp.OktaConnectionResponse.Msg)
+	if apiMessage == "success" {
+		state.Msg = types.StringValue("Connection Read Successful")
+	} else {
+		state.Msg = types.StringValue(apiMessage)
+	}
+	state.ErrorCode = util.Int32PtrToTFString(apiResp.OktaConnectionResponse.Errorcode)
+
 	stateDiagnostics := resp.State.Set(ctx, &state)
 	resp.Diagnostics.Append(stateDiagnostics...)
 	if resp.Diagnostics.HasError() {
@@ -741,7 +746,7 @@ func (r *OktaConnectionResource) Update(ctx context.Context, req resource.Update
 	ctx = opCtx.AddContextToLogger(ctx)
 
 	// Use interface pattern instead of direct API client creation
-	_, err := r.UpdateOktaConnection(ctx, &plan, &config)
+	updateResp, err := r.UpdateOktaConnection(ctx, &plan, &config)
 	if err != nil {
 		opCtx.LogOperationError(ctx, "Okta connection update failed", "", err)
 		resp.Diagnostics.AddError(
@@ -764,6 +769,10 @@ func (r *OktaConnectionResource) Update(ctx context.Context, req resource.Update
 
 	// Update model from read response
 	r.UpdateModelFromReadResponse(&plan, getResp)
+
+	apiMessage := util.SafeDeref(updateResp.Msg)
+	plan.Msg = types.StringValue(apiMessage)
+	plan.ErrorCode = types.StringValue(*updateResp.ErrorCode)
 
 	stateUpdateDiagnostics := resp.State.Set(ctx, plan)
 	resp.Diagnostics.Append(stateUpdateDiagnostics...)

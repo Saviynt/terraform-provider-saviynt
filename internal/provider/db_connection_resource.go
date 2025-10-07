@@ -21,9 +21,11 @@ import (
 
 	openapi "github.com/saviynt/saviynt-api-go-client/connections"
 
+	"github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
 	"github.com/hashicorp/terraform-plugin-framework/path"
 	"github.com/hashicorp/terraform-plugin-framework/resource"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema"
+	"github.com/hashicorp/terraform-plugin-framework/schema/validator"
 	"github.com/hashicorp/terraform-plugin-framework/types"
 	"github.com/hashicorp/terraform-plugin-log/tflog"
 )
@@ -117,12 +119,18 @@ func DBConnectorResourceSchema() map[string]schema.Attribute {
 		"password": schema.StringAttribute{
 			Optional:    true,
 			Sensitive:   true,
-			Description: "Set the Password.",
+			Description: "Set the Password. Set the password.It is a compulsory field. Either this or password_wo need to be set",
+			Validators: []validator.String{
+				stringvalidator.ConflictsWith(path.MatchRoot("password_wo")),
+			},
 		},
 		"password_wo": schema.StringAttribute{
 			Optional:    true,
 			WriteOnly:   true,
-			Description: "Set the Password.",
+			Description: "Set the Password. Set the password_wo.It is a compulsory field. Either this or password need to be set",
+			Validators: []validator.String{
+				stringvalidator.ConflictsWith(path.MatchRoot("password")),
+			},
 		},
 		"driver_name": schema.StringAttribute{
 			Required:    true,
@@ -182,11 +190,17 @@ func DBConnectorResourceSchema() map[string]schema.Attribute {
 			Optional:    true,
 			Sensitive:   true,
 			Description: "JSON to specify the queries/stored procedures used to change a password",
+			Validators: []validator.String{
+				stringvalidator.ConflictsWith(path.MatchRoot("change_pass_json_wo")),
+			},
 		},
 		"change_pass_json_wo": schema.StringAttribute{
 			Optional:    true,
 			WriteOnly:   true,
 			Description: "JSON to specify the queries/stored procedures used to change a password",
+			Validators: []validator.String{
+				stringvalidator.ConflictsWith(path.MatchRoot("change_pass_json")),
+			},
 		},
 		"delete_account_json": schema.StringAttribute{
 			Optional:    true,
@@ -291,23 +305,6 @@ func (r *DBConnectionResource) Schema(ctx context.Context, req resource.SchemaRe
 	resp.Schema = schema.Schema{
 		Description: util.DBConnDescription,
 		Attributes:  connectionsutil.MergeResourceAttributes(BaseConnectorResourceSchema(), DBConnectorResourceSchema()),
-	}
-}
-
-func (r *DBConnectionResource) ConfigValidators(ctx context.Context) []resource.ConfigValidator {
-	return []resource.ConfigValidator{
-		&connectionsutil.ExactlyOneOfValidator{
-			Attrs: []path.Expression{
-				path.MatchRoot("password"),
-				path.MatchRoot("password_wo"),
-			},
-		},
-		&connectionsutil.AtMostOneOfValidator{
-			Attrs: []path.Expression{
-				path.MatchRoot("change_pass_json"),
-				path.MatchRoot("change_pass_json_wo"),
-			},
-		},
 	}
 }
 
@@ -468,6 +465,10 @@ func (r *DBConnectionResource) CreateDBConnection(ctx context.Context, plan *DBC
 	}
 
 	// Build DB connector request
+	if (config.Password.IsNull() || config.Password.IsUnknown()) && (config.PasswordWo.IsNull() || config.PasswordWo.IsUnknown()) {
+		return nil, fmt.Errorf("either password or password_wo must be set")
+	}
+
 	dbConn := r.BuildDBConnector(plan, config)
 	dbConnRequest := openapi.CreateOrUpdateRequest{
 		DBConnector: &dbConn,
@@ -676,6 +677,14 @@ func (r *DBConnectionResource) Read(ctx context.Context, req resource.ReadReques
 
 	r.UpdateModelFromReadResponse(&state, apiResp)
 
+	apiMessage := util.SafeDeref(apiResp.DBConnectionResponse.Msg)
+	if apiMessage == "success" {
+		state.Msg = types.StringValue("Connection Read Successful")
+	} else {
+		state.Msg = types.StringValue(apiMessage)
+	}
+	state.ErrorCode = util.Int32PtrToTFString(apiResp.DBConnectionResponse.Errorcode)
+
 	stateDiagnostics := resp.State.Set(ctx, &state)
 	resp.Diagnostics.Append(stateDiagnostics...)
 	if resp.Diagnostics.HasError() {
@@ -812,15 +821,6 @@ func (r *DBConnectionResource) UpdateModelFromReadResponse(state *DBConnectorRes
 		state.EntitlementExistJson = util.SafeStringDatasource(attrs.ENTITLEMENTEXISTJSON)
 		state.UpdateEntitlementJson = util.SafeStringDatasource(attrs.UPDATEENTITLEMENTJSON)
 	}
-
-	// Update response message and error code
-	apiMessage := util.SafeDeref(dbResp.Msg)
-	if apiMessage == "success" {
-		state.Msg = types.StringValue("Connection Successful")
-	} else {
-		state.Msg = types.StringValue(apiMessage)
-	}
-	state.ErrorCode = util.Int32PtrToTFString(dbResp.Errorcode)
 }
 
 func (r *DBConnectionResource) Update(ctx context.Context, req resource.UpdateRequest, resp *resource.UpdateResponse) {
@@ -893,7 +893,7 @@ func (r *DBConnectionResource) Update(ctx context.Context, req resource.UpdateRe
 		map[string]interface{}{"connection_name": connectionName})
 
 	// Use interface pattern instead of direct API client creation
-	_, err := r.UpdateDBConnection(ctx, &plan, &config)
+	updateResp, err := r.UpdateDBConnection(ctx, &plan, &config)
 	if err != nil {
 		opCtx.LogOperationError(ctx, "DB connection update failed", "", err)
 		resp.Diagnostics.AddError(
@@ -915,6 +915,10 @@ func (r *DBConnectionResource) Update(ctx context.Context, req resource.UpdateRe
 	}
 
 	r.UpdateModelFromReadResponse(&plan, getResp)
+
+	apiMessage := util.SafeDeref(updateResp.Msg)
+	plan.Msg = types.StringValue(apiMessage)
+	plan.ErrorCode = types.StringValue(*updateResp.ErrorCode)
 
 	stateUpdateDiagnostics := resp.State.Set(ctx, plan)
 	resp.Diagnostics.Append(stateUpdateDiagnostics...)
@@ -945,6 +949,10 @@ func (r *DBConnectionResource) UpdateDBConnection(ctx context.Context, plan *DBC
 		map[string]interface{}{"connection_name": connectionName})
 
 	// Build DB connector request
+	if (config.Password.IsNull() || config.Password.IsUnknown()) && (config.PasswordWo.IsNull() || config.PasswordWo.IsUnknown()) {
+		return nil, fmt.Errorf("either password or password_wo must be set")
+	}
+
 	dbConn := r.BuildDBConnector(plan, config)
 
 	dbConnRequest := openapi.CreateOrUpdateRequest{

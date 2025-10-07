@@ -239,13 +239,13 @@ resource "saviynt_sap_connection_resource" "ss" {
 - `message_server` (String) Messageserver.
 - `modify_user_data_json` (String) Modifyuserdatajson.
 - `pam_config` (String) Pamconfig.
-- `password` (String, Sensitive) Password.
+- `password` (String, Sensitive) Password. Either this or password_wo need to be set to configure the password attribute.
 - `password_max_length` (String) Passwordmaxlength.
 - `password_min_length` (String) Passwordminlength.
 - `password_no_of_caps_alpha` (String) Passwordnoofcapsalpha.
 - `password_no_of_digits` (String) Passwordnoofdigits.
 - `password_no_of_spl_chars` (String) Passwordnoofsplchars.
-- `password_wo` (String) Password write-only attribute.
+- `password_wo` (String) Password write-only attribute. Either this or password need to be set to configure the password attribute.
 - `prov_cua_enabled` (String) Provcuaenabled.
 - `prov_cua_snc` (String) Provcuasnc.
 - `prov_jco_ashost` (String) Provjcoashost.
@@ -257,8 +257,8 @@ resource "saviynt_sap_connection_resource" "ss" {
 - `prov_jco_r3name` (String) Provjcor3name.
 - `prov_jco_sysnr` (String) Provjcosysnr.
 - `prov_jco_user` (String) Provjcouser.
-- `prov_password` (String, Sensitive) Provpassword.
-- `prov_password_wo` (String) Provpassword write-only attribute.
+- `prov_password` (String, Sensitive) Provpassword. Either this field or the prov_password_wo field must be populated to set the prov_password attribute.
+- `prov_password_wo` (String) Provpassword write-only attribute. Either this field or the prov_password field must be populated to set the prov_password attribute.
 - `reset_pwd_for_newaccount` (String) Resetpwdfornewaccount.
 - `saptable_filter_lang` (String) Saptablefilterlang.
 - `save_in_vault` (String) Flag indicating whether the encrypted attribute should be saved in the configured vault. Example: "false"

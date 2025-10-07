@@ -1141,7 +1141,7 @@ func (r *RolesResource) CreateRole(ctx context.Context, plan *RolesResourceModel
 			return fmt.Errorf("401 unauthorized")
 		}
 		apiResp = resp
-		finalHttpResp = httpResp  // Capture final HTTP response
+		finalHttpResp = httpResp // Capture final HTTP response
 		return err
 	})
 
@@ -1206,7 +1206,7 @@ func (r *RolesResource) AddUsersToRole(ctx context.Context, plan *RolesResourceM
 	// Add each user to the role
 	for _, user := range planUsers {
 		userName := user.UserName.ValueString()
-		
+
 		var apiResp *openapi.AddOrRemoveRoleResponse
 		var finalHttpResp *http.Response
 		err := r.provider.AuthenticatedAPICallWithRetry(ctx, "add_user_to_role", func(token string) error {
@@ -1216,7 +1216,7 @@ func (r *RolesResource) AddUsersToRole(ctx context.Context, plan *RolesResourceM
 				return fmt.Errorf("401 unauthorized")
 			}
 			apiResp = resp
-			finalHttpResp = httpResp  // Capture final HTTP response
+			finalHttpResp = httpResp // Capture final HTTP response
 			return err
 		})
 
@@ -1319,7 +1319,7 @@ func (r *RolesResource) ReadRole(ctx context.Context, roleName string) (*openapi
 			return fmt.Errorf("401 unauthorized")
 		}
 		apiResp = resp
-		finalHttpResp = httpResp  // Capture final HTTP response
+		finalHttpResp = httpResp // Capture final HTTP response
 		return err
 	})
 
@@ -1417,7 +1417,7 @@ func (r *RolesResource) UpdateRole(ctx context.Context, plan *RolesResourceModel
 			return fmt.Errorf("401 unauthorized")
 		}
 		apiResp = resp
-		finalHttpResp = httpResp  // Capture final HTTP response
+		finalHttpResp = httpResp // Capture final HTTP response
 		return err
 	})
 
@@ -1508,7 +1508,7 @@ func (r *RolesResource) AddEntitlementsAndChildRoles(ctx context.Context, plan *
 			return fmt.Errorf("401 unauthorized")
 		}
 		apiResp = resp
-		finalHttpResp = httpResp  // Capture final HTTP response
+		finalHttpResp = httpResp // Capture final HTTP response
 		return err
 	})
 
@@ -1638,7 +1638,7 @@ func (r *RolesResource) RoleResourceProcessUserChanges(ctx context.Context, plan
 					return fmt.Errorf("401 unauthorized")
 				}
 				apiResp = resp
-				finalHttpResp = httpResp  // Capture final HTTP response
+				finalHttpResp = httpResp // Capture final HTTP response
 				return err
 			})
 			lastApiResp = apiResp // Capture for message/errorcode
@@ -1687,7 +1687,7 @@ func (r *RolesResource) RoleResourceProcessUserChanges(ctx context.Context, plan
 					return fmt.Errorf("401 unauthorized")
 				}
 				apiResp = resp
-				finalHttpResp = httpResp  // Capture final HTTP response
+				finalHttpResp = httpResp // Capture final HTTP response
 				return err
 			})
 			lastApiResp = apiResp // Capture for message/errorcode
