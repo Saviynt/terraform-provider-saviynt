@@ -1,7 +1,7 @@
 /*
 Account Management API
 
-API for managing accounts in Saviynt/SSM. - **Create Endpoint**: Creates a new endpoint. - **Update Endpoint**: Updates an existing endpoint based on its name and roletype. - **Get Endpoint List**: Returns a list of endpoints based on search criteria. 
+API for managing accounts in Saviynt/SSM. - **Create Endpoint**: Creates a new endpoint. - **Update Endpoint**: Updates an existing endpoint based on its name and roletype. - **Get Endpoint List**: Returns a list of endpoints based on search criteria.
 
 API version: 1.0.0
 */
@@ -30,7 +30,7 @@ type GetEndpointsRequest struct {
 	// Description for the endpoint.
 	Max *string `json:"max,omitempty"`
 	// Owner of the endpoint. If ownerType is User, specify the username of the owner. If ownerType is Usergroup, sepecify the name of the User group
-	Owner *string `json:"owner,omitempty"`
+	Owner          *string                `json:"owner,omitempty"`
 	FilterCriteria map[string]interface{} `json:"filterCriteria,omitempty"`
 }
 
@@ -276,7 +276,7 @@ func (o *GetEndpointsRequest) SetFilterCriteria(v map[string]interface{}) {
 }
 
 func (o GetEndpointsRequest) MarshalJSON() ([]byte, error) {
-	toSerialize,err := o.ToMap()
+	toSerialize, err := o.ToMap()
 	if err != nil {
 		return []byte{}, err
 	}
@@ -344,5 +344,3 @@ func (v *NullableGetEndpointsRequest) UnmarshalJSON(src []byte) error {
 	v.isSet = true
 	return json.Unmarshal(src, &v.value)
 }
-
-

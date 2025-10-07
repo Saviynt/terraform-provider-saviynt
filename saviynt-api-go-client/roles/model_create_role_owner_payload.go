@@ -20,7 +20,7 @@ var _ MappedNullable = &CreateRoleOwnerPayload{}
 // CreateRoleOwnerPayload struct for CreateRoleOwnerPayload
 type CreateRoleOwnerPayload struct {
 	OwnerName *string `json:"ownerName,omitempty"`
-	Rank *string `json:"rank,omitempty"`
+	Rank      *string `json:"rank,omitempty"`
 }
 
 // NewCreateRoleOwnerPayload instantiates a new CreateRoleOwnerPayload object
@@ -105,7 +105,7 @@ func (o *CreateRoleOwnerPayload) SetRank(v string) {
 }
 
 func (o CreateRoleOwnerPayload) MarshalJSON() ([]byte, error) {
-	toSerialize,err := o.ToMap()
+	toSerialize, err := o.ToMap()
 	if err != nil {
 		return []byte{}, err
 	}
@@ -158,5 +158,3 @@ func (v *NullableCreateRoleOwnerPayload) UnmarshalJSON(src []byte) error {
 	v.isSet = true
 	return json.Unmarshal(src, &v.value)
 }
-
-

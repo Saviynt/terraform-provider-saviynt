@@ -28,7 +28,7 @@ type CreateOrUpdateOrDeleteDynamicAttributeResponse struct {
 	// Name of endpoint
 	Endpoint *string `json:"endpoint,omitempty"`
 	// Username of the user performing the update
-	Updateuser *string `json:"updateuser,omitempty"`
+	Updateuser        *string                                                          `json:"updateuser,omitempty"`
 	Dynamicattributes *CreateOrUpdateOrDeleteDynamicAttributeResponseDynamicattributes `json:"dynamicattributes,omitempty"`
 }
 
@@ -242,7 +242,7 @@ func (o *CreateOrUpdateOrDeleteDynamicAttributeResponse) SetDynamicattributes(v 
 }
 
 func (o CreateOrUpdateOrDeleteDynamicAttributeResponse) MarshalJSON() ([]byte, error) {
-	toSerialize,err := o.ToMap()
+	toSerialize, err := o.ToMap()
 	if err != nil {
 		return []byte{}, err
 	}
@@ -307,5 +307,3 @@ func (v *NullableCreateOrUpdateOrDeleteDynamicAttributeResponse) UnmarshalJSON(s
 	v.isSet = true
 	return json.Unmarshal(src, &v.value)
 }
-
-

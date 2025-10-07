@@ -30,6 +30,7 @@ var oktaDatasourceErrorCodes = errorsutil.NewConnectorErrorCodes(errorsutil.Conn
 type OktaConnectionsDataSource struct {
 	client            client.SaviyntClientInterface
 	token             string
+	provider          client.SaviyntProviderInterface
 	connectionFactory client.ConnectionFactoryInterface
 }
 
@@ -80,6 +81,11 @@ func (d *OktaConnectionsDataSource) SetClient(client client.SaviyntClientInterfa
 // SetToken sets the token for testing purposes
 func (d *OktaConnectionsDataSource) SetToken(token string) {
 	d.token = token
+}
+
+// SetProvider sets the provider for testing purposes
+func (d *OktaConnectionsDataSource) SetProvider(provider client.SaviyntProviderInterface) {
+	d.provider = provider
 }
 
 func (d *OktaConnectionsDataSource) Metadata(ctx context.Context, req datasource.MetadataRequest, resp *datasource.MetadataResponse) {
@@ -170,16 +176,16 @@ func (d *OktaConnectionsDataSource) Configure(ctx context.Context, req datasourc
 	}
 
 	// Cast provider data to your provider type.
-	prov, ok := req.ProviderData.(*saviyntProvider)
+	prov, ok := req.ProviderData.(*SaviyntProvider)
 	if !ok {
 		errorCode := oktaDatasourceErrorCodes.ProviderConfig()
 		opCtx.LogOperationError(ctx, "Provider configuration failed", errorCode,
-			fmt.Errorf("expected *saviyntProvider, got different type"),
-			map[string]interface{}{"expected_type": "*saviyntProvider"})
+			fmt.Errorf("expected *SaviyntProvider, got different type"),
+			map[string]interface{}{"expected_type": "*SaviyntProvider"})
 
 		resp.Diagnostics.AddError(
 			errorsutil.GetErrorMessage(errorsutil.ErrProviderConfig),
-			fmt.Sprintf("[%s] Expected *saviyntProvider, got different type", errorCode),
+			fmt.Sprintf("[%s] Expected *SaviyntProvider, got different type", errorCode),
 		)
 		return
 	}
@@ -187,6 +193,7 @@ func (d *OktaConnectionsDataSource) Configure(ctx context.Context, req datasourc
 	// Set the client and token from the provider state using interface wrapper.
 	d.client = &client.SaviyntClientWrapper{Client: prov.client}
 	d.token = prov.accessToken
+	d.provider = &client.SaviyntProviderWrapper{Provider: prov} // Store provider reference for retry logic
 
 	opCtx.LogOperationEnd(ctx, "Okta connection datasource configured successfully")
 }
@@ -200,20 +207,31 @@ func (d *OktaConnectionsDataSource) ReadOktaConnectionDetails(ctx context.Contex
 
 	opCtx.LogOperationStart(logCtx, "Starting Okta connection API call")
 
-	// Use factory pattern instead of direct client creation
-	connectionOps := d.connectionFactory.CreateConnectionOperations(d.client.APIBaseURL(), d.token)
+	var apiResp *openapi.GetConnectionDetailsResponse
 
-	tflog.Debug(logCtx, "Executing API request to get Okta connection details")
+	// Execute API call with retry logic
+	err := d.provider.AuthenticatedAPICallWithRetry(ctx, "read_okta_connection_datasource", func(token string) error {
+		// Use factory pattern with current token
+		connectionOps := d.connectionFactory.CreateConnectionOperations(d.client.APIBaseURL(), token)
 
-	// Execute API request through interface - use original context for API calls
-	reqParams := openapi.GetConnectionDetailsRequest{}
-	if connectionName != "" {
-		reqParams.SetConnectionname(connectionName)
-	}
-	if connectionKey != nil {
-		reqParams.SetConnectionkey(strconv.FormatInt(*connectionKey, 10))
-	}
-	apiResp, _, err := connectionOps.GetConnectionDetailsDataSource(ctx, reqParams)
+		tflog.Debug(logCtx, "Executing API request to get Okta connection details")
+
+		// Execute API request through interface - use original context for API calls
+		reqParams := openapi.GetConnectionDetailsRequest{}
+		if connectionName != "" {
+			reqParams.SetConnectionname(connectionName)
+		}
+		if connectionKey != nil {
+			reqParams.SetConnectionkey(strconv.FormatInt(*connectionKey, 10))
+		}
+		resp, httpResp, err := connectionOps.GetConnectionDetailsDataSource(ctx, reqParams)
+		if httpResp != nil && httpResp.StatusCode == 401 {
+			return fmt.Errorf("401 unauthorized")
+		}
+		apiResp = resp
+		return err
+	})
+
 	if err != nil {
 		errorCode := oktaDatasourceErrorCodes.ReadFailed()
 		opCtx.LogOperationError(logCtx, "Failed to read Okta connection details", errorCode, err)
@@ -367,6 +385,18 @@ func (d *OktaConnectionsDataSource) Read(ctx context.Context, req datasource.Rea
 	if !state.ConnectionKey.IsNull() {
 		keyValue := state.ConnectionKey.ValueInt64()
 		connectionKey = &keyValue
+	}
+
+	// Validate that at least one identifier is provided
+	if connectionName == "" && connectionKey == nil {
+		errorCode := oktaDatasourceErrorCodes.MissingIdentifier()
+		opCtx.LogOperationError(ctx, "Missing connection identifier", errorCode,
+			fmt.Errorf("either connection_name or connection_key must be provided"))
+		resp.Diagnostics.AddError(
+			errorsutil.GetErrorMessage(errorsutil.ErrMissingIdentifier),
+			fmt.Sprintf("[%s] Either 'connection_name' or 'connection_key' must be provided to look up the Okta connection.", errorCode),
+		)
+		return
 	}
 
 	// Execute API call to get Okta connection details

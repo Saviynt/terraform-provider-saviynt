@@ -12,6 +12,7 @@ package provider
 import (
 	"context"
 	"fmt"
+	"net/http"
 	"os"
 	"terraform-provider-Saviynt/internal/client"
 	"terraform-provider-Saviynt/util"
@@ -20,15 +21,17 @@ import (
 
 	openapi "github.com/saviynt/saviynt-api-go-client/connections"
 
+	"github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
 	"github.com/hashicorp/terraform-plugin-framework/path"
 	"github.com/hashicorp/terraform-plugin-framework/resource"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema"
+	"github.com/hashicorp/terraform-plugin-framework/schema/validator"
 	"github.com/hashicorp/terraform-plugin-framework/types"
 )
 
 // Ensure provider defined types fully satisfy framework interfaces.
-var _ resource.Resource = &githubRestConnectionResource{}
-var _ resource.ResourceWithImportState = &githubRestConnectionResource{}
+var _ resource.Resource = &GithubRestConnectionResource{}
+var _ resource.ResourceWithImportState = &GithubRestConnectionResource{}
 
 // Initialize error codes for GitHub REST Connection operations
 var githubRestErrorCodes = errorsutil.NewConnectorErrorCodes(errorsutil.ConnectorTypeGithubREST)
@@ -37,31 +40,34 @@ type GithubRestConnectorResourceModel struct {
 	BaseConnectorResourceModel
 	ID                      types.String `tfsdk:"id"`
 	ConnectionJSON          types.String `tfsdk:"connection_json"`
+	ConnectionJSONWO        types.String `tfsdk:"connection_json_wo"`
 	ImportAccountEntJSON    types.String `tfsdk:"import_account_ent_json"`
 	Access_Tokens           types.String `tfsdk:"access_tokens"`
+	Access_TokensWO         types.String `tfsdk:"access_tokens_wo"`
 	Organization_List       types.String `tfsdk:"organization_list"`
 	Status_Threshold_Config types.String `tfsdk:"status_threshold_config"`
 }
 
-type githubRestConnectionResource struct {
+type GithubRestConnectionResource struct {
 	client            client.SaviyntClientInterface
 	token             string
+	provider          client.SaviyntProviderInterface
 	connectionFactory client.ConnectionFactoryInterface
 }
 
 func NewGithubRestConnectionResource() resource.Resource {
-	return &githubRestConnectionResource{
+	return &GithubRestConnectionResource{
 		connectionFactory: &client.DefaultConnectionFactory{},
 	}
 }
 
 func NewGithubRestConnectionResourceWithFactory(factory client.ConnectionFactoryInterface) resource.Resource {
-	return &githubRestConnectionResource{
+	return &GithubRestConnectionResource{
 		connectionFactory: factory,
 	}
 }
 
-func (r *githubRestConnectionResource) Metadata(ctx context.Context, req resource.MetadataRequest, resp *resource.MetadataResponse) {
+func (r *GithubRestConnectionResource) Metadata(ctx context.Context, req resource.MetadataRequest, resp *resource.MetadataResponse) {
 	resp.TypeName = "saviynt_github_rest_connection_resource"
 }
 
@@ -73,8 +79,19 @@ func GithubRestConnectorResourceSchema() map[string]schema.Attribute {
 		},
 		"connection_json": schema.StringAttribute{
 			Optional:    true,
+			Sensitive:   true,
+			Description: "Property for ConnectionJSON. For setting connection_json either this field or connection_json_wo need to be set",
+			Validators: []validator.String{
+				stringvalidator.ConflictsWith(path.MatchRoot("connection_json_wo")),
+			},
+		},
+		"connection_json_wo": schema.StringAttribute{
+			Optional:    true,
 			WriteOnly:   true,
-			Description: "Property for ConnectionJSON",
+			Description: "Property for ConnectionJSON (write-only). For setting connection_json either this field or connection_json_wo need to be set",
+			Validators: []validator.String{
+				stringvalidator.ConflictsWith(path.MatchRoot("connection_json")),
+			},
 		},
 		"import_account_ent_json": schema.StringAttribute{
 			Optional:    true,
@@ -83,8 +100,19 @@ func GithubRestConnectorResourceSchema() map[string]schema.Attribute {
 		},
 		"access_tokens": schema.StringAttribute{
 			Optional:    true,
+			Sensitive:   true,
+			Description: "Property for ACCESS_TOKENS. For setting access_tokens either this field or access_tokens_wo need to be set",
+			Validators: []validator.String{
+				stringvalidator.ConflictsWith(path.MatchRoot("access_tokens_wo")),
+			},
+		},
+		"access_tokens_wo": schema.StringAttribute{
+			Optional:    true,
 			WriteOnly:   true,
-			Description: "Property for ACCESS_TOKENS",
+			Description: "Property for ACCESS_TOKENS (write-only). For setting access_tokens either this field or access_tokens_wo need to be set",
+			Validators: []validator.String{
+				stringvalidator.ConflictsWith(path.MatchRoot("access_tokens")),
+			},
 		},
 		"organization_list": schema.StringAttribute{
 			Optional:    true,
@@ -99,14 +127,14 @@ func GithubRestConnectorResourceSchema() map[string]schema.Attribute {
 	}
 }
 
-func (r *githubRestConnectionResource) Schema(ctx context.Context, req resource.SchemaRequest, resp *resource.SchemaResponse) {
+func (r *GithubRestConnectionResource) Schema(ctx context.Context, req resource.SchemaRequest, resp *resource.SchemaResponse) {
 	resp.Schema = schema.Schema{
 		Description: util.GithubRestConnDescription,
 		Attributes:  connectionsutil.MergeResourceAttributes(BaseConnectorResourceSchema(), GithubRestConnectorResourceSchema()),
 	}
 }
 
-func (r *githubRestConnectionResource) Configure(ctx context.Context, req resource.ConfigureRequest, resp *resource.ConfigureResponse) {
+func (r *GithubRestConnectionResource) Configure(ctx context.Context, req resource.ConfigureRequest, resp *resource.ConfigureResponse) {
 	opCtx := errorsutil.CreateOperationContext(errorsutil.ConnectorTypeGithubREST, "configure", "")
 	ctx = opCtx.AddContextToLogger(ctx)
 
@@ -117,33 +145,39 @@ func (r *githubRestConnectionResource) Configure(ctx context.Context, req resour
 		return
 	}
 
-	prov, ok := req.ProviderData.(*saviyntProvider)
+	prov, ok := req.ProviderData.(*SaviyntProvider)
 	if !ok {
 		errorCode := githubRestErrorCodes.ProviderConfig()
 		opCtx.LogOperationError(ctx, "Provider configuration failed", errorCode,
-			fmt.Errorf("expected *saviyntProvider, got different type"),
-			map[string]interface{}{"expected_type": "*saviyntProvider"})
-		resp.Diagnostics.AddError("Unexpected Provider Data", "Expected *saviyntProvider")
+			fmt.Errorf("expected *SaviyntProvider, got different type"),
+			map[string]interface{}{"expected_type": "*SaviyntProvider"})
+		resp.Diagnostics.AddError("Unexpected Provider Data", "Expected *SaviyntProvider")
 		return
 	}
 
 	r.client = &client.SaviyntClientWrapper{Client: prov.client}
 	r.token = prov.accessToken
+	r.provider = &client.SaviyntProviderWrapper{Provider: prov} // Store provider reference for retry logic
 
 	opCtx.LogOperationEnd(ctx, "GitHub REST connection resource configured successfully")
 }
 
 // SetClient sets the client for testing purposes
-func (r *githubRestConnectionResource) SetClient(client client.SaviyntClientInterface) {
+func (r *GithubRestConnectionResource) SetClient(client client.SaviyntClientInterface) {
 	r.client = client
 }
 
 // SetToken sets the token for testing purposes
-func (r *githubRestConnectionResource) SetToken(token string) {
+func (r *GithubRestConnectionResource) SetToken(token string) {
 	r.token = token
 }
 
-func (r *githubRestConnectionResource) Create(ctx context.Context, req resource.CreateRequest, resp *resource.CreateResponse) {
+// SetProvider sets the provider for testing purposes
+func (r *GithubRestConnectionResource) SetProvider(provider client.SaviyntProviderInterface) {
+	r.provider = provider
+}
+
+func (r *GithubRestConnectionResource) Create(ctx context.Context, req resource.CreateRequest, resp *resource.CreateResponse) {
 	var plan, config GithubRestConnectorResourceModel
 
 	opCtx := errorsutil.CreateOperationContext(errorsutil.ConnectorTypeGithubREST, "terraform_create", "")
@@ -200,7 +234,7 @@ func (r *githubRestConnectionResource) Create(ctx context.Context, req resource.
 		map[string]interface{}{"connection_key": plan.ConnectionKey.ValueInt64()})
 }
 
-func (r *githubRestConnectionResource) CreateGithubRestConnection(ctx context.Context, plan *GithubRestConnectorResourceModel, config *GithubRestConnectorResourceModel) (*openapi.CreateOrUpdateResponse, error) {
+func (r *GithubRestConnectionResource) CreateGithubRestConnection(ctx context.Context, plan *GithubRestConnectorResourceModel, config *GithubRestConnectorResourceModel) (*openapi.CreateOrUpdateResponse, error) {
 	connectionName := plan.ConnectionName.ValueString()
 	opCtx := errorsutil.CreateOperationContext(errorsutil.ConnectorTypeGithubREST, "create", connectionName)
 
@@ -209,11 +243,27 @@ func (r *githubRestConnectionResource) CreateGithubRestConnection(ctx context.Co
 
 	opCtx.LogOperationStart(logCtx, "Starting GitHub REST connection creation")
 
-	// Use the factory to create connection operations
-	connectionOps := r.connectionFactory.CreateConnectionOperations(r.client.APIBaseURL(), r.token)
+	// Check if connection already exists with retry logic
+	var existingResource *openapi.GetConnectionDetailsResponse
+	var finalHttpResp *http.Response
 
-	// Check if connection already exists
-	existingResource, _, _ := connectionOps.GetConnectionDetails(ctx, connectionName)
+	err := r.provider.AuthenticatedAPICallWithRetry(ctx, "get_connection_details_idempotency", func(token string) error {
+		connectionOps := r.connectionFactory.CreateConnectionOperations(r.client.APIBaseURL(), token)
+		resp, httpResp, err := connectionOps.GetConnectionDetails(ctx, connectionName)
+		if httpResp != nil && httpResp.StatusCode == 401 {
+			return fmt.Errorf("401 unauthorized")
+		}
+		existingResource = resp
+		finalHttpResp = httpResp // Update on every call including retries
+		return err
+	})
+
+	if err != nil && finalHttpResp != nil && finalHttpResp.StatusCode != 412 {
+		errorCode := githubRestErrorCodes.ReadFailed()
+		opCtx.LogOperationError(logCtx, "Failed to check existing connection", errorCode, err)
+		return nil, errorsutil.CreateStandardError(errorsutil.ConnectorTypeGithubREST, errorCode, "create", connectionName, err)
+	}
+
 	if existingResource != nil &&
 		existingResource.GithubRESTConnectionResponse != nil &&
 		existingResource.GithubRESTConnectionResponse.Errorcode != nil &&
@@ -230,7 +280,19 @@ func (r *githubRestConnectionResource) CreateGithubRestConnection(ctx context.Co
 		GithubRESTConnector: &githubRestConn,
 	}
 
-	apiResp, _, err := connectionOps.CreateOrUpdateConnection(ctx, githubRestConnRequest)
+	// Execute create operation with retry logic
+	var apiResp *openapi.CreateOrUpdateResponse
+
+	err = r.provider.AuthenticatedAPICallWithRetry(ctx, "create_githubrest_connection", func(token string) error {
+		connectionOps := r.connectionFactory.CreateConnectionOperations(r.client.APIBaseURL(), token)
+		resp, httpResp, err := connectionOps.CreateOrUpdateConnection(ctx, githubRestConnRequest)
+		if httpResp != nil && httpResp.StatusCode == 401 {
+			return fmt.Errorf("401 unauthorized")
+		}
+		apiResp = resp
+		return err
+	})
+
 	if err != nil {
 		errorCode := githubRestErrorCodes.CreateFailed()
 		opCtx.LogOperationError(ctx, "Failed to create GitHub REST connection", errorCode, err)
@@ -238,7 +300,7 @@ func (r *githubRestConnectionResource) CreateGithubRestConnection(ctx context.Co
 	}
 
 	// Check for API business logic errors
-	if apiResp != nil && *apiResp.ErrorCode != "0" {
+	if apiResp != nil && apiResp.ErrorCode != nil && *apiResp.ErrorCode != "0" {
 		apiErr := fmt.Errorf("API returned error code %s: %s", *apiResp.ErrorCode, errorsutil.SanitizeMessage(apiResp.Msg))
 		errorCode := githubRestErrorCodes.APIError()
 		opCtx.LogOperationError(ctx, "GitHub REST connection creation failed with API error", errorCode, apiErr,
@@ -260,7 +322,21 @@ func (r *githubRestConnectionResource) CreateGithubRestConnection(ctx context.Co
 	return apiResp, nil
 }
 
-func (r *githubRestConnectionResource) BuildGithubRestConnector(plan *GithubRestConnectorResourceModel, config *GithubRestConnectorResourceModel) openapi.GithubRESTConnector {
+func (r *GithubRestConnectionResource) BuildGithubRestConnector(plan *GithubRestConnectorResourceModel, config *GithubRestConnectorResourceModel) openapi.GithubRESTConnector {
+	var connectionJson string
+	if !config.ConnectionJSON.IsNull() && !config.ConnectionJSON.IsUnknown() {
+		connectionJson = config.ConnectionJSON.ValueString()
+	} else if !config.ConnectionJSONWO.IsNull() && !config.ConnectionJSONWO.IsUnknown() {
+		connectionJson = config.ConnectionJSONWO.ValueString()
+	}
+
+	var accessTokens string
+	if !config.Access_Tokens.IsNull() && !config.Access_Tokens.IsUnknown() {
+		accessTokens = config.Access_Tokens.ValueString()
+	} else if !config.Access_TokensWO.IsNull() && !config.Access_TokensWO.IsUnknown() {
+		accessTokens = config.Access_TokensWO.ValueString()
+	}
+
 	githubRestConn := openapi.GithubRESTConnector{
 		BaseConnector: openapi.BaseConnector{
 			Connectiontype:  "GithubRest",
@@ -269,9 +345,9 @@ func (r *githubRestConnectionResource) BuildGithubRestConnector(plan *GithubRest
 			Defaultsavroles: util.StringPointerOrEmpty(plan.DefaultSavRoles),
 			EmailTemplate:   util.StringPointerOrEmpty(plan.EmailTemplate),
 		},
-		ConnectionJSON:          util.StringPointerOrEmpty(config.ConnectionJSON),
+		ConnectionJSON:          util.StringPointerOrEmpty(types.StringValue(connectionJson)),
 		ImportAccountEntJSON:    util.StringPointerOrEmpty(plan.ImportAccountEntJSON),
-		ACCESS_TOKENS:           util.StringPointerOrEmpty(config.Access_Tokens),
+		ACCESS_TOKENS:           util.StringPointerOrEmpty(types.StringValue(accessTokens)),
 		ORGANIZATION_LIST:       util.StringPointerOrEmpty(plan.Organization_List),
 		STATUS_THRESHOLD_CONFIG: util.StringPointerOrEmpty(plan.Status_Threshold_Config),
 	}
@@ -285,7 +361,7 @@ func (r *githubRestConnectionResource) BuildGithubRestConnector(plan *GithubRest
 	return githubRestConn
 }
 
-func (r *githubRestConnectionResource) UpdateModelFromCreateResponse(plan *GithubRestConnectorResourceModel, apiResp *openapi.CreateOrUpdateResponse) {
+func (r *GithubRestConnectionResource) UpdateModelFromCreateResponse(plan *GithubRestConnectorResourceModel, apiResp *openapi.CreateOrUpdateResponse) {
 	if apiResp != nil && apiResp.ConnectionKey != nil {
 		plan.ID = types.StringValue(fmt.Sprintf("%d", *apiResp.ConnectionKey))
 		plan.ConnectionKey = types.Int64Value(int64(*apiResp.ConnectionKey))
@@ -305,7 +381,7 @@ func (r *githubRestConnectionResource) UpdateModelFromCreateResponse(plan *Githu
 	}
 }
 
-func (r *githubRestConnectionResource) Read(ctx context.Context, req resource.ReadRequest, resp *resource.ReadResponse) {
+func (r *GithubRestConnectionResource) Read(ctx context.Context, req resource.ReadRequest, resp *resource.ReadResponse) {
 	var state GithubRestConnectorResourceModel
 
 	opCtx := errorsutil.CreateOperationContext(errorsutil.ConnectorTypeGithubREST, "terraform_read", "")
@@ -343,6 +419,14 @@ func (r *githubRestConnectionResource) Read(ctx context.Context, req resource.Re
 
 	r.UpdateModelFromReadResponse(&state, apiResp)
 
+	apiMessage := util.SafeDeref(apiResp.GithubRESTConnectionResponse.Msg)
+	if apiMessage == "success" {
+		state.Msg = types.StringValue("Connection Read Successful")
+	} else {
+		state.Msg = types.StringValue(apiMessage)
+	}
+	state.ErrorCode = util.Int32PtrToTFString(apiResp.GithubRESTConnectionResponse.Errorcode)
+
 	stateDiagnostics := resp.State.Set(ctx, &state)
 	resp.Diagnostics.Append(stateDiagnostics...)
 	if resp.Diagnostics.HasError() {
@@ -359,7 +443,7 @@ func (r *githubRestConnectionResource) Read(ctx context.Context, req resource.Re
 	opCtx.LogOperationEnd(ctx, "GitHub REST connection resource read completed successfully")
 }
 
-func (r *githubRestConnectionResource) ReadGithubRestConnection(ctx context.Context, connectionName string) (*openapi.GetConnectionDetailsResponse, error) {
+func (r *GithubRestConnectionResource) ReadGithubRestConnection(ctx context.Context, connectionName string) (*openapi.GetConnectionDetailsResponse, error) {
 	opCtx := errorsutil.CreateOperationContext(errorsutil.ConnectorTypeGithubREST, "read", connectionName)
 
 	// Create logging context (separate from API context)
@@ -367,18 +451,33 @@ func (r *githubRestConnectionResource) ReadGithubRestConnection(ctx context.Cont
 
 	opCtx.LogOperationStart(logCtx, "Starting GitHub REST connection read operation")
 
-	// Use the factory to create connection operations
-	connectionOps := r.connectionFactory.CreateConnectionOperations(r.client.APIBaseURL(), r.token)
+	// Execute read operation with retry logic
+	var apiResp *openapi.GetConnectionDetailsResponse
 
-	apiResp, _, err := connectionOps.GetConnectionDetails(ctx, connectionName)
+	err := r.provider.AuthenticatedAPICallWithRetry(ctx, "read_githubrest_connection", func(token string) error {
+		connectionOps := r.connectionFactory.CreateConnectionOperations(r.client.APIBaseURL(), token)
+		resp, httpResp, err := connectionOps.GetConnectionDetails(ctx, connectionName)
+		if httpResp != nil && httpResp.StatusCode == 401 {
+			return fmt.Errorf("401 unauthorized")
+		}
+		apiResp = resp
+		return err
+	})
+
 	if err != nil {
 		errorCode := githubRestErrorCodes.ReadFailed()
 		opCtx.LogOperationError(logCtx, "Failed to read GitHub REST connection", errorCode, err)
 		return nil, errorsutil.CreateStandardError(errorsutil.ConnectorTypeGithubREST, errorCode, "read", connectionName, err)
 	}
 
+	if err := r.ValidateGithubRestConnectionResponse(apiResp); err != nil {
+		errorCode := githubRestErrorCodes.APIError()
+		opCtx.LogOperationError(ctx, "Invalid connection type for GithubREST datasource", errorCode, err)
+		return nil, fmt.Errorf("[%s] Unable to verify connection type for connection %q. The provider could not determine the type of this connection. Please ensure the connection name is correct and belongs to a supported connector type", errorCode, connectionName)
+	}
+
 	// Check for API business logic errors
-	if apiResp != nil && apiResp.GithubRESTConnectionResponse != nil && *apiResp.GithubRESTConnectionResponse.Errorcode != 0 {
+	if apiResp != nil && apiResp.GithubRESTConnectionResponse != nil && apiResp.GithubRESTConnectionResponse.Errorcode != nil && *apiResp.GithubRESTConnectionResponse.Errorcode != 0 {
 		apiErr := fmt.Errorf("API returned error code %d: %s", *apiResp.GithubRESTConnectionResponse.Errorcode, errorsutil.SanitizeMessage(apiResp.GithubRESTConnectionResponse.Msg))
 		errorCode := githubRestErrorCodes.APIError()
 		opCtx.LogOperationError(ctx, "GitHub REST connection read failed with API error", errorCode, apiErr,
@@ -400,7 +499,7 @@ func (r *githubRestConnectionResource) ReadGithubRestConnection(ctx context.Cont
 	return apiResp, nil
 }
 
-func (r *githubRestConnectionResource) UpdateModelFromReadResponse(state *GithubRestConnectorResourceModel, apiResp *openapi.GetConnectionDetailsResponse) {
+func (r *GithubRestConnectionResource) UpdateModelFromReadResponse(state *GithubRestConnectorResourceModel, apiResp *openapi.GetConnectionDetailsResponse) {
 	state.ConnectionKey = types.Int64Value(int64(*apiResp.GithubRESTConnectionResponse.Connectionkey))
 	state.ID = types.StringValue(fmt.Sprintf("%d", *apiResp.GithubRESTConnectionResponse.Connectionkey))
 
@@ -412,17 +511,16 @@ func (r *githubRestConnectionResource) UpdateModelFromReadResponse(state *Github
 	state.ImportAccountEntJSON = util.SafeStringDatasource(apiResp.GithubRESTConnectionResponse.Connectionattributes.ImportAccountEntJSON)
 	state.Organization_List = util.SafeStringDatasource(apiResp.GithubRESTConnectionResponse.Connectionattributes.ORGANIZATION_LIST)
 	state.Status_Threshold_Config = util.SafeStringDatasource(apiResp.GithubRESTConnectionResponse.Connectionattributes.STATUS_THRESHOLD_CONFIG)
-
-	apiMessage := util.SafeDeref(apiResp.GithubRESTConnectionResponse.Msg)
-	if apiMessage == "success" {
-		state.Msg = types.StringValue("Connection Successful")
-	} else {
-		state.Msg = types.StringValue(apiMessage)
-	}
-	state.ErrorCode = util.Int32PtrToTFString(apiResp.GithubRESTConnectionResponse.Errorcode)
 }
 
-func (r *githubRestConnectionResource) Update(ctx context.Context, req resource.UpdateRequest, resp *resource.UpdateResponse) {
+func (r *GithubRestConnectionResource) ValidateGithubRestConnectionResponse(apiResp *openapi.GetConnectionDetailsResponse) error {
+	if apiResp != nil && apiResp.GithubRESTConnectionResponse == nil {
+		return fmt.Errorf("verify the connection type - GithubREST connection response is nil")
+	}
+	return nil
+}
+
+func (r *GithubRestConnectionResource) Update(ctx context.Context, req resource.UpdateRequest, resp *resource.UpdateResponse) {
 	var plan, state, config GithubRestConnectorResourceModel
 
 	opCtx := errorsutil.CreateOperationContext(errorsutil.ConnectorTypeGithubREST, "terraform_update", "")
@@ -491,7 +589,7 @@ func (r *githubRestConnectionResource) Update(ctx context.Context, req resource.
 	ctx = opCtx.AddContextToLogger(ctx)
 
 	// Use interface pattern instead of direct API client creation
-	_, err := r.UpdateGithubRestConnection(ctx, &plan, &config)
+	updateResp, err := r.UpdateGithubRestConnection(ctx, &plan, &config)
 	if err != nil {
 		opCtx.LogOperationError(ctx, "GitHub REST connection update failed", "", err)
 		resp.Diagnostics.AddError(
@@ -514,6 +612,10 @@ func (r *githubRestConnectionResource) Update(ctx context.Context, req resource.
 
 	r.UpdateModelFromReadResponse(&plan, getResp)
 
+	apiMessage := util.SafeDeref(updateResp.Msg)
+	plan.Msg = types.StringValue(apiMessage)
+	plan.ErrorCode = types.StringValue(*updateResp.ErrorCode)
+
 	stateUpdateDiagnostics := resp.State.Set(ctx, plan)
 	resp.Diagnostics.Append(stateUpdateDiagnostics...)
 	if resp.Diagnostics.HasError() {
@@ -531,7 +633,7 @@ func (r *githubRestConnectionResource) Update(ctx context.Context, req resource.
 		map[string]interface{}{"connection_key": plan.ConnectionKey.ValueInt64()})
 }
 
-func (r *githubRestConnectionResource) UpdateGithubRestConnection(ctx context.Context, plan *GithubRestConnectorResourceModel, config *GithubRestConnectorResourceModel) (*openapi.CreateOrUpdateResponse, error) {
+func (r *GithubRestConnectionResource) UpdateGithubRestConnection(ctx context.Context, plan *GithubRestConnectorResourceModel, config *GithubRestConnectorResourceModel) (*openapi.CreateOrUpdateResponse, error) {
 	connectionName := plan.ConnectionName.ValueString()
 	opCtx := errorsutil.CreateOperationContext(errorsutil.ConnectorTypeGithubREST, "update", connectionName)
 
@@ -540,23 +642,25 @@ func (r *githubRestConnectionResource) UpdateGithubRestConnection(ctx context.Co
 
 	opCtx.LogOperationStart(logCtx, "Starting GitHub REST connection update")
 
-	// Use the factory to create connection operations
-	connectionOps := r.connectionFactory.CreateConnectionOperations(r.client.APIBaseURL(), r.token)
-
 	githubRestConn := r.BuildGithubRestConnector(plan, config)
-
-	if plan.VaultConnection.ValueString() == "" {
-		emptyStr := ""
-		githubRestConn.BaseConnector.VaultConnection = &emptyStr
-		githubRestConn.BaseConnector.VaultConfiguration = &emptyStr
-		githubRestConn.BaseConnector.Saveinvault = &emptyStr
-	}
 
 	githubRestConnRequest := openapi.CreateOrUpdateRequest{
 		GithubRESTConnector: &githubRestConn,
 	}
 
-	apiResp, _, err := connectionOps.CreateOrUpdateConnection(ctx, githubRestConnRequest)
+	// Execute update operation with retry logic
+	var apiResp *openapi.CreateOrUpdateResponse
+
+	err := r.provider.AuthenticatedAPICallWithRetry(ctx, "update_githubrest_connection", func(token string) error {
+		connectionOps := r.connectionFactory.CreateConnectionOperations(r.client.APIBaseURL(), token)
+		resp, httpResp, err := connectionOps.CreateOrUpdateConnection(ctx, githubRestConnRequest)
+		if httpResp != nil && httpResp.StatusCode == 401 {
+			return fmt.Errorf("401 unauthorized")
+		}
+		apiResp = resp
+		return err
+	})
+
 	if err != nil {
 		errorCode := githubRestErrorCodes.UpdateFailed()
 		opCtx.LogOperationError(logCtx, "Failed to update GitHub REST connection", errorCode, err)
@@ -564,7 +668,7 @@ func (r *githubRestConnectionResource) UpdateGithubRestConnection(ctx context.Co
 	}
 
 	// Check for API business logic errors
-	if apiResp != nil && *apiResp.ErrorCode != "0" {
+	if apiResp != nil && apiResp.ErrorCode != nil && *apiResp.ErrorCode != "0" {
 		apiErr := fmt.Errorf("API returned error code %s: %s", *apiResp.ErrorCode, errorsutil.SanitizeMessage(apiResp.Msg))
 		errorCode := githubRestErrorCodes.APIError()
 		opCtx.LogOperationError(logCtx, "GitHub REST connection update failed with API error", errorCode, apiErr,
@@ -586,7 +690,7 @@ func (r *githubRestConnectionResource) UpdateGithubRestConnection(ctx context.Co
 	return apiResp, nil
 }
 
-func (r *githubRestConnectionResource) Delete(ctx context.Context, req resource.DeleteRequest, resp *resource.DeleteResponse) {
+func (r *GithubRestConnectionResource) Delete(ctx context.Context, req resource.DeleteRequest, resp *resource.DeleteResponse) {
 	// resp.State.RemoveResource(ctx)
 	if os.Getenv("TF_ACC") == "1" {
 		resp.State.RemoveResource(ctx)
@@ -598,7 +702,7 @@ func (r *githubRestConnectionResource) Delete(ctx context.Context, req resource.
 	)
 }
 
-func (r *githubRestConnectionResource) ImportState(ctx context.Context, req resource.ImportStateRequest, resp *resource.ImportStateResponse) {
+func (r *GithubRestConnectionResource) ImportState(ctx context.Context, req resource.ImportStateRequest, resp *resource.ImportStateResponse) {
 	// Importing an GithubRest connection resource requires the connection name
 	connectionName := req.ID
 	opCtx := errorsutil.CreateOperationContext(errorsutil.ConnectorTypeGithubREST, "terraform_import", connectionName)

@@ -20,9 +20,9 @@ var _ MappedNullable = &UpdateEntitlementPayload{}
 // UpdateEntitlementPayload struct for UpdateEntitlementPayload
 type UpdateEntitlementPayload struct {
 	EntitlementValue *string `json:"entitlement_value,omitempty"`
-	EntitlementType *string `json:"entitlementType,omitempty"`
-	Endpoint *string `json:"endpoint,omitempty"`
-	UpdateType *string `json:"updateType,omitempty"`
+	EntitlementType  *string `json:"entitlementType,omitempty"`
+	Endpoint         *string `json:"endpoint,omitempty"`
+	UpdateType       *string `json:"updateType,omitempty"`
 }
 
 // NewUpdateEntitlementPayload instantiates a new UpdateEntitlementPayload object
@@ -171,7 +171,7 @@ func (o *UpdateEntitlementPayload) SetUpdateType(v string) {
 }
 
 func (o UpdateEntitlementPayload) MarshalJSON() ([]byte, error) {
-	toSerialize,err := o.ToMap()
+	toSerialize, err := o.ToMap()
 	if err != nil {
 		return []byte{}, err
 	}
@@ -230,5 +230,3 @@ func (v *NullableUpdateEntitlementPayload) UnmarshalJSON(src []byte) error {
 	v.isSet = true
 	return json.Unmarshal(src, &v.value)
 }
-
-

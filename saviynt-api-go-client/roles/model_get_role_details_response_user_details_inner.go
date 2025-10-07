@@ -19,7 +19,7 @@ import (
 // GetRoleDetailsResponseUserDetailsInner - struct for GetRoleDetailsResponseUserDetailsInner
 type GetRoleDetailsResponseUserDetailsInner struct {
 	GetUserDetailsResponse *GetUserDetailsResponse
-	String *string
+	String                 *string
 }
 
 // GetUserDetailsResponseAsGetRoleDetailsResponseUserDetailsInner is a convenience function that returns GetUserDetailsResponse wrapped in GetRoleDetailsResponseUserDetailsInner
@@ -35,7 +35,6 @@ func StringAsGetRoleDetailsResponseUserDetailsInner(v *string) GetRoleDetailsRes
 		String: v,
 	}
 }
-
 
 // Unmarshal JSON data into one of the pointers in the struct
 func (dst *GetRoleDetailsResponseUserDetailsInner) UnmarshalJSON(data []byte) error {
@@ -102,7 +101,7 @@ func (src GetRoleDetailsResponseUserDetailsInner) MarshalJSON() ([]byte, error) 
 }
 
 // Get the actual instance
-func (obj *GetRoleDetailsResponseUserDetailsInner) GetActualInstance() (interface{}) {
+func (obj *GetRoleDetailsResponseUserDetailsInner) GetActualInstance() interface{} {
 	if obj == nil {
 		return nil
 	}
@@ -119,7 +118,7 @@ func (obj *GetRoleDetailsResponseUserDetailsInner) GetActualInstance() (interfac
 }
 
 // Get the actual instance value
-func (obj GetRoleDetailsResponseUserDetailsInner) GetActualInstanceValue() (interface{}) {
+func (obj GetRoleDetailsResponseUserDetailsInner) GetActualInstanceValue() interface{} {
 	if obj.GetUserDetailsResponse != nil {
 		return *obj.GetUserDetailsResponse
 	}
@@ -167,5 +166,3 @@ func (v *NullableGetRoleDetailsResponseUserDetailsInner) UnmarshalJSON(src []byt
 	v.isSet = true
 	return json.Unmarshal(src, &v.value)
 }
-
-

@@ -19,57 +19,57 @@ var _ MappedNullable = &ADSIConnectionAttributes{}
 
 // ADSIConnectionAttributes struct for ADSIConnectionAttributes
 type ADSIConnectionAttributes struct {
-	ImportNestedMembership *string `json:"importNestedMembership,omitempty"`
-	PASSWDPOLICYJSON *string `json:"PASSWDPOLICYJSON,omitempty"`
-	CREATEACCOUNTJSON *string `json:"CREATEACCOUNTJSON,omitempty"`
-	ENDPOINTS_FILTER *string `json:"ENDPOINTS_FILTER,omitempty"`
-	DISABLEACCOUNTJSON *string `json:"DISABLEACCOUNTJSON,omitempty"`
-	REMOVEACCESSENTITLEMENTJSON *string `json:"REMOVEACCESSENTITLEMENTJSON,omitempty"`
-	GroupSearchBaseDN *string `json:"groupSearchBaseDN,omitempty"`
-	ConnectionType *string `json:"connectionType,omitempty"`
-	STATUSKEYJSON *string `json:"STATUSKEYJSON,omitempty"`
-	DEFAULT_USER_ROLE *string `json:"DEFAULT_USER_ROLE,omitempty"`
-	FOREST_DETAILS *string `json:"FOREST_DETAILS,omitempty"`
-	USERNAME *string `json:"USERNAME,omitempty"`
-	UPDATESERVICEACCOUNTJSON *string `json:"UPDATESERVICEACCOUNTJSON,omitempty"`
-	ADDACCESSJSON *string `json:"ADDACCESSJSON,omitempty"`
-	CREATESERVICEACCOUNTJSON *string `json:"CREATESERVICEACCOUNTJSON,omitempty"`
-	ACCOUNTNAMERULE *string `json:"ACCOUNTNAMERULE,omitempty"`
-	CONNECTION_URL *string `json:"CONNECTION_URL,omitempty"`
-	IsTimeoutSupported *bool `json:"isTimeoutSupported,omitempty"`
-	CreateUpdateMappings *string `json:"createUpdateMappings,omitempty"`
-	ACCOUNT_ATTRIBUTE *string `json:"ACCOUNT_ATTRIBUTE,omitempty"`
-	PASSWORD *string `json:"PASSWORD,omitempty"`
-	PAM_CONFIG *string `json:"PAM_CONFIG,omitempty"`
-	PAGE_SIZE *string `json:"PAGE_SIZE,omitempty"`
-	SEARCHFILTER *string `json:"SEARCHFILTER,omitempty"`
-	UPDATEGROUPJSON *string `json:"UPDATEGROUPJSON,omitempty"`
-	CREATEGROUPJSON *string `json:"CREATEGROUPJSON,omitempty"`
-	ENTITLEMENT_ATTRIBUTE *string `json:"ENTITLEMENT_ATTRIBUTE,omitempty"`
-	CHECKFORUNIQUE *string `json:"CHECKFORUNIQUE,omitempty"`
-	REMOVESERVICEACCOUNTJSON *string `json:"REMOVESERVICEACCOUNTJSON,omitempty"`
-	ConnectionTimeoutConfig *ConnectionTimeoutConfig `json:"connectionTimeoutConfig,omitempty"`
-	UPDATEUSERJSON *string `json:"UPDATEUSERJSON,omitempty"`
-	URL *string `json:"URL,omitempty"`
-	MOVEACCOUNTJSON *string `json:"MOVEACCOUNTJSON,omitempty"`
-	CUSTOMCONFIGJSON *string `json:"CUSTOMCONFIGJSON,omitempty"`
-	STATUS_THRESHOLD_CONFIG *string `json:"STATUS_THRESHOLD_CONFIG,omitempty"`
-	GroupImportMapping *string `json:"groupImportMapping,omitempty"`
-	PROVISIONING_URL *string `json:"PROVISIONING_URL,omitempty"`
-	REMOVEGROUPJSON *string `json:"REMOVEGROUPJSON,omitempty"`
-	REMOVEACCESSJSON *string `json:"REMOVEACCESSJSON,omitempty"`
-	IMPORTDATACOOKIES *string `json:"IMPORTDATACOOKIES,omitempty"`
-	RESETANDCHANGEPASSWRDJSON *string `json:"RESETANDCHANGEPASSWRDJSON,omitempty"`
-	USER_ATTRIBUTE *string `json:"USER_ATTRIBUTE,omitempty"`
-	ADDACCESSENTITLEMENTJSON *string `json:"ADDACCESSENTITLEMENTJSON,omitempty"`
-	MODIFYUSERDATAJSON *string `json:"MODIFYUSERDATAJSON,omitempty"`
-	IsTimeoutConfigValidated *bool `json:"isTimeoutConfigValidated,omitempty"`
-	ENABLEGROUPMANAGEMENT *string `json:"ENABLEGROUPMANAGEMENT,omitempty"`
-	ENABLEACCOUNTJSON *string `json:"ENABLEACCOUNTJSON,omitempty"`
-	FORESTLIST *string `json:"FORESTLIST,omitempty"`
-	OBJECTFILTER *string `json:"OBJECTFILTER,omitempty"`
-	UPDATEACCOUNTJSON *string `json:"UPDATEACCOUNTJSON,omitempty"`
-	REMOVEACCOUNTJSON *string `json:"REMOVEACCOUNTJSON,omitempty"`
+	ImportNestedMembership      *string                  `json:"importNestedMembership,omitempty"`
+	PASSWDPOLICYJSON            *string                  `json:"PASSWDPOLICYJSON,omitempty"`
+	CREATEACCOUNTJSON           *string                  `json:"CREATEACCOUNTJSON,omitempty"`
+	ENDPOINTS_FILTER            *string                  `json:"ENDPOINTS_FILTER,omitempty"`
+	DISABLEACCOUNTJSON          *string                  `json:"DISABLEACCOUNTJSON,omitempty"`
+	REMOVEACCESSENTITLEMENTJSON *string                  `json:"REMOVEACCESSENTITLEMENTJSON,omitempty"`
+	GroupSearchBaseDN           *string                  `json:"groupSearchBaseDN,omitempty"`
+	ConnectionType              *string                  `json:"connectionType,omitempty"`
+	STATUSKEYJSON               *string                  `json:"STATUSKEYJSON,omitempty"`
+	DEFAULT_USER_ROLE           *string                  `json:"DEFAULT_USER_ROLE,omitempty"`
+	FOREST_DETAILS              *string                  `json:"FOREST_DETAILS,omitempty"`
+	USERNAME                    *string                  `json:"USERNAME,omitempty"`
+	UPDATESERVICEACCOUNTJSON    *string                  `json:"UPDATESERVICEACCOUNTJSON,omitempty"`
+	ADDACCESSJSON               *string                  `json:"ADDACCESSJSON,omitempty"`
+	CREATESERVICEACCOUNTJSON    *string                  `json:"CREATESERVICEACCOUNTJSON,omitempty"`
+	ACCOUNTNAMERULE             *string                  `json:"ACCOUNTNAMERULE,omitempty"`
+	CONNECTION_URL              *string                  `json:"CONNECTION_URL,omitempty"`
+	IsTimeoutSupported          *bool                    `json:"isTimeoutSupported,omitempty"`
+	CreateUpdateMappings        *string                  `json:"createUpdateMappings,omitempty"`
+	ACCOUNT_ATTRIBUTE           *string                  `json:"ACCOUNT_ATTRIBUTE,omitempty"`
+	PASSWORD                    *string                  `json:"PASSWORD,omitempty"`
+	PAM_CONFIG                  *string                  `json:"PAM_CONFIG,omitempty"`
+	PAGE_SIZE                   *string                  `json:"PAGE_SIZE,omitempty"`
+	SEARCHFILTER                *string                  `json:"SEARCHFILTER,omitempty"`
+	UPDATEGROUPJSON             *string                  `json:"UPDATEGROUPJSON,omitempty"`
+	CREATEGROUPJSON             *string                  `json:"CREATEGROUPJSON,omitempty"`
+	ENTITLEMENT_ATTRIBUTE       *string                  `json:"ENTITLEMENT_ATTRIBUTE,omitempty"`
+	CHECKFORUNIQUE              *string                  `json:"CHECKFORUNIQUE,omitempty"`
+	REMOVESERVICEACCOUNTJSON    *string                  `json:"REMOVESERVICEACCOUNTJSON,omitempty"`
+	ConnectionTimeoutConfig     *ConnectionTimeoutConfig `json:"connectionTimeoutConfig,omitempty"`
+	UPDATEUSERJSON              *string                  `json:"UPDATEUSERJSON,omitempty"`
+	URL                         *string                  `json:"URL,omitempty"`
+	MOVEACCOUNTJSON             *string                  `json:"MOVEACCOUNTJSON,omitempty"`
+	CUSTOMCONFIGJSON            *string                  `json:"CUSTOMCONFIGJSON,omitempty"`
+	STATUS_THRESHOLD_CONFIG     *string                  `json:"STATUS_THRESHOLD_CONFIG,omitempty"`
+	GroupImportMapping          *string                  `json:"groupImportMapping,omitempty"`
+	PROVISIONING_URL            *string                  `json:"PROVISIONING_URL,omitempty"`
+	REMOVEGROUPJSON             *string                  `json:"REMOVEGROUPJSON,omitempty"`
+	REMOVEACCESSJSON            *string                  `json:"REMOVEACCESSJSON,omitempty"`
+	IMPORTDATACOOKIES           *string                  `json:"IMPORTDATACOOKIES,omitempty"`
+	RESETANDCHANGEPASSWRDJSON   *string                  `json:"RESETANDCHANGEPASSWRDJSON,omitempty"`
+	USER_ATTRIBUTE              *string                  `json:"USER_ATTRIBUTE,omitempty"`
+	ADDACCESSENTITLEMENTJSON    *string                  `json:"ADDACCESSENTITLEMENTJSON,omitempty"`
+	MODIFYUSERDATAJSON          *string                  `json:"MODIFYUSERDATAJSON,omitempty"`
+	IsTimeoutConfigValidated    *bool                    `json:"isTimeoutConfigValidated,omitempty"`
+	ENABLEGROUPMANAGEMENT       *string                  `json:"ENABLEGROUPMANAGEMENT,omitempty"`
+	ENABLEACCOUNTJSON           *string                  `json:"ENABLEACCOUNTJSON,omitempty"`
+	FORESTLIST                  *string                  `json:"FORESTLIST,omitempty"`
+	OBJECTFILTER                *string                  `json:"OBJECTFILTER,omitempty"`
+	UPDATEACCOUNTJSON           *string                  `json:"UPDATEACCOUNTJSON,omitempty"`
+	REMOVEACCOUNTJSON           *string                  `json:"REMOVEACCOUNTJSON,omitempty"`
 }
 
 // NewADSIConnectionAttributes instantiates a new ADSIConnectionAttributes object
@@ -1722,7 +1722,7 @@ func (o *ADSIConnectionAttributes) SetREMOVEACCOUNTJSON(v string) {
 }
 
 func (o ADSIConnectionAttributes) MarshalJSON() ([]byte, error) {
-	toSerialize,err := o.ToMap()
+	toSerialize, err := o.ToMap()
 	if err != nil {
 		return []byte{}, err
 	}
@@ -1922,5 +1922,3 @@ func (v *NullableADSIConnectionAttributes) UnmarshalJSON(src []byte) error {
 	v.isSet = true
 	return json.Unmarshal(src, &v.value)
 }
-
-

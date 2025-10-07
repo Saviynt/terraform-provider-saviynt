@@ -12,15 +12,18 @@ package provider
 import (
 	"context"
 	"fmt"
+	"net/http"
 	"os"
 	"terraform-provider-Saviynt/internal/client"
 	"terraform-provider-Saviynt/util"
 	connectionsutil "terraform-provider-Saviynt/util/connectionsutil"
 	"terraform-provider-Saviynt/util/errorsutil"
 
+	"github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
 	"github.com/hashicorp/terraform-plugin-framework/path"
 	"github.com/hashicorp/terraform-plugin-framework/resource"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema"
+	"github.com/hashicorp/terraform-plugin-framework/schema/validator"
 	"github.com/hashicorp/terraform-plugin-framework/types"
 	"github.com/hashicorp/terraform-plugin-log/tflog"
 	openapi "github.com/saviynt/saviynt-api-go-client/connections"
@@ -38,7 +41,9 @@ type SalesforceConnectorResourceModel struct {
 	ID                     types.String `tfsdk:"id"`
 	ClientId               types.String `tfsdk:"client_id"`
 	ClientSecret           types.String `tfsdk:"client_secret"`
+	ClientSecretWO         types.String `tfsdk:"client_secret_wo"`
 	RefreshToken           types.String `tfsdk:"refresh_token"`
+	RefreshTokenWO         types.String `tfsdk:"refresh_token_wo"`
 	RedirectUri            types.String `tfsdk:"redirect_uri"`
 	InstanceUrl            types.String `tfsdk:"instance_url"`
 	ObjectToBeImported     types.String `tfsdk:"object_to_be_imported"`
@@ -57,6 +62,7 @@ type SalesforceConnectorResourceModel struct {
 type SalesforceConnectionResource struct {
 	client            client.SaviyntClientInterface
 	token             string
+	provider          client.SaviyntProviderInterface
 	connectionFactory client.ConnectionFactoryInterface
 }
 
@@ -84,18 +90,40 @@ func SalesforceConnectorResourceSchema() map[string]schema.Attribute {
 		},
 		"client_id": schema.StringAttribute{
 			Optional:    true,
-			WriteOnly:   true,
+			Computed:    true,
 			Description: "The OAuth client ID for Salesforce.",
 		},
 		"client_secret": schema.StringAttribute{
 			Optional:    true,
+			Sensitive:   true,
+			Description: "The OAuth client secret for Salesforce. Either this field or the client_secret_wo field must be provided to configure the client_secret attribute.",
+			Validators: []validator.String{
+				stringvalidator.ConflictsWith(path.MatchRoot("client_secret_wo")),
+			},
+		},
+		"client_secret_wo": schema.StringAttribute{
+			Optional:    true,
 			WriteOnly:   true,
-			Description: "The OAuth client secret for Salesforce.",
+			Description: "The OAuth client secret for Salesforce (write-only). Either this field or the client_secret field must be provided to configure the client_secret attribute.",
+			Validators: []validator.String{
+				stringvalidator.ConflictsWith(path.MatchRoot("client_secret")),
+			},
 		},
 		"refresh_token": schema.StringAttribute{
 			Optional:    true,
+			Sensitive:   true,
+			Description: "The OAuth refresh token used to get access tokens from Salesforce. Either this field or the refresh_token_wo field must be provided to configure the refresh_token attribute.",
+			Validators: []validator.String{
+				stringvalidator.ConflictsWith(path.MatchRoot("refresh_token_wo")),
+			},
+		},
+		"refresh_token_wo": schema.StringAttribute{
+			Optional:    true,
 			WriteOnly:   true,
-			Description: "The OAuth refresh token used to get access tokens from Salesforce.",
+			Description: "The OAuth refresh token used to get access tokens from Salesforce (write-only). Either this field or the refresh_token field must be provided to configure the refresh_token attribute.",
+			Validators: []validator.String{
+				stringvalidator.ConflictsWith(path.MatchRoot("refresh_token")),
+			},
 		},
 		"redirect_uri": schema.StringAttribute{
 			Optional:    true,
@@ -172,6 +200,8 @@ func (r *SalesforceConnectionResource) Schema(ctx context.Context, req resource.
 	}
 }
 
+
+
 func (r *SalesforceConnectionResource) Configure(ctx context.Context, req resource.ConfigureRequest, resp *resource.ConfigureResponse) {
 	opCtx := errorsutil.CreateOperationContext(errorsutil.ConnectorTypeSalesforce, "configure", "")
 	ctx = opCtx.AddContextToLogger(ctx)
@@ -186,16 +216,16 @@ func (r *SalesforceConnectionResource) Configure(ctx context.Context, req resour
 	}
 
 	// Cast provider data to your provider type.
-	prov, ok := req.ProviderData.(*saviyntProvider)
+	prov, ok := req.ProviderData.(*SaviyntProvider)
 	if !ok {
 		errorCode := salesforceErrorCodes.ProviderConfig()
 		opCtx.LogOperationError(ctx, "Provider configuration failed", errorCode,
-			fmt.Errorf("expected *saviyntProvider, got different type"),
-			map[string]interface{}{"expected_type": "*saviyntProvider"})
+			fmt.Errorf("expected *SaviyntProvider, got different type"),
+			map[string]interface{}{"expected_type": "*SaviyntProvider"})
 
 		resp.Diagnostics.AddError(
 			errorsutil.GetErrorMessage(errorsutil.ErrProviderConfig),
-			fmt.Sprintf("[%s] Expected *saviyntProvider, got different type", errorCode),
+			fmt.Sprintf("[%s] Expected *SaviyntProvider, got different type", errorCode),
 		)
 		return
 	}
@@ -203,6 +233,7 @@ func (r *SalesforceConnectionResource) Configure(ctx context.Context, req resour
 	// Set the client and token from the provider state.
 	r.client = &client.SaviyntClientWrapper{Client: prov.client}
 	r.token = prov.accessToken
+	r.provider = &client.SaviyntProviderWrapper{Provider: prov} // Store provider reference for retry logic
 
 	opCtx.LogOperationEnd(ctx, "Salesforce connection resource configured successfully")
 }
@@ -217,6 +248,11 @@ func (r *SalesforceConnectionResource) SetToken(token string) {
 	r.token = token
 }
 
+// SetProvider sets the provider for testing purposes
+func (r *SalesforceConnectionResource) SetProvider(provider client.SaviyntProviderInterface) {
+	r.provider = provider
+}
+
 func (r *SalesforceConnectionResource) CreateSalesforceConnection(ctx context.Context, plan *SalesforceConnectorResourceModel, config *SalesforceConnectorResourceModel) (*openapi.CreateOrUpdateResponse, error) {
 	connectionName := plan.ConnectionName.ValueString()
 	opCtx := errorsutil.CreateOperationContext(errorsutil.ConnectorTypeSalesforce, "create", connectionName)
@@ -226,14 +262,28 @@ func (r *SalesforceConnectionResource) CreateSalesforceConnection(ctx context.Co
 
 	opCtx.LogOperationStart(logCtx, "Starting Salesforce connection creation")
 
-	// Use the factory to create connection operations
-	connectionOps := r.connectionFactory.CreateConnectionOperations(r.client.APIBaseURL(), r.token)
-
-	// Check if Salesforce connection already exists (idempotency check)
+	// Check if Salesforce connection already exists (idempotency check) with retry logic
 	tflog.Debug(logCtx, "Checking if connection already exists")
+	var existingResource *openapi.GetConnectionDetailsResponse
+	var finalHttpResp *http.Response
 
-	// Use original context for API calls to maintain test compatibility
-	existingResource, _, _ := connectionOps.GetConnectionDetails(ctx, connectionName)
+	err := r.provider.AuthenticatedAPICallWithRetry(ctx, "get_connection_details_idempotency", func(token string) error {
+		connectionOps := r.connectionFactory.CreateConnectionOperations(r.client.APIBaseURL(), token)
+		resp, httpResp, err := connectionOps.GetConnectionDetails(ctx, connectionName)
+		if httpResp != nil && httpResp.StatusCode == 401 {
+			return fmt.Errorf("401 unauthorized")
+		}
+		existingResource = resp
+		finalHttpResp = httpResp // Update on every call including retries
+		return err
+	})
+
+	if err != nil && finalHttpResp != nil && finalHttpResp.StatusCode != 412 {
+		errorCode := salesforceErrorCodes.ReadFailed()
+		opCtx.LogOperationError(logCtx, "Failed to check existing connection", errorCode, err)
+		return nil, errorsutil.CreateStandardError(errorsutil.ConnectorTypeSalesforce, errorCode, "create", connectionName, err)
+	}
+
 	if existingResource != nil &&
 		existingResource.SalesforceConnectionResponse != nil &&
 		existingResource.SalesforceConnectionResponse.Errorcode != nil &&
@@ -253,17 +303,27 @@ func (r *SalesforceConnectionResource) CreateSalesforceConnection(ctx context.Co
 		SalesforceConnector: &salesforceConn,
 	}
 
-	// Execute create operation through interface
+	// Execute create operation with retry logic
 	tflog.Debug(ctx, "Executing create operation")
+	var apiResp *openapi.CreateOrUpdateResponse
 
-	apiResp, _, err := connectionOps.CreateOrUpdateConnection(ctx, salesforceConnRequest)
+	err = r.provider.AuthenticatedAPICallWithRetry(ctx, "create_salesforce_connection", func(token string) error {
+		connectionOps := r.connectionFactory.CreateConnectionOperations(r.client.APIBaseURL(), token)
+		resp, httpResp, err := connectionOps.CreateOrUpdateConnection(ctx, salesforceConnRequest)
+		if httpResp != nil && httpResp.StatusCode == 401 {
+			return fmt.Errorf("401 unauthorized")
+		}
+		apiResp = resp
+		return err
+	})
+
 	if err != nil {
 		errorCode := salesforceErrorCodes.CreateFailed()
 		opCtx.LogOperationError(ctx, "Failed to create Salesforce connection", errorCode, err)
 		return nil, errorsutil.CreateStandardError(errorsutil.ConnectorTypeSalesforce, errorCode, "create", connectionName, err)
 	}
 
-	if apiResp != nil && *apiResp.ErrorCode != "0" {
+	if apiResp != nil && apiResp.ErrorCode != nil && *apiResp.ErrorCode != "0" {
 		apiErr := fmt.Errorf("API returned error code %s: %s", *apiResp.ErrorCode, errorsutil.SanitizeMessage(apiResp.Msg))
 		errorCode := salesforceErrorCodes.APIError()
 		opCtx.LogOperationError(ctx, "Salesforce connection creation failed with API error", errorCode, apiErr,
@@ -286,6 +346,20 @@ func (r *SalesforceConnectionResource) CreateSalesforceConnection(ctx context.Co
 }
 
 func (r *SalesforceConnectionResource) BuildSalesforceConnector(plan *SalesforceConnectorResourceModel, config *SalesforceConnectorResourceModel) openapi.SalesforceConnector {
+	var clientSecret string
+	if !config.ClientSecret.IsNull() && !config.ClientSecret.IsUnknown() {
+		clientSecret = config.ClientSecret.ValueString()
+	} else if !config.ClientSecretWO.IsNull() && !config.ClientSecretWO.IsUnknown() {
+		clientSecret = config.ClientSecretWO.ValueString()
+	}
+
+	var refreshToken string
+	if !config.RefreshToken.IsNull() && !config.RefreshToken.IsUnknown() {
+		refreshToken = config.RefreshToken.ValueString()
+	} else if !config.RefreshTokenWO.IsNull() && !config.RefreshTokenWO.IsUnknown() {
+		refreshToken = config.RefreshTokenWO.ValueString()
+	}
+
 	salesforceConn := openapi.SalesforceConnector{
 		BaseConnector: openapi.BaseConnector{
 			Connectiontype:  "SalesForce",
@@ -294,9 +368,9 @@ func (r *SalesforceConnectionResource) BuildSalesforceConnector(plan *Salesforce
 			Defaultsavroles: util.StringPointerOrEmpty(plan.DefaultSavRoles),
 			EmailTemplate:   util.StringPointerOrEmpty(plan.EmailTemplate),
 		},
-		CLIENT_ID:                util.StringPointerOrEmpty(config.ClientId),
-		CLIENT_SECRET:            util.StringPointerOrEmpty(config.ClientSecret),
-		REFRESH_TOKEN:            util.StringPointerOrEmpty(config.RefreshToken),
+		CLIENT_ID:                util.StringPointerOrEmpty(plan.ClientId),
+		CLIENT_SECRET:            util.StringPointerOrEmpty(types.StringValue(clientSecret)),
+		REFRESH_TOKEN:            util.StringPointerOrEmpty(types.StringValue(refreshToken)),
 		REDIRECT_URI:             util.StringPointerOrEmpty(plan.RedirectUri),
 		INSTANCE_URL:             util.StringPointerOrEmpty(plan.InstanceUrl),
 		OBJECT_TO_BE_IMPORTED:    util.StringPointerOrEmpty(plan.ObjectToBeImported),
@@ -356,18 +430,31 @@ func (r *SalesforceConnectionResource) ReadSalesforceConnection(ctx context.Cont
 
 	opCtx.LogOperationStart(logCtx, "Starting Salesforce connection read operation")
 
-	// Use the factory to create connection operations
-	connectionOps := r.connectionFactory.CreateConnectionOperations(r.client.APIBaseURL(), r.token)
+	// Execute read operation with retry logic
+	var apiResp *openapi.GetConnectionDetailsResponse
 
-	// Execute read operation through interface - use original context for API calls
-	apiResp, _, err := connectionOps.GetConnectionDetails(ctx, connectionName)
+	err := r.provider.AuthenticatedAPICallWithRetry(ctx, "read_salesforce_connection", func(token string) error {
+		connectionOps := r.connectionFactory.CreateConnectionOperations(r.client.APIBaseURL(), token)
+		resp, httpResp, err := connectionOps.GetConnectionDetails(ctx, connectionName)
+		if httpResp != nil && httpResp.StatusCode == 401 {
+			return fmt.Errorf("401 unauthorized")
+		}
+		apiResp = resp
+		return err
+	})
 	if err != nil {
 		errorCode := salesforceErrorCodes.ReadFailed()
 		opCtx.LogOperationError(logCtx, "Failed to read Salesforce connection", errorCode, err)
 		return nil, errorsutil.CreateStandardError(errorsutil.ConnectorTypeSalesforce, errorCode, "read", connectionName, err)
 	}
 
-	if apiResp != nil && apiResp.SalesforceConnectionResponse != nil && *apiResp.SalesforceConnectionResponse.Errorcode != 0 {
+	if err := r.ValidateSalesforceConnectionResponse(apiResp); err != nil {
+		errorCode := salesforceErrorCodes.APIError()
+		opCtx.LogOperationError(ctx, "Invalid connection type for Salesforce datasource", errorCode, err)
+		return nil, fmt.Errorf("[%s] Unable to verify connection type for connection %q. The provider could not determine the type of this connection. Please ensure the connection name is correct and belongs to a supported connector type", errorCode, connectionName)
+	}
+
+	if apiResp != nil && apiResp.SalesforceConnectionResponse != nil && apiResp.SalesforceConnectionResponse.Errorcode != nil && *apiResp.SalesforceConnectionResponse.Errorcode != 0 {
 		apiErr := fmt.Errorf("API returned error code %d: %s", *apiResp.SalesforceConnectionResponse.Errorcode, errorsutil.SanitizeMessage(apiResp.SalesforceConnectionResponse.Msg))
 		errorCode := salesforceErrorCodes.APIError()
 		opCtx.LogOperationError(ctx, "Salesforce connection read failed with API error", errorCode, apiErr,
@@ -412,14 +499,13 @@ func (r *SalesforceConnectionResource) UpdateModelFromReadResponse(state *Salesf
 	state.CustomCreateaccountUrl = util.SafeStringDatasource(apiResp.SalesforceConnectionResponse.Connectionattributes.CUSTOM_CREATEACCOUNT_URL)
 	state.AccountFilterQuery = util.SafeStringDatasource(apiResp.SalesforceConnectionResponse.Connectionattributes.ACCOUNT_FILTER_QUERY)
 	state.InstanceUrl = util.SafeStringDatasource(apiResp.SalesforceConnectionResponse.Connectionattributes.INSTANCE_URL)
+}
 
-	apiMessage := util.SafeDeref(apiResp.SalesforceConnectionResponse.Msg)
-	if apiMessage == "success" {
-		state.Msg = types.StringValue("Connection Successful")
-	} else {
-		state.Msg = types.StringValue(apiMessage)
+func (r *SalesforceConnectionResource) ValidateSalesforceConnectionResponse(apiResp *openapi.GetConnectionDetailsResponse) error {
+	if apiResp != nil && apiResp.SalesforceConnectionResponse == nil {
+		return fmt.Errorf("verify the connection type - Salesforce connection response is nil")
 	}
-	state.ErrorCode = util.Int32PtrToTFString(apiResp.SalesforceConnectionResponse.Errorcode)
+	return nil
 }
 
 func (r *SalesforceConnectionResource) UpdateSalesforceConnection(ctx context.Context, plan *SalesforceConnectorResourceModel, config *SalesforceConnectorResourceModel) (*openapi.CreateOrUpdateResponse, error) {
@@ -431,37 +517,36 @@ func (r *SalesforceConnectionResource) UpdateSalesforceConnection(ctx context.Co
 
 	opCtx.LogOperationStart(logCtx, "Starting Salesforce connection update")
 
-	// Use the factory to create connection operations
-	connectionOps := r.connectionFactory.CreateConnectionOperations(r.client.APIBaseURL(), r.token)
-
 	// Build Salesforce connection update request
 	tflog.Debug(logCtx, "Building Salesforce connection update request")
 
 	salesforceConn := r.BuildSalesforceConnector(plan, config)
 
-	if plan.VaultConnection.ValueString() == "" {
-		emptyStr := ""
-		salesforceConn.BaseConnector.VaultConnection = &emptyStr
-		salesforceConn.BaseConnector.VaultConfiguration = &emptyStr
-		salesforceConn.BaseConnector.Saveinvault = &emptyStr
-	}
-
 	salesforceConnRequest := openapi.CreateOrUpdateRequest{
 		SalesforceConnector: &salesforceConn,
 	}
 
-	// Execute update operation through interface
+	// Execute update operation with retry logic
 	tflog.Debug(logCtx, "Executing update operation")
+	var apiResp *openapi.CreateOrUpdateResponse
 
-	// Use original context for API calls to maintain test compatibility
-	apiResp, _, err := connectionOps.CreateOrUpdateConnection(ctx, salesforceConnRequest)
+	err := r.provider.AuthenticatedAPICallWithRetry(ctx, "update_salesforce_connection", func(token string) error {
+		connectionOps := r.connectionFactory.CreateConnectionOperations(r.client.APIBaseURL(), token)
+		resp, httpResp, err := connectionOps.CreateOrUpdateConnection(ctx, salesforceConnRequest)
+		if httpResp != nil && httpResp.StatusCode == 401 {
+			return fmt.Errorf("401 unauthorized")
+		}
+		apiResp = resp
+		return err
+	})
+
 	if err != nil {
 		errorCode := salesforceErrorCodes.UpdateFailed()
 		opCtx.LogOperationError(logCtx, "Failed to update Salesforce connection", errorCode, err)
 		return nil, errorsutil.CreateStandardError(errorsutil.ConnectorTypeSalesforce, errorCode, "update", connectionName, err)
 	}
 
-	if apiResp != nil && *apiResp.ErrorCode != "0" {
+	if apiResp != nil && apiResp.ErrorCode != nil && *apiResp.ErrorCode != "0" {
 		apiErr := fmt.Errorf("API returned error code %s: %s", *apiResp.ErrorCode, errorsutil.SanitizeMessage(apiResp.Msg))
 		errorCode := salesforceErrorCodes.APIError()
 		opCtx.LogOperationError(logCtx, "Salesforce connection update failed with API error", errorCode, apiErr,
@@ -580,6 +665,14 @@ func (r *SalesforceConnectionResource) Read(ctx context.Context, req resource.Re
 	// Update model from read response
 	r.UpdateModelFromReadResponse(&state, apiResp)
 
+	apiMessage := util.SafeDeref(apiResp.SalesforceConnectionResponse.Msg)
+	if apiMessage == "success" {
+		state.Msg = types.StringValue("Connection Read Successful")
+	} else {
+		state.Msg = types.StringValue(apiMessage)
+	}
+	state.ErrorCode = util.Int32PtrToTFString(apiResp.SalesforceConnectionResponse.Errorcode)
+
 	stateDiagnostics := resp.State.Set(ctx, &state)
 	resp.Diagnostics.Append(stateDiagnostics...)
 	if resp.Diagnostics.HasError() {
@@ -665,7 +758,7 @@ func (r *SalesforceConnectionResource) Update(ctx context.Context, req resource.
 	ctx = opCtx.AddContextToLogger(ctx)
 
 	// Use interface pattern instead of direct API client creation
-	_, err := r.UpdateSalesforceConnection(ctx, &plan, &config)
+	updateResp, err := r.UpdateSalesforceConnection(ctx, &plan, &config)
 	if err != nil {
 		opCtx.LogOperationError(ctx, "Salesforce connection update failed", "", err)
 		resp.Diagnostics.AddError(
@@ -688,6 +781,10 @@ func (r *SalesforceConnectionResource) Update(ctx context.Context, req resource.
 
 	// Update model from read response
 	r.UpdateModelFromReadResponse(&plan, getResp)
+
+	apiMessage := util.SafeDeref(updateResp.Msg)
+	plan.Msg = types.StringValue(apiMessage)
+	plan.ErrorCode = types.StringValue(*updateResp.ErrorCode)
 
 	stateUpdateDiagnostics := resp.State.Set(ctx, plan)
 	resp.Diagnostics.Append(stateUpdateDiagnostics...)

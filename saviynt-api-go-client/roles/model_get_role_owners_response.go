@@ -20,7 +20,7 @@ var _ MappedNullable = &GetRoleOwnersResponse{}
 // GetRoleOwnersResponse struct for GetRoleOwnersResponse
 type GetRoleOwnersResponse struct {
 	Ownername *string `json:"ownername,omitempty"`
-	Rank *string `json:"rank,omitempty"`
+	Rank      *string `json:"rank,omitempty"`
 }
 
 // NewGetRoleOwnersResponse instantiates a new GetRoleOwnersResponse object
@@ -105,7 +105,7 @@ func (o *GetRoleOwnersResponse) SetRank(v string) {
 }
 
 func (o GetRoleOwnersResponse) MarshalJSON() ([]byte, error) {
-	toSerialize,err := o.ToMap()
+	toSerialize, err := o.ToMap()
 	if err != nil {
 		return []byte{}, err
 	}
@@ -158,5 +158,3 @@ func (v *NullableGetRoleOwnersResponse) UnmarshalJSON(src []byte) error {
 	v.isSet = true
 	return json.Unmarshal(src, &v.value)
 }
-
-

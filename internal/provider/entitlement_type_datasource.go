@@ -9,6 +9,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"net/http"
 	"terraform-provider-Saviynt/internal/client"
 	"terraform-provider-Saviynt/util"
 
@@ -22,6 +23,7 @@ import (
 type entitlementTypeDataSource struct {
 	client                 client.SaviyntClientInterface
 	token                  string
+	provider               client.SaviyntProviderInterface
 	entitlementTypeFactory client.EntitlementTypeFactoryInterface
 }
 
@@ -50,6 +52,11 @@ func (d *entitlementTypeDataSource) SetClient(client client.SaviyntClientInterfa
 // SetToken sets the token for testing purposes
 func (d *entitlementTypeDataSource) SetToken(token string) {
 	d.token = token
+}
+
+// SetProvider sets the provider for testing purposes
+func (r *entitlementTypeDataSource) SetProvider(provider client.SaviyntProviderInterface) {
+	r.provider = provider
 }
 
 type EntitlementTypeDataSourceModel struct {
@@ -240,14 +247,14 @@ func (d *entitlementTypeDataSource) Configure(ctx context.Context, req datasourc
 	}
 
 	// Cast provider data to your provider type.
-	prov, ok := req.ProviderData.(*saviyntProvider)
+	prov, ok := req.ProviderData.(*SaviyntProvider)
 	if !ok {
 		tflog.Error(ctx, "Provider configuration failed", map[string]interface{}{
-			"expected_type": "*saviyntProvider",
+			"expected_type": "*SaviyntProvider",
 		})
 		resp.Diagnostics.AddError(
 			"Unexpected Provider Data",
-			"Expected *saviyntProvider, got different type",
+			"Expected *SaviyntProvider, got different type",
 		)
 		return
 	}
@@ -255,6 +262,7 @@ func (d *entitlementTypeDataSource) Configure(ctx context.Context, req datasourc
 	// Set the client and token from the provider state using interface wrapper.
 	d.client = &client.SaviyntClientWrapper{Client: prov.client}
 	d.token = prov.accessToken
+	d.provider = &client.SaviyntProviderWrapper{Provider: prov} // Store provider reference for retry logic
 
 	tflog.Debug(ctx, "Entitlement type datasource configured successfully")
 }
@@ -287,13 +295,13 @@ func (d *entitlementTypeDataSource) Read(ctx context.Context, req datasource.Rea
 	}
 
 	// Check if no entitlements were found and add user-visible warning
-	if apiResp != nil && apiResp.EntitlementTypeDetails!=nil && len(apiResp.EntitlementTypeDetails) == 0 {
+	if apiResp != nil && apiResp.EntitlementTypeDetails != nil && len(apiResp.EntitlementTypeDetails) == 0 {
 		resp.Diagnostics.AddWarning(
 			"No Entitlements Found",
-			fmt.Sprintf("No entitlement types found for entitlement_name='%s' and endpoint_name='%s'. Retrieved count: %d",
+			fmt.Sprintf("No entitlement types found for entitlement_name='%s' and endpoint_name='%s'. Retrieved count: %v",
 				state.EntitlementName.ValueString(),
 				state.EndpointName.ValueString(),
-				*apiResp.DisplayCount),
+				util.SafeInt32(apiResp.DisplayCount)),
 		)
 	}
 
@@ -323,9 +331,6 @@ func (d *entitlementTypeDataSource) Read(ctx context.Context, req datasource.Rea
 func (d *entitlementTypeDataSource) ReadEntitlementTypeDetails(ctx context.Context, state *EntitlementTypeDataSourceModel) (*openapi.GetEntitlementTypeResponse, error) {
 	tflog.Debug(ctx, "Starting entitlement type API call")
 
-	// Create entitlement type operations using the factory
-	entitlementTypeOps := d.entitlementTypeFactory.CreateEntitlementTypeOperations(d.client.APIBaseURL(), d.token)
-
 	// Prepare parameters using existing utility function
 	entitlementName := util.SafeStringValue(state.EntitlementName)
 	endpointName := util.SafeStringValue(state.EndpointName)
@@ -339,18 +344,32 @@ func (d *entitlementTypeDataSource) ReadEntitlementTypeDetails(ctx context.Conte
 		"offset":           offset,
 	})
 
-	// Execute API call
-	readResp, httpResp, err := entitlementTypeOps.GetEntitlementType(ctx, entitlementName, max, offset, endpointName)
+	// Execute API call with retry logic
+	var readResp *openapi.GetEntitlementTypeResponse
+	var finalHttpResp *http.Response
+	err := d.provider.AuthenticatedAPICallWithRetry(ctx, "read_entitlement_type_datasource", func(token string) error {
+		entitlementTypeOps := d.entitlementTypeFactory.CreateEntitlementTypeOperations(d.client.APIBaseURL(), token)
+		resp, hResp, err := entitlementTypeOps.GetEntitlementType(ctx, entitlementName, max, offset, endpointName)
+		if hResp != nil && hResp.StatusCode == 401 {
+			return fmt.Errorf("401 unauthorized")
+		}
+		readResp = resp
+		finalHttpResp = hResp // Update on every call including retries
+		return err
+	})
+
 	if err != nil {
 		return nil, fmt.Errorf("Entitlement Type Datasource: API call failed: %w", err)
 	}
 
-	if readResp!=nil && readResp.ErrorCode!=nil && *readResp.ErrorCode!="0"{
-		return nil, fmt.Errorf("Entitlement Type Datasource: API returned error code: %s and error message: %s", *readResp.ErrorCode, *readResp.Msg)
+	if readResp != nil && readResp.ErrorCode != nil && *readResp.ErrorCode != "0" {
+		errorCode := util.SafeDeref(readResp.ErrorCode)
+		msg := util.SafeDeref(readResp.Msg)
+		return nil, fmt.Errorf("Entitlement Type Datasource: API returned error code: %s and error message: %s", errorCode, msg)
 	}
 
 	tflog.Debug(ctx, "Entitltement type: API call successful", map[string]interface{}{
-		"status_code": httpResp.StatusCode,
+		"status_code": finalHttpResp.StatusCode,
 	})
 
 	return readResp, nil

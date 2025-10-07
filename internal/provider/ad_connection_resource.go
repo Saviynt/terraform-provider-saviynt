@@ -12,6 +12,7 @@ package provider
 import (
 	"context"
 	"fmt"
+	"net/http"
 	"os"
 	"terraform-provider-Saviynt/internal/client"
 	"terraform-provider-Saviynt/util"
@@ -19,9 +20,11 @@ import (
 
 	connectionsutil "terraform-provider-Saviynt/util/connectionsutil"
 
+	"github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
 	"github.com/hashicorp/terraform-plugin-framework/path"
 	"github.com/hashicorp/terraform-plugin-framework/resource"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema"
+	"github.com/hashicorp/terraform-plugin-framework/schema/validator"
 	"github.com/hashicorp/terraform-plugin-framework/types"
 	"github.com/hashicorp/terraform-plugin-log/tflog"
 	openapi "github.com/saviynt/saviynt-api-go-client/connections"
@@ -40,6 +43,7 @@ type ADConnectorResourceModel struct {
 	URL                       types.String `tfsdk:"url"`
 	Username                  types.String `tfsdk:"username"`
 	Password                  types.String `tfsdk:"password"`
+	PasswordWo                types.String `tfsdk:"password_wo"`
 	LdapOrAd                  types.String `tfsdk:"ldap_or_ad"`
 	EntitlementAttribute      types.String `tfsdk:"entitlement_attribute"`
 	CheckForUnique            types.String `tfsdk:"check_for_unique"`
@@ -98,6 +102,7 @@ type ADConnectorResourceModel struct {
 type AdConnectionResource struct {
 	client            client.SaviyntClientInterface
 	token             string
+	provider          client.SaviyntProviderInterface
 	connectionFactory client.ConnectionFactoryInterface
 }
 
@@ -130,13 +135,24 @@ func ADConnectorResourceSchema() map[string]schema.Attribute {
 		},
 		"username": schema.StringAttribute{
 			Optional:    true,
-			WriteOnly:   true,
+			Computed:    true,
 			Description: "System admin username.",
 		},
 		"password": schema.StringAttribute{
-			Required:    true,
+			Optional:    true,
+			Sensitive:   true,
+			Description: "Set the password. It is a compulsory field. Either this or password_wo need to be set",
+			Validators: []validator.String{
+				stringvalidator.ConflictsWith(path.MatchRoot("password_wo")),
+			},
+		},
+		"password_wo": schema.StringAttribute{
+			Optional:    true,
 			WriteOnly:   true,
-			Description: "Set the Password.",
+			Description: "Set the password_wo. It is a compulsory field. Either this or password need to be set",
+			Validators: []validator.String{
+				stringvalidator.ConflictsWith(path.MatchRoot("password")),
+			},
 		},
 		"ldap_or_ad": schema.StringAttribute{
 			Optional:    true,
@@ -427,23 +443,24 @@ func (r *AdConnectionResource) Configure(ctx context.Context, req resource.Confi
 	}
 
 	// Cast provider data to your provider type.
-	prov, ok := req.ProviderData.(*saviyntProvider)
+	prov, ok := req.ProviderData.(*SaviyntProvider)
 	if !ok {
 		errorCode := adErrorCodes.ProviderConfig()
 		opCtx.LogOperationError(ctx, "Provider configuration failed", errorCode,
-			fmt.Errorf("expected *saviyntProvider, got different type"),
-			map[string]interface{}{"expected_type": "*saviyntProvider"})
+			fmt.Errorf("expected *SaviyntProvider, got different type"),
+			map[string]interface{}{"expected_type": "*SaviyntProvider"})
 
 		resp.Diagnostics.AddError(
 			errorsutil.GetErrorMessage(errorsutil.ErrProviderConfig),
-			fmt.Sprintf("[%s] Expected *saviyntProvider, got different type", errorCode),
+			fmt.Sprintf("[%s] Expected *SaviyntProvider, got different type", errorCode),
 		)
 		return
 	}
 
-	// Set the client and token from the provider state using interface wrapper.
+	// Set the client, token, and provider reference from the provider state
 	r.client = &client.SaviyntClientWrapper{Client: prov.client}
 	r.token = prov.accessToken
+	r.provider = &client.SaviyntProviderWrapper{Provider: prov} // Store provider reference for retry logic
 
 	opCtx.LogOperationEnd(ctx, "AD connection resource configured successfully")
 }
@@ -458,7 +475,18 @@ func (r *AdConnectionResource) SetToken(token string) {
 	r.token = token
 }
 
+// SetProvider sets the provider for testing purposes
+func (r *AdConnectionResource) SetProvider(provider client.SaviyntProviderInterface) {
+	r.provider = provider
+}
+
 func (r *AdConnectionResource) BuildADConnector(plan *ADConnectorResourceModel, config *ADConnectorResourceModel) openapi.ADConnector {
+	var password string
+	if !config.Password.IsNull() && !config.Password.IsUnknown() {
+		password = config.Password.ValueString()
+	} else if !config.PasswordWo.IsNull() && !config.PasswordWo.IsUnknown() {
+		password = config.PasswordWo.ValueString()
+	}
 	adConn := openapi.ADConnector{
 		BaseConnector: openapi.BaseConnector{
 			//required field
@@ -470,10 +498,10 @@ func (r *AdConnectionResource) BuildADConnector(plan *ADConnectorResourceModel, 
 			EmailTemplate:   util.StringPointerOrEmpty(plan.EmailTemplate),
 		},
 		//required field
-		PASSWORD: config.Password.ValueString(),
+		PASSWORD: password,
 		//optional field
 		URL:                         util.StringPointerOrEmpty(plan.URL),
-		USERNAME:                    util.StringPointerOrEmpty(config.Username),
+		USERNAME:                    util.StringPointerOrEmpty(plan.Username),
 		LDAP_OR_AD:                  util.StringPointerOrEmpty(plan.LdapOrAd),
 		ENTITLEMENT_ATTRIBUTE:       util.StringPointerOrEmpty(plan.EntitlementAttribute),
 		CHECKFORUNIQUE:              util.StringPointerOrEmpty(plan.CheckForUnique),
@@ -612,14 +640,27 @@ func (r *AdConnectionResource) CreateADConnection(ctx context.Context, plan *ADC
 
 	opCtx.LogOperationStart(logCtx, "Starting AD connection creation")
 
-	// Use the factory to create connection operations
-	connectionOps := r.connectionFactory.CreateConnectionOperations(r.client.APIBaseURL(), r.token)
-
-	// Check if connection already exists (idempotency check)
+	// Check if connection already exists (idempotency check) with retry logic
 	tflog.Debug(logCtx, "Checking if connection already exists")
+	var existingResource *openapi.GetConnectionDetailsResponse
+	var finalHttpResp *http.Response
+	err := r.provider.AuthenticatedAPICallWithRetry(ctx, "get_connection_details_idempotency", func(token string) error {
+		connectionOps := r.connectionFactory.CreateConnectionOperations(r.client.APIBaseURL(), token)
+		resp, httpResp, err := connectionOps.GetConnectionDetails(ctx, connectionName)
+		if httpResp != nil && httpResp.StatusCode == 401 {
+			return fmt.Errorf("401 unauthorized")
+		}
+		existingResource = resp
+		finalHttpResp = httpResp // Update on every call including retries
+		return err
+	})
 
-	// Use original context for API calls to maintain test compatibility
-	existingResource, _, _ := connectionOps.GetConnectionDetails(ctx, connectionName)
+	if err != nil && finalHttpResp != nil && finalHttpResp.StatusCode != 412 {
+		errorCode := adErrorCodes.ReadFailed()
+		opCtx.LogOperationError(logCtx, "Failed to check existing connection", errorCode, err, nil)
+		return nil, fmt.Errorf("[%s] Failed to check existing connection: %w", errorCode, err)
+	}
+
 	if existingResource != nil &&
 		existingResource.ADConnectionResponse != nil &&
 		existingResource.ADConnectionResponse.Errorcode != nil &&
@@ -634,22 +675,36 @@ func (r *AdConnectionResource) CreateADConnection(ctx context.Context, plan *ADC
 	// Build AD connection create request
 	tflog.Debug(ctx, "Building AD connection create request")
 
+	if (config.Password.IsNull() || config.Password.IsUnknown()) && (config.PasswordWo.IsNull() || config.PasswordWo.IsUnknown()) {
+		return nil, fmt.Errorf("either password or password_wo must be set")
+	}
+
 	adConn := r.BuildADConnector(plan, config)
 	createReq := openapi.CreateOrUpdateRequest{
 		ADConnector: &adConn,
 	}
 
-	// Execute create operation through interface
-	tflog.Debug(ctx, "Executing create operation")
+	var apiResp *openapi.CreateOrUpdateResponse
 
-	apiResp, _, err := connectionOps.CreateOrUpdateConnection(ctx, createReq)
+	// Execute create operation with retry logic
+	tflog.Debug(ctx, "Executing create operation")
+	err = r.provider.AuthenticatedAPICallWithRetry(ctx, "create_ad_connection", func(token string) error {
+		connectionOps := r.connectionFactory.CreateConnectionOperations(r.client.APIBaseURL(), token)
+		resp, httpResp, err := connectionOps.CreateOrUpdateConnection(ctx, createReq)
+		if httpResp != nil && httpResp.StatusCode == 401 {
+			return fmt.Errorf("401 unauthorized")
+		}
+		apiResp = resp
+		return err
+	})
+
 	if err != nil {
 		errorCode := adErrorCodes.CreateFailed()
 		opCtx.LogOperationError(ctx, "Failed to create AD connection", errorCode, err)
 		return nil, errorsutil.CreateStandardError(errorsutil.ConnectorTypeAD, errorCode, "create", connectionName, err)
 	}
 
-	if apiResp != nil && *apiResp.ErrorCode != "0" {
+	if apiResp != nil && apiResp.ErrorCode != nil && *apiResp.ErrorCode != "0" {
 		apiErr := fmt.Errorf("API returned error code %s: %s", *apiResp.ErrorCode, errorsutil.SanitizeMessage(apiResp.Msg))
 		errorCode := adErrorCodes.APIError()
 		opCtx.LogOperationError(ctx, "AD connection creation failed with API error", errorCode, apiErr,
@@ -679,18 +734,32 @@ func (r *AdConnectionResource) ReadADConnection(ctx context.Context, connectionN
 
 	opCtx.LogOperationStart(logCtx, "Starting AD connection read operation")
 
-	// Use the factory to create connection operations
-	connectionOps := r.connectionFactory.CreateConnectionOperations(r.client.APIBaseURL(), r.token)
+	var apiResp *openapi.GetConnectionDetailsResponse
 
-	// Execute read operation through interface - use original context for API calls
-	apiResp, _, err := connectionOps.GetConnectionDetails(ctx, connectionName)
+	// Execute read operation with retry logic
+	err := r.provider.AuthenticatedAPICallWithRetry(ctx, "read_ad_connection", func(token string) error {
+		connectionOps := r.connectionFactory.CreateConnectionOperations(r.client.APIBaseURL(), token)
+		resp, httpResp, err := connectionOps.GetConnectionDetails(ctx, connectionName)
+		if httpResp != nil && httpResp.StatusCode == 401 {
+			return fmt.Errorf("401 unauthorized")
+		}
+		apiResp = resp
+		return err
+	})
+
 	if err != nil {
 		errorCode := adErrorCodes.ReadFailed()
 		opCtx.LogOperationError(logCtx, "Failed to read AD connection", errorCode, err)
 		return nil, errorsutil.CreateStandardError(errorsutil.ConnectorTypeAD, errorCode, "read", connectionName, err)
 	}
 
-	if apiResp != nil && apiResp.ADConnectionResponse != nil && *apiResp.ADConnectionResponse.Errorcode != 0 {
+	if err := r.ValidateADConnectionResponse(apiResp); err != nil {
+		errorCode := adErrorCodes.APIError()
+		opCtx.LogOperationError(ctx, "Invalid connection type for AD datasource", errorCode, err)
+		return nil, fmt.Errorf("[%s] Unable to verify connection type for connection %q. The provider could not determine the type of this connection. Please ensure the connection name is correct and belongs to a supported connector type", errorCode, connectionName)
+	}
+
+	if apiResp != nil && apiResp.ADConnectionResponse != nil && apiResp.ADConnectionResponse.Errorcode != nil && *apiResp.ADConnectionResponse.Errorcode != 0 {
 		apiErr := fmt.Errorf("API returned error code %d: %s", *apiResp.ADConnectionResponse.Errorcode, errorsutil.SanitizeMessage(apiResp.ADConnectionResponse.Msg))
 		errorCode := adErrorCodes.APIError()
 		opCtx.LogOperationError(ctx, "AD connection read failed with API error", errorCode, apiErr,
@@ -721,36 +790,40 @@ func (r *AdConnectionResource) UpdateADConnection(ctx context.Context, plan *ADC
 
 	opCtx.LogOperationStart(logCtx, "Starting AD connection update")
 
-	// Use the factory to create connection operations
-	connectionOps := r.connectionFactory.CreateConnectionOperations(r.client.APIBaseURL(), r.token)
-
 	// Build AD connection update request
 	tflog.Debug(logCtx, "Building AD connection update request")
 
-	adConn := r.BuildADConnector(plan, config)
-	if plan.VaultConnection.ValueString() == "" {
-		emptyStr := ""
-		adConn.BaseConnector.VaultConnection = &emptyStr
-		adConn.BaseConnector.VaultConfiguration = &emptyStr
-		adConn.BaseConnector.Saveinvault = &emptyStr
+	if (config.Password.IsNull() || config.Password.IsUnknown()) && (config.PasswordWo.IsNull() || config.PasswordWo.IsUnknown()) {
+		return nil, fmt.Errorf("either password or password_wo must be set")
 	}
+
+	adConn := r.BuildADConnector(plan, config)
 
 	updateReq := openapi.CreateOrUpdateRequest{
 		ADConnector: &adConn,
 	}
 
-	// Execute update operation through interface
-	tflog.Debug(logCtx, "Executing update operation")
+	var apiResp *openapi.CreateOrUpdateResponse
 
-	// Use original context for API calls to maintain test compatibility
-	apiResp, _, err := connectionOps.CreateOrUpdateConnection(ctx, updateReq)
+	// Execute update operation with retry logic
+	tflog.Debug(logCtx, "Executing update operation")
+	err := r.provider.AuthenticatedAPICallWithRetry(ctx, "update_ad_connection", func(token string) error {
+		connectionOps := r.connectionFactory.CreateConnectionOperations(r.client.APIBaseURL(), token)
+		resp, httpResp, err := connectionOps.CreateOrUpdateConnection(ctx, updateReq)
+		if httpResp != nil && httpResp.StatusCode == 401 {
+			return fmt.Errorf("401 unauthorized")
+		}
+		apiResp = resp
+		return err
+	})
+
 	if err != nil {
 		errorCode := adErrorCodes.UpdateFailed()
 		opCtx.LogOperationError(logCtx, "Failed to update AD connection", errorCode, err)
 		return nil, errorsutil.CreateStandardError(errorsutil.ConnectorTypeAD, errorCode, "update", connectionName, err)
 	}
 
-	if apiResp != nil && *apiResp.ErrorCode != "0" {
+	if apiResp != nil && apiResp.ErrorCode != nil && *apiResp.ErrorCode != "0" {
 		apiErr := fmt.Errorf("API returned error code %s: %s", *apiResp.ErrorCode, errorsutil.SanitizeMessage(apiResp.Msg))
 		errorCode := adErrorCodes.APIError()
 		opCtx.LogOperationError(logCtx, "AD connection update failed with API error", errorCode, apiErr,
@@ -834,14 +907,13 @@ func (r *AdConnectionResource) UpdateModelFromReadResponse(state *ADConnectorRes
 	state.CheckForUnique = util.SafeStringDatasource(apiResp.ADConnectionResponse.Connectionattributes.CHECKFORUNIQUE)
 	state.EnableGroupManagement = util.SafeStringDatasource(apiResp.ADConnectionResponse.Connectionattributes.ENABLEGROUPMANAGEMENT)
 	state.OrgImportJson = util.SafeStringDatasource(apiResp.ADConnectionResponse.Connectionattributes.ORGIMPORTJSON)
+}
 
-	apiMessage := util.SafeDeref(apiResp.ADConnectionResponse.Msg)
-	if apiMessage == "success" {
-		state.Msg = types.StringValue("Connection Successful")
-	} else {
-		state.Msg = types.StringValue(apiMessage)
+func (r *AdConnectionResource) ValidateADConnectionResponse(apiResp *openapi.GetConnectionDetailsResponse) error {
+	if apiResp != nil && apiResp.ADConnectionResponse == nil {
+		return fmt.Errorf("verify the connection type - AD connection response is nil")
 	}
-	state.ErrorCode = util.Int32PtrToTFString(apiResp.ADConnectionResponse.Errorcode)
+	return nil
 }
 
 func (r *AdConnectionResource) Create(ctx context.Context, req resource.CreateRequest, resp *resource.CreateResponse) {
@@ -940,6 +1012,13 @@ func (r *AdConnectionResource) Read(ctx context.Context, req resource.ReadReques
 
 	// Update model from read response
 	r.UpdateModelFromReadResponse(&state, apiResp)
+	apiMessage := util.SafeDeref(apiResp.ADConnectionResponse.Msg)
+	if apiMessage == "success" {
+		state.Msg = types.StringValue("Connection Read Successful")
+	} else {
+		state.Msg = types.StringValue(apiMessage)
+	}
+	state.ErrorCode = util.Int32PtrToTFString(apiResp.ADConnectionResponse.Errorcode)
 
 	stateDiagnostics := resp.State.Set(ctx, &state)
 	resp.Diagnostics.Append(stateDiagnostics...)
@@ -1026,7 +1105,7 @@ func (r *AdConnectionResource) Update(ctx context.Context, req resource.UpdateRe
 	ctx = opCtx.AddContextToLogger(ctx)
 
 	// Use interface pattern instead of direct API client creation
-	_, err := r.UpdateADConnection(ctx, &plan, &config)
+	updateResp, err := r.UpdateADConnection(ctx, &plan, &config)
 	if err != nil {
 		opCtx.LogOperationError(ctx, "AD connection update failed", "", err)
 		resp.Diagnostics.AddError(
@@ -1049,6 +1128,10 @@ func (r *AdConnectionResource) Update(ctx context.Context, req resource.UpdateRe
 
 	// Update model from read response
 	r.UpdateModelFromReadResponse(&plan, getResp)
+
+	apiMessage := util.SafeDeref(updateResp.Msg)
+	plan.Msg = types.StringValue(apiMessage)
+	plan.ErrorCode = types.StringValue(*updateResp.ErrorCode)
 
 	stateUpdateDiagnostics := resp.State.Set(ctx, plan)
 	resp.Diagnostics.Append(stateUpdateDiagnostics...)

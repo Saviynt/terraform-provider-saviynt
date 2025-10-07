@@ -6,7 +6,7 @@ Name | Type | Description | Notes
 ------------ | ------------- | ------------- | -------------
 **RequestedObject** | Pointer to **string** | Comma-separated values like &#x60;entitlement&#x60; | [optional] 
 **Username** | Pointer to **string** | Username associated with the role | [optional] 
-**Roletype** | Pointer to **string** | Role type code (e.g., 4 for enterprise roles) | [optional] 
+**RoleType** | Pointer to **string** | Role type code (e.g., 4 for enterprise roles) | [optional] 
 **Requestable** | Pointer to **string** | Requestable status (e.g., true or false) | [optional] 
 **Status** | Pointer to **string** | Role status (e.g., Active, Inactive) | [optional] 
 **RoleName** | Pointer to **string** | Role name | [optional] 
@@ -156,30 +156,30 @@ SetUsername sets Username field to given value.
 
 HasUsername returns a boolean if a field has been set.
 
-### GetRoletype
+### GetRoleType
 
-`func (o *GetRolesRequest) GetRoletype() string`
+`func (o *GetRolesRequest) GetRoleType() string`
 
-GetRoletype returns the Roletype field if non-nil, zero value otherwise.
+GetRoleType returns the RoleType field if non-nil, zero value otherwise.
 
-### GetRoletypeOk
+### GetRoleTypeOk
 
-`func (o *GetRolesRequest) GetRoletypeOk() (*string, bool)`
+`func (o *GetRolesRequest) GetRoleTypeOk() (*string, bool)`
 
-GetRoletypeOk returns a tuple with the Roletype field if it's non-nil, zero value otherwise
+GetRoleTypeOk returns a tuple with the RoleType field if it's non-nil, zero value otherwise
 and a boolean to check if the value has been set.
 
-### SetRoletype
+### SetRoleType
 
-`func (o *GetRolesRequest) SetRoletype(v string)`
+`func (o *GetRolesRequest) SetRoleType(v string)`
 
-SetRoletype sets Roletype field to given value.
+SetRoleType sets RoleType field to given value.
 
-### HasRoletype
+### HasRoleType
 
-`func (o *GetRolesRequest) HasRoletype() bool`
+`func (o *GetRolesRequest) HasRoleType() bool`
 
-HasRoletype returns a boolean if a field has been set.
+HasRoleType returns a boolean if a field has been set.
 
 ### GetRequestable
 

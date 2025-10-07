@@ -1,7 +1,7 @@
 /*
 Account Management API
 
-API for managing security systems in EIC. 
+API for managing security systems in EIC.
 
 API version: 1.0.0
 */
@@ -49,14 +49,14 @@ type GetSecuritySystems200ResponseSecuritySystemDetailsInner struct {
 	ProposedAccountOwnersworkflow *string `json:"proposedAccountOwnersworkflow,omitempty"`
 	// Specify the Service Desk Connection used for integration with a ticketing system, which can be a disconnected system too.
 	ServiceDeskConnection *string `json:"serviceDeskConnection,omitempty"`
-	Connection *string `json:"connection,omitempty"`
+	Connection            *string `json:"connection,omitempty"`
 	// Specify true to enable the connectivity with any system over the open-source connectors such as REST.
 	Useopenconnector *string `json:"useopenconnector,omitempty"`
 	// Specify true to importing data from respective endpoint associated to security system.
 	ReconApplication *string `json:"reconApplication,omitempty"`
-	CreateDate *string `json:"createDate,omitempty"`
-	Endpoints *string `json:"endpoints,omitempty"`
-	UpdatedBy *string `json:"updatedBy,omitempty"`
+	CreateDate       *string `json:"createDate,omitempty"`
+	Endpoints        *string `json:"endpoints,omitempty"`
+	UpdatedBy        *string `json:"updatedBy,omitempty"`
 	// Specify true to enable automated provisioning.
 	AutomatedProvisioning *string `json:"automatedProvisioning,omitempty"`
 	// Specify the security system name.
@@ -71,8 +71,8 @@ type GetSecuritySystems200ResponseSecuritySystemDetailsInner struct {
 	PolicyRule *string `json:"policyRule,omitempty"`
 	// Defines the password policy for service account passwords.
 	PolicyRuleServiceAccount *string `json:"policyRuleServiceAccount,omitempty"`
-	CreatedFrom *string `json:"createdFrom,omitempty"`
-	CreatedBy *string `json:"createdBy,omitempty"`
+	CreatedFrom              *string `json:"createdFrom,omitempty"`
+	CreatedBy                *string `json:"createdBy,omitempty"`
 	// Contains JSON configuration for external risk connections and is applicable only for few connections like SAP
 	ExternalRiskConnectionJson *string `json:"externalRiskConnectionJson,omitempty"`
 	// Number of provisioning tries.
@@ -81,7 +81,7 @@ type GetSecuritySystems200ResponseSecuritySystemDetailsInner struct {
 	Port *string `json:"port,omitempty"`
 	//  You can use this option used to filter out columns in SOD.
 	InherentSODReportFields []string `json:"inherentSODReportFields,omitempty"`
-	Status *string `json:"status,omitempty"`
+	Status                  *string  `json:"status,omitempty"`
 }
 
 // NewGetSecuritySystems200ResponseSecuritySystemDetailsInner instantiates a new GetSecuritySystems200ResponseSecuritySystemDetailsInner object
@@ -1222,7 +1222,7 @@ func (o *GetSecuritySystems200ResponseSecuritySystemDetailsInner) SetStatus(v st
 }
 
 func (o GetSecuritySystems200ResponseSecuritySystemDetailsInner) MarshalJSON() ([]byte, error) {
-	toSerialize,err := o.ToMap()
+	toSerialize, err := o.ToMap()
 	if err != nil {
 		return []byte{}, err
 	}
@@ -1374,5 +1374,3 @@ func (v *NullableGetSecuritySystems200ResponseSecuritySystemDetailsInner) Unmars
 	v.isSet = true
 	return json.Unmarshal(src, &v.value)
 }
-
-

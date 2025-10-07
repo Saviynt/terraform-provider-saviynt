@@ -13,6 +13,7 @@ import (
 	"net/http"
 	"strings"
 
+	"terraform-provider-Saviynt/internal/client"
 	"terraform-provider-Saviynt/util"
 
 	"github.com/hashicorp/terraform-plugin-framework/datasource"
@@ -24,8 +25,9 @@ import (
 
 // SecuritySystemsDataSource defines the data source
 type securitySystemsDataSource struct {
-	client *s.Client
-	token  string
+	client   *s.Client
+	token    string
+	provider client.SaviyntProviderInterface
 }
 
 type SecuritySystemsDataSourceModel struct {
@@ -44,8 +46,8 @@ type SecuritySystemsDataSourceModel struct {
 
 // SecuritySystemDetails represents a single security system details object.
 type SecuritySystemDetails struct {
-	Systemname                         types.String   `tfsdk:"systemname1"`
-	ConnectionType                     types.String   `tfsdk:"connection_type_1"`
+	Systemname                         types.String   `tfsdk:"systemname"`
+	ConnectionType                     types.String   `tfsdk:"connection_type"`
 	DisplayName                        types.String   `tfsdk:"display_name"`
 	Hostname                           types.String   `tfsdk:"hostname"`
 	Port                               types.String   `tfsdk:"port"`
@@ -107,19 +109,19 @@ func (d *securitySystemsDataSource) Schema(ctx context.Context, req datasource.S
 			},
 			"max": schema.Int64Attribute{
 				Optional:    true,
-				Description: "Name for the security system that will be displayed in the user interface.",
+				Description: "Maximum number of security systems to return in the response.",
 			},
 			"offset": schema.Int64Attribute{
 				Optional:    true,
-				Description: "Security system for which you want to create an endpoint.",
+				Description: "Number of security systems to skip before returning results (for pagination).",
 			},
 			"connectionname": schema.StringAttribute{
 				Optional:    true,
-				Description: "Owner type of the endpoint. It could be User or Usergroup.",
+				Description: "Filter security systems by connection name.",
 			},
 			"connection_type": schema.StringAttribute{
 				Optional:    true,
-				Description: "Owner of the endpoint. If ownerType is User, specify the username of the owner. If ownerType is Usergroup, sepecify the name of the User group.",
+				Description: "Filter security systems by connection type (e.g., AD, REST, DB).",
 			},
 			"msg": schema.StringAttribute{
 				Computed:    true,
@@ -144,8 +146,8 @@ func (d *securitySystemsDataSource) Schema(ctx context.Context, req datasource.S
 					Attributes: map[string]schema.Attribute{
 						"display_name":                          schema.StringAttribute{Computed: true, Description: "Specify a user-friendly display name that is shown on the the user interface."},
 						"hostname":                              schema.StringAttribute{Computed: true, Description: "Security system for which you want to create an endpoint."},
-						"connection_type_1":                     schema.StringAttribute{Computed: true, Description: "Specify a connection type to view all connections in EIC for the connection type."},
-						"systemname1":                           schema.StringAttribute{Computed: true, Description: "Specify the security system name."},
+						"connection_type":                       schema.StringAttribute{Computed: true, Description: "Specify a connection type to view all connections in EIC for the connection type."},
+						"systemname":                            schema.StringAttribute{Computed: true, Description: "Specify the security system name."},
 						"access_add_workflow":                   schema.StringAttribute{Computed: true, Description: "Specify the workflow used for approvals for an access request (account, entitlements, role, etc.)."},
 						"access_remove_workflow":                schema.StringAttribute{Computed: true, Description: "Workflow used when revoking access from accounts, entitlements, or performing other de-provisioning tasks."},
 						"add_service_account_workflow":          schema.StringAttribute{Computed: true, Description: "Workflow for adding a service account."},
@@ -199,15 +201,16 @@ func (d *securitySystemsDataSource) Configure(ctx context.Context, req datasourc
 	}
 
 	// Cast provider data to your provider type.
-	prov, ok := req.ProviderData.(*saviyntProvider)
+	prov, ok := req.ProviderData.(*SaviyntProvider)
 	if !ok {
-		resp.Diagnostics.AddError("Unexpected Provider Data", "Expected *saviyntProvider")
+		resp.Diagnostics.AddError("Unexpected Provider Data", "Expected *SaviyntProvider")
 		return
 	}
 
-	// Set the client and token from the provider state.
+	// Set the client, token, and provider reference from the provider state
 	d.client = prov.client
 	d.token = prov.accessToken
+	d.provider = &client.SaviyntProviderWrapper{Provider: prov} // Store provider reference for retry logic
 }
 
 // Read fetches data from the API and converts it to Terraform state.
@@ -221,79 +224,100 @@ func (d *securitySystemsDataSource) Read(ctx context.Context, req datasource.Rea
 		return
 	}
 
-	cfg := openapi.NewConfiguration()
-	apiBaseURL := strings.TrimPrefix(strings.TrimPrefix(d.client.APIBaseURL(), "https://"), "http://")
-	cfg.Host = apiBaseURL
-	cfg.Scheme = "https"
-	cfg.AddDefaultHeader("Authorization", "Bearer "+d.token)
-	cfg.HTTPClient = http.DefaultClient
+	var apiResp *openapi.GetSecuritySystems200Response
+	var finalHttpResp *http.Response
 
-	// Initialize API client.
-	apiClient := openapi.NewAPIClient(cfg)
+	// Execute the API request with retry logic
+	err := d.provider.AuthenticatedAPICallWithRetry(ctx, "get_security_systems_datasource", func(token string) error {
+		cfg := openapi.NewConfiguration()
+		apiBaseURL := strings.TrimPrefix(strings.TrimPrefix(d.client.APIBaseURL(), "https://"), "http://")
+		cfg.Host = apiBaseURL
+		cfg.Scheme = "https"
+		cfg.AddDefaultHeader("Authorization", "Bearer "+token)
+		cfg.HTTPClient = http.DefaultClient
 
-	// Use provided Max filter or default value.
-	apiReq := apiClient.SecuritySystemsAPI.GetSecuritySystems(ctx)
+		// Initialize API client with fresh token
+		apiClient := openapi.NewAPIClient(cfg)
+		apiReq := apiClient.SecuritySystemsAPI.GetSecuritySystems(ctx)
 
-	// Only set Systemname if a non-null value is provided.
-	if !state.Systemname.IsNull() && state.Systemname.ValueString() != "" {
-		apiReq = apiReq.Systemname(state.Systemname.ValueString())
-	}
+		// Apply filters
+		if !state.Systemname.IsNull() && state.Systemname.ValueString() != "" {
+			apiReq = apiReq.Systemname(state.Systemname.ValueString())
+		}
+		if !state.Max.IsNull() {
+			apiReq = apiReq.Max(int32(state.Max.ValueInt64()))
+		}
+		if !state.Offset.IsNull() {
+			apiReq = apiReq.Offset(int32(state.Offset.ValueInt64()))
+		}
+		if !state.Connectionname.IsNull() && state.Connectionname.ValueString() != "" {
+			apiReq = apiReq.Connectionname(state.Connectionname.ValueString())
+		}
+		if !state.ConnectionType.IsNull() && state.ConnectionType.ValueString() != "" {
+			apiReq = apiReq.ConnectionType(state.ConnectionType.ValueString())
+		}
 
-	// Only set Max if provided.
-	if !state.Max.IsNull() {
-		apiReq = apiReq.Max(int32(state.Max.ValueInt64()))
-	}
+		resp, httpResponse, err := apiReq.Execute()
+		finalHttpResp = httpResponse // Update on every call including retries
+		if httpResponse != nil && httpResponse.StatusCode == 401 {
+			return fmt.Errorf("401 unauthorized")
+		}
+		apiResp = resp
+		return err
+	})
 
-	// Only set Offset if provided.
-	if !state.Offset.IsNull() {
-		apiReq = apiReq.Offset(int32(state.Offset.ValueInt64()))
-	}
-
-	// Only set Connectionname if provided.
-	if !state.Connectionname.IsNull() && state.Connectionname.ValueString() != "" {
-		apiReq = apiReq.Connectionname(state.Connectionname.ValueString())
-	}
-
-	// Only set ConnectionType if provided.
-	if !state.ConnectionType.IsNull() && state.ConnectionType.ValueString() != "" {
-		apiReq = apiReq.ConnectionType(state.ConnectionType.ValueString())
-	}
-
-	// Execute the API request.
-	apiResp, httpResp, err := apiReq.Execute()
 	if err != nil {
-		if httpResp != nil && httpResp.StatusCode != 200 {
-			log.Printf("[ERROR] HTTP error while creating Security System: %s", httpResp.Status)
+		if finalHttpResp != nil && finalHttpResp.StatusCode == 412 {
+			log.Printf("[ERROR] HTTP error while reading Security System: %s", finalHttpResp.Status)
 			var fetchResp map[string]interface{}
-			if err := json.NewDecoder(httpResp.Body).Decode(&fetchResp); err != nil {
-				resp.Diagnostics.AddError("Failed to decode error response", err.Error())
-				return
+			if finalHttpResp.Body != nil {
+				if err := json.NewDecoder(finalHttpResp.Body).Decode(&fetchResp); err != nil {
+					resp.Diagnostics.AddError("Failed to decode error response", err.Error())
+					return
+				}
+				if msg, ok := fetchResp["msg"].(string); ok {
+					resp.Diagnostics.AddError(
+						"HTTP Error",
+						fmt.Sprintf("HTTP error while reading security system for the reasons: %s", msg),
+					)
+				} else {
+					resp.Diagnostics.AddError("HTTP Error", "412 Precondition Failed")
+				}
+			} else {
+				resp.Diagnostics.AddError("HTTP Error", "412 Precondition Failed - no response body")
 			}
-			resp.Diagnostics.AddError(
-				"HTTP Error",
-				fmt.Sprintf("HTTP error while creating security system for the reasons: %s", fetchResp["msg"]),
-			)
-
 		} else {
 			log.Printf("[ERROR] API Call Failed: %v", err)
 			resp.Diagnostics.AddError("API Call Failed", fmt.Sprintf("Error: %v", err))
 		}
 		return
 	}
+
 	//if the response is null
-	if len(apiResp.SecuritySystemDetails) == 0 {
+	if apiResp == nil || len(apiResp.SecuritySystemDetails) == 0 {
 		log.Println("[DEBUG] No data returned from API")
 		resp.Diagnostics.AddError("API Response is empty", "No data found for the given filters in the environment.")
 		return
 	}
 
-	log.Printf("[DEBUG] HTTP Status Code: %d", httpResp.StatusCode)
+	if finalHttpResp != nil {
+		log.Printf("[DEBUG] HTTP Status Code: %d", finalHttpResp.StatusCode)
+	}
 
 	// Transform API response to a slice of SecuritySystemDetails.
-	state.Msg = types.StringValue(*apiResp.Msg)
-	state.DisplayCount = types.Int64Value(int64(*apiResp.DisplayCount))
-	state.ErrorCode = types.StringValue(*apiResp.ErrorCode)
-	state.TotalCount = types.Int64Value(int64(*apiResp.TotalCount))
+	state.Msg = util.SafeStringDatasource(apiResp.Msg)
+	// Default to 0 when API omits count fields (happens when no results found)
+	if apiResp.DisplayCount != nil {
+		state.DisplayCount = types.Int64Value(int64(*apiResp.DisplayCount))
+	} else {
+		state.DisplayCount = types.Int64Value(0)
+	}
+	state.ErrorCode = util.SafeStringDatasource(apiResp.ErrorCode)
+	if apiResp.TotalCount != nil {
+		state.TotalCount = types.Int64Value(int64(*apiResp.TotalCount))
+	} else {
+		state.TotalCount = types.Int64Value(0)
+	}
 	if apiResp.SecuritySystemDetails != nil {
 		for _, item := range apiResp.SecuritySystemDetails {
 			securitySystemState := SecuritySystemDetails{

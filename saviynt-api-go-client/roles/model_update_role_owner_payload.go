@@ -19,9 +19,9 @@ var _ MappedNullable = &UpdateRoleOwnerPayload{}
 
 // UpdateRoleOwnerPayload struct for UpdateRoleOwnerPayload
 type UpdateRoleOwnerPayload struct {
-	OwnerName *string `json:"ownerName,omitempty"`
+	OwnerName  *string `json:"ownerName,omitempty"`
 	UpdateType *string `json:"updateType,omitempty"`
-	Rank *string `json:"rank,omitempty"`
+	Rank       *string `json:"rank,omitempty"`
 }
 
 // NewUpdateRoleOwnerPayload instantiates a new UpdateRoleOwnerPayload object
@@ -138,7 +138,7 @@ func (o *UpdateRoleOwnerPayload) SetRank(v string) {
 }
 
 func (o UpdateRoleOwnerPayload) MarshalJSON() ([]byte, error) {
-	toSerialize,err := o.ToMap()
+	toSerialize, err := o.ToMap()
 	if err != nil {
 		return []byte{}, err
 	}
@@ -194,5 +194,3 @@ func (v *NullableUpdateRoleOwnerPayload) UnmarshalJSON(src []byte) error {
 	v.isSet = true
 	return json.Unmarshal(src, &v.value)
 }
-
-

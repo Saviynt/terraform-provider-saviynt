@@ -19,7 +19,8 @@ var _ MappedNullable = &AddOrRemoveRoleResponse{}
 
 // AddOrRemoveRoleResponse struct for AddOrRemoveRoleResponse
 type AddOrRemoveRoleResponse struct {
-	Message *string `json:"message,omitempty"`
+	Message   *string `json:"message,omitempty"`
+	ErrorCode *string `json:"errorCode,omitempty"`
 }
 
 // NewAddOrRemoveRoleResponse instantiates a new AddOrRemoveRoleResponse object
@@ -71,8 +72,40 @@ func (o *AddOrRemoveRoleResponse) SetMessage(v string) {
 	o.Message = &v
 }
 
+// GetErrorCode returns the ErrorCode field value if set, zero value otherwise.
+func (o *AddOrRemoveRoleResponse) GetErrorCode() string {
+	if o == nil || IsNil(o.ErrorCode) {
+		var ret string
+		return ret
+	}
+	return *o.ErrorCode
+}
+
+// GetErrorCodeOk returns a tuple with the ErrorCode field value if set, nil otherwise
+// and a boolean to check if the value has been set.
+func (o *AddOrRemoveRoleResponse) GetErrorCodeOk() (*string, bool) {
+	if o == nil || IsNil(o.ErrorCode) {
+		return nil, false
+	}
+	return o.ErrorCode, true
+}
+
+// HasErrorCode returns a boolean if a field has been set.
+func (o *AddOrRemoveRoleResponse) HasErrorCode() bool {
+	if o != nil && !IsNil(o.ErrorCode) {
+		return true
+	}
+
+	return false
+}
+
+// SetErrorCode gets a reference to the given string and assigns it to the ErrorCode field.
+func (o *AddOrRemoveRoleResponse) SetErrorCode(v string) {
+	o.ErrorCode = &v
+}
+
 func (o AddOrRemoveRoleResponse) MarshalJSON() ([]byte, error) {
-	toSerialize,err := o.ToMap()
+	toSerialize, err := o.ToMap()
 	if err != nil {
 		return []byte{}, err
 	}
@@ -83,6 +116,9 @@ func (o AddOrRemoveRoleResponse) ToMap() (map[string]interface{}, error) {
 	toSerialize := map[string]interface{}{}
 	if !IsNil(o.Message) {
 		toSerialize["message"] = o.Message
+	}
+	if !IsNil(o.ErrorCode) {
+		toSerialize["errorCode"] = o.ErrorCode
 	}
 	return toSerialize, nil
 }
@@ -122,5 +158,3 @@ func (v *NullableAddOrRemoveRoleResponse) UnmarshalJSON(src []byte) error {
 	v.isSet = true
 	return json.Unmarshal(src, &v.value)
 }
-
-

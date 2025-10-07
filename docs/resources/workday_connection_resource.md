@@ -413,22 +413,23 @@ resource "saviynt_workday_connection_resource" "soap" {
 - `assign_orgrole_payload` (String) Payload for assigning org role.
 - `base_url` (String) Base URL of the Workday tenant instance.
 - `client_id` (String) OAuth client ID.
-- `client_secret` (String) OAuth client secret.
+- `client_secret` (String, Sensitive) OAuth client secret. Either this field or the client_secret_wo field must be populated to set the client_secret attribute.
+- `client_secret_wo` (String) OAuth client secret. Either this field or the client_secret field must be populated to set the client_secret attribute.
 - `create_account_payload` (String) Payload for creating an account.
 - `custom_config` (String) Custom configuration for Workday connector.
 - `defaultsavroles` (String) Default SAV roles for managing the connection. Example: "ROLE_ORG"
 - `description` (String) Description for the connection. Example: "ORG_AD"
 - `email_template` (String) Email template for notifications. Example: "New Account Task Creation"
-- `error_code` (String) An error code where '0' signifies success and '1' signifies an unsuccessful operation.
 - `include_reference_descriptors` (String) Include descriptor attribute in response if set to TRUE.
 - `modify_user_data_json` (String) Payload for modifying user data.
-- `msg` (String) A message indicating the outcome of the operation.
 - `orgrole_import_payload` (String) Custom SOAP body for organization role import.
 - `page_size` (String) Number of objects to return per page during import.
 - `pam_config` (String) Privileged Access Management configuration.
-- `password` (String) Password for SOAP authentication.
+- `password` (String, Sensitive) Password for SOAP authentication. Either this field or the password_wo field must be populated to set the password attribute.
+- `password_wo` (String) Password write-only attribute. Either this field or the password field must be populated to set the password attribute.
 - `raas_mapping_json` (String) Overrides default report mapping for RaaS.
-- `refresh_token` (String) OAuth refresh token.
+- `refresh_token` (String, Sensitive) OAuth refresh token. Either this field or the refresh_token_wo field must be populated to set the refresh_token attribute.
+- `refresh_token_wo` (String) Refresh token write-only attribute. Either this field or the refresh_token field must be populated to set the refresh_token attribute.
 - `remove_orgrole_payload` (String) Payload for removing org role.
 - `report_owner` (String) Account name of the report owner used to build default RaaS URLs.
 - `save_in_vault` (String) Flag indicating whether the encrypted attribute should be saved in the configured vault. Example: "false"
@@ -446,10 +447,13 @@ resource "saviynt_workday_connection_resource" "soap" {
 - `users_last_import_time` (String) Property for USERS_LAST_IMPORT_TIME.
 - `vault_configuration` (String) JSON string specifying vault configuration.
 - `vault_connection` (String) Specifies the type of vault connection being used (e.g., 'Hashicorp'). Example: "Hashicorp"
+- `wo_version` (String) Add/change the value of this attribute to update the writeonly attributes like username, password etc in connection resources
 - `x509_cert` (String, Sensitive) Certificate for x509-based SOAP authentication.
 - `x509_key` (String, Sensitive) Private key for x509-based SOAP authentication.
 
 ### Read-Only
 
 - `connection_key` (Number) Unique identifier of the connection returned by the API. Example: 1909
+- `error_code` (String) An error code where '0' signifies success and '1' signifies an unsuccessful operation.
 - `id` (String) Resource ID.
+- `msg` (String) A message indicating the outcome of the operation.

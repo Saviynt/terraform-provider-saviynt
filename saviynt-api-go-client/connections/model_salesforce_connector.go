@@ -11,8 +11,8 @@ API version: 1.0.0
 package connections
 
 import (
-	"encoding/json"
 	"bytes"
+	"encoding/json"
 	"fmt"
 )
 
@@ -22,23 +22,23 @@ var _ MappedNullable = &SalesforceConnector{}
 // SalesforceConnector struct for SalesforceConnector
 type SalesforceConnector struct {
 	BaseConnector
-	CLIENT_ID *string `json:"CLIENT_ID,omitempty"`
-	CLIENT_SECRET *string `json:"CLIENT_SECRET,omitempty"`
-	REFRESH_TOKEN *string `json:"REFRESH_TOKEN,omitempty"`
-	REDIRECT_URI *string `json:"REDIRECT_URI,omitempty"`
-	INSTANCE_URL *string `json:"INSTANCE_URL,omitempty"`
-	OBJECT_TO_BE_IMPORTED *string `json:"OBJECT_TO_BE_IMPORTED,omitempty"`
-	FEATURE_LICENSE_JSON *string `json:"FEATURE_LICENSE_JSON,omitempty"`
+	CLIENT_ID                *string `json:"CLIENT_ID,omitempty"`
+	CLIENT_SECRET            *string `json:"CLIENT_SECRET,omitempty"`
+	REFRESH_TOKEN            *string `json:"REFRESH_TOKEN,omitempty"`
+	REDIRECT_URI             *string `json:"REDIRECT_URI,omitempty"`
+	INSTANCE_URL             *string `json:"INSTANCE_URL,omitempty"`
+	OBJECT_TO_BE_IMPORTED    *string `json:"OBJECT_TO_BE_IMPORTED,omitempty"`
+	FEATURE_LICENSE_JSON     *string `json:"FEATURE_LICENSE_JSON,omitempty"`
 	CUSTOM_CREATEACCOUNT_URL *string `json:"CUSTOM_CREATEACCOUNT_URL,omitempty"`
-	CREATEACCOUNTJSON *string `json:"CREATEACCOUNTJSON,omitempty"`
-	ACCOUNT_FILTER_QUERY *string `json:"ACCOUNT_FILTER_QUERY,omitempty"`
-	ACCOUNT_FIELD_QUERY *string `json:"ACCOUNT_FIELD_QUERY,omitempty"`
-	FIELD_MAPPING_JSON *string `json:"FIELD_MAPPING_JSON,omitempty"`
-	MODIFYACCOUNTJSON *string `json:"MODIFYACCOUNTJSON,omitempty"`
+	CREATEACCOUNTJSON        *string `json:"CREATEACCOUNTJSON,omitempty"`
+	ACCOUNT_FILTER_QUERY     *string `json:"ACCOUNT_FILTER_QUERY,omitempty"`
+	ACCOUNT_FIELD_QUERY      *string `json:"ACCOUNT_FIELD_QUERY,omitempty"`
+	FIELD_MAPPING_JSON       *string `json:"FIELD_MAPPING_JSON,omitempty"`
+	MODIFYACCOUNTJSON        *string `json:"MODIFYACCOUNTJSON,omitempty"`
 	// The attributes of statusAndThresholdConfig json
 	STATUS_THRESHOLD_CONFIG *string `json:"STATUS_THRESHOLD_CONFIG,omitempty"`
-	CUSTOMCONFIGJSON *string `json:"CUSTOMCONFIGJSON,omitempty"`
-	PAM_CONFIG *string `json:"PAM_CONFIG,omitempty"`
+	CUSTOMCONFIGJSON        *string `json:"CUSTOMCONFIGJSON,omitempty"`
+	PAM_CONFIG              *string `json:"PAM_CONFIG,omitempty"`
 }
 
 type _SalesforceConnector SalesforceConnector
@@ -575,7 +575,7 @@ func (o *SalesforceConnector) SetPAM_CONFIG(v string) {
 }
 
 func (o SalesforceConnector) MarshalJSON() ([]byte, error) {
-	toSerialize,err := o.ToMap()
+	toSerialize, err := o.ToMap()
 	if err != nil {
 		return []byte{}, err
 	}
@@ -657,10 +657,10 @@ func (o *SalesforceConnector) UnmarshalJSON(data []byte) (err error) {
 	err = json.Unmarshal(data, &allProperties)
 
 	if err != nil {
-		return err;
+		return err
 	}
 
-	for _, requiredProperty := range(requiredProperties) {
+	for _, requiredProperty := range requiredProperties {
 		if _, exists := allProperties[requiredProperty]; !exists {
 			return fmt.Errorf("no value given for required property %v", requiredProperty)
 		}
@@ -716,5 +716,3 @@ func (v *NullableSalesforceConnector) UnmarshalJSON(src []byte) error {
 	v.isSet = true
 	return json.Unmarshal(src, &v.value)
 }
-
-

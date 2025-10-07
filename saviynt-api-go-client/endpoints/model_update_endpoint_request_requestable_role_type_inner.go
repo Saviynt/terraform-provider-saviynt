@@ -1,7 +1,7 @@
 /*
 Account Management API
 
-API for managing accounts in Saviynt/SSM. - **Create Endpoint**: Creates a new endpoint. - **Update Endpoint**: Updates an existing endpoint based on its name and roletype. - **Get Endpoint List**: Returns a list of endpoints based on search criteria. 
+API for managing accounts in Saviynt/SSM. - **Create Endpoint**: Creates a new endpoint. - **Update Endpoint**: Updates an existing endpoint based on its name and roletype. - **Get Endpoint List**: Returns a list of endpoints based on search criteria.
 
 API version: 1.0.0
 */
@@ -19,17 +19,17 @@ var _ MappedNullable = &UpdateEndpointRequestRequestableRoleTypeInner{}
 
 // UpdateEndpointRequestRequestableRoleTypeInner struct for UpdateEndpointRequestRequestableRoleTypeInner
 type UpdateEndpointRequestRequestableRoleTypeInner struct {
-	// 
+	//
 	RoleType *string `json:"roleType,omitempty"`
-	// 
+	//
 	RequestOption *string `json:"requestOption,omitempty"`
-	// 
+	//
 	Required *bool `json:"required,omitempty"`
-	// 
+	//
 	RequestedQuery *string `json:"requestedQuery,omitempty"`
-	// 
+	//
 	SelectedQuery *string `json:"selectedQuery,omitempty"`
-	// 
+	//
 	ShowOn *string `json:"showOn,omitempty"`
 }
 
@@ -243,7 +243,7 @@ func (o *UpdateEndpointRequestRequestableRoleTypeInner) SetShowOn(v string) {
 }
 
 func (o UpdateEndpointRequestRequestableRoleTypeInner) MarshalJSON() ([]byte, error) {
-	toSerialize,err := o.ToMap()
+	toSerialize, err := o.ToMap()
 	if err != nil {
 		return []byte{}, err
 	}
@@ -308,5 +308,3 @@ func (v *NullableUpdateEndpointRequestRequestableRoleTypeInner) UnmarshalJSON(sr
 	v.isSet = true
 	return json.Unmarshal(src, &v.value)
 }
-
-

@@ -216,7 +216,6 @@ resource "saviynt_sap_connection_resource" "ss" {
 - `email_template` (String) Email template for notifications. Example: "New Account Task Creation"
 - `enable_account_json` (String) Enableaccountjson.
 - `enforce_password_change` (String) Enforcepasswordchange.
-- `error_code` (String) An error code where '0' signifies success and '1' signifies an unsuccessful operation.
 - `external_sod_eval_json` (String) Externalsodevaljson.
 - `external_sod_eval_json_detail` (String) Externalsodevaljsondetail.
 - `fire_fighter_id_grant_access_json` (String) Firefighteridgrantaccessjson.
@@ -239,14 +238,14 @@ resource "saviynt_sap_connection_resource" "ss" {
 - `logs_table_filter` (String) Logstablefilter.
 - `message_server` (String) Messageserver.
 - `modify_user_data_json` (String) Modifyuserdatajson.
-- `msg` (String) A message indicating the outcome of the operation.
 - `pam_config` (String) Pamconfig.
-- `password` (String) Password.
+- `password` (String, Sensitive) Password. Either this or password_wo need to be set to configure the password attribute.
 - `password_max_length` (String) Passwordmaxlength.
 - `password_min_length` (String) Passwordminlength.
 - `password_no_of_caps_alpha` (String) Passwordnoofcapsalpha.
 - `password_no_of_digits` (String) Passwordnoofdigits.
 - `password_no_of_spl_chars` (String) Passwordnoofsplchars.
+- `password_wo` (String) Password write-only attribute. Either this or password need to be set to configure the password attribute.
 - `prov_cua_enabled` (String) Provcuaenabled.
 - `prov_cua_snc` (String) Provcuasnc.
 - `prov_jco_ashost` (String) Provjcoashost.
@@ -258,7 +257,8 @@ resource "saviynt_sap_connection_resource" "ss" {
 - `prov_jco_r3name` (String) Provjcor3name.
 - `prov_jco_sysnr` (String) Provjcosysnr.
 - `prov_jco_user` (String) Provjcouser.
-- `prov_password` (String) Provpassword.
+- `prov_password` (String, Sensitive) Provpassword. Either this field or the prov_password_wo field must be populated to set the prov_password attribute.
+- `prov_password_wo` (String) Provpassword write-only attribute. Either this field or the prov_password field must be populated to set the prov_password attribute.
 - `reset_pwd_for_newaccount` (String) Resetpwdfornewaccount.
 - `saptable_filter_lang` (String) Saptablefilterlang.
 - `save_in_vault` (String) Flag indicating whether the encrypted attribute should be saved in the configured vault. Example: "false"
@@ -273,8 +273,11 @@ resource "saviynt_sap_connection_resource" "ss" {
 - `user_import_json` (String) Userimportjson.
 - `vault_configuration` (String) JSON string specifying vault configuration.
 - `vault_connection` (String) Specifies the type of vault connection being used (e.g., 'Hashicorp'). Example: "Hashicorp"
+- `wo_version` (String) Add/change the value of this attribute to update the writeonly attributes like username, password etc in connection resources
 
 ### Read-Only
 
 - `connection_key` (Number) Unique identifier of the connection returned by the API. Example: 1909
+- `error_code` (String) An error code where '0' signifies success and '1' signifies an unsuccessful operation.
 - `id` (String) Resource ID.
+- `msg` (String) A message indicating the outcome of the operation.

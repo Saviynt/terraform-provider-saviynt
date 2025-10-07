@@ -12,6 +12,7 @@ package provider
 import (
 	"context"
 	"fmt"
+	"net/http"
 	"os"
 	"terraform-provider-Saviynt/internal/client"
 	"terraform-provider-Saviynt/util"
@@ -19,9 +20,11 @@ import (
 
 	connectionsutil "terraform-provider-Saviynt/util/connectionsutil"
 
+	"github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
 	"github.com/hashicorp/terraform-plugin-framework/path"
 	"github.com/hashicorp/terraform-plugin-framework/resource"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema"
+	"github.com/hashicorp/terraform-plugin-framework/schema/validator"
 	"github.com/hashicorp/terraform-plugin-framework/types"
 	"github.com/hashicorp/terraform-plugin-log/tflog"
 	openapi "github.com/saviynt/saviynt-api-go-client/connections"
@@ -39,6 +42,7 @@ type OktaConnectorResourceModel struct {
 	ID                            types.String `tfsdk:"id"`
 	ImportUrl                     types.String `tfsdk:"import_url"`
 	AuthToken                     types.String `tfsdk:"auth_token"`
+	AuthTokenWO                   types.String `tfsdk:"auth_token_wo"`
 	AccountFieldMappings          types.String `tfsdk:"account_field_mappings"`
 	UserFieldMappings             types.String `tfsdk:"user_field_mappings"`
 	EntitlementTypesMappings      types.String `tfsdk:"entitlement_types_mappings"`
@@ -57,6 +61,7 @@ type OktaConnectorResourceModel struct {
 type OktaConnectionResource struct {
 	client            client.SaviyntClientInterface
 	token             string
+	provider          client.SaviyntProviderInterface
 	connectionFactory client.ConnectionFactoryInterface
 }
 
@@ -87,9 +92,20 @@ func OktaConnectorSchema() map[string]schema.Attribute {
 			Description: "Base URL for Okta API calls.",
 		},
 		"auth_token": schema.StringAttribute{
-			Required:    true,
+			Optional:    true,
+			Sensitive:   true,
+			Description: "API token for Okta authentication. It is a compulsory field. Either this or auth_token_wo need to be set",
+			Validators: []validator.String{
+				stringvalidator.ConflictsWith(path.MatchRoot("auth_token_wo")),
+			},
+		},
+		"auth_token_wo": schema.StringAttribute{
+			Optional:    true,
 			WriteOnly:   true,
-			Description: "API token for Okta authentication.",
+			Description: "API token for Okta authentication (write-only). It is a compulsory field. Either this or auth_token need to be set",
+			Validators: []validator.String{
+				stringvalidator.ConflictsWith(path.MatchRoot("auth_token")),
+			},
 		},
 		"account_field_mappings": schema.StringAttribute{
 			Optional:    true,
@@ -179,16 +195,16 @@ func (r *OktaConnectionResource) Configure(ctx context.Context, req resource.Con
 	}
 
 	// Cast provider data to your provider type.
-	prov, ok := req.ProviderData.(*saviyntProvider)
+	prov, ok := req.ProviderData.(*SaviyntProvider)
 	if !ok {
 		errorCode := oktaErrorCodes.ProviderConfig()
 		opCtx.LogOperationError(ctx, "Provider configuration failed", errorCode,
-			fmt.Errorf("expected *saviyntProvider, got different type"),
-			map[string]interface{}{"expected_type": "*saviyntProvider"})
+			fmt.Errorf("expected *SaviyntProvider, got different type"),
+			map[string]interface{}{"expected_type": "*SaviyntProvider"})
 
 		resp.Diagnostics.AddError(
 			errorsutil.GetErrorMessage(errorsutil.ErrProviderConfig),
-			fmt.Sprintf("[%s] Expected *saviyntProvider, got different type", errorCode),
+			fmt.Sprintf("[%s] Expected *SaviyntProvider, got different type", errorCode),
 		)
 		return
 	}
@@ -196,6 +212,7 @@ func (r *OktaConnectionResource) Configure(ctx context.Context, req resource.Con
 	// Set the client and token from the provider state using interface wrapper.
 	r.client = &client.SaviyntClientWrapper{Client: prov.client}
 	r.token = prov.accessToken
+	r.provider = &client.SaviyntProviderWrapper{Provider: prov} // Store provider reference for retry logic
 
 	opCtx.LogOperationEnd(ctx, "Okta connection resource configured successfully")
 }
@@ -210,7 +227,19 @@ func (r *OktaConnectionResource) SetToken(token string) {
 	r.token = token
 }
 
+// SetProvider sets the provider for testing purposes
+func (r *OktaConnectionResource) SetProvider(provider client.SaviyntProviderInterface) {
+	r.provider = provider
+}
+
 func (r *OktaConnectionResource) BuildOktaConnector(plan *OktaConnectorResourceModel, config *OktaConnectorResourceModel) openapi.OktaConnector {
+	var authToken string
+	if !config.AuthToken.IsNull() && !config.AuthToken.IsUnknown() {
+		authToken = config.AuthToken.ValueString()
+	} else if !config.AuthTokenWO.IsNull() && !config.AuthTokenWO.IsUnknown() {
+		authToken = config.AuthTokenWO.ValueString()
+	}
+
 	oktaConn := openapi.OktaConnector{
 		BaseConnector: openapi.BaseConnector{
 			//required field
@@ -223,7 +252,7 @@ func (r *OktaConnectionResource) BuildOktaConnector(plan *OktaConnectorResourceM
 		},
 		//required field
 		IMPORTURL:                       plan.ImportUrl.ValueString(),
-		AUTHTOKEN:                       config.AuthToken.ValueString(),
+		AUTHTOKEN:                       authToken,
 		OKTA_APPLICATION_SECURITYSYSTEM: plan.OktaApplicationSecuritySystem.ValueString(),
 		//optional field
 		ACCOUNTFIELDMAPPINGS:     util.StringPointerOrEmpty(plan.AccountFieldMappings),
@@ -282,14 +311,28 @@ func (r *OktaConnectionResource) CreateOktaConnection(ctx context.Context, plan 
 
 	opCtx.LogOperationStart(logCtx, "Starting Okta connection creation")
 
-	// Use the factory to create connection operations
-	connectionOps := r.connectionFactory.CreateConnectionOperations(r.client.APIBaseURL(), r.token)
-
-	// Check if connection already exists (idempotency check)
+	// Check if connection already exists (idempotency check) with retry logic
 	tflog.Debug(logCtx, "Checking if connection already exists")
+	var existingResource *openapi.GetConnectionDetailsResponse
+	var finalHttpResp *http.Response
 
-	// Use original context for API calls to maintain test compatibility
-	existingResource, _, _ := connectionOps.GetConnectionDetails(ctx, connectionName)
+	err := r.provider.AuthenticatedAPICallWithRetry(ctx, "get_connection_details_idempotency", func(token string) error {
+		connectionOps := r.connectionFactory.CreateConnectionOperations(r.client.APIBaseURL(), token)
+		resp, httpResp, err := connectionOps.GetConnectionDetails(ctx, connectionName)
+		if httpResp != nil && httpResp.StatusCode == 401 {
+			return fmt.Errorf("401 unauthorized")
+		}
+		existingResource = resp
+		finalHttpResp = httpResp // Update on every call including retries
+		return err
+	})
+
+	if err != nil && finalHttpResp != nil && finalHttpResp.StatusCode != 412 {
+		errorCode := oktaErrorCodes.ReadFailed()
+		opCtx.LogOperationError(logCtx, "Failed to check existing connection", errorCode, err)
+		return nil, errorsutil.CreateStandardError(errorsutil.ConnectorTypeOkta, errorCode, "create", connectionName, err)
+	}
+
 	if existingResource != nil &&
 		existingResource.OktaConnectionResponse != nil &&
 		existingResource.OktaConnectionResponse.Errorcode != nil &&
@@ -304,35 +347,58 @@ func (r *OktaConnectionResource) CreateOktaConnection(ctx context.Context, plan 
 	// Build Okta connection create request
 	tflog.Debug(ctx, "Building Okta connection create request")
 
+	if (config.AuthToken.IsNull() || config.AuthToken.IsUnknown()) && (config.AuthTokenWO.IsNull() || config.AuthTokenWO.IsUnknown()) {
+		return nil, fmt.Errorf("either auth_token or auth_token_wo must be set")
+	}
+
 	oktaConn := r.BuildOktaConnector(plan, config)
 	createReq := openapi.CreateOrUpdateRequest{
 		OktaConnector: &oktaConn,
 	}
 
-	// Execute create operation through interface
+	// Execute create operation with retry logic
 	tflog.Debug(ctx, "Executing create operation")
+	var apiResp *openapi.CreateOrUpdateResponse
 
-	apiResp, _, err := connectionOps.CreateOrUpdateConnection(ctx, createReq)
+	err = r.provider.AuthenticatedAPICallWithRetry(ctx, "create_okta_connection", func(token string) error {
+		connectionOps := r.connectionFactory.CreateConnectionOperations(r.client.APIBaseURL(), token)
+		resp, httpResp, err := connectionOps.CreateOrUpdateConnection(ctx, createReq)
+		if httpResp != nil && httpResp.StatusCode == 401 {
+			return fmt.Errorf("401 unauthorized")
+		}
+		apiResp = resp
+		return err
+	})
 	if err != nil {
 		errorCode := oktaErrorCodes.CreateFailed()
 		opCtx.LogOperationError(ctx, "Failed to create Okta connection", errorCode, err)
 		return nil, errorsutil.CreateStandardError(errorsutil.ConnectorTypeOkta, errorCode, "create", connectionName, err)
 	}
 
-	if apiResp != nil && *apiResp.ErrorCode != "0" {
+	if apiResp != nil && apiResp.ErrorCode != nil && *apiResp.ErrorCode != "0" {
 		apiErr := fmt.Errorf("API returned error code %s: %s", *apiResp.ErrorCode, errorsutil.SanitizeMessage(apiResp.Msg))
 		errorCode := oktaErrorCodes.APIError()
 		opCtx.LogOperationError(ctx, "Okta connection creation failed with API error", errorCode, apiErr,
 			map[string]interface{}{
-				"api_error_code": *apiResp.ErrorCode,
-				"message":        errorsutil.SanitizeMessage(apiResp.Msg),
+				"api_error_code": func() interface{} {
+					if apiResp != nil && apiResp.ErrorCode != nil {
+						return *apiResp.ErrorCode
+					}
+					return "unknown"
+				}(),
+				"message": func() interface{} {
+					if apiResp != nil && apiResp.Msg != nil {
+						return errorsutil.SanitizeMessage(apiResp.Msg)
+					}
+					return "API call failed"
+				}(),
 			})
 		return nil, errorsutil.CreateStandardError(errorsutil.ConnectorTypeOkta, errorCode, "create", connectionName, apiErr)
 	}
 
 	opCtx.LogOperationEnd(logCtx, "Okta connection created successfully",
 		map[string]interface{}{"connection_key": func() interface{} {
-			if apiResp.ConnectionKey != nil {
+			if apiResp != nil && apiResp.ConnectionKey != nil {
 				return *apiResp.ConnectionKey
 			}
 			return "unknown"
@@ -349,18 +415,32 @@ func (r *OktaConnectionResource) ReadOktaConnection(ctx context.Context, connect
 
 	opCtx.LogOperationStart(logCtx, "Starting Okta connection read operation")
 
-	// Use the factory to create connection operations
-	connectionOps := r.connectionFactory.CreateConnectionOperations(r.client.APIBaseURL(), r.token)
+	// Execute read operation with retry logic
+	var apiResp *openapi.GetConnectionDetailsResponse
 
-	// Execute read operation through interface - use original context for API calls
-	apiResp, _, err := connectionOps.GetConnectionDetails(ctx, connectionName)
+	err := r.provider.AuthenticatedAPICallWithRetry(ctx, "read_okta_connection", func(token string) error {
+		connectionOps := r.connectionFactory.CreateConnectionOperations(r.client.APIBaseURL(), token)
+		resp, httpResp, err := connectionOps.GetConnectionDetails(ctx, connectionName)
+		if httpResp != nil && httpResp.StatusCode == 401 {
+			return fmt.Errorf("401 unauthorized")
+		}
+		apiResp = resp
+		return err
+	})
+
 	if err != nil {
 		errorCode := oktaErrorCodes.ReadFailed()
 		opCtx.LogOperationError(logCtx, "Failed to read Okta connection", errorCode, err)
 		return nil, errorsutil.CreateStandardError(errorsutil.ConnectorTypeOkta, errorCode, "read", connectionName, err)
 	}
 
-	if apiResp != nil && apiResp.OktaConnectionResponse != nil && *apiResp.OktaConnectionResponse.Errorcode != 0 {
+	if err := r.ValidateOktaConnectionResponse(apiResp); err != nil {
+		errorCode := oktaErrorCodes.APIError()
+		opCtx.LogOperationError(ctx, "Invalid connection type for Okta datasource", errorCode, err)
+		return nil, fmt.Errorf("[%s] Unable to verify connection type for connection %q. The provider could not determine the type of this connection. Please ensure the connection name is correct and belongs to a supported connector type", errorCode, connectionName)
+	}
+
+	if apiResp != nil && apiResp.OktaConnectionResponse != nil && apiResp.OktaConnectionResponse.Errorcode != nil && *apiResp.OktaConnectionResponse.Errorcode != 0 {
 		apiErr := fmt.Errorf("API returned error code %d: %s", *apiResp.OktaConnectionResponse.Errorcode, errorsutil.SanitizeMessage(apiResp.OktaConnectionResponse.Msg))
 		errorCode := oktaErrorCodes.APIError()
 		opCtx.LogOperationError(ctx, "Okta connection read failed with API error", errorCode, apiErr,
@@ -391,36 +471,40 @@ func (r *OktaConnectionResource) UpdateOktaConnection(ctx context.Context, plan 
 
 	opCtx.LogOperationStart(logCtx, "Starting Okta connection update")
 
-	// Use the factory to create connection operations
-	connectionOps := r.connectionFactory.CreateConnectionOperations(r.client.APIBaseURL(), r.token)
-
 	// Build Okta connection update request
 	tflog.Debug(logCtx, "Building Okta connection update request")
 
-	oktaConn := r.BuildOktaConnector(plan, config)
-	if plan.VaultConnection.ValueString() == "" {
-		emptyStr := ""
-		oktaConn.BaseConnector.VaultConnection = &emptyStr
-		oktaConn.BaseConnector.VaultConfiguration = &emptyStr
-		oktaConn.BaseConnector.Saveinvault = &emptyStr
+	if (config.AuthToken.IsNull() || config.AuthToken.IsUnknown()) && (config.AuthTokenWO.IsNull() || config.AuthTokenWO.IsUnknown()) {
+		return nil, fmt.Errorf("either auth_token or auth_token_wo must be set")
 	}
+
+	oktaConn := r.BuildOktaConnector(plan, config)
 
 	updateReq := openapi.CreateOrUpdateRequest{
 		OktaConnector: &oktaConn,
 	}
 
-	// Execute update operation through interface
+	// Execute update operation with retry logic
 	tflog.Debug(logCtx, "Executing update operation")
+	var apiResp *openapi.CreateOrUpdateResponse
 
-	// Use original context for API calls to maintain test compatibility
-	apiResp, _, err := connectionOps.CreateOrUpdateConnection(ctx, updateReq)
+	err := r.provider.AuthenticatedAPICallWithRetry(ctx, "update_okta_connection", func(token string) error {
+		connectionOps := r.connectionFactory.CreateConnectionOperations(r.client.APIBaseURL(), token)
+		resp, httpResp, err := connectionOps.CreateOrUpdateConnection(ctx, updateReq)
+		if httpResp != nil && httpResp.StatusCode == 401 {
+			return fmt.Errorf("401 unauthorized")
+		}
+		apiResp = resp
+		return err
+	})
+
 	if err != nil {
 		errorCode := oktaErrorCodes.UpdateFailed()
 		opCtx.LogOperationError(logCtx, "Failed to update Okta connection", errorCode, err)
 		return nil, errorsutil.CreateStandardError(errorsutil.ConnectorTypeOkta, errorCode, "update", connectionName, err)
 	}
 
-	if apiResp != nil && *apiResp.ErrorCode != "0" {
+	if apiResp != nil && apiResp.ErrorCode != nil && *apiResp.ErrorCode != "0" {
 		apiErr := fmt.Errorf("API returned error code %s: %s", *apiResp.ErrorCode, errorsutil.SanitizeMessage(apiResp.Msg))
 		errorCode := oktaErrorCodes.APIError()
 		opCtx.LogOperationError(logCtx, "Okta connection update failed with API error", errorCode, apiErr,
@@ -463,14 +547,13 @@ func (r *OktaConnectionResource) UpdateModelFromReadResponse(state *OktaConnecto
 	state.ActivateEndpoint = util.SafeStringDatasource(apiResp.OktaConnectionResponse.Connectionattributes.ACTIVATE_ENDPOINT)
 	state.ConfigJson = util.SafeStringDatasource(apiResp.OktaConnectionResponse.Connectionattributes.ConfigJSON)
 	state.PamConfig = util.SafeStringDatasource(apiResp.OktaConnectionResponse.Connectionattributes.PAM_CONFIG)
+}
 
-	apiMessage := util.SafeDeref(apiResp.OktaConnectionResponse.Msg)
-	if apiMessage == "success" {
-		state.Msg = types.StringValue("Connection Successful")
-	} else {
-		state.Msg = types.StringValue(apiMessage)
+func (r *OktaConnectionResource) ValidateOktaConnectionResponse(apiResp *openapi.GetConnectionDetailsResponse) error {
+	if apiResp != nil && apiResp.OktaConnectionResponse == nil {
+		return fmt.Errorf("verify the connection type - Okta connection response is nil")
 	}
-	state.ErrorCode = util.Int32PtrToTFString(apiResp.OktaConnectionResponse.Errorcode)
+	return nil
 }
 
 func (r *OktaConnectionResource) Create(ctx context.Context, req resource.CreateRequest, resp *resource.CreateResponse) {
@@ -570,6 +653,14 @@ func (r *OktaConnectionResource) Read(ctx context.Context, req resource.ReadRequ
 	// Update model from read response
 	r.UpdateModelFromReadResponse(&state, apiResp)
 
+	apiMessage := util.SafeDeref(apiResp.OktaConnectionResponse.Msg)
+	if apiMessage == "success" {
+		state.Msg = types.StringValue("Connection Read Successful")
+	} else {
+		state.Msg = types.StringValue(apiMessage)
+	}
+	state.ErrorCode = util.Int32PtrToTFString(apiResp.OktaConnectionResponse.Errorcode)
+
 	stateDiagnostics := resp.State.Set(ctx, &state)
 	resp.Diagnostics.Append(stateDiagnostics...)
 	if resp.Diagnostics.HasError() {
@@ -655,7 +746,7 @@ func (r *OktaConnectionResource) Update(ctx context.Context, req resource.Update
 	ctx = opCtx.AddContextToLogger(ctx)
 
 	// Use interface pattern instead of direct API client creation
-	_, err := r.UpdateOktaConnection(ctx, &plan, &config)
+	updateResp, err := r.UpdateOktaConnection(ctx, &plan, &config)
 	if err != nil {
 		opCtx.LogOperationError(ctx, "Okta connection update failed", "", err)
 		resp.Diagnostics.AddError(
@@ -678,6 +769,10 @@ func (r *OktaConnectionResource) Update(ctx context.Context, req resource.Update
 
 	// Update model from read response
 	r.UpdateModelFromReadResponse(&plan, getResp)
+
+	apiMessage := util.SafeDeref(updateResp.Msg)
+	plan.Msg = types.StringValue(apiMessage)
+	plan.ErrorCode = types.StringValue(*updateResp.ErrorCode)
 
 	stateUpdateDiagnostics := resp.State.Set(ctx, plan)
 	resp.Diagnostics.Append(stateUpdateDiagnostics...)

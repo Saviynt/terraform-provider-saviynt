@@ -7,7 +7,7 @@ Name | Type | Description | Notes
 **RoleKey** | Pointer to **int32** |  | [optional] 
 **Updatedate** | Pointer to **string** |  | [optional] 
 **Roletype** | Pointer to **string** |  | [optional] 
-**Version** | Pointer to **int32** |  | [optional] 
+**Version** | Pointer to [**GetRoleDetailsResponseVersion**](GetRoleDetailsResponseVersion.md) |  | [optional] 
 **RoleName** | Pointer to **string** |  | [optional] 
 **Description** | Pointer to **string** |  | [optional] 
 **Glossary** | Pointer to **string** |  | [optional] 
@@ -26,6 +26,7 @@ Name | Type | Description | Notes
 **RoleState** | Pointer to **string** |  | [optional] 
 **Endpointkey** | Pointer to **string** |  | [optional] 
 **LastReviewedCampaignName** | Pointer to **string** |  | [optional] 
+**Risk** | Pointer to **string** |  | [optional] 
 **LastReviewedBy** | Pointer to **string** |  | [optional] 
 **Owner** | Pointer to [**GetRoleDetailsResponseOwner**](GetRoleDetailsResponseOwner.md) |  | [optional] 
 **UserDetails** | Pointer to [**[]GetRoleDetailsResponseUserDetailsInner**](GetRoleDetailsResponseUserDetailsInner.md) |  | [optional] 
@@ -187,20 +188,20 @@ HasRoletype returns a boolean if a field has been set.
 
 ### GetVersion
 
-`func (o *GetRoleDetailsResponse) GetVersion() int32`
+`func (o *GetRoleDetailsResponse) GetVersion() GetRoleDetailsResponseVersion`
 
 GetVersion returns the Version field if non-nil, zero value otherwise.
 
 ### GetVersionOk
 
-`func (o *GetRoleDetailsResponse) GetVersionOk() (*int32, bool)`
+`func (o *GetRoleDetailsResponse) GetVersionOk() (*GetRoleDetailsResponseVersion, bool)`
 
 GetVersionOk returns a tuple with the Version field if it's non-nil, zero value otherwise
 and a boolean to check if the value has been set.
 
 ### SetVersion
 
-`func (o *GetRoleDetailsResponse) SetVersion(v int32)`
+`func (o *GetRoleDetailsResponse) SetVersion(v GetRoleDetailsResponseVersion)`
 
 SetVersion sets Version field to given value.
 
@@ -659,6 +660,31 @@ SetLastReviewedCampaignName sets LastReviewedCampaignName field to given value.
 `func (o *GetRoleDetailsResponse) HasLastReviewedCampaignName() bool`
 
 HasLastReviewedCampaignName returns a boolean if a field has been set.
+
+### GetRisk
+
+`func (o *GetRoleDetailsResponse) GetRisk() string`
+
+GetRisk returns the Risk field if non-nil, zero value otherwise.
+
+### GetRiskOk
+
+`func (o *GetRoleDetailsResponse) GetRiskOk() (*string, bool)`
+
+GetRiskOk returns a tuple with the Risk field if it's non-nil, zero value otherwise
+and a boolean to check if the value has been set.
+
+### SetRisk
+
+`func (o *GetRoleDetailsResponse) SetRisk(v string)`
+
+SetRisk sets Risk field to given value.
+
+### HasRisk
+
+`func (o *GetRoleDetailsResponse) HasRisk() bool`
+
+HasRisk returns a boolean if a field has been set.
 
 ### GetLastReviewedBy
 

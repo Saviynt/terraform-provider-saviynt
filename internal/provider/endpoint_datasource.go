@@ -12,6 +12,7 @@ import (
 	"log"
 	"net/http"
 	"strings"
+	"terraform-provider-Saviynt/internal/client"
 	"terraform-provider-Saviynt/util"
 
 	openapi "github.com/saviynt/saviynt-api-go-client/endpoints"
@@ -24,8 +25,9 @@ import (
 )
 
 type endpointsDataSource struct {
-	client *s.Client
-	token  string
+	client   *s.Client
+	token    string
+	provider client.SaviyntProviderInterface
 }
 
 var _ datasource.DataSource = &endpointsDataSource{}
@@ -390,15 +392,16 @@ func (d *endpointsDataSource) Configure(ctx context.Context, req datasource.Conf
 	}
 
 	// Cast provider data to your provider type.
-	prov, ok := req.ProviderData.(*saviyntProvider)
+	prov, ok := req.ProviderData.(*SaviyntProvider)
 	if !ok {
-		resp.Diagnostics.AddError("Unexpected Provider Data", "Expected *saviyntProvider")
+		resp.Diagnostics.AddError("Unexpected Provider Data", "Expected *SaviyntProvider")
 		return
 	}
 
-	// Set the client and token from the provider state.
+	// Set the client, token, and provider reference from the provider state
 	d.client = prov.client
 	d.token = prov.accessToken
+	d.provider = &client.SaviyntProviderWrapper{Provider: prov} // Store provider reference for retry logic
 }
 
 func (d *endpointsDataSource) Read(ctx context.Context, req datasource.ReadRequest, resp *datasource.ReadResponse) {
@@ -411,97 +414,123 @@ func (d *endpointsDataSource) Read(ctx context.Context, req datasource.ReadReque
 		return
 	}
 
-	cfg := openapi.NewConfiguration()
-	apiBaseURL := strings.TrimPrefix(strings.TrimPrefix(d.client.APIBaseURL(), "https://"), "http://")
-	cfg.Host = apiBaseURL
-	cfg.Scheme = "https"
-	cfg.AddDefaultHeader("Authorization", "Bearer "+d.token)
-	cfg.HTTPClient = http.DefaultClient
+	var endpointsResponse *openapi.GetEndpoints200Response
+	var finalHttpResp *http.Response
 
-	apiClient := openapi.NewAPIClient(cfg)
+	// Execute the API request with retry logic
+	err := d.provider.AuthenticatedAPICallWithRetry(ctx, "get_endpoints_datasource", func(token string) error {
+		cfg := openapi.NewConfiguration()
+		apiBaseURL := strings.TrimPrefix(strings.TrimPrefix(d.client.APIBaseURL(), "https://"), "http://")
+		cfg.Host = apiBaseURL
+		cfg.Scheme = "https"
+		cfg.AddDefaultHeader("Authorization", "Bearer "+token)
+		cfg.HTTPClient = http.DefaultClient
 
-	areq := openapi.GetEndpointsRequest{}
+		apiClient := openapi.NewAPIClient(cfg)
+		areq := openapi.GetEndpointsRequest{}
 
-	if !state.EndpointName.IsNull() && state.EndpointName.ValueString() != "" {
-		endpointName := state.EndpointName.ValueString()
-		areq.SetEndpointname(endpointName)
-	}
-
-	if !state.EndpointKey.IsNull() && len(state.EndpointKey.Elements()) > 0 {
-		endpointkeys := util.StringsFromList(state.EndpointKey)
-		areq.SetEndpointkey(endpointkeys)
-	}
-
-	if !state.ConnectionType.IsNull() && state.ConnectionType.ValueString() != "" {
-		connectionType := state.ConnectionType.ValueString()
-		areq.SetConnectionType(connectionType)
-	}
-
-	if !state.Displayname.IsNull() && state.Displayname.ValueString() != "" {
-		displayName := state.Displayname.ValueString()
-		areq.SetDisplayName(displayName)
-	}
-
-	if !state.Owner.IsNull() && state.Owner.ValueString() != "" {
-		owner := state.Owner.ValueString()
-		areq.SetOwner(owner)
-	}
-
-	if !state.Max.IsNull() && state.Max.ValueString() != "" {
-		max := state.Max.ValueString()
-		areq.SetMax(max)
-	}
-
-	if !state.FilterCriteria.IsNull() {
-		var filterMap map[string]string
-		diags := state.FilterCriteria.ElementsAs(ctx, &filterMap, true)
-
-		if diags.HasError() {
-			resp.Diagnostics.Append(diags...)
-			return
+		// Apply filters
+		if !state.EndpointName.IsNull() && state.EndpointName.ValueString() != "" {
+			endpointName := state.EndpointName.ValueString()
+			areq.SetEndpointname(endpointName)
 		}
 
-		filterCriteria := make(map[string]interface{}, len(filterMap))
-		for k, v := range filterMap {
-			filterCriteria[k] = v
+		if !state.EndpointKey.IsNull() && len(state.EndpointKey.Elements()) > 0 {
+			endpointkeys := util.StringsFromList(state.EndpointKey)
+			areq.SetEndpointkey(endpointkeys)
 		}
 
-		areq.SetFilterCriteria(filterCriteria)
-	}
+		if !state.ConnectionType.IsNull() && state.ConnectionType.ValueString() != "" {
+			connectionType := state.ConnectionType.ValueString()
+			areq.SetConnectionType(connectionType)
+		}
 
-	apiReq := apiClient.EndpointsAPI.GetEndpoints(ctx).GetEndpointsRequest(areq)
+		if !state.Displayname.IsNull() && state.Displayname.ValueString() != "" {
+			displayName := state.Displayname.ValueString()
+			areq.SetDisplayName(displayName)
+		}
 
-	endpointsResponse, httpResp, err := apiReq.Execute()
-	if err != nil {
-		if httpResp != nil && httpResp.StatusCode != 200 {
-			log.Printf("[ERROR] HTTP error while creating endpoint: %s", httpResp.Status)
-			var fetchResp map[string]interface{}
-			if err := json.NewDecoder(httpResp.Body).Decode(&fetchResp); err != nil {
-				resp.Diagnostics.AddError("Failed to decode error response", err.Error())
-				return
+		if !state.Owner.IsNull() && state.Owner.ValueString() != "" {
+			owner := state.Owner.ValueString()
+			areq.SetOwner(owner)
+		}
+
+		if !state.Max.IsNull() && state.Max.ValueString() != "" {
+			max := state.Max.ValueString()
+			areq.SetMax(max)
+		}
+
+		if !state.FilterCriteria.IsNull() {
+			var filterMap map[string]string
+			diags := state.FilterCriteria.ElementsAs(ctx, &filterMap, true)
+
+			if diags.HasError() {
+				resp.Diagnostics.Append(diags...)
+				return fmt.Errorf("failed to parse filter criteria")
 			}
-			resp.Diagnostics.AddError(
-				"HTTP Error",
-				fmt.Sprintf("HTTP error while creating endpoint for the reasons: %s", fetchResp),
-			)
 
+			filterCriteria := make(map[string]interface{}, len(filterMap))
+			for k, v := range filterMap {
+				filterCriteria[k] = v
+			}
+
+			areq.SetFilterCriteria(filterCriteria)
+		}
+
+		apiReq := apiClient.EndpointsAPI.GetEndpoints(ctx).GetEndpointsRequest(areq)
+		resp, httpResponse, err := apiReq.Execute()
+		finalHttpResp = httpResponse // Update on every call including retries
+		if httpResponse != nil && httpResponse.StatusCode == 401 {
+			return fmt.Errorf("401 unauthorized")
+		}
+		endpointsResponse = resp
+		return err
+	})
+
+	if err != nil {
+		if finalHttpResp != nil && finalHttpResp.StatusCode == 412 {
+			log.Printf("[ERROR] HTTP error while reading endpoint: %s", finalHttpResp.Status)
+			var fetchResp map[string]interface{}
+			if finalHttpResp.Body != nil {
+				if err := json.NewDecoder(finalHttpResp.Body).Decode(&fetchResp); err != nil {
+					resp.Diagnostics.AddError("Failed to decode error response", err.Error())
+					return
+				}
+				resp.Diagnostics.AddError(
+					"HTTP Error",
+					fmt.Sprintf("HTTP error while reading endpoint for the reasons: %s", fetchResp),
+				)
+			} else {
+				resp.Diagnostics.AddError("HTTP Error", "412 Precondition Failed - no response body")
+			}
 		} else {
 			log.Printf("[ERROR] API Call Failed: %v", err)
 			resp.Diagnostics.AddError("API Call Failed", fmt.Sprintf("Error: %v", err))
 		}
 		return
 	}
-	if endpointsResponse != nil && *endpointsResponse.ErrorCode != "0" {
-		log.Printf("[ERROR]: Error in reading endpoint. Errorcode: %v, Message: %v", *endpointsResponse.ErrorCode, *endpointsResponse.Message)
-		resp.Diagnostics.AddError("Read endpoint failed", *endpointsResponse.Message)
+	if endpointsResponse != nil && endpointsResponse.ErrorCode != nil && *endpointsResponse.ErrorCode != "0" {
+		errorCode := util.SafeDeref(endpointsResponse.ErrorCode)
+		message := util.SafeDeref(endpointsResponse.Message)
+		log.Printf("[ERROR]: Error in reading endpoint. Errorcode: %v, Message: %v", errorCode, message)
+		resp.Diagnostics.AddError("Read endpoint failed", message)
 	}
 
-	log.Printf("[DEBUG] HTTP Status Code: %d", httpResp.StatusCode)
+	log.Printf("[DEBUG] HTTP Status Code: %d", finalHttpResp.StatusCode)
 
-	state.Message = types.StringValue(*endpointsResponse.Message)
-	state.DisplayCount = types.Int64Value(int64(*endpointsResponse.DisplayCount))
-	state.ErrorCode = types.StringValue(*endpointsResponse.ErrorCode)
-	state.TotalCount = types.Int64Value(int64(*endpointsResponse.TotalCount))
+	state.Message = util.SafeStringDatasource(endpointsResponse.Message)
+	// Default to 0 when API omits count fields (happens when no results found)
+	if endpointsResponse.DisplayCount != nil {
+		state.DisplayCount = types.Int64Value(int64(*endpointsResponse.DisplayCount))
+	} else {
+		state.DisplayCount = types.Int64Value(0)
+	}
+	state.ErrorCode = util.SafeStringDatasource(endpointsResponse.ErrorCode)
+	if endpointsResponse.TotalCount != nil {
+		state.TotalCount = types.Int64Value(int64(*endpointsResponse.TotalCount))
+	} else {
+		state.TotalCount = types.Int64Value(0)
+	}
 
 	if endpointsResponse.Endpoints != nil {
 		for _, item := range endpointsResponse.Endpoints {

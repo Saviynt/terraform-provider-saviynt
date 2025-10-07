@@ -12,6 +12,7 @@ package provider
 import (
 	"context"
 	"fmt"
+	"net/http"
 	"os"
 	"terraform-provider-Saviynt/internal/client"
 	"terraform-provider-Saviynt/util"
@@ -19,9 +20,11 @@ import (
 
 	connectionsutil "terraform-provider-Saviynt/util/connectionsutil"
 
+	"github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
 	"github.com/hashicorp/terraform-plugin-framework/path"
 	"github.com/hashicorp/terraform-plugin-framework/resource"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema"
+	"github.com/hashicorp/terraform-plugin-framework/schema/validator"
 	"github.com/hashicorp/terraform-plugin-framework/types"
 	"github.com/hashicorp/terraform-plugin-log/tflog"
 	openapi "github.com/saviynt/saviynt-api-go-client/connections"
@@ -52,9 +55,12 @@ type WorkdayConnectorResourceModel struct {
 	X509Cert               types.String `tfsdk:"x509_cert"`
 	Username               types.String `tfsdk:"username"`
 	Password               types.String `tfsdk:"password"`
+	PasswordWo             types.String `tfsdk:"password_wo"`
 	ClientID               types.String `tfsdk:"client_id"`
 	ClientSecret           types.String `tfsdk:"client_secret"`
+	ClientSecretWo         types.String `tfsdk:"client_secret_wo"`
 	RefreshToken           types.String `tfsdk:"refresh_token"`
+	RefreshTokenWo         types.String `tfsdk:"refresh_token_wo"`
 	PageSize               types.String `tfsdk:"page_size"`
 	UserImportPayload      types.String `tfsdk:"user_import_payload"`
 	UserImportMapping      types.String `tfsdk:"user_import_mapping"`
@@ -81,6 +87,7 @@ type WorkdayConnectorResourceModel struct {
 type WorkdayConnectionResource struct {
 	client            client.SaviyntClientInterface
 	token             string
+	provider          client.SaviyntProviderInterface
 	connectionFactory client.ConnectionFactoryInterface
 }
 
@@ -175,28 +182,61 @@ func WorkdayConnectorResourceSchema() map[string]schema.Attribute {
 		},
 		"username": schema.StringAttribute{
 			Optional:    true,
-			WriteOnly:   true,
+			Computed:    true,
 			Description: "Username for SOAP authentication.",
 		},
 		"password": schema.StringAttribute{
 			Optional:    true,
+			Sensitive:   true,
+			Description: "Password for SOAP authentication. Either this field or the password_wo field must be populated to set the password attribute.",
+			Validators: []validator.String{
+				stringvalidator.ConflictsWith(path.MatchRoot("password_wo")),
+			},
+		},
+		"password_wo": schema.StringAttribute{
+			Optional:    true,
 			WriteOnly:   true,
-			Description: "Password for SOAP authentication.",
+			Description: "Password write-only attribute. Either this field or the password field must be populated to set the password attribute.",
+			Validators: []validator.String{
+				stringvalidator.ConflictsWith(path.MatchRoot("password")),
+			},
 		},
 		"client_id": schema.StringAttribute{
 			Optional:    true,
-			WriteOnly:   true,
+			Computed:    true,
 			Description: "OAuth client ID.",
 		},
 		"client_secret": schema.StringAttribute{
 			Optional:    true,
+			Sensitive:   true,
+			Description: "OAuth client secret. Either this field or the client_secret_wo field must be populated to set the client_secret attribute.",
+			Validators: []validator.String{
+				stringvalidator.ConflictsWith(path.MatchRoot("client_secret_wo")),
+			},
+		},
+		"client_secret_wo": schema.StringAttribute{
+			Optional:    true,
 			WriteOnly:   true,
-			Description: "OAuth client secret.",
+			Description: "OAuth client secret. Either this field or the client_secret field must be populated to set the client_secret attribute.",
+			Validators: []validator.String{
+				stringvalidator.ConflictsWith(path.MatchRoot("client_secret")),
+			},
 		},
 		"refresh_token": schema.StringAttribute{
 			Optional:    true,
+			Sensitive:   true,
+			Description: "OAuth refresh token. Either this field or the refresh_token_wo field must be populated to set the refresh_token attribute.",
+			Validators: []validator.String{
+				stringvalidator.ConflictsWith(path.MatchRoot("refresh_token_wo")),
+			},
+		},
+		"refresh_token_wo": schema.StringAttribute{
+			Optional:    true,
 			WriteOnly:   true,
-			Description: "OAuth refresh token.",
+			Description: "Refresh token write-only attribute. Either this field or the refresh_token field must be populated to set the refresh_token attribute.",
+			Validators: []validator.String{
+				stringvalidator.ConflictsWith(path.MatchRoot("refresh_token")),
+			},
 		},
 		"page_size": schema.StringAttribute{
 			Optional:    true,
@@ -308,6 +348,8 @@ func (r *WorkdayConnectionResource) Schema(ctx context.Context, req resource.Sch
 	}
 }
 
+
+
 func (r *WorkdayConnectionResource) Configure(ctx context.Context, req resource.ConfigureRequest, resp *resource.ConfigureResponse) {
 	opCtx := errorsutil.CreateOperationContext(errorsutil.ConnectorTypeWorkday, "configure", "")
 	ctx = opCtx.AddContextToLogger(ctx)
@@ -322,16 +364,16 @@ func (r *WorkdayConnectionResource) Configure(ctx context.Context, req resource.
 	}
 
 	// Cast provider data to your provider type.
-	prov, ok := req.ProviderData.(*saviyntProvider)
+	prov, ok := req.ProviderData.(*SaviyntProvider)
 	if !ok {
 		errorCode := workdayErrorCodes.ProviderConfig()
 		opCtx.LogOperationError(ctx, "Provider configuration failed", errorCode,
-			fmt.Errorf("expected *saviyntProvider, got different type"),
-			map[string]interface{}{"expected_type": "*saviyntProvider"})
+			fmt.Errorf("expected *SaviyntProvider, got different type"),
+			map[string]interface{}{"expected_type": "*SaviyntProvider"})
 
 		resp.Diagnostics.AddError(
 			errorsutil.GetErrorMessage(errorsutil.ErrProviderConfig),
-			fmt.Sprintf("[%s] Expected *saviyntProvider, got different type", errorCode),
+			fmt.Sprintf("[%s] Expected *SaviyntProvider, got different type", errorCode),
 		)
 		return
 	}
@@ -339,6 +381,7 @@ func (r *WorkdayConnectionResource) Configure(ctx context.Context, req resource.
 	// Set the client and token from the provider state using interface wrapper.
 	r.client = &client.SaviyntClientWrapper{Client: prov.client}
 	r.token = prov.accessToken
+	r.provider = &client.SaviyntProviderWrapper{Provider: prov} // Store provider reference for retry logic
 
 	opCtx.LogOperationEnd(ctx, "Workday connection resource configured successfully")
 }
@@ -353,6 +396,11 @@ func (r *WorkdayConnectionResource) SetToken(token string) {
 	r.token = token
 }
 
+// SetProvider sets the provider for testing purposes
+func (r *WorkdayConnectionResource) SetProvider(provider client.SaviyntProviderInterface) {
+	r.provider = provider
+}
+
 func (r *WorkdayConnectionResource) CreateWorkdayConnection(ctx context.Context, plan *WorkdayConnectorResourceModel, config *WorkdayConnectorResourceModel) (*openapi.CreateOrUpdateResponse, error) {
 	connectionName := plan.ConnectionName.ValueString()
 	opCtx := errorsutil.CreateOperationContext(errorsutil.ConnectorTypeWorkday, "create", connectionName)
@@ -362,14 +410,28 @@ func (r *WorkdayConnectionResource) CreateWorkdayConnection(ctx context.Context,
 
 	opCtx.LogOperationStart(logCtx, "Starting Workday connection creation")
 
-	// Use the factory to create connection operations
-	connectionOps := r.connectionFactory.CreateConnectionOperations(r.client.APIBaseURL(), r.token)
-
-	// Check if connection already exists (idempotency check)
+	// Check if connection already exists (idempotency check) with retry logic
 	tflog.Debug(logCtx, "Checking if connection already exists")
+	var existingResource *openapi.GetConnectionDetailsResponse
+	var finalHttpResp *http.Response
 
-	// Use original context for API calls to maintain test compatibility
-	existingResource, _, _ := connectionOps.GetConnectionDetails(ctx, connectionName)
+	err := r.provider.AuthenticatedAPICallWithRetry(ctx, "get_connection_details_idempotency", func(token string) error {
+		connectionOps := r.connectionFactory.CreateConnectionOperations(r.client.APIBaseURL(), token)
+		resp, httpResp, err := connectionOps.GetConnectionDetails(ctx, connectionName)
+		if httpResp != nil && httpResp.StatusCode == 401 {
+			return fmt.Errorf("401 unauthorized")
+		}
+		existingResource = resp
+		finalHttpResp = httpResp // Update on every call including retries
+		return err
+	})
+
+	if err != nil && finalHttpResp != nil && finalHttpResp.StatusCode != 412 {
+		errorCode := workdayErrorCodes.ReadFailed()
+		opCtx.LogOperationError(logCtx, "Failed to check existing connection", errorCode, err)
+		return nil, errorsutil.CreateStandardError(errorsutil.ConnectorTypeWorkday, errorCode, "create", connectionName, err)
+	}
+
 	if existingResource != nil &&
 		existingResource.WorkdayConnectionResponse != nil &&
 		existingResource.WorkdayConnectionResponse.Errorcode != nil &&
@@ -389,17 +451,27 @@ func (r *WorkdayConnectionResource) CreateWorkdayConnection(ctx context.Context,
 		WorkdayConnector: &workdayConn,
 	}
 
-	// Execute create operation through interface
+	// Execute create operation with retry logic
 	tflog.Debug(ctx, "Executing create operation")
+	var apiResp *openapi.CreateOrUpdateResponse
 
-	apiResp, _, err := connectionOps.CreateOrUpdateConnection(ctx, createReq)
+	err = r.provider.AuthenticatedAPICallWithRetry(ctx, "create_workday_connection", func(token string) error {
+		connectionOps := r.connectionFactory.CreateConnectionOperations(r.client.APIBaseURL(), token)
+		resp, httpResp, err := connectionOps.CreateOrUpdateConnection(ctx, createReq)
+		if httpResp != nil && httpResp.StatusCode == 401 {
+			return fmt.Errorf("401 unauthorized")
+		}
+		apiResp = resp
+		return err
+	})
+
 	if err != nil {
 		errorCode := workdayErrorCodes.CreateFailed()
 		opCtx.LogOperationError(ctx, "Failed to create Workday connection", errorCode, err)
 		return nil, errorsutil.CreateStandardError(errorsutil.ConnectorTypeWorkday, errorCode, "create", connectionName, err)
 	}
 
-	if apiResp != nil && *apiResp.ErrorCode != "0" {
+	if apiResp != nil && apiResp.ErrorCode != nil && *apiResp.ErrorCode != "0" {
 		apiErr := fmt.Errorf("API returned error code %s: %s", *apiResp.ErrorCode, errorsutil.SanitizeMessage(apiResp.Msg))
 		errorCode := workdayErrorCodes.APIError()
 		opCtx.LogOperationError(ctx, "Workday connection creation failed with API error", errorCode, apiErr,
@@ -422,6 +494,27 @@ func (r *WorkdayConnectionResource) CreateWorkdayConnection(ctx context.Context,
 }
 
 func (r *WorkdayConnectionResource) BuildWorkdayConnector(plan *WorkdayConnectorResourceModel, config *WorkdayConnectorResourceModel) openapi.WorkdayConnector {
+	var password string
+	if !config.Password.IsNull() && !config.Password.IsUnknown() {
+		password = config.Password.ValueString()
+	} else if !config.PasswordWo.IsNull() && !config.PasswordWo.IsUnknown() {
+		password = config.PasswordWo.ValueString()
+	}
+
+	var clientSecret string
+	if !config.ClientSecret.IsNull() && !config.ClientSecret.IsUnknown() {
+		clientSecret = config.ClientSecret.ValueString()
+	} else if !config.ClientSecretWo.IsNull() && !config.ClientSecretWo.IsUnknown() {
+		clientSecret = config.ClientSecretWo.ValueString()
+	}
+
+	var refreshToken string
+	if !config.RefreshToken.IsNull() && !config.RefreshToken.IsUnknown() {
+		refreshToken = config.RefreshToken.ValueString()
+	} else if !config.RefreshTokenWo.IsNull() && !config.RefreshTokenWo.IsUnknown() {
+		refreshToken = config.RefreshTokenWo.ValueString()
+	}
+
 	workdayConn := openapi.WorkdayConnector{
 		BaseConnector: openapi.BaseConnector{
 			//required fields
@@ -447,11 +540,11 @@ func (r *WorkdayConnectionResource) BuildWorkdayConnector(plan *WorkdayConnector
 		USEX509AUTHFORSOAP:            util.StringPointerOrEmpty(plan.UseX509AuthForSOAP),
 		X509KEY:                       util.StringPointerOrEmpty(plan.X509Key),
 		X509CERT:                      util.StringPointerOrEmpty(plan.X509Cert),
-		USERNAME:                      util.StringPointerOrEmpty(config.Username),
-		PASSWORD:                      util.StringPointerOrEmpty(config.Password),
-		CLIENT_ID:                     util.StringPointerOrEmpty(config.ClientID),
-		CLIENT_SECRET:                 util.StringPointerOrEmpty(config.ClientSecret),
-		REFRESH_TOKEN:                 util.StringPointerOrEmpty(config.RefreshToken),
+		USERNAME:                      util.StringPointerOrEmpty(plan.Username),
+		PASSWORD:                      util.StringPointerOrEmpty(types.StringValue(password)),
+		CLIENT_ID:                     util.StringPointerOrEmpty(plan.ClientID),
+		CLIENT_SECRET:                 util.StringPointerOrEmpty(types.StringValue(clientSecret)),
+		REFRESH_TOKEN:                 util.StringPointerOrEmpty(types.StringValue(refreshToken)),
 		PAGE_SIZE:                     util.StringPointerOrEmpty(plan.PageSize),
 		USER_IMPORT_PAYLOAD:           util.StringPointerOrEmpty(plan.UserImportPayload),
 		USER_IMPORT_MAPPING:           util.StringPointerOrEmpty(plan.UserImportMapping),
@@ -540,18 +633,32 @@ func (r *WorkdayConnectionResource) ReadWorkdayConnection(ctx context.Context, c
 
 	opCtx.LogOperationStart(logCtx, "Starting Workday connection read operation")
 
-	// Use the factory to create connection operations
-	connectionOps := r.connectionFactory.CreateConnectionOperations(r.client.APIBaseURL(), r.token)
+	// Execute read operation with retry logic
+	var apiResp *openapi.GetConnectionDetailsResponse
 
-	// Execute read operation through interface - use original context for API calls
-	apiResp, _, err := connectionOps.GetConnectionDetails(ctx, connectionName)
+	err := r.provider.AuthenticatedAPICallWithRetry(ctx, "read_workday_connection", func(token string) error {
+		connectionOps := r.connectionFactory.CreateConnectionOperations(r.client.APIBaseURL(), token)
+		resp, httpResp, err := connectionOps.GetConnectionDetails(ctx, connectionName)
+		if httpResp != nil && httpResp.StatusCode == 401 {
+			return fmt.Errorf("401 unauthorized")
+		}
+		apiResp = resp
+		return err
+	})
+
 	if err != nil {
 		errorCode := workdayErrorCodes.ReadFailed()
 		opCtx.LogOperationError(logCtx, "Failed to read Workday connection", errorCode, err)
 		return nil, errorsutil.CreateStandardError(errorsutil.ConnectorTypeWorkday, errorCode, "read", connectionName, err)
 	}
 
-	if apiResp != nil && apiResp.WorkdayConnectionResponse != nil && *apiResp.WorkdayConnectionResponse.Errorcode != 0 {
+	if err := r.ValidateWorkdayConnectionResponse(apiResp); err != nil {
+		errorCode := workdayErrorCodes.APIError()
+		opCtx.LogOperationError(ctx, "Invalid connection type for Workday datasource", errorCode, err)
+		return nil, fmt.Errorf("[%s] Unable to verify connection type for connection %q. The provider could not determine the type of this connection. Please ensure the connection name is correct and belongs to a supported connector type", errorCode, connectionName)
+	}
+
+	if apiResp != nil && apiResp.WorkdayConnectionResponse != nil && apiResp.WorkdayConnectionResponse.Errorcode != nil && *apiResp.WorkdayConnectionResponse.Errorcode != 0 {
 		apiErr := fmt.Errorf("API returned error code %d: %s", *apiResp.WorkdayConnectionResponse.Errorcode, errorsutil.SanitizeMessage(apiResp.WorkdayConnectionResponse.Msg))
 		errorCode := workdayErrorCodes.APIError()
 		opCtx.LogOperationError(ctx, "Workday connection read failed with API error", errorCode, apiErr,
@@ -616,13 +723,13 @@ func (r *WorkdayConnectionResource) UpdateModelFromReadResponse(state *WorkdayCo
 	state.UseEnhancedOrgRole = util.SafeStringDatasource(apiResp.WorkdayConnectionResponse.Connectionattributes.USE_ENHANCED_ORGROLE)
 	state.CreateAccountPayload = util.SafeStringDatasource(apiResp.WorkdayConnectionResponse.Connectionattributes.CREATE_ACCOUNT_PAYLOAD)
 	state.BaseURL = util.SafeStringDatasource(apiResp.WorkdayConnectionResponse.Connectionattributes.BASE_URL)
-	apiMessage := util.SafeDeref(apiResp.WorkdayConnectionResponse.Msg)
-	if apiMessage == "success" {
-		state.Msg = types.StringValue("Connection Successful")
-	} else {
-		state.Msg = types.StringValue(apiMessage)
+}
+
+func (r *WorkdayConnectionResource) ValidateWorkdayConnectionResponse(apiResp *openapi.GetConnectionDetailsResponse) error {
+	if apiResp != nil && apiResp.WorkdayConnectionResponse == nil {
+		return fmt.Errorf("verify the connection type - Workday connection response is nil")
 	}
-	state.ErrorCode = util.Int32PtrToTFString(apiResp.WorkdayConnectionResponse.Errorcode)
+	return nil
 }
 
 func (r *WorkdayConnectionResource) UpdateWorkdayConnection(ctx context.Context, plan *WorkdayConnectorResourceModel, config *WorkdayConnectorResourceModel) (*openapi.CreateOrUpdateResponse, error) {
@@ -634,36 +741,36 @@ func (r *WorkdayConnectionResource) UpdateWorkdayConnection(ctx context.Context,
 
 	opCtx.LogOperationStart(logCtx, "Starting Workday connection update")
 
-	// Use the factory to create connection operations
-	connectionOps := r.connectionFactory.CreateConnectionOperations(r.client.APIBaseURL(), r.token)
-
 	// Build Workday connection update request
 	tflog.Debug(logCtx, "Building Workday connection update request")
 
 	workdayConn := r.BuildWorkdayConnector(plan, config)
-	if plan.VaultConnection.ValueString() == "" {
-		emptyStr := ""
-		workdayConn.BaseConnector.VaultConnection = &emptyStr
-		workdayConn.BaseConnector.VaultConfiguration = &emptyStr
-		workdayConn.BaseConnector.Saveinvault = &emptyStr
-	}
 
 	updateReq := openapi.CreateOrUpdateRequest{
 		WorkdayConnector: &workdayConn,
 	}
 
-	// Execute update operation through interface
+	// Execute update operation with retry logic
 	tflog.Debug(logCtx, "Executing update operation")
+	var apiResp *openapi.CreateOrUpdateResponse
 
-	// Use original context for API calls to maintain test compatibility
-	apiResp, _, err := connectionOps.CreateOrUpdateConnection(ctx, updateReq)
+	err := r.provider.AuthenticatedAPICallWithRetry(ctx, "update_workday_connection", func(token string) error {
+		connectionOps := r.connectionFactory.CreateConnectionOperations(r.client.APIBaseURL(), token)
+		resp, httpResp, err := connectionOps.CreateOrUpdateConnection(ctx, updateReq)
+		if httpResp != nil && httpResp.StatusCode == 401 {
+			return fmt.Errorf("401 unauthorized")
+		}
+		apiResp = resp
+		return err
+	})
+
 	if err != nil {
 		errorCode := workdayErrorCodes.UpdateFailed()
 		opCtx.LogOperationError(logCtx, "Failed to update Workday connection", errorCode, err)
 		return nil, errorsutil.CreateStandardError(errorsutil.ConnectorTypeWorkday, errorCode, "update", connectionName, err)
 	}
 
-	if apiResp != nil && *apiResp.ErrorCode != "0" {
+	if apiResp != nil && apiResp.ErrorCode != nil && *apiResp.ErrorCode != "0" {
 		apiErr := fmt.Errorf("API returned error code %s: %s", *apiResp.ErrorCode, errorsutil.SanitizeMessage(apiResp.Msg))
 		errorCode := workdayErrorCodes.APIError()
 		opCtx.LogOperationError(logCtx, "Workday connection update failed with API error", errorCode, apiErr,
@@ -782,6 +889,14 @@ func (r *WorkdayConnectionResource) Read(ctx context.Context, req resource.ReadR
 	// Update model from read response
 	r.UpdateModelFromReadResponse(&state, apiResp)
 
+	apiMessage := util.SafeDeref(apiResp.WorkdayConnectionResponse.Msg)
+	if apiMessage == "success" {
+		state.Msg = types.StringValue("Connection Read Successful")
+	} else {
+		state.Msg = types.StringValue(apiMessage)
+	}
+	state.ErrorCode = util.Int32PtrToTFString(apiResp.WorkdayConnectionResponse.Errorcode)
+
 	stateDiagnostics := resp.State.Set(ctx, &state)
 	resp.Diagnostics.Append(stateDiagnostics...)
 	if resp.Diagnostics.HasError() {
@@ -866,7 +981,7 @@ func (r *WorkdayConnectionResource) Update(ctx context.Context, req resource.Upd
 	ctx = opCtx.AddContextToLogger(ctx)
 
 	// Use interface pattern instead of direct API client creation
-	_, err := r.UpdateWorkdayConnection(ctx, &plan, &config)
+	updateResp, err := r.UpdateWorkdayConnection(ctx, &plan, &config)
 	if err != nil {
 		opCtx.LogOperationError(ctx, "Workday connection update failed", "", err)
 		resp.Diagnostics.AddError(
@@ -889,6 +1004,10 @@ func (r *WorkdayConnectionResource) Update(ctx context.Context, req resource.Upd
 
 	// Update model from read response
 	r.UpdateModelFromReadResponse(&plan, getResp)
+
+	apiMessage := util.SafeDeref(updateResp.Msg)
+	plan.Msg = types.StringValue(apiMessage)
+	plan.ErrorCode = types.StringValue(*updateResp.ErrorCode)
 
 	stateUpdateDiagnostics := resp.State.Set(ctx, plan)
 	resp.Diagnostics.Append(stateUpdateDiagnostics...)

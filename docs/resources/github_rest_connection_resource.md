@@ -494,21 +494,24 @@ resource "saviynt_github_rest_connection_resource" "example" {
 
 ### Optional
 
-- `access_tokens` (String) Property for ACCESS_TOKENS
-- `connection_json` (String) Property for ConnectionJSON
+- `access_tokens` (String, Sensitive) Property for ACCESS_TOKENS. For setting access_tokens either this field or access_tokens_wo need to be set
+- `access_tokens_wo` (String) Property for ACCESS_TOKENS (write-only). For setting access_tokens either this field or access_tokens_wo need to be set
+- `connection_json` (String, Sensitive) Property for ConnectionJSON. For setting connection_json either this field or connection_json_wo need to be set
+- `connection_json_wo` (String) Property for ConnectionJSON (write-only). For setting connection_json either this field or connection_json_wo need to be set
 - `defaultsavroles` (String) Default SAV roles for managing the connection. Example: "ROLE_ORG"
 - `description` (String) Description for the connection. Example: "ORG_AD"
 - `email_template` (String) Email template for notifications. Example: "New Account Task Creation"
-- `error_code` (String) An error code where '0' signifies success and '1' signifies an unsuccessful operation.
 - `import_account_ent_json` (String) Property for ImportAccountEntJSON
-- `msg` (String) A message indicating the outcome of the operation.
 - `organization_list` (String) Property for ORGANIZATION_LIST
 - `save_in_vault` (String) Flag indicating whether the encrypted attribute should be saved in the configured vault. Example: "false"
 - `status_threshold_config` (String) Property for STATUS_THRESHOLD_CONFIG
 - `vault_configuration` (String) JSON string specifying vault configuration.
 - `vault_connection` (String) Specifies the type of vault connection being used (e.g., 'Hashicorp'). Example: "Hashicorp"
+- `wo_version` (String) Add/change the value of this attribute to update the writeonly attributes like username, password etc in connection resources
 
 ### Read-Only
 
 - `connection_key` (Number) Unique identifier of the connection returned by the API. Example: 1909
+- `error_code` (String) An error code where '0' signifies success and '1' signifies an unsuccessful operation.
 - `id` (String) Resource ID.
+- `msg` (String) A message indicating the outcome of the operation.

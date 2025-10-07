@@ -155,7 +155,6 @@ resource "saviynt_okta_connection_resource" "example" {
 
 ### Required
 
-- `auth_token` (String) API token for Okta authentication.
 - `connection_name` (String) Name of the connection. Example: "Active Directory_Doc"
 - `import_url` (String) Base URL for Okta API calls.
 - `okta_application_securitysystem` (String) Saviynt security system name for Okta applications.
@@ -166,15 +165,15 @@ resource "saviynt_okta_connection_resource" "example" {
 - `activate_endpoint` (String) Auto-enables disabled endpoints based on application status.
 - `app_account_field_mappings` (String) Maps Okta application user fields to Saviynt account field.
 - `audit_filter` (String) Filter for importing specific audit events.
+- `auth_token` (String, Sensitive) API token for Okta authentication. It is a compulsory field. Either this or auth_token_wo need to be set
+- `auth_token_wo` (String) API token for Okta authentication (write-only). It is a compulsory field. Either this or auth_token need to be set
 - `config_json` (String) General connector configuration including timeouts, retries, and connector-specific settings.
 - `defaultsavroles` (String) Default SAV roles for managing the connection. Example: "ROLE_ORG"
 - `description` (String) Description for the connection. Example: "ORG_AD"
 - `email_template` (String) Email template for notifications. Example: "New Account Task Creation"
 - `entitlement_types_mappings` (String) Maps Okta entitlements to Saviynt entitlement types.
-- `error_code` (String) An error code where '0' signifies success and '1' signifies an unsuccessful operation.
 - `import_inactive_apps` (String) Controls import of inactive/disabled Okta applications.
 - `modify_user_data_json` (String) JSON configuration for user data modification operations during provisioning.
-- `msg` (String) A message indicating the outcome of the operation.
 - `okta_groups_filter` (String) Filter criteria for selective group import from Okta.
 - `pam_config` (String) Privileged Access Management configuration for PAM operations and bootstrap processes.
 - `save_in_vault` (String) Flag indicating whether the encrypted attribute should be saved in the configured vault. Example: "false"
@@ -182,8 +181,11 @@ resource "saviynt_okta_connection_resource" "example" {
 - `user_field_mappings` (String) Maps Okta user fields to Saviynt user fields.
 - `vault_configuration` (String) JSON string specifying vault configuration.
 - `vault_connection` (String) Specifies the type of vault connection being used (e.g., 'Hashicorp'). Example: "Hashicorp"
+- `wo_version` (String) Add/change the value of this attribute to update the writeonly attributes like username, password etc in connection resources
 
 ### Read-Only
 
 - `connection_key` (Number) Unique identifier of the connection returned by the API. Example: 1909
+- `error_code` (String) An error code where '0' signifies success and '1' signifies an unsuccessful operation.
 - `id` (String) Resource ID.
+- `msg` (String) A message indicating the outcome of the operation.

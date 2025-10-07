@@ -4,6 +4,8 @@
 package client
 
 import (
+	"context"
+
 	s "github.com/saviynt/saviynt-api-go-client"
 )
 
@@ -20,4 +22,18 @@ type SaviyntClientWrapper struct {
 
 func (w *SaviyntClientWrapper) APIBaseURL() string {
 	return w.Client.APIBaseURL()
+}
+
+// SaviyntProviderInterface defines the interface for provider operations needed by resources/datasources
+type SaviyntProviderInterface interface {
+	AuthenticatedAPICallWithRetry(ctx context.Context, operation string, apiCall func(token string) error) error
+}
+
+// SaviyntProviderWrapper wraps the actual provider to implement the interface
+type SaviyntProviderWrapper struct {
+	Provider SaviyntProviderInterface
+}
+
+func (w *SaviyntProviderWrapper) AuthenticatedAPICallWithRetry(ctx context.Context, operation string, apiCall func(token string) error) error {
+	return w.Provider.AuthenticatedAPICallWithRetry(ctx, operation, apiCall)
 }

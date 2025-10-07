@@ -421,12 +421,12 @@ resource "saviynt_entraid_connection_resource" "example" {
 
 - `aad_tenant_id` (String) Azure Active Directory tenant ID.
 - `client_id` (String) Client ID for authentication.
-- `client_secret` (String) Client Secret for authentication.
 - `connection_name` (String) Name of the connection. Example: "Active Directory_Doc"
 
 ### Optional
 
-- `access_token` (String) Access token used for API calls.
+- `access_token` (String, Sensitive) Access token used for API calls.
+- `access_token_wo` (String) Access token used for API calls (write-only).
 - `account_attributes` (String) Attributes for account configuration.
 - `account_import_fields` (String) Fields to import for accounts.
 - `accounts_filter` (String) Filter for accounts.
@@ -434,10 +434,14 @@ resource "saviynt_entraid_connection_resource" "example" {
 - `add_access_to_entitlement_json` (String) JSON to add access to entitlement.
 - `authentication_endpoint` (String) Authentication endpoint URL.
 - `azure_management_endpoint` (String) Azure management endpoint URL.
-- `azure_mgmt_access_token` (String) Access token for Azure management APIs.
+- `azure_mgmt_access_token` (String, Sensitive) Access token for Azure management APIs.
+- `azure_mgmt_access_token_wo` (String) Access token for Azure management APIs (write-only).
 - `change_pass_json` (String) JSON template to change password.
+- `client_secret` (String, Sensitive) Client Secret for authentication. Set the client_secret. It is a compulsory field. Either this or client_secret_wo need to be set
+- `client_secret_wo` (String) Client Secret for authentication (write-only). Set the client_secret_wo. It is a compulsory field. Either this or client_secret need to be set
 - `config_json` (String) Main config JSON.
-- `connection_json` (String) Connection JSON configuration.
+- `connection_json` (String, Sensitive) Configuration for the connection in JSON format. Either the connection_json field or the connection_json_wo field must be populated to set the connection_json attribute.
+- `connection_json_wo` (String) Connection JSON configuration (write-only). Either the connection_json field or the connection_json_wo field must be populated to set the connection_json attribute.
 - `create_account_json` (String) JSON template to create an account.
 - `create_channel_json` (String) JSON to create channel.
 - `create_group_json` (String) JSON to create group.
@@ -456,13 +460,11 @@ resource "saviynt_entraid_connection_resource" "example" {
 - `enhanced_directory_roles` (String) Configuration for enhanced directory roles.
 - `entitlement_attribute` (String) Attribute used for entitlement.
 - `entitlement_filter_json` (String) Filter JSON for entitlements.
-- `error_code` (String) An error code where '0' signifies success and '1' signifies an unsuccessful operation.
 - `import_depth` (String) Depth level for import.
 - `import_user_json` (String) JSON configuration for importing users.
 - `managed_account_type` (String) Type of managed accounts.
 - `microsoft_graph_endpoint` (String) Microsoft Graph API endpoint.
 - `modify_user_data_json` (String) JSON to modify user data.
-- `msg` (String) A message indicating the outcome of the operation.
 - `pam_config` (String) PAM configuration.
 - `remove_access_from_entitlement_json` (String) JSON to remove access from entitlement.
 - `remove_access_json` (String) JSON template to remove access.
@@ -477,9 +479,13 @@ resource "saviynt_entraid_connection_resource" "example" {
 - `update_user_json` (String) JSON template to update user.
 - `vault_configuration` (String) JSON string specifying vault configuration.
 - `vault_connection` (String) Specifies the type of vault connection being used (e.g., 'Hashicorp'). Example: "Hashicorp"
-- `windows_connector_json` (String) Windows connector JSON configuration.
+- `windows_connector_json` (String, Sensitive) Windows connector JSON configuration.
+- `windows_connector_json_wo` (String) Windows connector JSON configuration (write-only).
+- `wo_version` (String) Add/change the value of this attribute to update the writeonly attributes like username, password etc in connection resources
 
 ### Read-Only
 
 - `connection_key` (Number) Unique identifier of the connection returned by the API. Example: 1909
+- `error_code` (String) An error code where '0' signifies success and '1' signifies an unsuccessful operation.
 - `id` (String) Resource ID.
+- `msg` (String) A message indicating the outcome of the operation.

@@ -24,7 +24,7 @@ type GetRolesRequest struct {
 	// Username associated with the role
 	Username *string `json:"username,omitempty"`
 	// Role type code (e.g., 4 for enterprise roles)
-	Roletype *string `json:"roletype,omitempty"`
+	RoleType *string `json:"role_type,omitempty"`
 	// Requestable status (e.g., true or false)
 	Requestable *string `json:"requestable,omitempty"`
 	// Role status (e.g., Active, Inactive)
@@ -266,36 +266,36 @@ func (o *GetRolesRequest) SetUsername(v string) {
 	o.Username = &v
 }
 
-// GetRoletype returns the Roletype field value if set, zero value otherwise.
-func (o *GetRolesRequest) GetRoletype() string {
-	if o == nil || IsNil(o.Roletype) {
+// GetRoleType returns the RoleType field value if set, zero value otherwise.
+func (o *GetRolesRequest) GetRoleType() string {
+	if o == nil || IsNil(o.RoleType) {
 		var ret string
 		return ret
 	}
-	return *o.Roletype
+	return *o.RoleType
 }
 
-// GetRoletypeOk returns a tuple with the Roletype field value if set, nil otherwise
+// GetRoleTypeOk returns a tuple with the RoleType field value if set, nil otherwise
 // and a boolean to check if the value has been set.
-func (o *GetRolesRequest) GetRoletypeOk() (*string, bool) {
-	if o == nil || IsNil(o.Roletype) {
+func (o *GetRolesRequest) GetRoleTypeOk() (*string, bool) {
+	if o == nil || IsNil(o.RoleType) {
 		return nil, false
 	}
-	return o.Roletype, true
+	return o.RoleType, true
 }
 
-// HasRoletype returns a boolean if a field has been set.
-func (o *GetRolesRequest) HasRoletype() bool {
-	if o != nil && !IsNil(o.Roletype) {
+// HasRoleType returns a boolean if a field has been set.
+func (o *GetRolesRequest) HasRoleType() bool {
+	if o != nil && !IsNil(o.RoleType) {
 		return true
 	}
 
 	return false
 }
 
-// SetRoletype gets a reference to the given string and assigns it to the Roletype field.
-func (o *GetRolesRequest) SetRoletype(v string) {
-	o.Roletype = &v
+// SetRoleType gets a reference to the given string and assigns it to the RoleType field.
+func (o *GetRolesRequest) SetRoleType(v string) {
+	o.RoleType = &v
 }
 
 // GetRequestable returns the Requestable field value if set, zero value otherwise.
@@ -2827,7 +2827,7 @@ func (o *GetRolesRequest) SetCustomproperty60(v string) {
 }
 
 func (o GetRolesRequest) MarshalJSON() ([]byte, error) {
-	toSerialize,err := o.ToMap()
+	toSerialize, err := o.ToMap()
 	if err != nil {
 		return []byte{}, err
 	}
@@ -2842,8 +2842,8 @@ func (o GetRolesRequest) ToMap() (map[string]interface{}, error) {
 	if !IsNil(o.Username) {
 		toSerialize["username"] = o.Username
 	}
-	if !IsNil(o.Roletype) {
-		toSerialize["roletype"] = o.Roletype
+	if !IsNil(o.RoleType) {
+		toSerialize["role_type"] = o.RoleType
 	}
 	if !IsNil(o.Requestable) {
 		toSerialize["requestable"] = o.Requestable
@@ -3120,5 +3120,3 @@ func (v *NullableGetRolesRequest) UnmarshalJSON(src []byte) error {
 	v.isSet = true
 	return json.Unmarshal(src, &v.value)
 }
-
-

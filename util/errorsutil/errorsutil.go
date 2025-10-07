@@ -103,10 +103,11 @@ func (ecg *ErrorCodeGenerator) GenerateErrorCode(category ErrorCategory, sequenc
 // Common error codes that can be used across all connectors
 const (
 	// Configuration errors (001-009)
-	ErrProviderConfig   = "PROVIDER_CONFIG"
-	ErrPlanExtraction   = "PLAN_EXTRACTION"
-	ErrConfigExtraction = "CONFIG_EXTRACTION"
-	ErrStateExtraction  = "STATE_EXTRACTION"
+	ErrProviderConfig    = "PROVIDER_CONFIG"
+	ErrPlanExtraction    = "PLAN_EXTRACTION"
+	ErrConfigExtraction  = "CONFIG_EXTRACTION"
+	ErrStateExtraction   = "STATE_EXTRACTION"
+	ErrMissingIdentifier = "MISSING_IDENTIFIER"
 
 	// Business logic errors (101-109)
 	ErrDuplicateName = "DUPLICATE_NAME"
@@ -127,20 +128,21 @@ const (
 
 // Common error messages
 var commonErrorMessages = map[string]string{
-	ErrProviderConfig:   "Failed to configure provider",
-	ErrPlanExtraction:   "Failed to extract plan from Terraform request",
-	ErrConfigExtraction: "Failed to extract configuration from Terraform request",
-	ErrStateExtraction:  "Failed to extract state from Terraform request",
-	ErrDuplicateName:    "Connection with this name already exists",
-	ErrNameImmutable:    "Connection name cannot be modified after creation",
-	ErrInvalidConfig:    "Invalid configuration provided",
-	ErrCreateFailed:     "Failed to create connection",
-	ErrReadFailed:       "Failed to read connection details",
-	ErrUpdateFailed:     "Failed to update connection",
-	ErrDeleteFailed:     "Failed to delete connection",
-	ErrAPIError:         "API operation returned an error",
-	ErrStateUpdate:      "Failed to update Terraform state",
-	ErrStateRead:        "Failed to read Terraform state",
+	ErrProviderConfig:    "Failed to configure provider",
+	ErrPlanExtraction:    "Failed to extract plan from Terraform request",
+	ErrConfigExtraction:  "Failed to extract configuration from Terraform request",
+	ErrStateExtraction:   "Failed to extract state from Terraform request",
+	ErrMissingIdentifier: "Missing required identifier for operation",
+	ErrDuplicateName:     "Connection with this name already exists",
+	ErrNameImmutable:     "Connection name cannot be modified after creation",
+	ErrInvalidConfig:     "Invalid configuration provided",
+	ErrCreateFailed:      "Failed to create connection",
+	ErrReadFailed:        "Failed to read connection details",
+	ErrUpdateFailed:      "Failed to update connection",
+	ErrDeleteFailed:      "Failed to delete connection",
+	ErrAPIError:          "API operation returned an error",
+	ErrStateUpdate:       "Failed to update Terraform state",
+	ErrStateRead:         "Failed to read Terraform state",
 }
 
 // GetErrorMessage returns a standardized error message for the given error code
@@ -175,7 +177,7 @@ func GetErrorMessage(errorCode string) string {
 	} else if strings.HasPrefix(errorCode, "OKTA_CONN_") {
 		connectorType = "Okta"
 	}
-	
+
 	// Then check if it's a connector-specific error code and map to specific message
 	switch {
 	case strings.Contains(errorCode, "_CONN_001"):
@@ -413,6 +415,10 @@ func (cec *ConnectorErrorCodes) ConfigExtraction() string {
 
 func (cec *ConnectorErrorCodes) StateExtraction() string {
 	return cec.generator.GenerateErrorCode(CategoryConfiguration, 4)
+}
+
+func (cec *ConnectorErrorCodes) MissingIdentifier() string {
+	return cec.generator.GenerateErrorCode(CategoryConfiguration, 5)
 }
 
 // Business logic error codes

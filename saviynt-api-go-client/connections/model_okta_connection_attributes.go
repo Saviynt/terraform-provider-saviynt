@@ -19,25 +19,25 @@ var _ MappedNullable = &OktaConnectionAttributes{}
 
 // OktaConnectionAttributes struct for OktaConnectionAttributes
 type OktaConnectionAttributes struct {
-	IMPORTURL *string `json:"IMPORTURL,omitempty"`
-	AUTHTOKEN *string `json:"AUTHTOKEN,omitempty"`
-	IsTimeoutSupported *bool `json:"isTimeoutSupported,omitempty"`
-	OKTA_GROUPS_FILTER *string `json:"OKTA_GROUPS_FILTER,omitempty"`
-	ACCOUNTFIELDMAPPINGS *string `json:"ACCOUNTFIELDMAPPINGS,omitempty"`
-	IMPORT_INACTIVE_APPS *string `json:"IMPORT_INACTIVE_APPS,omitempty"`
-	AUDIT_FILTER *string `json:"AUDIT_FILTER,omitempty"`
-	USERFIELDMAPPINGS *string `json:"USERFIELDMAPPINGS,omitempty"`
-	APPACCOUNTFIELDMAPPINGS *string `json:"APPACCOUNTFIELDMAPPINGS,omitempty"`
-	MODIFYUSERDATAJSON *string `json:"MODIFYUSERDATAJSON,omitempty"`
-	ConnectionTimeoutConfig *ConnectionTimeoutConfig `json:"connectionTimeoutConfig,omitempty"`
-	ConnectionType *string `json:"connectionType,omitempty"`
-	IsTimeoutConfigValidated *bool `json:"isTimeoutConfigValidated,omitempty"`
-	ACTIVATE_ENDPOINT *string `json:"ACTIVATE_ENDPOINT,omitempty"`
-	ENTITLEMENTTYPESMAPPINGS *string `json:"ENTITLEMENTTYPESMAPPINGS,omitempty"`
-	OKTA_APPLICATION_SECURITYSYSTEM *string `json:"OKTA_APPLICATION_SECURITYSYSTEM,omitempty"`
-	PAM_CONFIG *string `json:"PAM_CONFIG,omitempty"`
-	ConfigJSON *string `json:"ConfigJSON,omitempty"`
-	STATUS_THRESHOLD_CONFIG *string `json:"STATUS_THRESHOLD_CONFIG,omitempty"`
+	IMPORTURL                       *string                  `json:"IMPORTURL,omitempty"`
+	AUTHTOKEN                       *string                  `json:"AUTHTOKEN,omitempty"`
+	IsTimeoutSupported              *bool                    `json:"isTimeoutSupported,omitempty"`
+	OKTA_GROUPS_FILTER              *string                  `json:"OKTA_GROUPS_FILTER,omitempty"`
+	ACCOUNTFIELDMAPPINGS            *string                  `json:"ACCOUNTFIELDMAPPINGS,omitempty"`
+	IMPORT_INACTIVE_APPS            *string                  `json:"IMPORT_INACTIVE_APPS,omitempty"`
+	AUDIT_FILTER                    *string                  `json:"AUDIT_FILTER,omitempty"`
+	USERFIELDMAPPINGS               *string                  `json:"USERFIELDMAPPINGS,omitempty"`
+	APPACCOUNTFIELDMAPPINGS         *string                  `json:"APPACCOUNTFIELDMAPPINGS,omitempty"`
+	MODIFYUSERDATAJSON              *string                  `json:"MODIFYUSERDATAJSON,omitempty"`
+	ConnectionTimeoutConfig         *ConnectionTimeoutConfig `json:"connectionTimeoutConfig,omitempty"`
+	ConnectionType                  *string                  `json:"connectionType,omitempty"`
+	IsTimeoutConfigValidated        *bool                    `json:"isTimeoutConfigValidated,omitempty"`
+	ACTIVATE_ENDPOINT               *string                  `json:"ACTIVATE_ENDPOINT,omitempty"`
+	ENTITLEMENTTYPESMAPPINGS        *string                  `json:"ENTITLEMENTTYPESMAPPINGS,omitempty"`
+	OKTA_APPLICATION_SECURITYSYSTEM *string                  `json:"OKTA_APPLICATION_SECURITYSYSTEM,omitempty"`
+	PAM_CONFIG                      *string                  `json:"PAM_CONFIG,omitempty"`
+	ConfigJSON                      *string                  `json:"ConfigJSON,omitempty"`
+	STATUS_THRESHOLD_CONFIG         *string                  `json:"STATUS_THRESHOLD_CONFIG,omitempty"`
 }
 
 // NewOktaConnectionAttributes instantiates a new OktaConnectionAttributes object
@@ -666,7 +666,7 @@ func (o *OktaConnectionAttributes) SetSTATUS_THRESHOLD_CONFIG(v string) {
 }
 
 func (o OktaConnectionAttributes) MarshalJSON() ([]byte, error) {
-	toSerialize,err := o.ToMap()
+	toSerialize, err := o.ToMap()
 	if err != nil {
 		return []byte{}, err
 	}
@@ -770,5 +770,3 @@ func (v *NullableOktaConnectionAttributes) UnmarshalJSON(src []byte) error {
 	v.isSet = true
 	return json.Unmarshal(src, &v.value)
 }
-
-

@@ -11,8 +11,8 @@ API version: 1.0.0
 package connections
 
 import (
-	"encoding/json"
 	"bytes"
+	"encoding/json"
 	"fmt"
 )
 
@@ -46,11 +46,11 @@ type DBConnector struct {
 	CREATEACCOUNTJSON *string `json:"CREATEACCOUNTJSON,omitempty"`
 	// JSON to specify the Queries/stored procedures which will be used to Update an existing Account,Objects Exposed-(randomPassword,task,user,accountName,role,endpoint and all the objects defined in Dynamic Attributes ).
 	UPDATEACCOUNTJSON *string `json:"UPDATEACCOUNTJSON,omitempty"`
-	// JSON to specify the Queries/stored procedures which will be used to provide acccess,Objects Exposed-(task,user,accountName,role,endpoint and all the objects defined in Dynamic Attributes ). 
+	// JSON to specify the Queries/stored procedures which will be used to provide acccess,Objects Exposed-(task,user,accountName,role,endpoint and all the objects defined in Dynamic Attributes ).
 	GRANTACCESSJSON *string `json:"GRANTACCESSJSON,omitempty"`
 	// JSON to specify the Queries/stored procedures which will be used to revoke access,Objects Exposed-(task,user,accountName,role,endpoint and all the objects defined in Dynamic Attributes ).
 	REVOKEACCESSJSON *string `json:"REVOKEACCESSJSON,omitempty"`
-	// JSON to specify the Queries/stored procedures which will be used to change password,Objects Exposed-(randomPassword,task,user,accountName,role,endpoint and all the objects defined in Dynamic Attributes ). 
+	// JSON to specify the Queries/stored procedures which will be used to change password,Objects Exposed-(randomPassword,task,user,accountName,role,endpoint and all the objects defined in Dynamic Attributes ).
 	CHANGEPASSJSON *string `json:"CHANGEPASSJSON,omitempty"`
 	// JSON to specify the Queries/stored procedures which will be used to delete an account,Objects Exposed-(task,user,accountName,role,endpoint and all the objects defined in Dynamic Attributes ).
 	DELETEACCOUNTJSON *string `json:"DELETEACCOUNTJSON,omitempty"`
@@ -81,10 +81,10 @@ type DBConnector struct {
 	// Defines the max number of records from the target to be processed in each page
 	MAX_PAGINATION_SIZE *string `json:"MAX_PAGINATION_SIZE,omitempty"`
 	// JSON to specify the commands which can be executed in target server.
-	CLI_COMMAND_JSON *string `json:"CLI_COMMAND_JSON,omitempty"`
+	CLI_COMMAND_JSON      *string `json:"CLI_COMMAND_JSON,omitempty"`
 	CREATEENTITLEMENTJSON *string `json:"CREATEENTITLEMENTJSON,omitempty"`
 	DELETEENTITLEMENTJSON *string `json:"DELETEENTITLEMENTJSON,omitempty"`
-	ENTITLEMENTEXISTJSON *string `json:"ENTITLEMENTEXISTJSON,omitempty"`
+	ENTITLEMENTEXISTJSON  *string `json:"ENTITLEMENTEXISTJSON,omitempty"`
 	UPDATEENTITLEMENTJSON *string `json:"UPDATEENTITLEMENTJSON,omitempty"`
 }
 
@@ -1170,7 +1170,7 @@ func (o *DBConnector) SetUPDATEENTITLEMENTJSON(v string) {
 }
 
 func (o DBConnector) MarshalJSON() ([]byte, error) {
-	toSerialize,err := o.ToMap()
+	toSerialize, err := o.ToMap()
 	if err != nil {
 		return []byte{}, err
 	}
@@ -1302,10 +1302,10 @@ func (o *DBConnector) UnmarshalJSON(data []byte) (err error) {
 	err = json.Unmarshal(data, &allProperties)
 
 	if err != nil {
-		return err;
+		return err
 	}
 
-	for _, requiredProperty := range(requiredProperties) {
+	for _, requiredProperty := range requiredProperties {
 		if _, exists := allProperties[requiredProperty]; !exists {
 			return fmt.Errorf("no value given for required property %v", requiredProperty)
 		}
@@ -1361,5 +1361,3 @@ func (v *NullableDBConnector) UnmarshalJSON(src []byte) error {
 	v.isSet = true
 	return json.Unmarshal(src, &v.value)
 }
-
-
