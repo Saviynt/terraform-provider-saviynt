@@ -12,6 +12,7 @@ import (
 	"context"
 	"log"
 	"strings"
+	"sync"
 	"terraform-provider-Saviynt/util"
 
 	"github.com/hashicorp/terraform-plugin-framework/datasource"
@@ -25,24 +26,24 @@ import (
 
 // Ensure SaviyntProvider satisfies Terraform's provider interfaces.
 
-var _ provider.Provider = &saviyntProvider{}
-var _ provider.ProviderWithEphemeralResources = &saviyntProvider{}
+var _ provider.Provider = &SaviyntProvider{}
+var _ provider.ProviderWithEphemeralResources = &SaviyntProvider{}
 
 func New(version string) func() provider.Provider {
 	return func() provider.Provider {
-		return &saviyntProvider{
+		return &SaviyntProvider{
 			version: version,
 		}
 	}
 }
 
 // SaviyntProvider defines the provider implementation.
-type saviyntProvider struct {
+type SaviyntProvider struct {
 	version      string
 	client       *s.Client // your Go client SDK instance
 	accessToken  string
 	refreshToken string
-	expiresIn    int64
+	tokenMutex   sync.RWMutex // Protects token refresh operations
 }
 
 // SaviyntProviderModel describes the provider data model.
@@ -52,12 +53,12 @@ type SaviyntProviderModel struct {
 	Password  types.String `tfsdk:"password"`
 }
 
-func (p *saviyntProvider) Metadata(_ context.Context, _ provider.MetadataRequest, resp *provider.MetadataResponse) {
+func (p *SaviyntProvider) Metadata(_ context.Context, _ provider.MetadataRequest, resp *provider.MetadataResponse) {
 	resp.TypeName = "saviynt"
 	resp.Version = p.version
 }
 
-func (p *saviyntProvider) Schema(_ context.Context, _ provider.SchemaRequest, resp *provider.SchemaResponse) {
+func (p *SaviyntProvider) Schema(_ context.Context, _ provider.SchemaRequest, resp *provider.SchemaResponse) {
 	resp.Schema = schema.Schema{
 		Description: util.ProviderDescription,
 		Attributes: map[string]schema.Attribute{
@@ -79,7 +80,7 @@ func (p *saviyntProvider) Schema(_ context.Context, _ provider.SchemaRequest, re
 }
 
 // Configure prepares a Saviynt API client for data sources and resources.
-func (p *saviyntProvider) Configure(ctx context.Context, req provider.ConfigureRequest, resp *provider.ConfigureResponse) {
+func (p *SaviyntProvider) Configure(ctx context.Context, req provider.ConfigureRequest, resp *provider.ConfigureResponse) {
 	var config SaviyntProviderModel
 
 	configDiagnostics := req.Config.Get(ctx, &config)
@@ -106,7 +107,7 @@ func (p *saviyntProvider) Configure(ctx context.Context, req provider.ConfigureR
 	serverURL = strings.TrimPrefix(strings.TrimPrefix(serverURL, "https://"), "http://")
 
 	client, err := s.NewClient(ctx, s.Credentials{
-		ServerURL: "https://" + serverURL,
+		ServerURL: "http://" + serverURL,
 		Username:  config.Username.ValueString(),
 		Password:  config.Password.ValueString(),
 	})
@@ -130,7 +131,6 @@ func (p *saviyntProvider) Configure(ctx context.Context, req provider.ConfigureR
 	p.client = client
 	p.accessToken = token.AccessToken
 	p.refreshToken = token.RefreshToken
-	p.expiresIn = token.ExpiresIn
 	//Storing in Resource and Datasource
 	resp.ResourceData = p
 	resp.DataSourceData = p
@@ -138,7 +138,7 @@ func (p *saviyntProvider) Configure(ctx context.Context, req provider.ConfigureR
 }
 
 // DataSources defines the data sources implemented in the provider.
-func (p *saviyntProvider) DataSources(ctx context.Context) []func() datasource.DataSource {
+func (p *SaviyntProvider) DataSources(ctx context.Context) []func() datasource.DataSource {
 	return []func() datasource.DataSource{
 		NewSecuritySystemsDataSource,
 		NewEndpointsDataSource,
@@ -155,12 +155,15 @@ func (p *saviyntProvider) DataSources(ctx context.Context) []func() datasource.D
 		NewGithubRestConnectionsDataSource,
 		NewDynamicAttributeDataSource,
 		NewOktaConnectionsDataSource,
+		NewRolesDataSource,
 		NewEntitlementTypeDataSource,
+		NewEntitlementDataSource,
+		NewPrivilegeDataSource,
 	}
 }
 
 // Resources defines the resources implemented in the provider.
-func (p *saviyntProvider) Resources(ctx context.Context) []func() resource.Resource {
+func (p *SaviyntProvider) Resources(ctx context.Context) []func() resource.Resource {
 	return []func() resource.Resource{
 		NewSecuritySystemResource,
 		NewADConnectionResource,
@@ -178,9 +181,11 @@ func (p *saviyntProvider) Resources(ctx context.Context) []func() resource.Resou
 		NewDynamicAttributeResource,
 		NewOktaConnectionResource,
 		NewEntitlementTypeResource,
+		NewEntitlementResource,
+		NewPrivilegeResource,
 	}
 }
-func (p *saviyntProvider) EphemeralResources(ctx context.Context) []func() ephemeral.EphemeralResource {
+func (p *SaviyntProvider) EphemeralResources(ctx context.Context) []func() ephemeral.EphemeralResource {
 	return []func() ephemeral.EphemeralResource{
 		NewFileCredentialsResource,
 		NewEnvCredentialsResource,

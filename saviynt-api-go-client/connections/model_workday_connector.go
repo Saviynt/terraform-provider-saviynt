@@ -11,8 +11,8 @@ API version: 1.0.0
 package connections
 
 import (
-	"encoding/json"
 	"bytes"
+	"encoding/json"
 	"fmt"
 )
 
@@ -51,8 +51,8 @@ type WorkdayConnector struct {
 	// The username to use for SOAP authentication.
 	USERNAME *string `json:"USERNAME,omitempty"`
 	// The password of the username used for authentication.
-	PASSWORD *string `json:"PASSWORD,omitempty"`
-	CLIENT_ID *string `json:"CLIENT_ID,omitempty"`
+	PASSWORD      *string `json:"PASSWORD,omitempty"`
+	CLIENT_ID     *string `json:"CLIENT_ID,omitempty"`
 	CLIENT_SECRET *string `json:"CLIENT_SECRET,omitempty"`
 	REFRESH_TOKEN *string `json:"REFRESH_TOKEN,omitempty"`
 	// Specify the number of objects to return in a page for each import request from Workday
@@ -88,9 +88,9 @@ type WorkdayConnector struct {
 	// Specify the mapping of user status
 	STATUS_KEY_JSON *string `json:"STATUS_KEY_JSON,omitempty"`
 	// JSON that specifies which job related attributes are to be stored as User Attributes
-	USERATTRIBUTEJSON *string `json:"USERATTRIBUTEJSON,omitempty"`
-	CUSTOM_CONFIG *string `json:"CUSTOM_CONFIG,omitempty"`
-	PAM_CONFIG *string `json:"PAM_CONFIG,omitempty"`
+	USERATTRIBUTEJSON  *string `json:"USERATTRIBUTEJSON,omitempty"`
+	CUSTOM_CONFIG      *string `json:"CUSTOM_CONFIG,omitempty"`
+	PAM_CONFIG         *string `json:"PAM_CONFIG,omitempty"`
 	MODIFYUSERDATAJSON *string `json:"MODIFYUSERDATAJSON,omitempty"`
 }
 
@@ -1325,7 +1325,7 @@ func (o *WorkdayConnector) SetMODIFYUSERDATAJSON(v string) {
 }
 
 func (o WorkdayConnector) MarshalJSON() ([]byte, error) {
-	toSerialize,err := o.ToMap()
+	toSerialize, err := o.ToMap()
 	if err != nil {
 		return []byte{}, err
 	}
@@ -1472,10 +1472,10 @@ func (o *WorkdayConnector) UnmarshalJSON(data []byte) (err error) {
 	err = json.Unmarshal(data, &allProperties)
 
 	if err != nil {
-		return err;
+		return err
 	}
 
-	for _, requiredProperty := range(requiredProperties) {
+	for _, requiredProperty := range requiredProperties {
 		if _, exists := allProperties[requiredProperty]; !exists {
 			return fmt.Errorf("no value given for required property %v", requiredProperty)
 		}
@@ -1531,5 +1531,3 @@ func (v *NullableWorkdayConnector) UnmarshalJSON(src []byte) error {
 	v.isSet = true
 	return json.Unmarshal(src, &v.value)
 }
-
-

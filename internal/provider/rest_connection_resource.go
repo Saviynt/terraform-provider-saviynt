@@ -6,6 +6,7 @@ package provider
 import (
 	"context"
 	"fmt"
+	"net/http"
 	"os"
 	"terraform-provider-Saviynt/internal/client"
 	"terraform-provider-Saviynt/util"
@@ -14,9 +15,11 @@ import (
 
 	openapi "github.com/saviynt/saviynt-api-go-client/connections"
 
+	"github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
 	"github.com/hashicorp/terraform-plugin-framework/path"
 	"github.com/hashicorp/terraform-plugin-framework/resource"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema"
+	"github.com/hashicorp/terraform-plugin-framework/schema/validator"
 	"github.com/hashicorp/terraform-plugin-framework/types"
 	"github.com/hashicorp/terraform-plugin-log/tflog"
 )
@@ -32,6 +35,7 @@ type RestConnectorResourceModel struct {
 	BaseConnectorResourceModel
 	ID                    types.String `tfsdk:"id"`
 	ConnectionJSON        types.String `tfsdk:"connection_json"`
+	ConnectionJSONWO      types.String `tfsdk:"connection_json_wo"`
 	ImportUserJson        types.String `tfsdk:"import_user_json"`
 	ImportAccountEntJson  types.String `tfsdk:"import_account_ent_json"`
 	StatusThresholdConfig types.String `tfsdk:"status_threshold_config"`
@@ -65,6 +69,7 @@ type RestConnectorResourceModel struct {
 type RestConnectionResource struct {
 	client            client.SaviyntClientInterface
 	token             string
+	provider          client.SaviyntProviderInterface
 	connectionFactory client.ConnectionFactoryInterface
 }
 
@@ -92,8 +97,19 @@ func RestConnectorResourceSchema() map[string]schema.Attribute {
 		},
 		"connection_json": schema.StringAttribute{
 			Optional:    true,
+			Sensitive:   true,
+			Description: "Dynamic JSON configuration for the connection. Must be a valid JSON object string. Either the connection_json field or the connection_json_wo field must be populated to set the connection_json attribute.",
+			Validators: []validator.String{
+				stringvalidator.ConflictsWith(path.MatchRoot("connection_json_wo")),
+			},
+		},
+		"connection_json_wo": schema.StringAttribute{
+			Optional:    true,
 			WriteOnly:   true,
-			Description: "Dynamic JSON configuration for the connection. Must be a valid JSON object string.",
+			Description: "Dynamic JSON configuration for the connection (write-only). Must be a valid JSON object string. Either the connection_json field or the connection_json_wo field must be populated to set the connection_json attribute.",
+			Validators: []validator.String{
+				stringvalidator.ConflictsWith(path.MatchRoot("connection_json")),
+			},
 		},
 		"import_user_json": schema.StringAttribute{
 			Optional:    true,
@@ -147,7 +163,7 @@ func RestConnectorResourceSchema() map[string]schema.Attribute {
 		},
 		"change_pass_json": schema.StringAttribute{
 			Optional:    true,
-			WriteOnly:   true,
+			Computed:    true,
 			Description: "JSON to change a user's password.",
 		},
 		"remove_account_json": schema.StringAttribute{
@@ -241,6 +257,8 @@ func (r *RestConnectionResource) Schema(ctx context.Context, req resource.Schema
 	}
 }
 
+
+
 func (r *RestConnectionResource) Configure(ctx context.Context, req resource.ConfigureRequest, resp *resource.ConfigureResponse) {
 	opCtx := errorsutil.CreateOperationContext(errorsutil.ConnectorTypeREST, "configure", "")
 	ctx = opCtx.AddContextToLogger(ctx)
@@ -255,16 +273,16 @@ func (r *RestConnectionResource) Configure(ctx context.Context, req resource.Con
 	}
 
 	// Cast provider data to your provider type.
-	prov, ok := req.ProviderData.(*saviyntProvider)
+	prov, ok := req.ProviderData.(*SaviyntProvider)
 	if !ok {
 		errorCode := restErrorCodes.ProviderConfig()
 		opCtx.LogOperationError(ctx, "Provider configuration failed", errorCode,
-			fmt.Errorf("expected *saviyntProvider, got different type"),
-			map[string]interface{}{"expected_type": "*saviyntProvider"})
+			fmt.Errorf("expected *SaviyntProvider, got different type"),
+			map[string]interface{}{"expected_type": "*SaviyntProvider"})
 
 		resp.Diagnostics.AddError(
 			errorsutil.GetErrorMessage(errorsutil.ErrProviderConfig),
-			fmt.Sprintf("[%s] Expected *saviyntProvider, got different type", errorCode),
+			fmt.Sprintf("[%s] Expected *SaviyntProvider, got different type", errorCode),
 		)
 		return
 	}
@@ -272,6 +290,7 @@ func (r *RestConnectionResource) Configure(ctx context.Context, req resource.Con
 	// Set the client and token from the provider state using interface wrapper.
 	r.client = &client.SaviyntClientWrapper{Client: prov.client}
 	r.token = prov.accessToken
+	r.provider = &client.SaviyntProviderWrapper{Provider: prov} // Store provider reference for retry logic
 
 	opCtx.LogOperationEnd(ctx, "REST connection resource configured successfully")
 }
@@ -286,6 +305,11 @@ func (r *RestConnectionResource) SetToken(token string) {
 	r.token = token
 }
 
+// SetProvider sets the provider for testing purposes
+func (r *RestConnectionResource) SetProvider(provider client.SaviyntProviderInterface) {
+	r.provider = provider
+}
+
 func (r *RestConnectionResource) CreateRESTConnection(ctx context.Context, plan *RestConnectorResourceModel, config *RestConnectorResourceModel) (*openapi.CreateOrUpdateResponse, error) {
 	connectionName := plan.ConnectionName.ValueString()
 	opCtx := errorsutil.CreateOperationContext(errorsutil.ConnectorTypeREST, "create", connectionName)
@@ -295,14 +319,27 @@ func (r *RestConnectionResource) CreateRESTConnection(ctx context.Context, plan 
 
 	opCtx.LogOperationStart(logCtx, "Starting REST connection creation")
 
-	// Use the factory to create connection operations
-	connectionOps := r.connectionFactory.CreateConnectionOperations(r.client.APIBaseURL(), r.token)
-
-	// Check if connection already exists (idempotency check)
+	// Check if connection already exists (idempotency check) with retry logic
 	tflog.Debug(logCtx, "Checking if connection already exists")
+	var existingResource *openapi.GetConnectionDetailsResponse
+	var finalHttpResp *http.Response
+	err := r.provider.AuthenticatedAPICallWithRetry(ctx, "get_connection_details_idempotency", func(token string) error {
+		connectionOps := r.connectionFactory.CreateConnectionOperations(r.client.APIBaseURL(), token)
+		resp, httpResp, err := connectionOps.GetConnectionDetails(ctx, connectionName)
+		if httpResp != nil && httpResp.StatusCode == 401 {
+			return fmt.Errorf("401 unauthorized")
+		}
+		existingResource = resp
+		finalHttpResp = httpResp // Update on every call including retries
+		return err
+	})
 
-	// Use original context for API calls to maintain test compatibility
-	existingResource, _, _ := connectionOps.GetConnectionDetails(ctx, connectionName)
+	if err != nil && finalHttpResp != nil && finalHttpResp.StatusCode != 412 {
+		errorCode := restErrorCodes.ReadFailed()
+		opCtx.LogOperationError(logCtx, "Failed to check existing connection", errorCode, err)
+		return nil, errorsutil.CreateStandardError(errorsutil.ConnectorTypeREST, errorCode, "create", connectionName, err)
+	}
+
 	if existingResource != nil &&
 		existingResource.RESTConnectionResponse != nil &&
 		existingResource.RESTConnectionResponse.Errorcode != nil &&
@@ -325,14 +362,26 @@ func (r *RestConnectionResource) CreateRESTConnection(ctx context.Context, plan 
 	// Execute create operation through interface
 	tflog.Debug(ctx, "Executing create operation")
 
-	apiResp, _, err := connectionOps.CreateOrUpdateConnection(ctx, restConnRequest)
+	// Execute create operation with retry logic
+	var apiResp *openapi.CreateOrUpdateResponse
+
+	err = r.provider.AuthenticatedAPICallWithRetry(ctx, "create_rest_connection", func(token string) error {
+		connectionOps := r.connectionFactory.CreateConnectionOperations(r.client.APIBaseURL(), token)
+		resp, httpResp, err := connectionOps.CreateOrUpdateConnection(ctx, restConnRequest)
+		if httpResp != nil && httpResp.StatusCode == 401 {
+			return fmt.Errorf("401 unauthorized")
+		}
+		apiResp = resp
+		return err
+	})
+
 	if err != nil {
 		errorCode := restErrorCodes.CreateFailed()
 		opCtx.LogOperationError(ctx, "Failed to create REST connection", errorCode, err)
 		return nil, errorsutil.CreateStandardError(errorsutil.ConnectorTypeREST, errorCode, "create", connectionName, err)
 	}
 
-	if apiResp != nil && *apiResp.ErrorCode != "0" {
+	if apiResp != nil && apiResp.ErrorCode != nil && *apiResp.ErrorCode != "0" {
 		apiErr := fmt.Errorf("API returned error code %s: %s", *apiResp.ErrorCode, errorsutil.SanitizeMessage(apiResp.Msg))
 		errorCode := restErrorCodes.APIError()
 		opCtx.LogOperationError(ctx, "REST connection creation failed with API error", errorCode, apiErr,
@@ -355,6 +404,13 @@ func (r *RestConnectionResource) CreateRESTConnection(ctx context.Context, plan 
 }
 
 func (r *RestConnectionResource) BuildRESTConnector(plan *RestConnectorResourceModel, config *RestConnectorResourceModel) openapi.RESTConnector {
+	var connectionJson string
+	if !config.ConnectionJSON.IsNull() && !config.ConnectionJSON.IsUnknown() {
+		connectionJson = config.ConnectionJSON.ValueString()
+	} else if !config.ConnectionJSONWO.IsNull() && !config.ConnectionJSONWO.IsUnknown() {
+		connectionJson = config.ConnectionJSONWO.ValueString()
+	}
+
 	restConn := openapi.RESTConnector{
 		BaseConnector: openapi.BaseConnector{
 			//required fields
@@ -366,7 +422,7 @@ func (r *RestConnectionResource) BuildRESTConnector(plan *RestConnectorResourceM
 			EmailTemplate:   util.StringPointerOrEmpty(plan.EmailTemplate),
 		},
 		//optional fields
-		ConnectionJSON:          util.StringPointerOrEmpty(config.ConnectionJSON),
+		ConnectionJSON:          util.StringPointerOrEmpty(types.StringValue(connectionJson)),
 		ImportUserJSON:          util.StringPointerOrEmpty(plan.ImportUserJson),
 		ImportAccountEntJSON:    util.StringPointerOrEmpty(plan.ImportAccountEntJson),
 		STATUS_THRESHOLD_CONFIG: util.StringPointerOrEmpty(plan.StatusThresholdConfig),
@@ -377,7 +433,7 @@ func (r *RestConnectionResource) BuildRESTConnector(plan *RestConnectorResourceM
 		AddAccessJSON:           util.StringPointerOrEmpty(plan.AddAccessJson),
 		RemoveAccessJSON:        util.StringPointerOrEmpty(plan.RemoveAccessJson),
 		UpdateUserJSON:          util.StringPointerOrEmpty(plan.UpdateUserJson),
-		ChangePassJSON:          util.StringPointerOrEmpty(config.ChangePassJson),
+		ChangePassJSON:          util.StringPointerOrEmpty(plan.ChangePassJson),
 		RemoveAccountJSON:       util.StringPointerOrEmpty(plan.RemoveAccountJson),
 		TicketStatusJSON:        util.StringPointerOrEmpty(plan.TicketStatusJson),
 		CreateTicketJSON:        util.StringPointerOrEmpty(plan.CreateTicketJson),
@@ -455,18 +511,32 @@ func (r *RestConnectionResource) ReadRESTConnection(ctx context.Context, connect
 
 	opCtx.LogOperationStart(logCtx, "Starting REST connection read operation")
 
-	// Use the factory to create connection operations
-	connectionOps := r.connectionFactory.CreateConnectionOperations(r.client.APIBaseURL(), r.token)
+	// Execute read operation with retry logic
+	var apiResp *openapi.GetConnectionDetailsResponse
 
-	// Execute read operation through interface - use original context for API calls
-	apiResp, _, err := connectionOps.GetConnectionDetails(ctx, connectionName)
+	err := r.provider.AuthenticatedAPICallWithRetry(ctx, "read_rest_connection", func(token string) error {
+		connectionOps := r.connectionFactory.CreateConnectionOperations(r.client.APIBaseURL(), token)
+		resp, httpResp, err := connectionOps.GetConnectionDetails(ctx, connectionName)
+		if httpResp != nil && httpResp.StatusCode == 401 {
+			return fmt.Errorf("401 unauthorized")
+		}
+		apiResp = resp
+		return err
+	})
+
 	if err != nil {
 		errorCode := restErrorCodes.ReadFailed()
 		opCtx.LogOperationError(logCtx, "Failed to read REST connection", errorCode, err)
 		return nil, errorsutil.CreateStandardError(errorsutil.ConnectorTypeREST, errorCode, "read", connectionName, err)
 	}
 
-	if apiResp != nil && apiResp.RESTConnectionResponse != nil && *apiResp.RESTConnectionResponse.Errorcode != 0 {
+	if err := r.ValidateRESTConnectionResponse(apiResp); err != nil {
+		errorCode := restErrorCodes.APIError()
+		opCtx.LogOperationError(ctx, "Invalid connection type for REST datasource", errorCode, err)
+		return nil, fmt.Errorf("[%s] Unable to verify connection type for connection %q. The provider could not determine the type of this connection. Please ensure the connection name is correct and belongs to a supported connector type", errorCode, connectionName)
+	}
+
+	if apiResp != nil && apiResp.RESTConnectionResponse != nil && apiResp.RESTConnectionResponse.Errorcode != nil && *apiResp.RESTConnectionResponse.Errorcode != 0 {
 		apiErr := fmt.Errorf("API returned error code %d: %s", *apiResp.RESTConnectionResponse.Errorcode, errorsutil.SanitizeMessage(apiResp.RESTConnectionResponse.Msg))
 		errorCode := restErrorCodes.APIError()
 		opCtx.LogOperationError(ctx, "REST connection read failed with API error", errorCode, apiErr,
@@ -525,14 +595,13 @@ func (r *RestConnectionResource) UpdateModelFromReadResponse(state *RestConnecto
 	state.CreateEntitlementJson = util.SafeStringDatasource(apiResp.RESTConnectionResponse.Connectionattributes.CreateEntitlementJSON)
 	state.DeleteEntitlementJson = util.SafeStringDatasource(apiResp.RESTConnectionResponse.Connectionattributes.DeleteEntitlementJSON)
 	state.UpdateEntitlementJson = util.SafeStringDatasource(apiResp.RESTConnectionResponse.Connectionattributes.UpdateEntitlementJSON)
+}
 
-	apiMessage := util.SafeDeref(apiResp.RESTConnectionResponse.Msg)
-	if apiMessage == "success" {
-		state.Msg = types.StringValue("Connection Successful")
-	} else {
-		state.Msg = types.StringValue(apiMessage)
+func (r *RestConnectionResource) ValidateRESTConnectionResponse(apiResp *openapi.GetConnectionDetailsResponse) error {
+	if apiResp != nil && apiResp.RESTConnectionResponse == nil {
+		return fmt.Errorf("verify the connection type - REST connection response is nil")
 	}
-	state.ErrorCode = util.Int32PtrToTFString(apiResp.RESTConnectionResponse.Errorcode)
+	return nil
 }
 
 func (r *RestConnectionResource) UpdateRESTConnection(ctx context.Context, plan *RestConnectorResourceModel, config *RestConnectorResourceModel) (*openapi.CreateOrUpdateResponse, error) {
@@ -544,36 +613,36 @@ func (r *RestConnectionResource) UpdateRESTConnection(ctx context.Context, plan 
 
 	opCtx.LogOperationStart(logCtx, "Starting REST connection update")
 
-	// Use the factory to create connection operations
-	connectionOps := r.connectionFactory.CreateConnectionOperations(r.client.APIBaseURL(), r.token)
-
 	// Build REST connection update request
 	tflog.Debug(logCtx, "Building REST connection update request")
 
 	restConn := r.BuildRESTConnector(plan, config)
-	if plan.VaultConnection.ValueString() == "" {
-		emptyStr := ""
-		restConn.BaseConnector.VaultConnection = &emptyStr
-		restConn.BaseConnector.VaultConfiguration = &emptyStr
-		restConn.BaseConnector.Saveinvault = &emptyStr
-	}
 
 	restConnRequest := openapi.CreateOrUpdateRequest{
 		RESTConnector: &restConn,
 	}
 
-	// Execute update operation through interface
+	// Execute update operation with retry logic
 	tflog.Debug(logCtx, "Executing update operation")
+	var apiResp *openapi.CreateOrUpdateResponse
 
-	// Use original context for API calls to maintain test compatibility
-	apiResp, _, err := connectionOps.CreateOrUpdateConnection(ctx, restConnRequest)
+	err := r.provider.AuthenticatedAPICallWithRetry(ctx, "update_rest_connection", func(token string) error {
+		connectionOps := r.connectionFactory.CreateConnectionOperations(r.client.APIBaseURL(), token)
+		resp, httpResp, err := connectionOps.CreateOrUpdateConnection(ctx, restConnRequest)
+		if httpResp != nil && httpResp.StatusCode == 401 {
+			return fmt.Errorf("401 unauthorized")
+		}
+		apiResp = resp
+		return err
+	})
+
 	if err != nil {
 		errorCode := restErrorCodes.UpdateFailed()
 		opCtx.LogOperationError(logCtx, "Failed to update REST connection", errorCode, err)
 		return nil, errorsutil.CreateStandardError(errorsutil.ConnectorTypeREST, errorCode, "update", connectionName, err)
 	}
 
-	if apiResp != nil && *apiResp.ErrorCode != "0" {
+	if apiResp != nil && apiResp.ErrorCode != nil && *apiResp.ErrorCode != "0" {
 		apiErr := fmt.Errorf("API returned error code %s: %s", *apiResp.ErrorCode, errorsutil.SanitizeMessage(apiResp.Msg))
 		errorCode := restErrorCodes.APIError()
 		opCtx.LogOperationError(logCtx, "REST connection update failed with API error", errorCode, apiErr,
@@ -692,6 +761,14 @@ func (r *RestConnectionResource) Read(ctx context.Context, req resource.ReadRequ
 	// Update model from read response
 	r.UpdateModelFromReadResponse(&state, apiResp)
 
+	apiMessage := util.SafeDeref(apiResp.RESTConnectionResponse.Msg)
+	if apiMessage == "success" {
+		state.Msg = types.StringValue("Connection Read Successful")
+	} else {
+		state.Msg = types.StringValue(apiMessage)
+	}
+	state.ErrorCode = util.Int32PtrToTFString(apiResp.RESTConnectionResponse.Errorcode)
+
 	stateDiagnostics := resp.State.Set(ctx, &state)
 	resp.Diagnostics.Append(stateDiagnostics...)
 	if resp.Diagnostics.HasError() {
@@ -777,7 +854,7 @@ func (r *RestConnectionResource) Update(ctx context.Context, req resource.Update
 	ctx = opCtx.AddContextToLogger(ctx)
 
 	// Use interface pattern instead of direct API client creation
-	_, err := r.UpdateRESTConnection(ctx, &plan, &config)
+	updateResp, err := r.UpdateRESTConnection(ctx, &plan, &config)
 	if err != nil {
 		opCtx.LogOperationError(ctx, "REST connection update failed", "", err)
 		resp.Diagnostics.AddError(
@@ -800,6 +877,10 @@ func (r *RestConnectionResource) Update(ctx context.Context, req resource.Update
 
 	// Update model from read response
 	r.UpdateModelFromReadResponse(&plan, getResp)
+
+	apiMessage := util.SafeDeref(updateResp.Msg)
+	plan.Msg = types.StringValue(apiMessage)
+	plan.ErrorCode = types.StringValue(*updateResp.ErrorCode)
 
 	stateUpdateDiagnostics := resp.State.Set(ctx, plan)
 	resp.Diagnostics.Append(stateUpdateDiagnostics...)

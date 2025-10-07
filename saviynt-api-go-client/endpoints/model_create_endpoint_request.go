@@ -1,7 +1,7 @@
 /*
 Account Management API
 
-API for managing accounts in Saviynt/SSM. - **Create Endpoint**: Creates a new endpoint. - **Update Endpoint**: Updates an existing endpoint based on its name and roletype. - **Get Endpoint List**: Returns a list of endpoints based on search criteria. 
+API for managing accounts in Saviynt/SSM. - **Create Endpoint**: Creates a new endpoint. - **Update Endpoint**: Updates an existing endpoint based on its name and roletype. - **Get Endpoint List**: Returns a list of endpoints based on search criteria.
 
 API version: 1.0.0
 */
@@ -11,8 +11,8 @@ API version: 1.0.0
 package endpoints
 
 import (
-	"encoding/json"
 	"bytes"
+	"encoding/json"
 	"fmt"
 )
 
@@ -24,9 +24,9 @@ type CreateEndpointRequest struct {
 	// Specify a name for the endpoint. Provide a logical name that will help you easily identify it.
 	Endpointname string `json:"endpointname"`
 	// Specify the primary account type for the endpoint.
-	PrimaryAccountType *string `json:"primaryAccountType,omitempty"`
-	AccountTypeNoPasswordChange *string `json:"accountTypeNoPasswordChange,omitempty"`
-	Taskemailtemplates []CreateEndpointRequestEmailTemplateInner `json:"taskemailtemplates,omitempty"`
+	PrimaryAccountType          *string                                   `json:"primaryAccountType,omitempty"`
+	AccountTypeNoPasswordChange *string                                   `json:"accountTypeNoPasswordChange,omitempty"`
+	Taskemailtemplates          []CreateEndpointRequestEmailTemplateInner `json:"taskemailtemplates,omitempty"`
 	// Enter a user-friendly display name for the endpoint that will be displayed in the user interface. Display Name can be different from Endpoint Name.
 	DisplayName string `json:"displayName"`
 	// Specify the Security system for which you want to create an endpoint.
@@ -64,7 +64,7 @@ type CreateEndpointRequest struct {
 	// Specify the parent and child relationship for the Active Directory endpoint. The specified value is used to filter the parent and child objects in the Request Access tile.
 	ParentAccountPattern *string `json:"parentAccountPattern,omitempty"`
 	// Rule to generate a name for this endpoint while creating a new service account
-	ServiceAccountNameRule *string `json:"serviceAccountNameRule,omitempty"`
+	ServiceAccountNameRule    *string `json:"serviceAccountNameRule,omitempty"`
 	ServiceAccountAccessQuery *string `json:"serviceAccountAccessQuery,omitempty"`
 	// Specify query to restrict the access for changing the account password of the endpoint.
 	ChangePasswordAccessQuery *string `json:"changePasswordAccessQuery,omitempty"`
@@ -4711,7 +4711,7 @@ func (o *CreateEndpointRequest) SetAllowRemoveAllRoleOnRequest(v bool) {
 }
 
 func (o CreateEndpointRequest) MarshalJSON() ([]byte, error) {
-	toSerialize,err := o.ToMap()
+	toSerialize, err := o.ToMap()
 	if err != nil {
 		return []byte{}, err
 	}
@@ -5146,10 +5146,10 @@ func (o *CreateEndpointRequest) UnmarshalJSON(data []byte) (err error) {
 	err = json.Unmarshal(data, &allProperties)
 
 	if err != nil {
-		return err;
+		return err
 	}
 
-	for _, requiredProperty := range(requiredProperties) {
+	for _, requiredProperty := range requiredProperties {
 		if _, exists := allProperties[requiredProperty]; !exists {
 			return fmt.Errorf("no value given for required property %v", requiredProperty)
 		}
@@ -5205,5 +5205,3 @@ func (v *NullableCreateEndpointRequest) UnmarshalJSON(src []byte) error {
 	v.isSet = true
 	return json.Unmarshal(src, &v.value)
 }
-
-

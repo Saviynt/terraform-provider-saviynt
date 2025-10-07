@@ -161,32 +161,39 @@ resource "saviynt_unix_connection_resource" "example" {
 - `disable_account_command` (String) Property for DISABLE_ACCOUNT_COMMAND
 - `email_template` (String) Email template for notifications. Example: "New Account Task Creation"
 - `enable_account_command` (String) Property for ENABLE_ACCOUNT_COMMAND
-- `error_code` (String) An error code where '0' signifies success and '1' signifies an unsuccessful operation.
 - `fire_fighter_id_grant_access_command` (String) Property for FIREFIGHTERID_GRANT_ACCESS_COMMAND
 - `fire_fighter_id_revoke_access_command` (String) Property for FIREFIGHTERID_REVOKE_ACCESS_COMMAND
 - `groups_file` (String) Property for GROUPS_FILE
 - `inactive_lock_account` (String) Property for INACTIVE_LOCK_ACCOUNT
 - `lock_account_command` (String) Property for LOCK_ACCOUNT_COMMAND
-- `msg` (String) A message indicating the outcome of the operation.
 - `pass_through_connection_details` (String) Property for PassThroughConnectionDetails
-- `passphrase` (String) Property for PASSPHRASE
-- `password` (String) Property for PASSWORD
+- `passphrase` (String, Sensitive) Property for PASSPHRASE. Either this or passphrase_wo need to be set to configure the passphrase attribute.
+- `passphrase_wo` (String) Passphrase write-only attribute. Either this or passphrase need to be set to configure the passphrase attribute.
+- `password` (String, Sensitive) Property for PASSWORD. Either this or password_wo need to be set to configure the password attribute.
+- `password_wo` (String) Password write-only attribute. Either this or password need to be set to configure the password attribute.
 - `pem_key_file` (String) Property for PEM_KEY_FILE
 - `provision_account_command` (String) Property for PROVISION_ACCOUNT_COMMAND
 - `remove_access_command` (String) Property for REMOVE_ACCESS_COMMAND
 - `save_in_vault` (String) Flag indicating whether the encrypted attribute should be saved in the configured vault. Example: "false"
 - `shadow_file` (String) Property for SHADOW_FILE
-- `ssh_key` (String) Property for SSH_KEY
-- `ssh_pass_through_passphrase` (String) Property for SSHPassThroughPassphrase
-- `ssh_pass_through_password` (String) Property for SSHPassThroughPassword
-- `ssh_pass_through_sshkey` (String) Property for SSHPassThroughSSHKEY
+- `ssh_key` (String, Sensitive) Property for SSH_KEY. Either this or ssh_key_wo need to be set to configure the ssh_key attribute.
+- `ssh_key_wo` (String) SSH key write-only attribute. Either this or ssh_key need to be set to configure the ssh_key attribute.
+- `ssh_pass_through_passphrase` (String, Sensitive) Property for SSHPassThroughPassphrase. Either this or ssh_pass_through_passphrase_wo need to be set to configure the ssh_pass_through_passphrase attribute.
+- `ssh_pass_through_passphrase_wo` (String) SSH pass-through passphrase write-only attribute. Either this or ssh_pass_through_passphrase need to be set to configure the ssh_pass_through_passphrase attribute.
+- `ssh_pass_through_password` (String, Sensitive) Property for SSHPassThroughPassword. Either this or ssh_pass_through_password_wo need to be set to configure the ssh_pass_through_password attribute.
+- `ssh_pass_through_password_wo` (String) SSH pass-through password write-only attribute. Either this or ssh_pass_through_password need to be set to configure the ssh_pass_through_password attribute.
+- `ssh_pass_through_sshkey` (String, Sensitive) Property for SSHPassThroughSSHKEY. Either this or ssh_pass_through_sshkey_wo need to be set to configure the ssh_pass_through_sshkey attribute.
+- `ssh_pass_through_sshkey_wo` (String) Property for SSHPassThroughSSHKEY. Either this or ssh_pass_through_sshkey need to be set to configure the ssh_pass_through_sshkey attribute.
 - `status_threshold_config` (String) Property for STATUS_THRESHOLD_CONFIG
 - `unlock_account_command` (String) Property for UNLOCK_ACCOUNT_COMMAND
 - `update_account_command` (String) Property for UPDATE_ACCOUNT_COMMAND
 - `vault_configuration` (String) JSON string specifying vault configuration.
 - `vault_connection` (String) Specifies the type of vault connection being used (e.g., 'Hashicorp'). Example: "Hashicorp"
+- `wo_version` (String) Add/change the value of this attribute to update the writeonly attributes like username, password etc in connection resources
 
 ### Read-Only
 
 - `connection_key` (Number) Unique identifier of the connection returned by the API. Example: 1909
+- `error_code` (String) An error code where '0' signifies success and '1' signifies an unsuccessful operation.
 - `id` (String) Resource ID.
+- `msg` (String) A message indicating the outcome of the operation.

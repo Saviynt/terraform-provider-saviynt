@@ -110,29 +110,32 @@ resource "saviynt_salesforce_connection_resource" "ss" {
 - `account_field_query` (String) Fields to retrieve for Salesforce accounts. Example: Id, Username, LastName, FirstName, etc.
 - `account_filter_query` (String) Query used to filter Salesforce accounts.
 - `client_id` (String) The OAuth client ID for Salesforce.
-- `client_secret` (String) The OAuth client secret for Salesforce.
+- `client_secret` (String, Sensitive) The OAuth client secret for Salesforce. Either this field or the client_secret_wo field must be provided to configure the client_secret attribute.
+- `client_secret_wo` (String) The OAuth client secret for Salesforce (write-only). Either this field or the client_secret field must be provided to configure the client_secret attribute.
 - `createaccountjson` (String) JSON template used for account creation in Salesforce.
 - `custom_createaccount_url` (String) Custom URL used when creating a Salesforce account.
 - `customconfigjson` (String) Custom configuration options for Salesforce connector.
 - `defaultsavroles` (String) Default SAV roles for managing the connection. Example: "ROLE_ORG"
 - `description` (String) Description for the connection. Example: "ORG_AD"
 - `email_template` (String) Email template for notifications. Example: "New Account Task Creation"
-- `error_code` (String) An error code where '0' signifies success and '1' signifies an unsuccessful operation.
 - `feature_license_json` (String) JSON mapping of feature licenses to permission fields in Salesforce.
 - `field_mapping_json` (String) JSON mapping of local fields to Salesforce fields with data types.
 - `instance_url` (String) Salesforce instance base URL. Example: https://@INSTANCE_NAME@.salesforce.com
 - `modifyaccountjson` (String) JSON template used for modifying Salesforce accounts.
-- `msg` (String) A message indicating the outcome of the operation.
 - `object_to_be_imported` (String) Comma-separated list of Salesforce objects to import. Example: "Profile,Role,Group,PermissionSet"
 - `pam_config` (String) Privileged Access Management (PAM) configuration in JSON format.
 - `redirect_uri` (String) The redirect URI used in OAuth flows. Example: https://@INSTANCE_NAME@.salesforce.com/services/oauth2/success
-- `refresh_token` (String) The OAuth refresh token used to get access tokens from Salesforce.
+- `refresh_token` (String, Sensitive) The OAuth refresh token used to get access tokens from Salesforce. Either this field or the refresh_token_wo field must be provided to configure the refresh_token attribute.
+- `refresh_token_wo` (String) The OAuth refresh token used to get access tokens from Salesforce (write-only). Either this field or the refresh_token field must be provided to configure the refresh_token attribute.
 - `save_in_vault` (String) Flag indicating whether the encrypted attribute should be saved in the configured vault. Example: "false"
 - `status_threshold_config` (String) JSON configuration to define active/inactive thresholds and lock statuses.
 - `vault_configuration` (String) JSON string specifying vault configuration.
 - `vault_connection` (String) Specifies the type of vault connection being used (e.g., 'Hashicorp'). Example: "Hashicorp"
+- `wo_version` (String) Add/change the value of this attribute to update the writeonly attributes like username, password etc in connection resources
 
 ### Read-Only
 
 - `connection_key` (Number) Unique identifier of the connection returned by the API. Example: 1909
+- `error_code` (String) An error code where '0' signifies success and '1' signifies an unsuccessful operation.
 - `id` (String) Resource ID.
+- `msg` (String) A message indicating the outcome of the operation.

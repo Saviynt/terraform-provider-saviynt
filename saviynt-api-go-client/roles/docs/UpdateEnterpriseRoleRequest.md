@@ -8,6 +8,7 @@ Name | Type | Description | Notes
 **RoleName** | **string** |  | 
 **Requestor** | Pointer to **string** |  | [optional] 
 **Owner** | Pointer to [**[]UpdateRoleOwnerPayload**](UpdateRoleOwnerPayload.md) |  | [optional] 
+**ChildRoles** | Pointer to [**[]UpdateChildRolePayload**](UpdateChildRolePayload.md) |  | [optional] 
 **Endpointname** | Pointer to **string** |  | [optional] 
 **Entitlements** | Pointer to [**[]UpdateEntitlementPayload**](UpdateEntitlementPayload.md) |  | [optional] 
 **Defaulttimeframe** | Pointer to **string** |  | [optional] 
@@ -192,6 +193,31 @@ SetOwner sets Owner field to given value.
 `func (o *UpdateEnterpriseRoleRequest) HasOwner() bool`
 
 HasOwner returns a boolean if a field has been set.
+
+### GetChildRoles
+
+`func (o *UpdateEnterpriseRoleRequest) GetChildRoles() []UpdateChildRolePayload`
+
+GetChildRoles returns the ChildRoles field if non-nil, zero value otherwise.
+
+### GetChildRolesOk
+
+`func (o *UpdateEnterpriseRoleRequest) GetChildRolesOk() (*[]UpdateChildRolePayload, bool)`
+
+GetChildRolesOk returns a tuple with the ChildRoles field if it's non-nil, zero value otherwise
+and a boolean to check if the value has been set.
+
+### SetChildRoles
+
+`func (o *UpdateEnterpriseRoleRequest) SetChildRoles(v []UpdateChildRolePayload)`
+
+SetChildRoles sets ChildRoles field to given value.
+
+### HasChildRoles
+
+`func (o *UpdateEnterpriseRoleRequest) HasChildRoles() bool`
+
+HasChildRoles returns a boolean if a field has been set.
 
 ### GetEndpointname
 

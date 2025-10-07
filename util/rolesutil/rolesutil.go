@@ -12,7 +12,13 @@ var RoleTypeMap = map[string]string{
 	"6": "ENTITLEMENT",
 }
 
+var StatusMap = map[string]string{
+	"0": "Inactive",
+	"1": "Active",
+}
+
 var SoxCriticalityMap = map[string]string{
+	"0": "None",
 	"1": "Very Low",
 	"2": "Low",
 	"3": "Medium",
@@ -21,6 +27,7 @@ var SoxCriticalityMap = map[string]string{
 }
 
 var SysCriticalMap = map[string]string{
+	"0": "None",
 	"1": "Very Low",
 	"2": "Low",
 	"3": "Medium",
@@ -29,6 +36,7 @@ var SysCriticalMap = map[string]string{
 }
 
 var PrivilegedMap = map[string]string{
+	"0": "None",
 	"1": "Very Low",
 	"2": "Low",
 	"3": "Medium",
@@ -37,6 +45,31 @@ var PrivilegedMap = map[string]string{
 }
 
 var ConfidentialityMap = map[string]string{
+	"0": "None",
+	"1": "Very Low",
+	"2": "Low",
+	"3": "Medium",
+	"4": "High",
+	"5": "Critical",
+}
+
+// ReverseTranslateValue converts human-readable values back to numeric keys using the provided map
+func ReverseTranslateValue(input string, valueMap map[string]string) string {
+	if input == "" {
+		return ""
+	}
+	// Search for the input value in the map values and return the corresponding key
+	for key, value := range valueMap {
+		if value == input {
+			return key
+		}
+	}
+	// If not found in map, return the input as-is (might already be numeric)
+	return input
+}
+
+var RiskMap = map[string]string{
+	"0": "None",
 	"1": "Very Low",
 	"2": "Low",
 	"3": "Medium",

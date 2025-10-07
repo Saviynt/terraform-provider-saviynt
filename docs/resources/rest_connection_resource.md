@@ -50,7 +50,8 @@ resource "saviynt_rest_connection_resource" "example" {
 - `application_discovery_json` (String) The ApplicationDiscoveryJSON attribute is specifically implemented for ServiceNow application discovery, allowing automated discovery and import of applications from ServiceNow instances.
 - `change_pass_json` (String) JSON to change a user's password.
 - `config_json` (String) General configuration JSON for the REST connector.
-- `connection_json` (String) Dynamic JSON configuration for the connection. Must be a valid JSON object string.
+- `connection_json` (String, Sensitive) Dynamic JSON configuration for the connection. Must be a valid JSON object string. Either the connection_json field or the connection_json_wo field must be populated to set the connection_json attribute.
+- `connection_json_wo` (String) Dynamic JSON configuration for the connection (write-only). Must be a valid JSON object string. Either the connection_json field or the connection_json_wo field must be populated to set the connection_json attribute.
 - `create_account_json` (String) JSON to create an account.
 - `create_entitlement_json` (String) The three entitlement JSON attributes (Create, Update, Delete) are part of a comprehensive entitlement management system for REST connectors, with supporting constants and service classes.
 - `create_ticket_json` (String) JSON to create a ticket.
@@ -61,11 +62,9 @@ resource "saviynt_rest_connection_resource" "example" {
 - `email_template` (String) Email template for notifications. Example: "New Account Task Creation"
 - `enable_account_json` (String) JSON configuration to enable an account.
 - `endpoints_filter` (String) Filter criteria for endpoints.
-- `error_code` (String) An error code where '0' signifies success and '1' signifies an unsuccessful operation.
 - `import_account_ent_json` (String) JSON for importing accounts and entitlements.
 - `import_user_json` (String) JSON for importing users.
 - `modify_user_data_json` (String) JSON for modifying user data.
-- `msg` (String) A message indicating the outcome of the operation.
 - `pam_config` (String) PAM configuration JSON.
 - `passwd_policy_json` (String) JSON defining the password policy.
 - `remove_access_json` (String) JSON to remove access.
@@ -81,8 +80,11 @@ resource "saviynt_rest_connection_resource" "example" {
 - `validate_otp_json` (String) JSON to validate OTP.
 - `vault_configuration` (String) JSON string specifying vault configuration.
 - `vault_connection` (String) Specifies the type of vault connection being used (e.g., 'Hashicorp'). Example: "Hashicorp"
+- `wo_version` (String) Add/change the value of this attribute to update the writeonly attributes like username, password etc in connection resources
 
 ### Read-Only
 
 - `connection_key` (Number) Unique identifier of the connection returned by the API. Example: 1909
+- `error_code` (String) An error code where '0' signifies success and '1' signifies an unsuccessful operation.
 - `id` (String) Resource ID.
+- `msg` (String) A message indicating the outcome of the operation.

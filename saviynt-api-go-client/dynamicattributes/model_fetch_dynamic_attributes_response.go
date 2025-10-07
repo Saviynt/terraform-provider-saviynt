@@ -26,7 +26,7 @@ type FetchDynamicAttributesResponse struct {
 	// Total number of records displayed.
 	Displaycount *int32 `json:"displaycount,omitempty"`
 	// Total number of records available.
-	Totalcount *int32 `json:"totalcount,omitempty"`
+	Totalcount        *int32                                           `json:"totalcount,omitempty"`
 	Dynamicattributes *FetchDynamicAttributesResponseDynamicattributes `json:"dynamicattributes,omitempty"`
 }
 
@@ -208,7 +208,7 @@ func (o *FetchDynamicAttributesResponse) SetDynamicattributes(v FetchDynamicAttr
 }
 
 func (o FetchDynamicAttributesResponse) MarshalJSON() ([]byte, error) {
-	toSerialize,err := o.ToMap()
+	toSerialize, err := o.ToMap()
 	if err != nil {
 		return []byte{}, err
 	}
@@ -270,5 +270,3 @@ func (v *NullableFetchDynamicAttributesResponse) UnmarshalJSON(src []byte) error
 	v.isSet = true
 	return json.Unmarshal(src, &v.value)
 }
-
-

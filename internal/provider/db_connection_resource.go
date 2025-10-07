@@ -12,6 +12,7 @@ package provider
 import (
 	"context"
 	"fmt"
+	"net/http"
 	"os"
 	"terraform-provider-Saviynt/internal/client"
 	"terraform-provider-Saviynt/util"
@@ -20,9 +21,11 @@ import (
 
 	openapi "github.com/saviynt/saviynt-api-go-client/connections"
 
+	"github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
 	"github.com/hashicorp/terraform-plugin-framework/path"
 	"github.com/hashicorp/terraform-plugin-framework/resource"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema"
+	"github.com/hashicorp/terraform-plugin-framework/schema/validator"
 	"github.com/hashicorp/terraform-plugin-framework/types"
 	"github.com/hashicorp/terraform-plugin-log/tflog"
 )
@@ -40,6 +43,7 @@ type DBConnectorResourceModel struct {
 	URL                    types.String `tfsdk:"url"`
 	Username               types.String `tfsdk:"username"`
 	Password               types.String `tfsdk:"password"`
+	PasswordWo             types.String `tfsdk:"password_wo"`
 	DriverName             types.String `tfsdk:"driver_name"`
 	ConnectionProperties   types.String `tfsdk:"connection_properties"`
 	PasswordMinLength      types.String `tfsdk:"password_min_length"`
@@ -52,6 +56,7 @@ type DBConnectorResourceModel struct {
 	GrantAccessJson        types.String `tfsdk:"grant_access_json"`
 	RevokeAccessJson       types.String `tfsdk:"revoke_access_json"`
 	ChangePassJson         types.String `tfsdk:"change_pass_json"`
+	ChangePassJsonWO       types.String `tfsdk:"change_pass_json_wo"`
 	DeleteAccountJson      types.String `tfsdk:"delete_account_json"`
 	EnableAccountJson      types.String `tfsdk:"enable_account_json"`
 	DisableAccountJson     types.String `tfsdk:"disable_account_json"`
@@ -77,6 +82,7 @@ type DBConnectorResourceModel struct {
 type DBConnectionResource struct {
 	client            client.SaviyntClientInterface
 	token             string
+	provider          client.SaviyntProviderInterface
 	connectionFactory client.ConnectionFactoryInterface
 }
 
@@ -108,13 +114,23 @@ func DBConnectorResourceSchema() map[string]schema.Attribute {
 		},
 		"username": schema.StringAttribute{
 			Required:    true,
-			WriteOnly:   true,
 			Description: "Username for connection",
 		},
 		"password": schema.StringAttribute{
-			Required:    true,
+			Optional:    true,
+			Sensitive:   true,
+			Description: "Set the Password. Set the password.It is a compulsory field. Either this or password_wo need to be set",
+			Validators: []validator.String{
+				stringvalidator.ConflictsWith(path.MatchRoot("password_wo")),
+			},
+		},
+		"password_wo": schema.StringAttribute{
+			Optional:    true,
 			WriteOnly:   true,
-			Description: "Password for connection",
+			Description: "Set the Password. Set the password_wo.It is a compulsory field. Either this or password need to be set",
+			Validators: []validator.String{
+				stringvalidator.ConflictsWith(path.MatchRoot("password")),
+			},
 		},
 		"driver_name": schema.StringAttribute{
 			Required:    true,
@@ -172,8 +188,19 @@ func DBConnectorResourceSchema() map[string]schema.Attribute {
 		},
 		"change_pass_json": schema.StringAttribute{
 			Optional:    true,
+			Sensitive:   true,
+			Description: "JSON to specify the queries/stored procedures used to change a password",
+			Validators: []validator.String{
+				stringvalidator.ConflictsWith(path.MatchRoot("change_pass_json_wo")),
+			},
+		},
+		"change_pass_json_wo": schema.StringAttribute{
+			Optional:    true,
 			WriteOnly:   true,
 			Description: "JSON to specify the queries/stored procedures used to change a password",
+			Validators: []validator.String{
+				stringvalidator.ConflictsWith(path.MatchRoot("change_pass_json")),
+			},
 		},
 		"delete_account_json": schema.StringAttribute{
 			Optional:    true,
@@ -295,16 +322,16 @@ func (r *DBConnectionResource) Configure(ctx context.Context, req resource.Confi
 	}
 
 	// Cast provider data to your provider type.
-	prov, ok := req.ProviderData.(*saviyntProvider)
+	prov, ok := req.ProviderData.(*SaviyntProvider)
 	if !ok {
 		errorCode := dbErrorCodes.ProviderConfig()
 		opCtx.LogOperationError(ctx, "Provider configuration failed", errorCode,
-			fmt.Errorf("expected *saviyntProvider, got different type"),
-			map[string]interface{}{"expected_type": "*saviyntProvider"})
+			fmt.Errorf("expected *SaviyntProvider, got different type"),
+			map[string]interface{}{"expected_type": "*SaviyntProvider"})
 
 		resp.Diagnostics.AddError(
 			errorsutil.GetErrorMessage(errorsutil.ErrProviderConfig),
-			fmt.Sprintf("[%s] Expected *saviyntProvider, got different type", errorCode),
+			fmt.Sprintf("[%s] Expected *SaviyntProvider, got different type", errorCode),
 		)
 		return
 	}
@@ -312,6 +339,7 @@ func (r *DBConnectionResource) Configure(ctx context.Context, req resource.Confi
 	// Set the client and token from the provider state.
 	r.client = &client.SaviyntClientWrapper{Client: prov.client}
 	r.token = prov.accessToken
+	r.provider = &client.SaviyntProviderWrapper{Provider: prov} // Store provider reference for retry logic
 
 	opCtx.LogOperationEnd(ctx, "DB connection resource configuration completed successfully")
 }
@@ -326,6 +354,10 @@ func (r *DBConnectionResource) SetToken(token string) {
 	r.token = token
 }
 
+// SetProvider sets the provider for testing purposes
+func (r *DBConnectionResource) SetProvider(provider client.SaviyntProviderInterface) {
+	r.provider = provider
+}
 func (r *DBConnectionResource) Create(ctx context.Context, req resource.CreateRequest, resp *resource.CreateResponse) {
 	var plan, config DBConnectorResourceModel
 
@@ -383,6 +415,13 @@ func (r *DBConnectionResource) Create(ctx context.Context, req resource.CreateRe
 		map[string]interface{}{"connection_name": connectionName})
 }
 
+func (r *DBConnectionResource) ValidateDBConnectionResponse(apiResp *openapi.GetConnectionDetailsResponse) error {
+	if apiResp != nil && apiResp.DBConnectionResponse == nil {
+		return fmt.Errorf("verify the connection type - DB connection response is nil")
+	}
+	return nil
+}
+
 // CreateDBConnection creates a new DB connection
 func (r *DBConnectionResource) CreateDBConnection(ctx context.Context, plan *DBConnectorResourceModel, config *DBConnectorResourceModel) (*openapi.CreateOrUpdateResponse, error) {
 	connectionName := plan.ConnectionName.ValueString()
@@ -394,11 +433,26 @@ func (r *DBConnectionResource) CreateDBConnection(ctx context.Context, plan *DBC
 	opCtx.LogOperationStart(logCtx, "Starting DB connection creation",
 		map[string]interface{}{"connection_name": connectionName})
 
-	// Use the factory to create connection operations
-	connectionOps := r.connectionFactory.CreateConnectionOperations(r.client.APIBaseURL(), r.token)
+	// Check if connection already exists (idempotency check) with retry logic
+	var existingResource *openapi.GetConnectionDetailsResponse
+	var finalHttpResp *http.Response
+	err := r.provider.AuthenticatedAPICallWithRetry(ctx, "get_connection_details_idempotency", func(token string) error {
+		connectionOps := r.connectionFactory.CreateConnectionOperations(r.client.APIBaseURL(), token)
+		resp, httpResp, err := connectionOps.GetConnectionDetails(ctx, connectionName)
+		if httpResp != nil && httpResp.StatusCode == 401 {
+			return fmt.Errorf("401 unauthorized")
+		}
+		existingResource = resp
+		finalHttpResp = httpResp // Update on every call including retries
+		return err
+	})
 
-	// Check if connection already exists (idempotency check)
-	existingResource, _, _ := connectionOps.GetConnectionDetails(ctx, connectionName)
+	if err != nil && finalHttpResp != nil && finalHttpResp.StatusCode != 412 {
+		errorCode := dbErrorCodes.ReadFailed()
+		opCtx.LogOperationError(logCtx, "Failed to check existing connection", errorCode, err)
+		return nil, errorsutil.CreateStandardError(errorsutil.ConnectorTypeDB, errorCode, "create", connectionName, err)
+	}
+
 	if existingResource != nil &&
 		existingResource.DBConnectionResponse != nil &&
 		existingResource.DBConnectionResponse.Errorcode != nil &&
@@ -411,6 +465,10 @@ func (r *DBConnectionResource) CreateDBConnection(ctx context.Context, plan *DBC
 	}
 
 	// Build DB connector request
+	if (config.Password.IsNull() || config.Password.IsUnknown()) && (config.PasswordWo.IsNull() || config.PasswordWo.IsUnknown()) {
+		return nil, fmt.Errorf("either password or password_wo must be set")
+	}
+
 	dbConn := r.BuildDBConnector(plan, config)
 	dbConnRequest := openapi.CreateOrUpdateRequest{
 		DBConnector: &dbConn,
@@ -418,15 +476,26 @@ func (r *DBConnectionResource) CreateDBConnection(ctx context.Context, plan *DBC
 
 	opCtx.LogOperationStart(logCtx, "Executing DB connection create API call")
 
-	// Execute create operation through interface - use original context for API calls
-	apiResp, _, err := connectionOps.CreateOrUpdateConnection(ctx, dbConnRequest)
+	// Execute create operation with retry logic
+	var apiResp *openapi.CreateOrUpdateResponse
+
+	err = r.provider.AuthenticatedAPICallWithRetry(ctx, "create_db_connection", func(token string) error {
+		connectionOps := r.connectionFactory.CreateConnectionOperations(r.client.APIBaseURL(), token)
+		resp, httpResp, err := connectionOps.CreateOrUpdateConnection(ctx, dbConnRequest)
+		if httpResp != nil && httpResp.StatusCode == 401 {
+			return fmt.Errorf("401 unauthorized")
+		}
+		apiResp = resp
+		return err
+	})
+
 	if err != nil {
 		errorCode := dbErrorCodes.CreateFailed()
 		opCtx.LogOperationError(logCtx, "Failed to create DB connection", errorCode, err)
 		return nil, errorsutil.CreateStandardError(errorsutil.ConnectorTypeDB, errorCode, "create", connectionName, err)
 	}
 
-	if apiResp != nil && *apiResp.ErrorCode != "0" {
+	if apiResp != nil && apiResp.ErrorCode != nil && *apiResp.ErrorCode != "0" {
 		apiErr := fmt.Errorf("API returned error code %s: %s", *apiResp.ErrorCode, errorsutil.SanitizeMessage(apiResp.Msg))
 		errorCode := dbErrorCodes.APIError()
 		opCtx.LogOperationError(ctx, "DB connection creation failed with API error", errorCode, apiErr,
@@ -448,6 +517,20 @@ func (r *DBConnectionResource) CreateDBConnection(ctx context.Context, plan *DBC
 
 // BuildDBConnector builds the DB connector object
 func (r *DBConnectionResource) BuildDBConnector(plan *DBConnectorResourceModel, config *DBConnectorResourceModel) openapi.DBConnector {
+	var password string
+	if !config.Password.IsNull() && !config.Password.IsUnknown() {
+		password = config.Password.ValueString()
+	} else if !config.PasswordWo.IsNull() && !config.PasswordWo.IsUnknown() {
+		password = config.PasswordWo.ValueString()
+	}
+
+	var changePassJson string
+	if !config.ChangePassJson.IsNull() && !config.ChangePassJson.IsUnknown() {
+		changePassJson = config.ChangePassJson.ValueString()
+	} else if !config.ChangePassJsonWO.IsNull() && !config.ChangePassJsonWO.IsUnknown() {
+		changePassJson = config.ChangePassJsonWO.ValueString()
+	}
+
 	connector := openapi.DBConnector{
 		BaseConnector: openapi.BaseConnector{
 			Connectiontype:  "DB",
@@ -458,8 +541,8 @@ func (r *DBConnectionResource) BuildDBConnector(plan *DBConnectorResourceModel, 
 		},
 		// Required fields
 		URL:        plan.URL.ValueString(),
-		USERNAME:   config.Username.ValueString(),
-		PASSWORD:   config.Password.ValueString(),
+		USERNAME:   plan.Username.ValueString(),
+		PASSWORD:   password,
 		DRIVERNAME: plan.DriverName.ValueString(),
 
 		// Optional configuration fields
@@ -475,7 +558,7 @@ func (r *DBConnectionResource) BuildDBConnector(plan *DBConnectorResourceModel, 
 		UPDATEACCOUNTJSON:  util.StringPointerOrEmpty(plan.UpdateAccountJson),
 		GRANTACCESSJSON:    util.StringPointerOrEmpty(plan.GrantAccessJson),
 		REVOKEACCESSJSON:   util.StringPointerOrEmpty(plan.RevokeAccessJson),
-		CHANGEPASSJSON:     util.StringPointerOrEmpty(config.ChangePassJson),
+		CHANGEPASSJSON:     util.StringPointerOrEmpty(types.StringValue(changePassJson)),
 		DELETEACCOUNTJSON:  util.StringPointerOrEmpty(plan.DeleteAccountJson),
 		ENABLEACCOUNTJSON:  util.StringPointerOrEmpty(plan.EnableAccountJson),
 		DISABLEACCOUNTJSON: util.StringPointerOrEmpty(plan.DisableAccountJson),
@@ -594,6 +677,14 @@ func (r *DBConnectionResource) Read(ctx context.Context, req resource.ReadReques
 
 	r.UpdateModelFromReadResponse(&state, apiResp)
 
+	apiMessage := util.SafeDeref(apiResp.DBConnectionResponse.Msg)
+	if apiMessage == "success" {
+		state.Msg = types.StringValue("Connection Read Successful")
+	} else {
+		state.Msg = types.StringValue(apiMessage)
+	}
+	state.ErrorCode = util.Int32PtrToTFString(apiResp.DBConnectionResponse.Errorcode)
+
 	stateDiagnostics := resp.State.Set(ctx, &state)
 	resp.Diagnostics.Append(stateDiagnostics...)
 	if resp.Diagnostics.HasError() {
@@ -621,18 +712,32 @@ func (r *DBConnectionResource) ReadDBConnection(ctx context.Context, connectionN
 	opCtx.LogOperationStart(logCtx, "Starting DB connection read",
 		map[string]interface{}{"connection_name": connectionName})
 
-	// Use the factory to create connection operations
-	connectionOps := r.connectionFactory.CreateConnectionOperations(r.client.APIBaseURL(), r.token)
+	// Execute read operation with retry logic
+	var apiResp *openapi.GetConnectionDetailsResponse
 
-	// Execute read operation through interface - use original context for API calls
-	apiResp, _, err := connectionOps.GetConnectionDetails(ctx, connectionName)
+	err := r.provider.AuthenticatedAPICallWithRetry(ctx, "read_db_connection", func(token string) error {
+		connectionOps := r.connectionFactory.CreateConnectionOperations(r.client.APIBaseURL(), token)
+		resp, httpResp, err := connectionOps.GetConnectionDetails(ctx, connectionName)
+		if httpResp != nil && httpResp.StatusCode == 401 {
+			return fmt.Errorf("401 unauthorized")
+		}
+		apiResp = resp
+		return err
+	})
+
 	if err != nil {
 		errorCode := dbErrorCodes.ReadFailed()
 		opCtx.LogOperationError(logCtx, "Failed to read DB connection", errorCode, err)
 		return nil, errorsutil.CreateStandardError(errorsutil.ConnectorTypeDB, errorCode, "read", connectionName, err)
 	}
 
-	if apiResp != nil && apiResp.DBConnectionResponse != nil && *apiResp.DBConnectionResponse.Errorcode != 0 {
+	if err := r.ValidateDBConnectionResponse(apiResp); err != nil {
+		errorCode := dbErrorCodes.APIError()
+		opCtx.LogOperationError(ctx, "Invalid connection type for DB datasource", errorCode, err)
+		return nil, fmt.Errorf("[%s] Unable to verify connection type for connection %q. The provider could not determine the type of this connection. Please ensure the connection name is correct and belongs to a supported connector type", errorCode, connectionName)
+	}
+
+	if apiResp != nil && apiResp.DBConnectionResponse != nil && apiResp.DBConnectionResponse.Errorcode != nil && *apiResp.DBConnectionResponse.Errorcode != 0 {
 		apiErr := fmt.Errorf("API returned error code %d: %s", *apiResp.DBConnectionResponse.Errorcode, errorsutil.SanitizeMessage(apiResp.DBConnectionResponse.Msg))
 		errorCode := dbErrorCodes.APIError()
 		opCtx.LogOperationError(ctx, "DB connection read failed with API error", errorCode, apiErr,
@@ -716,15 +821,6 @@ func (r *DBConnectionResource) UpdateModelFromReadResponse(state *DBConnectorRes
 		state.EntitlementExistJson = util.SafeStringDatasource(attrs.ENTITLEMENTEXISTJSON)
 		state.UpdateEntitlementJson = util.SafeStringDatasource(attrs.UPDATEENTITLEMENTJSON)
 	}
-
-	// Update response message and error code
-	apiMessage := util.SafeDeref(dbResp.Msg)
-	if apiMessage == "success" {
-		state.Msg = types.StringValue("Connection Successful")
-	} else {
-		state.Msg = types.StringValue(apiMessage)
-	}
-	state.ErrorCode = util.Int32PtrToTFString(dbResp.Errorcode)
 }
 
 func (r *DBConnectionResource) Update(ctx context.Context, req resource.UpdateRequest, resp *resource.UpdateResponse) {
@@ -797,7 +893,7 @@ func (r *DBConnectionResource) Update(ctx context.Context, req resource.UpdateRe
 		map[string]interface{}{"connection_name": connectionName})
 
 	// Use interface pattern instead of direct API client creation
-	_, err := r.UpdateDBConnection(ctx, &plan, &config)
+	updateResp, err := r.UpdateDBConnection(ctx, &plan, &config)
 	if err != nil {
 		opCtx.LogOperationError(ctx, "DB connection update failed", "", err)
 		resp.Diagnostics.AddError(
@@ -819,6 +915,10 @@ func (r *DBConnectionResource) Update(ctx context.Context, req resource.UpdateRe
 	}
 
 	r.UpdateModelFromReadResponse(&plan, getResp)
+
+	apiMessage := util.SafeDeref(updateResp.Msg)
+	plan.Msg = types.StringValue(apiMessage)
+	plan.ErrorCode = types.StringValue(*updateResp.ErrorCode)
 
 	stateUpdateDiagnostics := resp.State.Set(ctx, plan)
 	resp.Diagnostics.Append(stateUpdateDiagnostics...)
@@ -848,18 +948,12 @@ func (r *DBConnectionResource) UpdateDBConnection(ctx context.Context, plan *DBC
 	opCtx.LogOperationStart(logCtx, "Starting DB connection update",
 		map[string]interface{}{"connection_name": connectionName})
 
-	// Use the factory to create connection operations
-	connectionOps := r.connectionFactory.CreateConnectionOperations(r.client.APIBaseURL(), r.token)
-
 	// Build DB connector request
-	dbConn := r.BuildDBConnector(plan, config)
-
-	if plan.VaultConnection.ValueString() == "" {
-		emptyStr := ""
-		dbConn.BaseConnector.VaultConnection = &emptyStr
-		dbConn.BaseConnector.VaultConfiguration = &emptyStr
-		dbConn.BaseConnector.Saveinvault = &emptyStr
+	if (config.Password.IsNull() || config.Password.IsUnknown()) && (config.PasswordWo.IsNull() || config.PasswordWo.IsUnknown()) {
+		return nil, fmt.Errorf("either password or password_wo must be set")
 	}
+
+	dbConn := r.BuildDBConnector(plan, config)
 
 	dbConnRequest := openapi.CreateOrUpdateRequest{
 		DBConnector: &dbConn,
@@ -867,15 +961,26 @@ func (r *DBConnectionResource) UpdateDBConnection(ctx context.Context, plan *DBC
 
 	opCtx.LogOperationStart(logCtx, "Executing DB connection update API call")
 
-	// Use original context for API calls to maintain test compatibility
-	apiResp, _, err := connectionOps.CreateOrUpdateConnection(ctx, dbConnRequest)
+	// Execute update operation with retry logic
+	var apiResp *openapi.CreateOrUpdateResponse
+
+	err := r.provider.AuthenticatedAPICallWithRetry(ctx, "update_db_connection", func(token string) error {
+		connectionOps := r.connectionFactory.CreateConnectionOperations(r.client.APIBaseURL(), token)
+		resp, httpResp, err := connectionOps.CreateOrUpdateConnection(ctx, dbConnRequest)
+		if httpResp != nil && httpResp.StatusCode == 401 {
+			return fmt.Errorf("401 unauthorized")
+		}
+		apiResp = resp
+		return err
+	})
+
 	if err != nil {
 		errorCode := dbErrorCodes.UpdateFailed()
 		opCtx.LogOperationError(logCtx, "Failed to update DB connection", errorCode, err)
 		return nil, errorsutil.CreateStandardError(errorsutil.ConnectorTypeDB, errorCode, "update", connectionName, err)
 	}
 
-	if apiResp != nil && *apiResp.ErrorCode != "0" {
+	if apiResp != nil && apiResp.ErrorCode != nil && *apiResp.ErrorCode != "0" {
 		apiErr := fmt.Errorf("API returned error code %s: %s", *apiResp.ErrorCode, errorsutil.SanitizeMessage(apiResp.Msg))
 		errorCode := dbErrorCodes.APIError()
 		opCtx.LogOperationError(logCtx, "DB connection update failed with API error", errorCode, apiErr,

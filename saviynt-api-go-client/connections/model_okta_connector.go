@@ -11,8 +11,8 @@ API version: 1.0.0
 package connections
 
 import (
-	"encoding/json"
 	"bytes"
+	"encoding/json"
 	"fmt"
 )
 
@@ -22,35 +22,35 @@ var _ MappedNullable = &OktaConnector{}
 // OktaConnector struct for OktaConnector
 type OktaConnector struct {
 	BaseConnector
-	// 
+	//
 	IMPORTURL string `json:"IMPORTURL"`
-	// 
+	//
 	AUTHTOKEN string `json:"AUTHTOKEN"`
-	// 
+	//
 	ACCOUNTFIELDMAPPINGS *string `json:"ACCOUNTFIELDMAPPINGS,omitempty"`
-	// 
+	//
 	USERFIELDMAPPINGS *string `json:"USERFIELDMAPPINGS,omitempty"`
-	// 
+	//
 	ENTITLEMENTTYPESMAPPINGS *string `json:"ENTITLEMENTTYPESMAPPINGS,omitempty"`
-	// 
+	//
 	IMPORT_INACTIVE_APPS *string `json:"IMPORT_INACTIVE_APPS,omitempty"`
-	// 
+	//
 	OKTA_APPLICATION_SECURITYSYSTEM string `json:"OKTA_APPLICATION_SECURITYSYSTEM"`
-	// 
+	//
 	OKTA_GROUPS_FILTER *string `json:"OKTA_GROUPS_FILTER,omitempty"`
-	// 
+	//
 	APPACCOUNTFIELDMAPPINGS *string `json:"APPACCOUNTFIELDMAPPINGS,omitempty"`
-	// 
+	//
 	STATUS_THRESHOLD_CONFIG *string `json:"STATUS_THRESHOLD_CONFIG,omitempty"`
-	// 
+	//
 	AUDIT_FILTER *string `json:"AUDIT_FILTER,omitempty"`
-	// 
+	//
 	MODIFYUSERDATAJSON *string `json:"MODIFYUSERDATAJSON,omitempty"`
-	// 
+	//
 	ACTIVATE_ENDPOINT *string `json:"ACTIVATE_ENDPOINT,omitempty"`
-	// 
+	//
 	ConfigJSON *string `json:"ConfigJSON,omitempty"`
-	// 
+	//
 	PAM_CONFIG *string `json:"PAM_CONFIG,omitempty"`
 }
 
@@ -535,7 +535,7 @@ func (o *OktaConnector) SetPAM_CONFIG(v string) {
 }
 
 func (o OktaConnector) MarshalJSON() ([]byte, error) {
-	toSerialize,err := o.ToMap()
+	toSerialize, err := o.ToMap()
 	if err != nil {
 		return []byte{}, err
 	}
@@ -611,10 +611,10 @@ func (o *OktaConnector) UnmarshalJSON(data []byte) (err error) {
 	err = json.Unmarshal(data, &allProperties)
 
 	if err != nil {
-		return err;
+		return err
 	}
 
-	for _, requiredProperty := range(requiredProperties) {
+	for _, requiredProperty := range requiredProperties {
 		if _, exists := allProperties[requiredProperty]; !exists {
 			return fmt.Errorf("no value given for required property %v", requiredProperty)
 		}
@@ -670,5 +670,3 @@ func (v *NullableOktaConnector) UnmarshalJSON(src []byte) error {
 	v.isSet = true
 	return json.Unmarshal(src, &v.value)
 }
-
-

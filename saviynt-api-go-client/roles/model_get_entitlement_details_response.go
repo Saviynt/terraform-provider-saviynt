@@ -19,9 +19,9 @@ var _ MappedNullable = &GetEntitlementDetailsResponse{}
 
 // GetEntitlementDetailsResponse struct for GetEntitlementDetailsResponse
 type GetEntitlementDetailsResponse struct {
-	EntitlementValue *string `json:"entitlement_value,omitempty"`
+	EntitlementValue    *string `json:"entitlement_value,omitempty"`
 	EntitlementTypeName *string `json:"entitlementTypeName,omitempty"`
-	Endpoint *string `json:"endpoint,omitempty"`
+	Endpoint            *string `json:"endpoint,omitempty"`
 }
 
 // NewGetEntitlementDetailsResponse instantiates a new GetEntitlementDetailsResponse object
@@ -138,7 +138,7 @@ func (o *GetEntitlementDetailsResponse) SetEndpoint(v string) {
 }
 
 func (o GetEntitlementDetailsResponse) MarshalJSON() ([]byte, error) {
-	toSerialize,err := o.ToMap()
+	toSerialize, err := o.ToMap()
 	if err != nil {
 		return []byte{}, err
 	}
@@ -194,5 +194,3 @@ func (v *NullableGetEntitlementDetailsResponse) UnmarshalJSON(src []byte) error 
 	v.isSet = true
 	return json.Unmarshal(src, &v.value)
 }
-
-

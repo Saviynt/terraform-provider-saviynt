@@ -1,7 +1,7 @@
 /*
 Account Management API
 
-API for managing accounts in Saviynt/SSM. - **Create Endpoint**: Creates a new endpoint. - **Update Endpoint**: Updates an existing endpoint based on its name and roletype. - **Get Endpoint List**: Returns a list of endpoints based on search criteria. 
+API for managing accounts in Saviynt/SSM. - **Create Endpoint**: Creates a new endpoint. - **Update Endpoint**: Updates an existing endpoint based on its name and roletype. - **Get Endpoint List**: Returns a list of endpoints based on search criteria.
 
 API version: 1.0.0
 */
@@ -21,18 +21,18 @@ var _ MappedNullable = &GetEndpoints200ResponseEndpointsInner{}
 type GetEndpoints200ResponseEndpointsInner struct {
 	Id *string `json:"id,omitempty"`
 	// Description for the endpoint.
-	Description *string `json:"description,omitempty"`
+	Description            *string `json:"description,omitempty"`
 	StatusForUniqueAccount *string `json:"statusForUniqueAccount,omitempty"`
-	Requestowner *string `json:"requestowner,omitempty"`
-	Requestable *string `json:"requestable,omitempty"`
+	Requestowner           *string `json:"requestowner,omitempty"`
+	Requestable            *string `json:"requestable,omitempty"`
 	// Specify the primary account type for the endpoint.
 	PrimaryAccountType *string `json:"primaryAccountType,omitempty"`
 	// Specify the account type for which password change is not allowed.
 	AccountTypeNoPasswordChange *string `json:"accountTypeNoPasswordChange,omitempty"`
-	ServiceAccountNameRule *string `json:"serviceAccountNameRule,omitempty"`
-	AccountNameValidatorRegex *string `json:"accountNameValidatorRegex,omitempty"`
+	ServiceAccountNameRule      *string `json:"serviceAccountNameRule,omitempty"`
+	AccountNameValidatorRegex   *string `json:"accountNameValidatorRegex,omitempty"`
 	AllowChangePasswordSqlquery *string `json:"allowChangePassword_sqlquery,omitempty"`
-	ParentAccountPattern *string `json:"parentAccountPattern,omitempty"`
+	ParentAccountPattern        *string `json:"parentAccountPattern,omitempty"`
 	// Specify the owner type for the endpoint. An endpoint can be owned by a User or Usergroup.
 	OwnerType *string `json:"ownerType,omitempty"`
 	// Specify the Security system for which you want to create an endpoint.
@@ -43,19 +43,19 @@ type GetEndpoints200ResponseEndpointsInner struct {
 	UpdatedBy *string `json:"updatedBy,omitempty"`
 	// Specify the query to filter the access and display of the endpoint to specific users. If you do not define a query, the endpoint is displayed for all users.
 	Accessquery *string `json:"accessquery,omitempty"`
-	// 
+	//
 	Status *string `json:"status,omitempty"`
 	// Enter a user-friendly display name for the endpoint that will be displayed in the user interface. Display Name can be different from Endpoint Name.
 	DisplayName *string `json:"displayName,omitempty"`
-	// 
+	//
 	UpdateDate *string `json:"updateDate,omitempty"`
 	// Specify true to displays the Remove All Roles option in the Request page that can be used to remove all the roles.
 	AllowRemoveAllRoleOnRequest *string `json:"allowRemoveAllRoleOnRequest,omitempty"`
-	// 
+	//
 	RoleTypeAsJson *string `json:"roleTypeAsJson,omitempty"`
-	// 
+	//
 	EntsWithNewAccount *string `json:"entsWithNewAccount,omitempty"`
-	// 
+	//
 	ConnectionconfigAsJson *string `json:"connectionconfig_as_json,omitempty"`
 	// Use this configuration for processing the add access tasks and remove access tasks for AD and LDAP Connectors.
 	Connectionconfig *string `json:"connectionconfig,omitempty"`
@@ -63,37 +63,37 @@ type GetEndpoints200ResponseEndpointsInner struct {
 	AccountNameRule *string `json:"accountNameRule,omitempty"`
 	// Specify query to restrict the access for changing the account password of the endpoint.
 	ChangePasswordAccessQuery *string `json:"changePasswordAccessQuery,omitempty"`
-	// 
+	//
 	Disableaccountrequest *string `json:"disableaccountrequest,omitempty"`
 	//  The Plugin Configuration drives the functionality of the Saviynt SmartAssist (Browserplugin).
 	PluginConfigs *string `json:"pluginConfigs,omitempty"`
-	// 
+	//
 	DisableaccountrequestServiceAccount *string `json:"disableaccountrequestServiceAccount,omitempty"`
-	// 
+	//
 	Requestableapplication *string `json:"requestableapplication,omitempty"`
-	// 
+	//
 	CreatedFrom *string `json:"createdFrom,omitempty"`
-	// 
+	//
 	CreatedBy *string `json:"createdBy,omitempty"`
-	// 
+	//
 	CreateDate *string `json:"createDate,omitempty"`
-	// 
+	//
 	ParentEndpoint *string `json:"parentEndpoint,omitempty"`
-	// 
+	//
 	BaseLineConfig *string `json:"baseLineConfig,omitempty"`
-	// 
+	//
 	Requestownertype *string `json:"requestownertype,omitempty"`
 	// If this is set to true, remove Access tasks will be created for entitlements (account entitlements and their dependent entitlements) when a user requests for removing an account.
 	CreateEntTaskforRemoveAcc *string `json:"createEntTaskforRemoveAcc,omitempty"`
 	// Specify true to display the Copy Access from User option in the Request pages.
 	EnableCopyAccess *string `json:"enableCopyAccess,omitempty"`
-	// 
+	//
 	AccountTypeNoDeprovision *string `json:"accountTypeNoDeprovision,omitempty"`
 	// Option to copy data in Step 3 of the service account request will be enabled.
 	EndpointConfig *string `json:"endpointConfig,omitempty"`
-	// 
+	//
 	Taskemailtemplates *string `json:"taskemailtemplates,omitempty"`
-	// 
+	//
 	Ownerkey *string `json:"ownerkey,omitempty"`
 	// Specify the query to filter the access and display of the endpoint for specific users while managing service accounts.
 	ServiceAccountAccessQuery *string `json:"serviceAccountAccessQuery,omitempty"`
@@ -5131,7 +5131,7 @@ func (o *GetEndpoints200ResponseEndpointsInner) SetCustomproperty60Label(v strin
 }
 
 func (o GetEndpoints200ResponseEndpointsInner) MarshalJSON() ([]byte, error) {
-	toSerialize,err := o.ToMap()
+	toSerialize, err := o.ToMap()
 	if err != nil {
 		return []byte{}, err
 	}
@@ -5628,5 +5628,3 @@ func (v *NullableGetEndpoints200ResponseEndpointsInner) UnmarshalJSON(src []byte
 	v.isSet = true
 	return json.Unmarshal(src, &v.value)
 }
-
-

@@ -21,16 +21,19 @@ import (
 	"github.com/saviynt/saviynt-api-go-client/dynamicattributes"
 	"github.com/saviynt/saviynt-api-go-client/email"
 	"github.com/saviynt/saviynt-api-go-client/endpoints"
+	"github.com/saviynt/saviynt-api-go-client/entitlements"
 	"github.com/saviynt/saviynt-api-go-client/entitlementtype"
 	"github.com/saviynt/saviynt-api-go-client/filedirectory"
-	"github.com/saviynt/saviynt-api-go-client/jobcontrol"
+	"github.com/saviynt/saviynt-api-go-client/job_control"
 	"github.com/saviynt/saviynt-api-go-client/mtlsauthentication"
+	"github.com/saviynt/saviynt-api-go-client/privileges"
 	"github.com/saviynt/saviynt-api-go-client/roles"
 	"github.com/saviynt/saviynt-api-go-client/savroles"
 	"github.com/saviynt/saviynt-api-go-client/securitysystems"
 	"github.com/saviynt/saviynt-api-go-client/tasks"
 	"github.com/saviynt/saviynt-api-go-client/transport"
 	"github.com/saviynt/saviynt-api-go-client/users"
+	"github.com/saviynt/saviynt-api-go-client/utility"
 	"golang.org/x/oauth2"
 )
 
@@ -46,6 +49,8 @@ type Client struct {
 	Username                      *string
 	token                         *oauth2.Token
 	httpClient                    *http.Client
+	Utility                       *utility.UtilityAPIService
+	utilityClient                 *utility.APIClient
 	Connections                   *connections.ConnectionsAPIService
 	connectionsClient             *connections.APIClient
 	Roles                         *roles.RolesAPIService
@@ -58,14 +63,18 @@ type Client struct {
 	emailClient                   *email.APIClient
 	Endpoints                     *endpoints.EndpointsAPIService
 	endpointsClient               *endpoints.APIClient
+	Entitlements                  *entitlements.EntitlementAPIService
+	entitlementsClient            *entitlements.APIClient
 	EntitlementType               *entitlementtype.EntitlementTypeAPIService
 	entitlementTypeClient         *entitlementtype.APIClient
 	FileDirectory                 *filedirectory.FileDirectoryAPIService
 	fileDirectoryClient           *filedirectory.APIClient
-	JobControl                    *jobcontrol.JobControlAPIService
-	jobControlClient              *jobcontrol.APIClient
+	JobControl                    *job_control.JobControlAPIService
+	jobControlClient              *job_control.APIClient
 	MTLSAuthentication            *mtlsauthentication.MTLSAuthenticationAPIService
 	mtlsAuthenticationClient      *mtlsauthentication.APIClient
+	Privileges                    *privileges.PrivilegeAPIService
+	privilegesClient              *privileges.APIClient
 	SAVRoles                      *savroles.SAVRolesAPIService
 	savRolesClient                *savroles.APIClient
 	SecuritySystems               *securitysystems.SecuritySystemsAPIService
@@ -85,6 +94,8 @@ func newClientHTTPClient(serverURL string, username *string, httpClient *http.Cl
 	if username != nil {
 		c.Username = Pointer(*username)
 	}
+	c.utilityClient = newClientUtility(c.APIBaseURL(), c.httpClient)
+	c.Utility = c.utilityClient.UtilityAPI
 	c.connectionsClient = newClientConnections(c.APIBaseURL(), c.httpClient)
 	c.Connections = c.connectionsClient.ConnectionsAPI
 	c.rolesClient = newClientRoles(c.APIBaseURL(), c.httpClient)
@@ -97,6 +108,8 @@ func newClientHTTPClient(serverURL string, username *string, httpClient *http.Cl
 	c.Email = c.emailClient.EmailAPI
 	c.endpointsClient = newClientEndpoints(c.APIBaseURL(), c.httpClient)
 	c.Endpoints = c.endpointsClient.EndpointsAPI
+	c.entitlementsClient = newClientEntitlements(c.APIBaseURL(), c.httpClient)
+	c.Entitlements = c.entitlementsClient.EntitlementAPI
 	c.entitlementTypeClient = newClientEntitlementType(c.APIBaseURL(), c.httpClient)
 	c.EntitlementType = c.entitlementTypeClient.EntitlementTypeAPI
 	c.fileDirectoryClient = newClientFileDirectory(c.APIBaseURL(), c.httpClient)
@@ -105,6 +118,8 @@ func newClientHTTPClient(serverURL string, username *string, httpClient *http.Cl
 	c.JobControl = c.jobControlClient.JobControlAPI
 	c.mtlsAuthenticationClient = newClientMTLSAuthentication(c.APIBaseURL(), c.httpClient)
 	c.MTLSAuthentication = c.mtlsAuthenticationClient.MTLSAuthenticationAPI
+	c.privilegesClient = newClientPrivileges(c.APIBaseURL(), c.httpClient)
+	c.Privileges = c.privilegesClient.PrivilegeAPI
 	c.savRolesClient = newClientSAVRoles(c.APIBaseURL(), c.httpClient)
 	c.SAVRoles = c.savRolesClient.SAVRolesAPI
 	c.securitySystemsClient = newClientSecuritySystems(c.APIBaseURL(), c.httpClient)
@@ -163,6 +178,13 @@ func (c *Client) Token() *oauth2.Token {
 	return c.token
 }
 
+func newClientUtility(apiBaseURL string, httpClient *http.Client) *utility.APIClient {
+	cfg := utility.NewConfiguration()
+	cfg.HTTPClient = httpClient
+	cfg.Servers = utility.ServerConfigurations{{URL: apiBaseURL}}
+	return utility.NewAPIClient(cfg)
+}
+
 func newClientConnections(apiBaseURL string, httpClient *http.Client) *connections.APIClient {
 	cfg := connections.NewConfiguration()
 	cfg.HTTPClient = httpClient
@@ -205,6 +227,13 @@ func newClientEndpoints(apiBaseURL string, httpClient *http.Client) *endpoints.A
 	return endpoints.NewAPIClient(cfg)
 }
 
+func newClientEntitlements(apiBaseURL string, httpClient *http.Client) *entitlements.APIClient {
+	cfg := entitlements.NewConfiguration()
+	cfg.HTTPClient = httpClient
+	cfg.Servers = entitlements.ServerConfigurations{{URL: apiBaseURL}}
+	return entitlements.NewAPIClient(cfg)
+}
+
 func newClientEntitlementType(apiBaseURL string, httpClient *http.Client) *entitlementtype.APIClient {
 	cfg := entitlementtype.NewConfiguration()
 	cfg.HTTPClient = httpClient
@@ -219,11 +248,11 @@ func newClientFileDirectory(apiBaseURL string, httpClient *http.Client) *filedir
 	return filedirectory.NewAPIClient(cfg)
 }
 
-func newClientJobControl(apiBaseURL string, httpClient *http.Client) *jobcontrol.APIClient {
-	cfg := jobcontrol.NewConfiguration()
+func newClientJobControl(apiBaseURL string, httpClient *http.Client) *job_control.APIClient {
+	cfg := job_control.NewConfiguration()
 	cfg.HTTPClient = httpClient
-	cfg.Servers = jobcontrol.ServerConfigurations{{URL: apiBaseURL}}
-	return jobcontrol.NewAPIClient(cfg)
+	cfg.Servers = job_control.ServerConfigurations{{URL: apiBaseURL}}
+	return job_control.NewAPIClient(cfg)
 }
 
 func newClientMTLSAuthentication(apiBaseURL string, httpClient *http.Client) *mtlsauthentication.APIClient {
@@ -231,6 +260,13 @@ func newClientMTLSAuthentication(apiBaseURL string, httpClient *http.Client) *mt
 	cfg.HTTPClient = httpClient
 	cfg.Servers = mtlsauthentication.ServerConfigurations{{URL: apiBaseURL}}
 	return mtlsauthentication.NewAPIClient(cfg)
+}
+
+func newClientPrivileges(apiBaseURL string, httpClient *http.Client) *privileges.APIClient {
+	cfg := privileges.NewConfiguration()
+	cfg.HTTPClient = httpClient
+	cfg.Servers = privileges.ServerConfigurations{{URL: apiBaseURL}}
+	return privileges.NewAPIClient(cfg)
 }
 
 func newClientSAVRoles(apiBaseURL string, httpClient *http.Client) *savroles.APIClient {

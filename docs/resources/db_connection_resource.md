@@ -242,7 +242,6 @@ EOF
 
 - `connection_name` (String) Name of the connection. Example: "Active Directory_Doc"
 - `driver_name` (String) Driver name for the connection
-- `password` (String) Password for connection
 - `url` (String) Host Name for connection
 - `username` (String) Username for connection
 
@@ -250,7 +249,8 @@ EOF
 
 - `account_exists_json` (String) JSON to specify the query used to check whether an account exists
 - `accounts_import` (String) Accounts Import XML file content
-- `change_pass_json` (String) JSON to specify the queries/stored procedures used to change a password
+- `change_pass_json` (String, Sensitive) JSON to specify the queries/stored procedures used to change a password
+- `change_pass_json_wo` (String) JSON to specify the queries/stored procedures used to change a password
 - `cli_command_json` (String) JSON to specify commands executable on the target server
 - `connection_properties` (String) Properties that need to be added when connecting to the database
 - `create_account_json` (String) JSON to specify the queries/stored procedures used to create a new account (e.g., randomPassword, task, user, accountName, role, endpoint, etc.)
@@ -264,16 +264,16 @@ EOF
 - `enable_account_json` (String) JSON to specify the queries/stored procedures used to enable an account
 - `entitlement_exist_json` (String) JSON to specify the Query which will be used to check whether an entitlement exists. Objects Exposed - (entitlementMgmtObj, task, user, endpoint and all the objects defined in Dynamic Attributes).
 - `entitlement_value_import` (String) Entitlement Value Import XML file content
-- `error_code` (String) An error code where '0' signifies success and '1' signifies an unsuccessful operation.
 - `grant_access_json` (String) JSON to specify the queries/stored procedures used to provide access
 - `max_pagination_size` (String) Defines the maximum number of records to be processed per page
 - `modify_user_data_json` (String) Property for MODIFYUSERDATAJSON
-- `msg` (String) A message indicating the outcome of the operation.
+- `password` (String, Sensitive) Set the Password. Set the password.It is a compulsory field. Either this or password_wo need to be set
 - `password_max_length` (String) Specify the maximum length for the random password
 - `password_min_length` (String) Specify the minimum length for the random password
 - `password_no_of_caps_alpha` (String) Specify the number of uppercase alphabets required for the random password
 - `password_no_of_digits` (String) Specify the number of digits required for the random password
 - `password_no_of_spl_chars` (String) Specify the number of special characters required for the random password
+- `password_wo` (String) Set the Password. Set the password_wo.It is a compulsory field. Either this or password need to be set
 - `revoke_access_json` (String) JSON to specify the queries/stored procedures used to revoke access
 - `role_owner_import` (String) Role Owner Import XML file content
 - `roles_import` (String) Roles Import XML file content
@@ -286,8 +286,11 @@ EOF
 - `user_import` (String) User Import XML file content
 - `vault_configuration` (String) JSON string specifying vault configuration.
 - `vault_connection` (String) Specifies the type of vault connection being used (e.g., 'Hashicorp'). Example: "Hashicorp"
+- `wo_version` (String) Add/change the value of this attribute to update the writeonly attributes like username, password etc in connection resources
 
 ### Read-Only
 
 - `connection_key` (Number) Unique identifier of the connection returned by the API. Example: 1909
+- `error_code` (String) An error code where '0' signifies success and '1' signifies an unsuccessful operation.
 - `id` (String) Resource ID.
+- `msg` (String) A message indicating the outcome of the operation.

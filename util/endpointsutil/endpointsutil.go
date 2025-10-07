@@ -11,7 +11,7 @@ import (
 
 var OwnerTypeMap = map[string]string{
 	"":  "",
-	"0": "None",
+	"0": "",
 	"1": "User",
 	"2": "Usergroup",
 }

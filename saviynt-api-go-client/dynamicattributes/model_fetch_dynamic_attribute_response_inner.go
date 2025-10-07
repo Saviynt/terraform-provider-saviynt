@@ -19,27 +19,27 @@ var _ MappedNullable = &FetchDynamicAttributeResponseInner{}
 
 // FetchDynamicAttributeResponseInner struct for FetchDynamicAttributeResponseInner
 type FetchDynamicAttributeResponseInner struct {
-	Accountscolumn *string `json:"accountscolumn,omitempty"`
-	Hideoncreate *string `json:"hideoncreate,omitempty"`
-	Orderindex *string `json:"orderindex,omitempty"`
-	Attributevalue *string `json:"attributevalue,omitempty"`
-	Attributegroup *string `json:"attributegroup,omitempty"`
-	Defaultvalue *string `json:"defaultvalue,omitempty"`
-	Actionstring *string `json:"actionstring,omitempty"`
-	Editable *string `json:"editable,omitempty"`
-	Regex *string `json:"regex,omitempty"`
-	Securitysystem *string `json:"securitysystem,omitempty"`
-	Attributename *string `json:"attributename,omitempty"`
-	Attributelable *string `json:"attributelable,omitempty"`
-	Required *string `json:"required,omitempty"`
-	Endpoint *string `json:"endpoint,omitempty"`
-	Hideonupdate *string `json:"hideonupdate,omitempty"`
-	Requesttype *string `json:"requesttype,omitempty"`
-	Showonchild *string `json:"showonchild,omitempty"`
+	Accountscolumn                            *string `json:"accountscolumn,omitempty"`
+	Hideoncreate                              *string `json:"hideoncreate,omitempty"`
+	Orderindex                                *string `json:"orderindex,omitempty"`
+	Attributevalue                            *string `json:"attributevalue,omitempty"`
+	Attributegroup                            *string `json:"attributegroup,omitempty"`
+	Defaultvalue                              *string `json:"defaultvalue,omitempty"`
+	Actionstring                              *string `json:"actionstring,omitempty"`
+	Editable                                  *string `json:"editable,omitempty"`
+	Regex                                     *string `json:"regex,omitempty"`
+	Securitysystem                            *string `json:"securitysystem,omitempty"`
+	Attributename                             *string `json:"attributename,omitempty"`
+	Attributelable                            *string `json:"attributelable,omitempty"`
+	Required                                  *string `json:"required,omitempty"`
+	Endpoint                                  *string `json:"endpoint,omitempty"`
+	Hideonupdate                              *string `json:"hideonupdate,omitempty"`
+	Requesttype                               *string `json:"requesttype,omitempty"`
+	Showonchild                               *string `json:"showonchild,omitempty"`
 	Actiontoperformwhenparentattributechanges *string `json:"actiontoperformwhenparentattributechanges,omitempty"`
-	Attributetype *string `json:"attributetype,omitempty"`
-	Parentattribute *string `json:"parentattribute,omitempty"`
-	Descriptionascsv *string `json:"descriptionascsv,omitempty"`
+	Attributetype                             *string `json:"attributetype,omitempty"`
+	Parentattribute                           *string `json:"parentattribute,omitempty"`
+	Descriptionascsv                          *string `json:"descriptionascsv,omitempty"`
 }
 
 // NewFetchDynamicAttributeResponseInner instantiates a new FetchDynamicAttributeResponseInner object
@@ -732,7 +732,7 @@ func (o *FetchDynamicAttributeResponseInner) SetDescriptionascsv(v string) {
 }
 
 func (o FetchDynamicAttributeResponseInner) MarshalJSON() ([]byte, error) {
-	toSerialize,err := o.ToMap()
+	toSerialize, err := o.ToMap()
 	if err != nil {
 		return []byte{}, err
 	}
@@ -842,5 +842,3 @@ func (v *NullableFetchDynamicAttributeResponseInner) UnmarshalJSON(src []byte) e
 	v.isSet = true
 	return json.Unmarshal(src, &v.value)
 }
-
-

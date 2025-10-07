@@ -13,6 +13,7 @@ import (
 	"net/http"
 	"strconv"
 	"strings"
+	"terraform-provider-Saviynt/internal/client"
 	"terraform-provider-Saviynt/util"
 	connectionsutil "terraform-provider-Saviynt/util/connectionsutil"
 
@@ -27,8 +28,9 @@ import (
 var _ datasource.DataSource = &restConnectionDatasource{}
 
 type restConnectionDatasource struct {
-	client *s.Client
-	token  string
+	client   *s.Client
+	token    string
+	provider client.SaviyntProviderInterface
 }
 
 type RESTConnectionDataSourceModel struct {
@@ -143,15 +145,21 @@ func (d *restConnectionDatasource) Configure(ctx context.Context, req datasource
 	}
 
 	// Cast provider data to your provider type.
-	prov, ok := req.ProviderData.(*saviyntProvider)
+	prov, ok := req.ProviderData.(*SaviyntProvider)
 	if !ok {
-		resp.Diagnostics.AddError("Unexpected Provider Data", "Expected *saviyntProvider")
+		resp.Diagnostics.AddError("Unexpected Provider Data", "Expected *SaviyntProvider")
 		return
 	}
 
 	// Set the client and token from the provider state.
 	d.client = prov.client
 	d.token = prov.accessToken
+	d.provider = &client.SaviyntProviderWrapper{Provider: prov} // Store provider reference for retry logic
+}
+
+// SetProvider sets the provider for testing purposes
+func (r *restConnectionDatasource) SetProvider(provider client.SaviyntProviderInterface) {
+	r.provider = provider
 }
 
 func (d *restConnectionDatasource) Read(ctx context.Context, req datasource.ReadRequest, resp *datasource.ReadResponse) {
@@ -163,15 +171,7 @@ func (d *restConnectionDatasource) Read(ctx context.Context, req datasource.Read
 		return
 	}
 
-	// Configure API client
-	cfg := openapi.NewConfiguration()
-	apiBaseURL := strings.TrimPrefix(strings.TrimPrefix(d.client.APIBaseURL(), "https://"), "http://")
-	cfg.Host = apiBaseURL
-	cfg.Scheme = "https"
-	cfg.AddDefaultHeader("Authorization", "Bearer "+d.token)
-	cfg.HTTPClient = http.DefaultClient
-
-	apiClient := openapi.NewAPIClient(cfg)
+	// Prepare request parameters
 	reqParams := openapi.GetConnectionDetailsRequest{}
 
 	// Set filters based on provided parameters
@@ -182,21 +182,44 @@ func (d *restConnectionDatasource) Read(ctx context.Context, req datasource.Read
 		connectionKeyInt := state.ConnectionKey.ValueInt64()
 		reqParams.SetConnectionkey(strconv.FormatInt(connectionKeyInt, 10))
 	}
-	apiReq := apiClient.ConnectionsAPI.GetConnectionDetails(ctx).GetConnectionDetailsRequest(reqParams)
 
-	// Execute API request
-	apiResp, httpResp, err := apiReq.Execute()
+	var apiResp *openapi.GetConnectionDetailsResponse
+	var finalHttpResp *http.Response
+
+	// Execute API call with retry logic
+	err := d.provider.AuthenticatedAPICallWithRetry(ctx, "read_rest_connection_datasource", func(token string) error {
+		// Configure API client with current token
+		cfg := openapi.NewConfiguration()
+		apiBaseURL := strings.TrimPrefix(strings.TrimPrefix(d.client.APIBaseURL(), "https://"), "http://")
+		cfg.Host = apiBaseURL
+		cfg.Scheme = "https"
+		cfg.AddDefaultHeader("Authorization", "Bearer "+token)
+		cfg.HTTPClient = http.DefaultClient
+
+		apiClient := openapi.NewAPIClient(cfg)
+		apiReq := apiClient.ConnectionsAPI.GetConnectionDetails(ctx).GetConnectionDetailsRequest(reqParams)
+
+		// Execute API request
+		resp, hResp, err := apiReq.Execute()
+		if hResp != nil && hResp.StatusCode == 401 {
+			return fmt.Errorf("401 unauthorized")
+		}
+		apiResp = resp
+		finalHttpResp = hResp // Update on every call including retries
+		return err
+	})
+
 	if err != nil {
-		if httpResp != nil && httpResp.StatusCode != 200 {
-			log.Printf("[ERROR] HTTP error while creating Rest Connector: %s", httpResp.Status)
+		if finalHttpResp != nil && finalHttpResp.StatusCode != 200 {
+			log.Printf("[ERROR] HTTP error while reading Rest Connector: %s", finalHttpResp.Status)
 			var fetchResp map[string]interface{}
-			if err := json.NewDecoder(httpResp.Body).Decode(&fetchResp); err != nil {
+			if err := json.NewDecoder(finalHttpResp.Body).Decode(&fetchResp); err != nil {
 				resp.Diagnostics.AddError("Failed to decode error response", err.Error())
 				return
 			}
 			resp.Diagnostics.AddError(
 				"HTTP Error",
-				fmt.Sprintf("HTTP error while creating Rest Connector for the reasons: %s", fetchResp["msg"]),
+				fmt.Sprintf("HTTP error while reading Rest Connector for the reasons: %s", fetchResp["msg"]),
 			)
 
 		} else {
@@ -213,7 +236,7 @@ func (d *restConnectionDatasource) Read(ctx context.Context, req datasource.Read
 		return
 	}
 
-	log.Printf("[DEBUG] HTTP Status Code: %d", httpResp.StatusCode)
+	log.Printf("[DEBUG] HTTP Status Code: %d", finalHttpResp.StatusCode)
 
 	state.Msg = util.SafeStringDatasource(apiResp.RESTConnectionResponse.Msg)
 	state.ErrorCode = util.SafeInt64(apiResp.RESTConnectionResponse.Errorcode)
@@ -254,19 +277,21 @@ func (d *restConnectionDatasource) Read(ctx context.Context, req datasource.Read
 			IsTimeoutSupported:       util.SafeBoolDatasource(apiResp.RESTConnectionResponse.Connectionattributes.IsTimeoutSupported),
 			ImportAccountEntJSON:     util.SafeStringDatasource(apiResp.RESTConnectionResponse.Connectionattributes.ImportAccountEntJSON),
 			IsTimeoutConfigValidated: util.SafeBoolDatasource(apiResp.RESTConnectionResponse.Connectionattributes.IsTimeoutConfigValidated),
-			ConnectionTimeoutConfig: ConnectionTimeoutConfig{
-				RetryWait:               util.SafeInt64(apiResp.RESTConnectionResponse.Connectionattributes.ConnectionTimeoutConfig.RetryWait),
-				TokenRefreshMaxTryCount: util.SafeInt64(apiResp.RESTConnectionResponse.Connectionattributes.ConnectionTimeoutConfig.TokenRefreshMaxTryCount),
-				RetryWaitMaxValue:       util.SafeInt64(apiResp.RESTConnectionResponse.Connectionattributes.ConnectionTimeoutConfig.RetryWaitMaxValue),
-				RetryCount:              util.SafeInt64(apiResp.RESTConnectionResponse.Connectionattributes.ConnectionTimeoutConfig.RetryCount),
-				ReadTimeout:             util.SafeInt64(apiResp.RESTConnectionResponse.Connectionattributes.ConnectionTimeoutConfig.ReadTimeout),
-				ConnectionTimeout:       util.SafeInt64(apiResp.RESTConnectionResponse.Connectionattributes.ConnectionTimeoutConfig.ConnectionTimeout),
-				RetryFailureStatusCode:  util.SafeInt64(apiResp.RESTConnectionResponse.Connectionattributes.ConnectionTimeoutConfig.RetryFailureStatusCode),
-			},
 			ApplicationDiscoveryJson: util.SafeStringDatasource(apiResp.RESTConnectionResponse.Connectionattributes.ApplicationDiscoveryJSON),
 			CreateEntitlementJson:    util.SafeStringDatasource(apiResp.RESTConnectionResponse.Connectionattributes.CreateEntitlementJSON),
 			DeleteEntitlementJson:    util.SafeStringDatasource(apiResp.RESTConnectionResponse.Connectionattributes.DeleteEntitlementJSON),
 			UpdateEntitlementJson:    util.SafeStringDatasource(apiResp.RESTConnectionResponse.Connectionattributes.UpdateEntitlementJSON),
+		}
+		if apiResp.RESTConnectionResponse.Connectionattributes.ConnectionTimeoutConfig != nil {
+			state.ConnectionAttributes.ConnectionTimeoutConfig = ConnectionTimeoutConfig{
+				RetryWait:               util.SafeInt64(apiResp.RESTConnectionResponse.Connectionattributes.ConnectionTimeoutConfig.RetryWait),
+				TokenRefreshMaxTryCount: util.SafeInt64(apiResp.RESTConnectionResponse.Connectionattributes.ConnectionTimeoutConfig.TokenRefreshMaxTryCount),
+				RetryFailureStatusCode:  util.SafeInt64(apiResp.RESTConnectionResponse.Connectionattributes.ConnectionTimeoutConfig.RetryFailureStatusCode),
+				RetryWaitMaxValue:       util.SafeInt64(apiResp.RESTConnectionResponse.Connectionattributes.ConnectionTimeoutConfig.RetryWaitMaxValue),
+				RetryCount:              util.SafeInt64(apiResp.RESTConnectionResponse.Connectionattributes.ConnectionTimeoutConfig.RetryCount),
+				ReadTimeout:             util.SafeInt64(apiResp.RESTConnectionResponse.Connectionattributes.ConnectionTimeoutConfig.ReadTimeout),
+				ConnectionTimeout:       util.SafeInt64(apiResp.RESTConnectionResponse.Connectionattributes.ConnectionTimeoutConfig.ConnectionTimeout),
+			}
 		}
 	}
 

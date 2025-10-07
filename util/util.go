@@ -430,3 +430,44 @@ func ConvertTFSetToGoStrings(input types.Set) []string {
 
 	return result
 }
+
+func Difference(a, b []string) []string {
+	mb := make(map[string]bool, len(b))
+	for _, x := range b {
+		mb[x] = true
+	}
+	var diff []string
+	for _, x := range a {
+		if !mb[x] {
+			diff = append(diff, x)
+		}
+	}
+	return diff
+}
+
+// StringSlicesEqual compares two string slices for equality (order-independent)
+func StringSlicesEqual(a, b []string) bool {
+	if len(a) != len(b) {
+		return false
+	}
+
+	// Create frequency maps
+	freqA := make(map[string]int)
+	freqB := make(map[string]int)
+
+	for _, s := range a {
+		freqA[s]++
+	}
+	for _, s := range b {
+		freqB[s]++
+	}
+
+	// Compare frequency maps
+	for k, v := range freqA {
+		if freqB[k] != v {
+			return false
+		}
+	}
+
+	return true
+}

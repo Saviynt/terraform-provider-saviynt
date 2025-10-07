@@ -21,6 +21,8 @@ Below are example configurations to help guide you through your Terraform journe
 - [saviynt_workday_connection_resource](./resources/saviynt_workday_connection_resource) For managing Workday connections.
 - [saviynt_dynamic_attribute_resource](./resources/saviynt_dynamic_attribute_resource) Manages lifecycle (create, update, read, delete) of dynamic attribute
 - [saviynt_okta_connection_resource](./resources/saviynt_okta_connection_resource) For managing Okta connections.
+- [saviynt_entitlement_type_resource](./resources/saviynt_entitlement_type_resource) For managing entitlement types.
+- [saviynt_enterprise_roles_resource](./resources/saviynt_enterprise_roles_resource) For managing enterprise roles.
 
 ## Supported Data Sources
 
@@ -39,3 +41,5 @@ Below are example configurations to help guide you through your Terraform journe
 - [saviynt_workday_connection_datasource](./data-sources/saviynt_workday_connection_datasource) Retrieves a Workday connection.
 - [saviynt_dynamic_attribute_datasource](./data-sources/saviynt_dynamic_attribute_datasource) Retrieves Dynamic attribute.
 - [saviynt_okta_connection_datasource](./data-sources/saviynt_okta_connection_datasource) Retrieves a Okta connection.
+- [saviynt_entitlement_type_datasource](./data-sources/saviynt_entitlement_type_datasource) Retrieves entitlement types.
+- [saviynt_roles_datasource](./data-sources/saviynt_role_datasource) Retrieves roles with filtering options.

@@ -20,41 +20,41 @@ var _ MappedNullable = &RESTConnectionAttributes{}
 // RESTConnectionAttributes struct for RESTConnectionAttributes
 type RESTConnectionAttributes struct {
 	// Property for UpdateUserJSON
-	UpdateUserJSON *string `json:"UpdateUserJSON,omitempty"`
-	ChangePassJSON *string `json:"ChangePassJSON,omitempty"`
-	CreateEntitlementJSON *string `json:"CreateEntitlementJSON,omitempty"`
-	UpdateEntitlementJSON *string `json:"UpdateEntitlementJSON,omitempty"`
-	DeleteEntitlementJSON *string `json:"DeleteEntitlementJSON,omitempty"`
+	UpdateUserJSON           *string `json:"UpdateUserJSON,omitempty"`
+	ChangePassJSON           *string `json:"ChangePassJSON,omitempty"`
+	CreateEntitlementJSON    *string `json:"CreateEntitlementJSON,omitempty"`
+	UpdateEntitlementJSON    *string `json:"UpdateEntitlementJSON,omitempty"`
+	DeleteEntitlementJSON    *string `json:"DeleteEntitlementJSON,omitempty"`
 	ApplicationDiscoveryJSON *string `json:"ApplicationDiscoveryJSON,omitempty"`
-	RemoveAccountJSON *string `json:"RemoveAccountJSON,omitempty"`
-	TicketStatusJSON *string `json:"TicketStatusJSON,omitempty"`
-	CreateTicketJSON *string `json:"CreateTicketJSON,omitempty"`
+	RemoveAccountJSON        *string `json:"RemoveAccountJSON,omitempty"`
+	TicketStatusJSON         *string `json:"TicketStatusJSON,omitempty"`
+	CreateTicketJSON         *string `json:"CreateTicketJSON,omitempty"`
 	// Type of connection, e.g., MS_BASED_CONNECTOR.
-	ConnectionType *string `json:"connectionType,omitempty"`
+	ConnectionType   *string `json:"connectionType,omitempty"`
 	ENDPOINTS_FILTER *string `json:"ENDPOINTS_FILTER,omitempty"`
 	PasswdPolicyJSON *string `json:"PasswdPolicyJSON,omitempty"`
 	// We can use this attribute to define the provisioningLimit,showLogs and connectionTimeoutConfig.
-	ConfigJSON *string `json:"ConfigJSON,omitempty"`
-	AddFFIDAccessJSON *string `json:"AddFFIDAccessJSON,omitempty"`
+	ConfigJSON           *string `json:"ConfigJSON,omitempty"`
+	AddFFIDAccessJSON    *string `json:"AddFFIDAccessJSON,omitempty"`
 	RemoveFFIDAccessJSON *string `json:"RemoveFFIDAccessJSON,omitempty"`
 	// JSON configuration for account status thresholds.
-	STATUS_THRESHOLD_CONFIG *string `json:"STATUS_THRESHOLD_CONFIG,omitempty"`
-	MODIFYUSERDATAJSON *string `json:"MODIFYUSERDATAJSON,omitempty"`
-	SendOtpJSON *string `json:"SendOtpJSON,omitempty"`
-	ValidateOtpJSON *string `json:"ValidateOtpJSON,omitempty"`
-	PAM_CONFIG *string `json:"PAM_CONFIG,omitempty"`
-	ConnectionTimeoutConfig *ConnectionTimeoutConfig `json:"connectionTimeoutConfig,omitempty"`
-	CreateAccountJSON *string `json:"CreateAccountJSON,omitempty"`
-	UpdateAccountJSON *string `json:"UpdateAccountJSON,omitempty"`
-	EnableAccountJSON *string `json:"EnableAccountJSON,omitempty"`
-	DisableAccountJSON *string `json:"DisableAccountJSON,omitempty"`
-	AddAccessJSON *string `json:"AddAccessJSON,omitempty"`
-	RemoveAccessJSON *string `json:"RemoveAccessJSON,omitempty"`
-	ImportUserJSON *string `json:"ImportUserJSON,omitempty"`
-	IsTimeoutSupported *bool `json:"isTimeoutSupported,omitempty"`
-	ImportAccountEntJSON *string `json:"ImportAccountEntJSON,omitempty"`
-	IsTimeoutConfigValidated *bool `json:"isTimeoutConfigValidated,omitempty"`
-	ConnectionJSON *string `json:"ConnectionJSON,omitempty"`
+	STATUS_THRESHOLD_CONFIG  *string                  `json:"STATUS_THRESHOLD_CONFIG,omitempty"`
+	MODIFYUSERDATAJSON       *string                  `json:"MODIFYUSERDATAJSON,omitempty"`
+	SendOtpJSON              *string                  `json:"SendOtpJSON,omitempty"`
+	ValidateOtpJSON          *string                  `json:"ValidateOtpJSON,omitempty"`
+	PAM_CONFIG               *string                  `json:"PAM_CONFIG,omitempty"`
+	ConnectionTimeoutConfig  *ConnectionTimeoutConfig `json:"connectionTimeoutConfig,omitempty"`
+	CreateAccountJSON        *string                  `json:"CreateAccountJSON,omitempty"`
+	UpdateAccountJSON        *string                  `json:"UpdateAccountJSON,omitempty"`
+	EnableAccountJSON        *string                  `json:"EnableAccountJSON,omitempty"`
+	DisableAccountJSON       *string                  `json:"DisableAccountJSON,omitempty"`
+	AddAccessJSON            *string                  `json:"AddAccessJSON,omitempty"`
+	RemoveAccessJSON         *string                  `json:"RemoveAccessJSON,omitempty"`
+	ImportUserJSON           *string                  `json:"ImportUserJSON,omitempty"`
+	IsTimeoutSupported       *bool                    `json:"isTimeoutSupported,omitempty"`
+	ImportAccountEntJSON     *string                  `json:"ImportAccountEntJSON,omitempty"`
+	IsTimeoutConfigValidated *bool                    `json:"isTimeoutConfigValidated,omitempty"`
+	ConnectionJSON           *string                  `json:"ConnectionJSON,omitempty"`
 }
 
 // NewRESTConnectionAttributes instantiates a new RESTConnectionAttributes object
@@ -1099,7 +1099,7 @@ func (o *RESTConnectionAttributes) SetConnectionJSON(v string) {
 }
 
 func (o RESTConnectionAttributes) MarshalJSON() ([]byte, error) {
-	toSerialize,err := o.ToMap()
+	toSerialize, err := o.ToMap()
 	if err != nil {
 		return []byte{}, err
 	}
@@ -1242,5 +1242,3 @@ func (v *NullableRESTConnectionAttributes) UnmarshalJSON(src []byte) error {
 	v.isSet = true
 	return json.Unmarshal(src, &v.value)
 }
-
-

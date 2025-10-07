@@ -59,7 +59,7 @@ terraform {
   required_providers {
     saviynt = {
       source  = "saviynt/saviynt"
-      version = "1.0.0"
+      version = "~> 0.2.10"
     }
   }
 }
@@ -96,6 +96,8 @@ check "saviynt_security_system_resource_check" {
 }
 
 resource "saviynt_endpoint_resource" "endpoint" {
+  depends_on = [saviynt_security_system_resource.security_system]
+
   endpoint_name                                 = "Terraform_Endpoint"
   display_name                                  = "Terraform_Endpoint"
   security_system                               = "Terraform_Security_System"
@@ -371,4 +373,5 @@ check "saviynt_ad_connection_resource_check" {
 
 data "saviynt_ad_connection_datasource" "ad_datasource" {
   connection_name = "Terraform_AD_Connector"
+  authenticate    = false
 }

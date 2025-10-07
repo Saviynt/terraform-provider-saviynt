@@ -12,6 +12,7 @@ package provider
 import (
 	"context"
 	"fmt"
+	"net/http"
 	"os"
 	"terraform-provider-Saviynt/internal/client"
 	"terraform-provider-Saviynt/util"
@@ -19,9 +20,11 @@ import (
 	connectionsutil "terraform-provider-Saviynt/util/connectionsutil"
 	"terraform-provider-Saviynt/util/errorsutil"
 
+	"github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
 	"github.com/hashicorp/terraform-plugin-framework/path"
 	"github.com/hashicorp/terraform-plugin-framework/resource"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema"
+	"github.com/hashicorp/terraform-plugin-framework/schema/validator"
 	"github.com/hashicorp/terraform-plugin-framework/types"
 	"github.com/hashicorp/terraform-plugin-log/tflog"
 	openapi "github.com/saviynt/saviynt-api-go-client/connections"
@@ -39,15 +42,19 @@ type EntraIdConnectorResourceModel struct {
 	ID                              types.String `tfsdk:"id"`
 	ClientId                        types.String `tfsdk:"client_id"`
 	ClientSecret                    types.String `tfsdk:"client_secret"`
+	ClientSecretWO                  types.String `tfsdk:"client_secret_wo"`
 	AccessToken                     types.String `tfsdk:"access_token"`
+	AccessTokenWO                   types.String `tfsdk:"access_token_wo"`
 	AadTenantId                     types.String `tfsdk:"aad_tenant_id"`
 	AzureMgmtAccessToken            types.String `tfsdk:"azure_mgmt_access_token"`
+	AzureMgmtAccessTokenWO          types.String `tfsdk:"azure_mgmt_access_token_wo"`
 	AuthenticationEndpoint          types.String `tfsdk:"authentication_endpoint"`
 	MicrosoftGraphEndpoint          types.String `tfsdk:"microsoft_graph_endpoint"`
 	AzureManagementEndpoint         types.String `tfsdk:"azure_management_endpoint"`
 	ImportUserJson                  types.String `tfsdk:"import_user_json"`
 	CreateUsers                     types.String `tfsdk:"create_users"`
 	WindowsConnectorJson            types.String `tfsdk:"windows_connector_json"`
+	WindowsConnectorJsonWO          types.String `tfsdk:"windows_connector_json_wo"`
 	CreateNewEndpoints              types.String `tfsdk:"create_new_endpoints"`
 	ManagedAccountType              types.String `tfsdk:"managed_account_type"`
 	AccountAttributes               types.String `tfsdk:"account_attributes"`
@@ -66,6 +73,7 @@ type EntraIdConnectorResourceModel struct {
 	ChangePassJson                  types.String `tfsdk:"change_pass_json"`
 	RemoveAccountJson               types.String `tfsdk:"remove_account_json"`
 	ConnectionJson                  types.String `tfsdk:"connection_json"`
+	ConnectionJsonWO                types.String `tfsdk:"connection_json_wo"`
 	CreateGroupJson                 types.String `tfsdk:"create_group_json"`
 	UpdateGroupJson                 types.String `tfsdk:"update_group_json"`
 	AddAccessToEntitlementJson      types.String `tfsdk:"add_access_to_entitlement_json"`
@@ -89,6 +97,7 @@ type EntraIdConnectorResourceModel struct {
 type EntraIdConnectionResource struct {
 	client            client.SaviyntClientInterface
 	token             string
+	provider          client.SaviyntProviderInterface
 	connectionFactory client.ConnectionFactoryInterface
 }
 
@@ -108,368 +117,6 @@ func (r *EntraIdConnectionResource) Metadata(ctx context.Context, req resource.M
 	resp.TypeName = "saviynt_entraid_connection_resource"
 }
 
-// SetClient sets the client for testing purposes
-func (r *EntraIdConnectionResource) SetClient(client client.SaviyntClientInterface) {
-	r.client = client
-}
-
-// SetToken sets the token for testing purposes
-func (r *EntraIdConnectionResource) SetToken(token string) {
-	r.token = token
-}
-
-func (r *EntraIdConnectionResource) BuildEntraIdConnector(plan *EntraIdConnectorResourceModel, config *EntraIdConnectorResourceModel) openapi.EntraIDConnector {
-	entraidConn := openapi.EntraIDConnector{
-		BaseConnector: openapi.BaseConnector{
-			//required fields
-			Connectiontype: "AzureAD",
-			ConnectionName: plan.ConnectionName.ValueString(),
-			//optional fields
-			Description:     util.StringPointerOrEmpty(plan.Description),
-			Defaultsavroles: util.StringPointerOrEmpty(plan.DefaultSavRoles),
-			EmailTemplate:   util.StringPointerOrEmpty(plan.EmailTemplate),
-		},
-		//required fields
-		CLIENT_ID:     config.ClientId.ValueString(),
-		CLIENT_SECRET: config.ClientSecret.ValueString(),
-		AAD_TENANT_ID: plan.AadTenantId.ValueString(),
-		//optional fields
-		ACCESS_TOKEN:                    util.StringPointerOrEmpty(config.AccessToken),
-		AZURE_MGMT_ACCESS_TOKEN:         util.StringPointerOrEmpty(config.AzureMgmtAccessToken),
-		AUTHENTICATION_ENDPOINT:         util.StringPointerOrEmpty(plan.AuthenticationEndpoint),
-		MICROSOFT_GRAPH_ENDPOINT:        util.StringPointerOrEmpty(plan.MicrosoftGraphEndpoint),
-		AZURE_MANAGEMENT_ENDPOINT:       util.StringPointerOrEmpty(plan.AzureManagementEndpoint),
-		ImportUserJSON:                  util.StringPointerOrEmpty(plan.ImportUserJson),
-		CREATEUSERS:                     util.StringPointerOrEmpty(plan.CreateUsers),
-		WINDOWS_CONNECTOR_JSON:          util.StringPointerOrEmpty(config.WindowsConnectorJson),
-		CREATE_NEW_ENDPOINTS:            util.StringPointerOrEmpty(plan.CreateNewEndpoints),
-		MANAGED_ACCOUNT_TYPE:            util.StringPointerOrEmpty(plan.ManagedAccountType),
-		ACCOUNT_ATTRIBUTES:              util.StringPointerOrEmpty(plan.AccountAttributes),
-		SERVICE_ACCOUNT_ATTRIBUTES:      util.StringPointerOrEmpty(plan.ServiceAccountAttributes),
-		DELTATOKENSJSON:                 util.StringPointerOrEmpty(plan.DeltaTokensJson),
-		ACCOUNT_IMPORT_FIELDS:           util.StringPointerOrEmpty(plan.AccountImportFields),
-		IMPORT_DEPTH:                    util.StringPointerOrEmpty(plan.ImportDepth),
-		ENTITLEMENT_ATTRIBUTE:           util.StringPointerOrEmpty(plan.EntitlementAttribute),
-		CreateAccountJSON:               util.StringPointerOrEmpty(plan.CreateAccountJson),
-		UpdateAccountJSON:               util.StringPointerOrEmpty(plan.UpdateAccountJson),
-		EnableAccountJSON:               util.StringPointerOrEmpty(plan.EnableAccountJson),
-		DisableAccountJSON:              util.StringPointerOrEmpty(plan.DisableAccountJson),
-		AddAccessJSON:                   util.StringPointerOrEmpty(plan.AddAccessJson),
-		RemoveAccessJSON:                util.StringPointerOrEmpty(plan.RemoveAccessJson),
-		UpdateUserJSON:                  util.StringPointerOrEmpty(plan.UpdateUserJson),
-		ChangePassJSON:                  util.StringPointerOrEmpty(config.ChangePassJson),
-		RemoveAccountJSON:               util.StringPointerOrEmpty(plan.RemoveAccountJson),
-		ConnectionJSON:                  util.StringPointerOrEmpty(config.ConnectionJson),
-		CreateGroupJSON:                 util.StringPointerOrEmpty(plan.CreateGroupJson),
-		UpdateGroupJSON:                 util.StringPointerOrEmpty(plan.UpdateGroupJson),
-		AddAccessToEntitlementJSON:      util.StringPointerOrEmpty(plan.AddAccessToEntitlementJson),
-		RemoveAccessFromEntitlementJSON: util.StringPointerOrEmpty(plan.RemoveAccessFromEntitlementJson),
-		DeleteGroupJSON:                 util.StringPointerOrEmpty(plan.DeleteGroupJson),
-		CreateServicePrincipalJSON:      util.StringPointerOrEmpty(plan.CreateServicePrincipalJson),
-		UpdateServicePrincipalJSON:      util.StringPointerOrEmpty(plan.UpdateServicePrincipalJson),
-		RemoveServicePrincipalJSON:      util.StringPointerOrEmpty(plan.RemoveServicePrincipalJson),
-		ENTITLEMENT_FILTER_JSON:         util.StringPointerOrEmpty(plan.EntitlementFilterJson),
-		CreateTeamJSON:                  util.StringPointerOrEmpty(plan.CreateTeamJson),
-		CreateChannelJSON:               util.StringPointerOrEmpty(plan.CreateChannelJson),
-		STATUS_THRESHOLD_CONFIG:         util.StringPointerOrEmpty(plan.StatusThresholdConfig),
-		ACCOUNTS_FILTER:                 util.StringPointerOrEmpty(plan.AccountsFilter),
-		PAM_CONFIG:                      util.StringPointerOrEmpty(plan.PamConfig),
-		ENDPOINTS_FILTER:                util.StringPointerOrEmpty(plan.EndpointsFilter),
-		ConfigJSON:                      util.StringPointerOrEmpty(plan.ConfigJson),
-		MODIFYUSERDATAJSON:              util.StringPointerOrEmpty(plan.ModifyUserdataJson),
-		ENHANCEDDIRECTORYROLES:          util.StringPointerOrEmpty(plan.EnhancedDirectoryRoles),
-	}
-
-	if plan.VaultConnection.ValueString() != "" {
-		entraidConn.BaseConnector.VaultConnection = util.SafeStringConnector(plan.VaultConnection.ValueString())
-		entraidConn.BaseConnector.VaultConfiguration = util.SafeStringConnector(plan.VaultConfiguration.ValueString())
-		entraidConn.BaseConnector.Saveinvault = util.SafeStringConnector(plan.SaveInVault.ValueString())
-	}
-
-	return entraidConn
-}
-
-func (r *EntraIdConnectionResource) CreateEntraIdConnection(ctx context.Context, plan *EntraIdConnectorResourceModel, config *EntraIdConnectorResourceModel) (*openapi.CreateOrUpdateResponse, error) {
-	connectionName := plan.ConnectionName.ValueString()
-	opCtx := errorsutil.CreateOperationContext(errorsutil.ConnectorTypeEntraID, "create", connectionName)
-	logCtx := opCtx.AddContextToLogger(ctx)
-
-	opCtx.LogOperationStart(logCtx, "Starting EntraID connection creation")
-
-	// Use the factory to create connection operations
-	connectionOps := r.connectionFactory.CreateConnectionOperations(r.client.APIBaseURL(), r.token)
-
-	// Check if connection already exists (idempotency check)
-	existingResource, _, _ := connectionOps.GetConnectionDetails(ctx, connectionName)
-	if existingResource != nil &&
-		existingResource.EntraIDConnectionResponse != nil &&
-		existingResource.EntraIDConnectionResponse.Errorcode != nil &&
-		*existingResource.EntraIDConnectionResponse.Errorcode == 0 {
-
-		errorCode := entraIdErrorCodes.DuplicateName()
-		opCtx.LogOperationError(logCtx, "Connection name already exists. Please import or use a different name", errorCode,
-			fmt.Errorf("duplicate connection name"))
-		return nil, errorsutil.CreateStandardError(errorsutil.ConnectorTypeEntraID, errorCode, "create", connectionName, nil)
-	}
-
-	// Build EntraID connection create request
-	tflog.Debug(logCtx, "Building EntraID connection create request")
-	entraIdConn := r.BuildEntraIdConnector(plan, config)
-	createReq := openapi.CreateOrUpdateRequest{
-		EntraIDConnector: &entraIdConn,
-	}
-
-	// Execute create operation through interface
-	apiResp, _, err := connectionOps.CreateOrUpdateConnection(ctx, createReq)
-	if err != nil {
-		errorCode := entraIdErrorCodes.CreateFailed()
-		opCtx.LogOperationError(logCtx, "Failed to create EntraID connection", errorCode, err)
-		return nil, errorsutil.CreateStandardError(errorsutil.ConnectorTypeEntraID, errorCode, "create", connectionName, err)
-	}
-
-	if apiResp != nil && *apiResp.ErrorCode != "0" {
-		apiErr := fmt.Errorf("API returned error code %s: %s", *apiResp.ErrorCode, errorsutil.SanitizeMessage(apiResp.Msg))
-		errorCode := entraIdErrorCodes.APIError()
-		opCtx.LogOperationError(logCtx, "EntraID connection creation failed with API error", errorCode, apiErr,
-			map[string]interface{}{
-				"api_error_code": *apiResp.ErrorCode,
-				"message":        errorsutil.SanitizeMessage(apiResp.Msg),
-			})
-		return nil, errorsutil.CreateStandardError(errorsutil.ConnectorTypeEntraID, errorCode, "create", connectionName, apiErr)
-	}
-
-	opCtx.LogOperationEnd(logCtx, "EntraID connection created successfully",
-		map[string]interface{}{"connection_key": func() interface{} {
-			if apiResp.ConnectionKey != nil {
-				return *apiResp.ConnectionKey
-			}
-			return nil
-		}()})
-
-	return apiResp, nil
-}
-
-func (r *EntraIdConnectionResource) ReadEntraIdConnection(ctx context.Context, connectionName string) (*openapi.GetConnectionDetailsResponse, error) {
-	opCtx := errorsutil.CreateOperationContext(errorsutil.ConnectorTypeEntraID, "read", connectionName)
-	logCtx := opCtx.AddContextToLogger(ctx)
-
-	opCtx.LogOperationStart(logCtx, "Starting EntraID connection read")
-
-	// Use the factory to create connection operations
-	connectionOps := r.connectionFactory.CreateConnectionOperations(r.client.APIBaseURL(), r.token)
-
-	// Execute read operation through interface
-	apiResp, _, err := connectionOps.GetConnectionDetails(ctx, connectionName)
-	if err != nil {
-		errorCode := entraIdErrorCodes.ReadFailed()
-		opCtx.LogOperationError(logCtx, "Failed to read EntraID connection", errorCode, err)
-		return nil, errorsutil.CreateStandardError(errorsutil.ConnectorTypeEntraID, errorCode, "read", connectionName, err)
-	}
-
-	if apiResp != nil && apiResp.EntraIDConnectionResponse != nil && *apiResp.EntraIDConnectionResponse.Errorcode != 0 {
-		apiErr := fmt.Errorf("API returned error code %d: %s", *apiResp.EntraIDConnectionResponse.Errorcode, errorsutil.SanitizeMessage(apiResp.EntraIDConnectionResponse.Msg))
-		errorCode := entraIdErrorCodes.APIError()
-		opCtx.LogOperationError(logCtx, "EntraID connection read failed with API error", errorCode, apiErr,
-			map[string]interface{}{
-				"api_error_code": *apiResp.EntraIDConnectionResponse.Errorcode,
-				"message":        errorsutil.SanitizeMessage(apiResp.EntraIDConnectionResponse.Msg),
-			})
-		return nil, errorsutil.CreateStandardError(errorsutil.ConnectorTypeEntraID, errorCode, "read", connectionName, apiErr)
-	}
-
-	opCtx.LogOperationEnd(logCtx, "EntraID connection read completed successfully")
-	return apiResp, nil
-}
-
-func (r *EntraIdConnectionResource) UpdateEntraIdConnection(ctx context.Context, plan *EntraIdConnectorResourceModel, config *EntraIdConnectorResourceModel) (*openapi.CreateOrUpdateResponse, error) {
-	connectionName := plan.ConnectionName.ValueString()
-	opCtx := errorsutil.CreateOperationContext(errorsutil.ConnectorTypeEntraID, "update", connectionName)
-	logCtx := opCtx.AddContextToLogger(ctx)
-
-	opCtx.LogOperationStart(logCtx, "Starting EntraID connection update")
-
-	// Use the factory to create connection operations
-	connectionOps := r.connectionFactory.CreateConnectionOperations(r.client.APIBaseURL(), r.token)
-
-	// Build EntraID connection update request
-	tflog.Debug(logCtx, "Building EntraID connection update request")
-	entraIdConn := r.BuildEntraIdConnector(plan, config) // Reuse the same request builder
-	if plan.VaultConnection.ValueString() == "" {
-		emptyStr := ""
-		entraIdConn.BaseConnector.VaultConnection = &emptyStr
-		entraIdConn.BaseConnector.VaultConfiguration = &emptyStr
-		entraIdConn.BaseConnector.Saveinvault = &emptyStr
-	}
-
-	updateReq := openapi.CreateOrUpdateRequest{
-		EntraIDConnector: &entraIdConn,
-	}
-	// Execute update operation through interface
-	apiResp, _, err := connectionOps.CreateOrUpdateConnection(ctx, updateReq)
-	if err != nil {
-		errorCode := entraIdErrorCodes.UpdateFailed()
-		opCtx.LogOperationError(logCtx, "Failed to update EntraID connection", errorCode, err)
-		return nil, errorsutil.CreateStandardError(errorsutil.ConnectorTypeEntraID, errorCode, "update", connectionName, err)
-	}
-
-	if apiResp != nil && *apiResp.ErrorCode != "0" {
-		apiErr := fmt.Errorf("API returned error code %s: %s", *apiResp.ErrorCode, errorsutil.SanitizeMessage(apiResp.Msg))
-		errorCode := entraIdErrorCodes.APIError()
-		opCtx.LogOperationError(logCtx, "EntraID connection update failed with API error", errorCode, apiErr,
-			map[string]interface{}{
-				"api_error_code": *apiResp.ErrorCode,
-				"message":        errorsutil.SanitizeMessage(apiResp.Msg),
-			})
-		return nil, errorsutil.CreateStandardError(errorsutil.ConnectorTypeEntraID, errorCode, "update", connectionName, apiErr)
-	}
-
-	opCtx.LogOperationEnd(logCtx, "EntraID connection updated successfully",
-		map[string]interface{}{"connection_key": func() interface{} {
-			if apiResp.ConnectionKey != nil {
-				return *apiResp.ConnectionKey
-			}
-			return nil
-		}()})
-
-	return apiResp, nil
-}
-
-func (r *EntraIdConnectionResource) UpdateModelFromCreateResponse(plan *EntraIdConnectorResourceModel, apiResp *openapi.CreateOrUpdateResponse) {
-	plan.ID = types.StringValue(fmt.Sprintf("%d", *apiResp.ConnectionKey))
-	plan.ConnectionKey = types.Int64Value(int64(*apiResp.ConnectionKey))
-	plan.Description = util.SafeStringDatasource(plan.Description.ValueStringPointer())
-	plan.DefaultSavRoles = util.SafeStringDatasource(plan.DefaultSavRoles.ValueStringPointer())
-	plan.EmailTemplate = util.SafeStringDatasource(plan.EmailTemplate.ValueStringPointer())
-	plan.AadTenantId = util.SafeStringDatasource(plan.AadTenantId.ValueStringPointer())
-	plan.AuthenticationEndpoint = util.SafeStringDatasource(plan.AuthenticationEndpoint.ValueStringPointer())
-	plan.MicrosoftGraphEndpoint = util.SafeStringDatasource(plan.MicrosoftGraphEndpoint.ValueStringPointer())
-	plan.AzureManagementEndpoint = util.SafeStringDatasource(plan.AzureManagementEndpoint.ValueStringPointer())
-	plan.ImportUserJson = util.SafeStringDatasource(plan.ImportUserJson.ValueStringPointer())
-	plan.CreateUsers = util.SafeStringDatasource(plan.CreateUsers.ValueStringPointer())
-	plan.CreateNewEndpoints = util.SafeStringDatasource(plan.CreateNewEndpoints.ValueStringPointer())
-	plan.ManagedAccountType = util.SafeStringDatasource(plan.ManagedAccountType.ValueStringPointer())
-	plan.AccountAttributes = util.SafeStringDatasource(plan.AccountAttributes.ValueStringPointer())
-	plan.ServiceAccountAttributes = util.SafeStringDatasource(plan.ServiceAccountAttributes.ValueStringPointer())
-	plan.DeltaTokensJson = util.SafeStringDatasource(plan.DeltaTokensJson.ValueStringPointer())
-	plan.AccountImportFields = util.SafeStringDatasource(plan.AccountImportFields.ValueStringPointer())
-	plan.ImportDepth = util.SafeStringDatasource(plan.ImportDepth.ValueStringPointer())
-	plan.EntitlementAttribute = util.SafeStringDatasource(plan.EntitlementAttribute.ValueStringPointer())
-	plan.CreateAccountJson = util.SafeStringDatasource(plan.CreateAccountJson.ValueStringPointer())
-	plan.UpdateAccountJson = util.SafeStringDatasource(plan.UpdateAccountJson.ValueStringPointer())
-	plan.EnableAccountJson = util.SafeStringDatasource(plan.EnableAccountJson.ValueStringPointer())
-	plan.DisableAccountJson = util.SafeStringDatasource(plan.DisableAccountJson.ValueStringPointer())
-	plan.AddAccessJson = util.SafeStringDatasource(plan.AddAccessJson.ValueStringPointer())
-	plan.RemoveAccessJson = util.SafeStringDatasource(plan.RemoveAccessJson.ValueStringPointer())
-	plan.UpdateUserJson = util.SafeStringDatasource(plan.UpdateUserJson.ValueStringPointer())
-	plan.RemoveAccountJson = util.SafeStringDatasource(plan.RemoveAccountJson.ValueStringPointer())
-	plan.CreateGroupJson = util.SafeStringDatasource(plan.CreateGroupJson.ValueStringPointer())
-	plan.UpdateGroupJson = util.SafeStringDatasource(plan.UpdateGroupJson.ValueStringPointer())
-	plan.AddAccessToEntitlementJson = util.SafeStringDatasource(plan.AddAccessToEntitlementJson.ValueStringPointer())
-	plan.RemoveAccessFromEntitlementJson = util.SafeStringDatasource(plan.RemoveAccessFromEntitlementJson.ValueStringPointer())
-	plan.DeleteGroupJson = util.SafeStringDatasource(plan.DeleteGroupJson.ValueStringPointer())
-	plan.CreateServicePrincipalJson = util.SafeStringDatasource(plan.CreateServicePrincipalJson.ValueStringPointer())
-	plan.UpdateServicePrincipalJson = util.SafeStringDatasource(plan.UpdateServicePrincipalJson.ValueStringPointer())
-	plan.RemoveServicePrincipalJson = util.SafeStringDatasource(plan.RemoveServicePrincipalJson.ValueStringPointer())
-	plan.EntitlementFilterJson = util.SafeStringDatasource(plan.EntitlementFilterJson.ValueStringPointer())
-	plan.CreateTeamJson = util.SafeStringDatasource(plan.CreateTeamJson.ValueStringPointer())
-	plan.CreateChannelJson = util.SafeStringDatasource(plan.CreateChannelJson.ValueStringPointer())
-	plan.StatusThresholdConfig = util.SafeStringDatasource(plan.StatusThresholdConfig.ValueStringPointer())
-	plan.AccountsFilter = util.SafeStringDatasource(plan.AccountsFilter.ValueStringPointer())
-	plan.PamConfig = util.SafeStringDatasource(plan.PamConfig.ValueStringPointer())
-	plan.EndpointsFilter = util.SafeStringDatasource(plan.EndpointsFilter.ValueStringPointer())
-	plan.ConfigJson = util.SafeStringDatasource(plan.ConfigJson.ValueStringPointer())
-	plan.ModifyUserdataJson = util.SafeStringDatasource(plan.ModifyUserdataJson.ValueStringPointer())
-	plan.EnhancedDirectoryRoles = util.SafeStringDatasource(plan.EnhancedDirectoryRoles.ValueStringPointer())
-
-	// Set response fields
-	plan.ErrorCode = util.SafeStringDatasource(apiResp.ErrorCode)
-	plan.Msg = util.SafeStringDatasource(apiResp.Msg)
-}
-
-func (r *EntraIdConnectionResource) UpdateModelFromReadResponse(state *EntraIdConnectorResourceModel, apiResp *openapi.GetConnectionDetailsResponse) {
-	// Set basic connection info
-	state.ConnectionKey = types.Int64Value(int64(*apiResp.EntraIDConnectionResponse.Connectionkey))
-	state.ID = types.StringValue(fmt.Sprintf("%d", *apiResp.EntraIDConnectionResponse.Connectionkey))
-	state.ConnectionName = util.SafeStringDatasource(apiResp.EntraIDConnectionResponse.Connectionname)
-	state.Description = util.SafeStringDatasource(apiResp.EntraIDConnectionResponse.Description)
-	state.DefaultSavRoles = util.SafeStringDatasource(apiResp.EntraIDConnectionResponse.Defaultsavroles)
-	state.EmailTemplate = util.SafeStringDatasource(apiResp.EntraIDConnectionResponse.Emailtemplate)
-
-	// Map all EntraID-specific attributes from the connection attributes
-	if apiResp.EntraIDConnectionResponse.Connectionattributes != nil {
-		attrs := apiResp.EntraIDConnectionResponse.Connectionattributes
-
-		// Authentication and endpoint configuration
-		state.ClientId = util.SafeStringDatasource(attrs.CLIENT_ID)
-		state.AadTenantId = util.SafeStringDatasource(attrs.AAD_TENANT_ID)
-		state.AuthenticationEndpoint = util.SafeStringDatasource(attrs.AUTHENTICATION_ENDPOINT)
-		state.MicrosoftGraphEndpoint = util.SafeStringDatasource(attrs.MICROSOFT_GRAPH_ENDPOINT)
-		state.AzureManagementEndpoint = util.SafeStringDatasource(attrs.AZURE_MANAGEMENT_ENDPOINT)
-
-		// User and account management
-		state.ImportUserJson = util.SafeStringDatasource(attrs.ImportUserJSON)
-		state.CreateUsers = util.SafeStringDatasource(attrs.CREATEUSERS)
-		state.CreateNewEndpoints = util.SafeStringDatasource(attrs.CREATE_NEW_ENDPOINTS)
-		state.ManagedAccountType = util.SafeStringDatasource(attrs.MANAGED_ACCOUNT_TYPE)
-		state.AccountAttributes = util.SafeStringDatasource(attrs.ACCOUNT_ATTRIBUTES)
-		state.ServiceAccountAttributes = util.SafeStringDatasource(attrs.SERVICE_ACCOUNT_ATTRIBUTES)
-		state.DeltaTokensJson = util.SafeStringDatasource(attrs.DELTATOKENSJSON)
-		state.AccountImportFields = util.SafeStringDatasource(attrs.ACCOUNT_IMPORT_FIELDS)
-		state.ImportDepth = util.SafeStringDatasource(attrs.IMPORT_DEPTH)
-		state.EntitlementAttribute = util.SafeStringDatasource(attrs.ENTITLEMENT_ATTRIBUTE)
-
-		// Account lifecycle operations
-		state.CreateAccountJson = util.SafeStringDatasource(attrs.CreateAccountJSON)
-		state.UpdateAccountJson = util.SafeStringDatasource(attrs.UpdateAccountJSON)
-		state.EnableAccountJson = util.SafeStringDatasource(attrs.EnableAccountJSON)
-		state.DisableAccountJson = util.SafeStringDatasource(attrs.DisableAccountJSON)
-		state.RemoveAccountJson = util.SafeStringDatasource(attrs.RemoveAccountJSON)
-
-		// Access management
-		state.AddAccessJson = util.SafeStringDatasource(attrs.AddAccessJSON)
-		state.RemoveAccessJson = util.SafeStringDatasource(attrs.RemoveAccessJSON)
-		state.AddAccessToEntitlementJson = util.SafeStringDatasource(attrs.AddAccessToEntitlementJSON)
-		state.RemoveAccessFromEntitlementJson = util.SafeStringDatasource(attrs.RemoveAccessFromEntitlementJSON)
-
-		// User management
-		state.UpdateUserJson = util.SafeStringDatasource(attrs.UpdateUserJSON)
-		state.ChangePassJson = util.SafeStringDatasource(attrs.ChangePassJSON)
-		state.ModifyUserdataJson = util.SafeStringDatasource(attrs.MODIFYUSERDATAJSON)
-
-		// Group management
-		state.CreateGroupJson = util.SafeStringDatasource(attrs.CreateGroupJSON)
-		state.UpdateGroupJson = util.SafeStringDatasource(attrs.UpdateGroupJSON)
-		state.DeleteGroupJson = util.SafeStringDatasource(attrs.DeleteGroupJSON)
-
-		// Service principal management
-		state.CreateServicePrincipalJson = util.SafeStringDatasource(attrs.CreateServicePrincipalJSON)
-		state.UpdateServicePrincipalJson = util.SafeStringDatasource(attrs.UpdateServicePrincipalJSON)
-		state.RemoveServicePrincipalJson = util.SafeStringDatasource(attrs.RemoveServicePrincipalJSON)
-
-		// Teams and channels
-		state.CreateTeamJson = util.SafeStringDatasource(attrs.CreateTeamJSON)
-		state.CreateChannelJson = util.SafeStringDatasource(attrs.CreateChannelJSON)
-
-		// Filtering and configuration
-		state.EntitlementFilterJson = util.SafeStringDatasource(attrs.ENTITLEMENT_FILTER_JSON)
-		state.StatusThresholdConfig = util.SafeStringDatasource(attrs.STATUS_THRESHOLD_CONFIG)
-		state.AccountsFilter = util.SafeStringDatasource(attrs.ACCOUNTS_FILTER)
-		state.PamConfig = util.SafeStringDatasource(attrs.PAM_CONFIG)
-		state.EndpointsFilter = util.SafeStringDatasource(attrs.ENDPOINTS_FILTER)
-		state.ConfigJson = util.SafeStringDatasource(attrs.ConfigJSON)
-		state.EnhancedDirectoryRoles = util.SafeStringDatasource(attrs.ENHANCEDDIRECTORYROLES)
-	}
-
-	// Set response message and error code
-	apiMessage := util.SafeDeref(apiResp.EntraIDConnectionResponse.Msg)
-	if apiMessage == "success" {
-		state.Msg = types.StringValue("Connection Successful")
-	} else {
-		state.Msg = types.StringValue(apiMessage)
-	}
-	state.ErrorCode = util.Int32PtrToTFString(apiResp.EntraIDConnectionResponse.Errorcode)
-}
-
 func EntraIdConnectorResourceSchema() map[string]schema.Attribute {
 	return map[string]schema.Attribute{
 		"id": schema.StringAttribute{
@@ -478,18 +125,39 @@ func EntraIdConnectorResourceSchema() map[string]schema.Attribute {
 		},
 		"client_id": schema.StringAttribute{
 			Required:    true,
-			WriteOnly:   true,
 			Description: "Client ID for authentication.",
 		},
 		"client_secret": schema.StringAttribute{
-			Required:    true,
+			Optional:    true,
+			Sensitive:   true,
+			Description: "Client Secret for authentication. Set the client_secret. It is a compulsory field. Either this or client_secret_wo need to be set",
+			Validators: []validator.String{
+				stringvalidator.ConflictsWith(path.MatchRoot("client_secret_wo")),
+			},
+		},
+		"client_secret_wo": schema.StringAttribute{
+			Optional:    true,
 			WriteOnly:   true,
-			Description: "Client Secret for authentication.",
+			Description: "Client Secret for authentication (write-only). Set the client_secret_wo. It is a compulsory field. Either this or client_secret need to be set",
+			Validators: []validator.String{
+				stringvalidator.ConflictsWith(path.MatchRoot("client_secret")),
+			},
 		},
 		"access_token": schema.StringAttribute{
 			Optional:    true,
-			WriteOnly:   true,
+			Sensitive:   true,
 			Description: "Access token used for API calls.",
+			Validators: []validator.String{
+				stringvalidator.ConflictsWith(path.MatchRoot("access_token_wo")),
+			},
+		},
+		"access_token_wo": schema.StringAttribute{
+			Optional:    true,
+			WriteOnly:   true,
+			Description: "Access token used for API calls (write-only).",
+			Validators: []validator.String{
+				stringvalidator.ConflictsWith(path.MatchRoot("access_token")),
+			},
 		},
 		"aad_tenant_id": schema.StringAttribute{
 			Required:    true,
@@ -497,8 +165,19 @@ func EntraIdConnectorResourceSchema() map[string]schema.Attribute {
 		},
 		"azure_mgmt_access_token": schema.StringAttribute{
 			Optional:    true,
-			WriteOnly:   true,
+			Sensitive:   true,
 			Description: "Access token for Azure management APIs.",
+			Validators: []validator.String{
+				stringvalidator.ConflictsWith(path.MatchRoot("azure_mgmt_access_token_wo")),
+			},
+		},
+		"azure_mgmt_access_token_wo": schema.StringAttribute{
+			Optional:    true,
+			WriteOnly:   true,
+			Description: "Access token for Azure management APIs (write-only).",
+			Validators: []validator.String{
+				stringvalidator.ConflictsWith(path.MatchRoot("azure_mgmt_access_token")),
+			},
 		},
 		"authentication_endpoint": schema.StringAttribute{
 			Optional:    true,
@@ -527,8 +206,19 @@ func EntraIdConnectorResourceSchema() map[string]schema.Attribute {
 		},
 		"windows_connector_json": schema.StringAttribute{
 			Optional:    true,
-			WriteOnly:   true,
+			Sensitive:   true,
 			Description: "Windows connector JSON configuration.",
+			Validators: []validator.String{
+				stringvalidator.ConflictsWith(path.MatchRoot("windows_connector_json_wo")),
+			},
+		},
+		"windows_connector_json_wo": schema.StringAttribute{
+			Optional:    true,
+			WriteOnly:   true,
+			Description: "Windows connector JSON configuration (write-only).",
+			Validators: []validator.String{
+				stringvalidator.ConflictsWith(path.MatchRoot("windows_connector_json")),
+			},
 		},
 		"create_new_endpoints": schema.StringAttribute{
 			Optional:    true,
@@ -607,7 +297,7 @@ func EntraIdConnectorResourceSchema() map[string]schema.Attribute {
 		},
 		"change_pass_json": schema.StringAttribute{
 			Optional:    true,
-			WriteOnly:   true,
+			Computed:    true,
 			Description: "JSON template to change password.",
 		},
 		"remove_account_json": schema.StringAttribute{
@@ -617,8 +307,19 @@ func EntraIdConnectorResourceSchema() map[string]schema.Attribute {
 		},
 		"connection_json": schema.StringAttribute{
 			Optional:    true,
+			Sensitive:   true,
+			Description: "Configuration for the connection in JSON format. Either the connection_json field or the connection_json_wo field must be populated to set the connection_json attribute.",
+			Validators: []validator.String{
+				stringvalidator.ConflictsWith(path.MatchRoot("connection_json_wo")),
+			},
+		},
+		"connection_json_wo": schema.StringAttribute{
+			Optional:    true,
 			WriteOnly:   true,
-			Description: "Connection JSON configuration.",
+			Description: "Connection JSON configuration (write-only). Either the connection_json field or the connection_json_wo field must be populated to set the connection_json attribute.",
+			Validators: []validator.String{
+				stringvalidator.ConflictsWith(path.MatchRoot("connection_json")),
+			},
 		},
 		"create_group_json": schema.StringAttribute{
 			Optional:    true,
@@ -734,7 +435,7 @@ func (r *EntraIdConnectionResource) Configure(ctx context.Context, req resource.
 	}
 
 	// Cast provider data to your provider type.
-	prov, ok := req.ProviderData.(*saviyntProvider)
+	prov, ok := req.ProviderData.(*SaviyntProvider)
 	if !ok {
 		errorCode := entraIdErrorCodes.ProviderConfig()
 		opCtx.LogOperationError(ctx, "Provider configuration failed", errorCode,
@@ -751,8 +452,464 @@ func (r *EntraIdConnectionResource) Configure(ctx context.Context, req resource.
 	// Set the client and token from the provider state.
 	r.client = &client.SaviyntClientWrapper{Client: prov.client}
 	r.token = prov.accessToken
+	r.provider = &client.SaviyntProviderWrapper{Provider: prov} // Store provider reference for retry logic
 
 	opCtx.LogOperationEnd(ctx, "EntraID connection resource configured successfully")
+}
+
+// SetClient sets the client for testing purposes
+func (r *EntraIdConnectionResource) SetClient(client client.SaviyntClientInterface) {
+	r.client = client
+}
+
+// SetToken sets the token for testing purposes
+func (r *EntraIdConnectionResource) SetToken(token string) {
+	r.token = token
+}
+
+// SetProvider sets the provider for testing purposes
+func (r *EntraIdConnectionResource) SetProvider(provider client.SaviyntProviderInterface) {
+	r.provider = provider
+}
+
+func (r *EntraIdConnectionResource) BuildEntraIdConnector(plan *EntraIdConnectorResourceModel, config *EntraIdConnectorResourceModel) openapi.EntraIDConnector {
+	var clientSecret string
+	if !config.ClientSecret.IsNull() && !config.ClientSecret.IsUnknown() {
+		clientSecret = config.ClientSecret.ValueString()
+	} else if !config.ClientSecretWO.IsNull() && !config.ClientSecretWO.IsUnknown() {
+		clientSecret = config.ClientSecretWO.ValueString()
+	}
+
+	var accessToken string
+	if !config.AccessToken.IsNull() && !config.AccessToken.IsUnknown() {
+		accessToken = config.AccessToken.ValueString()
+	} else if !config.AccessTokenWO.IsNull() && !config.AccessTokenWO.IsUnknown() {
+		accessToken = config.AccessTokenWO.ValueString()
+	}
+
+	var azureMgmtAccessToken string
+	if !config.AzureMgmtAccessToken.IsNull() && !config.AzureMgmtAccessToken.IsUnknown() {
+		azureMgmtAccessToken = config.AzureMgmtAccessToken.ValueString()
+	} else if !config.AzureMgmtAccessTokenWO.IsNull() && !config.AzureMgmtAccessTokenWO.IsUnknown() {
+		azureMgmtAccessToken = config.AzureMgmtAccessTokenWO.ValueString()
+	}
+
+	var windowsConnectorJson string
+	if !config.WindowsConnectorJson.IsNull() && !config.WindowsConnectorJson.IsUnknown() {
+		windowsConnectorJson = config.WindowsConnectorJson.ValueString()
+	} else if !config.WindowsConnectorJsonWO.IsNull() && !config.WindowsConnectorJsonWO.IsUnknown() {
+		windowsConnectorJson = config.WindowsConnectorJsonWO.ValueString()
+	}
+
+	var connectionJson string
+	if !config.ConnectionJson.IsNull() && !config.ConnectionJson.IsUnknown() {
+		connectionJson = config.ConnectionJson.ValueString()
+	} else if !config.ConnectionJsonWO.IsNull() && !config.ConnectionJsonWO.IsUnknown() {
+		connectionJson = config.ConnectionJsonWO.ValueString()
+	}
+
+	entraidConn := openapi.EntraIDConnector{
+		BaseConnector: openapi.BaseConnector{
+			//required fields
+			Connectiontype: "AzureAD",
+			ConnectionName: plan.ConnectionName.ValueString(),
+			//optional fields
+			Description:     util.StringPointerOrEmpty(plan.Description),
+			Defaultsavroles: util.StringPointerOrEmpty(plan.DefaultSavRoles),
+			EmailTemplate:   util.StringPointerOrEmpty(plan.EmailTemplate),
+		},
+		//required fields
+		CLIENT_ID:     plan.ClientId.ValueString(),
+		CLIENT_SECRET: clientSecret,
+		AAD_TENANT_ID: plan.AadTenantId.ValueString(),
+		//optional fields
+		ACCESS_TOKEN:                    util.StringPointerOrEmpty(types.StringValue(accessToken)),
+		AZURE_MGMT_ACCESS_TOKEN:         util.StringPointerOrEmpty(types.StringValue(azureMgmtAccessToken)),
+		AUTHENTICATION_ENDPOINT:         util.StringPointerOrEmpty(plan.AuthenticationEndpoint),
+		MICROSOFT_GRAPH_ENDPOINT:        util.StringPointerOrEmpty(plan.MicrosoftGraphEndpoint),
+		AZURE_MANAGEMENT_ENDPOINT:       util.StringPointerOrEmpty(plan.AzureManagementEndpoint),
+		ImportUserJSON:                  util.StringPointerOrEmpty(plan.ImportUserJson),
+		CREATEUSERS:                     util.StringPointerOrEmpty(plan.CreateUsers),
+		WINDOWS_CONNECTOR_JSON:          util.StringPointerOrEmpty(types.StringValue(windowsConnectorJson)),
+		CREATE_NEW_ENDPOINTS:            util.StringPointerOrEmpty(plan.CreateNewEndpoints),
+		MANAGED_ACCOUNT_TYPE:            util.StringPointerOrEmpty(plan.ManagedAccountType),
+		ACCOUNT_ATTRIBUTES:              util.StringPointerOrEmpty(plan.AccountAttributes),
+		SERVICE_ACCOUNT_ATTRIBUTES:      util.StringPointerOrEmpty(plan.ServiceAccountAttributes),
+		DELTATOKENSJSON:                 util.StringPointerOrEmpty(plan.DeltaTokensJson),
+		ACCOUNT_IMPORT_FIELDS:           util.StringPointerOrEmpty(plan.AccountImportFields),
+		IMPORT_DEPTH:                    util.StringPointerOrEmpty(plan.ImportDepth),
+		ENTITLEMENT_ATTRIBUTE:           util.StringPointerOrEmpty(plan.EntitlementAttribute),
+		CreateAccountJSON:               util.StringPointerOrEmpty(plan.CreateAccountJson),
+		UpdateAccountJSON:               util.StringPointerOrEmpty(plan.UpdateAccountJson),
+		EnableAccountJSON:               util.StringPointerOrEmpty(plan.EnableAccountJson),
+		DisableAccountJSON:              util.StringPointerOrEmpty(plan.DisableAccountJson),
+		AddAccessJSON:                   util.StringPointerOrEmpty(plan.AddAccessJson),
+		RemoveAccessJSON:                util.StringPointerOrEmpty(plan.RemoveAccessJson),
+		UpdateUserJSON:                  util.StringPointerOrEmpty(plan.UpdateUserJson),
+		ChangePassJSON:                  util.StringPointerOrEmpty(plan.ChangePassJson),
+		RemoveAccountJSON:               util.StringPointerOrEmpty(plan.RemoveAccountJson),
+		ConnectionJSON:                  util.StringPointerOrEmpty(types.StringValue(connectionJson)),
+		CreateGroupJSON:                 util.StringPointerOrEmpty(plan.CreateGroupJson),
+		UpdateGroupJSON:                 util.StringPointerOrEmpty(plan.UpdateGroupJson),
+		AddAccessToEntitlementJSON:      util.StringPointerOrEmpty(plan.AddAccessToEntitlementJson),
+		RemoveAccessFromEntitlementJSON: util.StringPointerOrEmpty(plan.RemoveAccessFromEntitlementJson),
+		DeleteGroupJSON:                 util.StringPointerOrEmpty(plan.DeleteGroupJson),
+		CreateServicePrincipalJSON:      util.StringPointerOrEmpty(plan.CreateServicePrincipalJson),
+		UpdateServicePrincipalJSON:      util.StringPointerOrEmpty(plan.UpdateServicePrincipalJson),
+		RemoveServicePrincipalJSON:      util.StringPointerOrEmpty(plan.RemoveServicePrincipalJson),
+		ENTITLEMENT_FILTER_JSON:         util.StringPointerOrEmpty(plan.EntitlementFilterJson),
+		CreateTeamJSON:                  util.StringPointerOrEmpty(plan.CreateTeamJson),
+		CreateChannelJSON:               util.StringPointerOrEmpty(plan.CreateChannelJson),
+		STATUS_THRESHOLD_CONFIG:         util.StringPointerOrEmpty(plan.StatusThresholdConfig),
+		ACCOUNTS_FILTER:                 util.StringPointerOrEmpty(plan.AccountsFilter),
+		PAM_CONFIG:                      util.StringPointerOrEmpty(plan.PamConfig),
+		ENDPOINTS_FILTER:                util.StringPointerOrEmpty(plan.EndpointsFilter),
+		ConfigJSON:                      util.StringPointerOrEmpty(plan.ConfigJson),
+		MODIFYUSERDATAJSON:              util.StringPointerOrEmpty(plan.ModifyUserdataJson),
+		ENHANCEDDIRECTORYROLES:          util.StringPointerOrEmpty(plan.EnhancedDirectoryRoles),
+	}
+
+	if plan.VaultConnection.ValueString() != "" {
+		entraidConn.BaseConnector.VaultConnection = util.SafeStringConnector(plan.VaultConnection.ValueString())
+		entraidConn.BaseConnector.VaultConfiguration = util.SafeStringConnector(plan.VaultConfiguration.ValueString())
+		entraidConn.BaseConnector.Saveinvault = util.SafeStringConnector(plan.SaveInVault.ValueString())
+	}
+
+	return entraidConn
+}
+
+func (r *EntraIdConnectionResource) CreateEntraIdConnection(ctx context.Context, plan *EntraIdConnectorResourceModel, config *EntraIdConnectorResourceModel) (*openapi.CreateOrUpdateResponse, error) {
+	connectionName := plan.ConnectionName.ValueString()
+	opCtx := errorsutil.CreateOperationContext(errorsutil.ConnectorTypeEntraID, "create", connectionName)
+	logCtx := opCtx.AddContextToLogger(ctx)
+
+	opCtx.LogOperationStart(logCtx, "Starting EntraID connection creation")
+
+	// Check if connection already exists (idempotency check) with retry logic
+	var existingResource *openapi.GetConnectionDetailsResponse
+	var finalHttpResp *http.Response
+
+	err := r.provider.AuthenticatedAPICallWithRetry(ctx, "get_connection_details_idempotency", func(token string) error {
+		connectionOps := r.connectionFactory.CreateConnectionOperations(r.client.APIBaseURL(), token)
+		resp, httpResp, err := connectionOps.GetConnectionDetails(ctx, connectionName)
+		if httpResp != nil && httpResp.StatusCode == 401 {
+			return fmt.Errorf("401 unauthorized")
+		}
+		existingResource = resp
+		finalHttpResp = httpResp // Update on every call including retries
+		return err
+	})
+
+	if err != nil && finalHttpResp != nil && finalHttpResp.StatusCode != 412 {
+		errorCode := entraIdErrorCodes.ReadFailed()
+		opCtx.LogOperationError(logCtx, "Failed to check existing connection", errorCode, err)
+		return nil, errorsutil.CreateStandardError(errorsutil.ConnectorTypeEntraID, errorCode, "create", connectionName, err)
+	}
+
+	if existingResource != nil &&
+		existingResource.EntraIDConnectionResponse != nil &&
+		existingResource.EntraIDConnectionResponse.Errorcode != nil &&
+		*existingResource.EntraIDConnectionResponse.Errorcode == 0 {
+
+		errorCode := entraIdErrorCodes.DuplicateName()
+		opCtx.LogOperationError(logCtx, "Connection name already exists. Please import or use a different name", errorCode,
+			fmt.Errorf("duplicate connection name"))
+		return nil, errorsutil.CreateStandardError(errorsutil.ConnectorTypeEntraID, errorCode, "create", connectionName, nil)
+	}
+
+	// Build EntraID connection create request
+	tflog.Debug(logCtx, "Building EntraID connection create request")
+
+	if (config.ClientSecret.IsNull() || config.ClientSecret.IsUnknown()) && (config.ClientSecretWO.IsNull() || config.ClientSecretWO.IsUnknown()) {
+		return nil, fmt.Errorf("either client_secret or client_secret_wo must be set")
+	}
+
+	entraIdConn := r.BuildEntraIdConnector(plan, config)
+	createReq := openapi.CreateOrUpdateRequest{
+		EntraIDConnector: &entraIdConn,
+	}
+
+	// Execute create operation with retry logic
+	var apiResp *openapi.CreateOrUpdateResponse
+
+	err = r.provider.AuthenticatedAPICallWithRetry(ctx, "create_entraid_connection", func(token string) error {
+		connectionOps := r.connectionFactory.CreateConnectionOperations(r.client.APIBaseURL(), token)
+		resp, httpResp, err := connectionOps.CreateOrUpdateConnection(ctx, createReq)
+		if httpResp != nil && httpResp.StatusCode == 401 {
+			return fmt.Errorf("401 unauthorized")
+		}
+		apiResp = resp
+		return err
+	})
+
+	if err != nil {
+		errorCode := entraIdErrorCodes.CreateFailed()
+		opCtx.LogOperationError(logCtx, "Failed to create EntraID connection", errorCode, err)
+		return nil, errorsutil.CreateStandardError(errorsutil.ConnectorTypeEntraID, errorCode, "create", connectionName, err)
+	}
+
+	if apiResp != nil && apiResp.ErrorCode != nil && *apiResp.ErrorCode != "0" {
+		apiErr := fmt.Errorf("API returned error code %s: %s", *apiResp.ErrorCode, errorsutil.SanitizeMessage(apiResp.Msg))
+		errorCode := entraIdErrorCodes.APIError()
+		opCtx.LogOperationError(logCtx, "EntraID connection creation failed with API error", errorCode, apiErr,
+			map[string]interface{}{
+				"api_error_code": *apiResp.ErrorCode,
+				"message":        errorsutil.SanitizeMessage(apiResp.Msg),
+			})
+		return nil, errorsutil.CreateStandardError(errorsutil.ConnectorTypeEntraID, errorCode, "create", connectionName, apiErr)
+	}
+
+	opCtx.LogOperationEnd(logCtx, "EntraID connection created successfully",
+		map[string]interface{}{"connection_key": func() interface{} {
+			if apiResp.ConnectionKey != nil {
+				return *apiResp.ConnectionKey
+			}
+			return nil
+		}()})
+
+	return apiResp, nil
+}
+
+func (r *EntraIdConnectionResource) ReadEntraIdConnection(ctx context.Context, connectionName string) (*openapi.GetConnectionDetailsResponse, error) {
+	opCtx := errorsutil.CreateOperationContext(errorsutil.ConnectorTypeEntraID, "read", connectionName)
+	logCtx := opCtx.AddContextToLogger(ctx)
+
+	opCtx.LogOperationStart(logCtx, "Starting EntraID connection read")
+
+	// Execute read operation with retry logic
+	var apiResp *openapi.GetConnectionDetailsResponse
+
+	err := r.provider.AuthenticatedAPICallWithRetry(ctx, "read_entraid_connection", func(token string) error {
+		connectionOps := r.connectionFactory.CreateConnectionOperations(r.client.APIBaseURL(), token)
+		resp, httpResp, err := connectionOps.GetConnectionDetails(ctx, connectionName)
+		if httpResp != nil && httpResp.StatusCode == 401 {
+			return fmt.Errorf("401 unauthorized")
+		}
+		apiResp = resp
+		return err
+	})
+
+	if err != nil {
+		errorCode := entraIdErrorCodes.ReadFailed()
+		opCtx.LogOperationError(logCtx, "Failed to read EntraID connection", errorCode, err)
+		return nil, errorsutil.CreateStandardError(errorsutil.ConnectorTypeEntraID, errorCode, "read", connectionName, err)
+	}
+
+	if err := r.ValidateEntraIdConnectionResponse(apiResp); err != nil {
+		errorCode := entraIdErrorCodes.APIError()
+		opCtx.LogOperationError(ctx, "Invalid connection type for EntraID datasource", errorCode, err)
+		return nil, fmt.Errorf("[%s] Unable to verify connection type for connection %q. The provider could not determine the type of this connection. Please ensure the connection name is correct and belongs to a supported connector type", errorCode, connectionName)
+	}
+
+	if apiResp != nil && apiResp.EntraIDConnectionResponse != nil && apiResp.EntraIDConnectionResponse.Errorcode != nil && *apiResp.EntraIDConnectionResponse.Errorcode != 0 {
+		apiErr := fmt.Errorf("API returned error code %d: %s", *apiResp.EntraIDConnectionResponse.Errorcode, errorsutil.SanitizeMessage(apiResp.EntraIDConnectionResponse.Msg))
+		errorCode := entraIdErrorCodes.APIError()
+		opCtx.LogOperationError(logCtx, "EntraID connection read failed with API error", errorCode, apiErr,
+			map[string]interface{}{
+				"api_error_code": *apiResp.EntraIDConnectionResponse.Errorcode,
+				"message":        errorsutil.SanitizeMessage(apiResp.EntraIDConnectionResponse.Msg),
+			})
+		return nil, errorsutil.CreateStandardError(errorsutil.ConnectorTypeEntraID, errorCode, "read", connectionName, apiErr)
+	}
+
+	opCtx.LogOperationEnd(logCtx, "EntraID connection read completed successfully")
+	return apiResp, nil
+}
+
+func (r *EntraIdConnectionResource) UpdateEntraIdConnection(ctx context.Context, plan *EntraIdConnectorResourceModel, config *EntraIdConnectorResourceModel) (*openapi.CreateOrUpdateResponse, error) {
+	connectionName := plan.ConnectionName.ValueString()
+	opCtx := errorsutil.CreateOperationContext(errorsutil.ConnectorTypeEntraID, "update", connectionName)
+	logCtx := opCtx.AddContextToLogger(ctx)
+
+	opCtx.LogOperationStart(logCtx, "Starting EntraID connection update")
+
+	// Build EntraID connection update request
+	tflog.Debug(logCtx, "Building EntraID connection update request")
+
+	if (config.ClientSecret.IsNull() || config.ClientSecret.IsUnknown()) && (config.ClientSecretWO.IsNull() || config.ClientSecretWO.IsUnknown()) {
+		return nil, fmt.Errorf("either client_secret or client_secret_wo must be set")
+	}
+
+	entraIdConn := r.BuildEntraIdConnector(plan, config) // Reuse the same request builder
+
+	updateReq := openapi.CreateOrUpdateRequest{
+		EntraIDConnector: &entraIdConn,
+	}
+
+	// Execute update operation with retry logic
+	var apiResp *openapi.CreateOrUpdateResponse
+
+	err := r.provider.AuthenticatedAPICallWithRetry(ctx, "update_entraid_connection", func(token string) error {
+		connectionOps := r.connectionFactory.CreateConnectionOperations(r.client.APIBaseURL(), token)
+		resp, httpResp, err := connectionOps.CreateOrUpdateConnection(ctx, updateReq)
+		if httpResp != nil && httpResp.StatusCode == 401 {
+			return fmt.Errorf("401 unauthorized")
+		}
+		apiResp = resp
+		return err
+	})
+
+	if err != nil {
+		errorCode := entraIdErrorCodes.UpdateFailed()
+		opCtx.LogOperationError(logCtx, "Failed to update EntraID connection", errorCode, err)
+		return nil, errorsutil.CreateStandardError(errorsutil.ConnectorTypeEntraID, errorCode, "update", connectionName, err)
+	}
+
+	if apiResp != nil && apiResp.ErrorCode != nil && *apiResp.ErrorCode != "0" {
+		apiErr := fmt.Errorf("API returned error code %s: %s", *apiResp.ErrorCode, errorsutil.SanitizeMessage(apiResp.Msg))
+		errorCode := entraIdErrorCodes.APIError()
+		opCtx.LogOperationError(logCtx, "EntraID connection update failed with API error", errorCode, apiErr,
+			map[string]interface{}{
+				"api_error_code": *apiResp.ErrorCode,
+				"message":        errorsutil.SanitizeMessage(apiResp.Msg),
+			})
+		return nil, errorsutil.CreateStandardError(errorsutil.ConnectorTypeEntraID, errorCode, "update", connectionName, apiErr)
+	}
+
+	opCtx.LogOperationEnd(logCtx, "EntraID connection updated successfully",
+		map[string]interface{}{"connection_key": func() interface{} {
+			if apiResp.ConnectionKey != nil {
+				return *apiResp.ConnectionKey
+			}
+			return nil
+		}()})
+
+	return apiResp, nil
+}
+
+func (r *EntraIdConnectionResource) UpdateModelFromCreateResponse(plan *EntraIdConnectorResourceModel, apiResp *openapi.CreateOrUpdateResponse) {
+	plan.ID = types.StringValue(fmt.Sprintf("%d", *apiResp.ConnectionKey))
+	plan.ConnectionKey = types.Int64Value(int64(*apiResp.ConnectionKey))
+	plan.Description = util.SafeStringDatasource(plan.Description.ValueStringPointer())
+	plan.DefaultSavRoles = util.SafeStringDatasource(plan.DefaultSavRoles.ValueStringPointer())
+	plan.EmailTemplate = util.SafeStringDatasource(plan.EmailTemplate.ValueStringPointer())
+	plan.AadTenantId = util.SafeStringDatasource(plan.AadTenantId.ValueStringPointer())
+	plan.AuthenticationEndpoint = util.SafeStringDatasource(plan.AuthenticationEndpoint.ValueStringPointer())
+	plan.MicrosoftGraphEndpoint = util.SafeStringDatasource(plan.MicrosoftGraphEndpoint.ValueStringPointer())
+	plan.AzureManagementEndpoint = util.SafeStringDatasource(plan.AzureManagementEndpoint.ValueStringPointer())
+	plan.ImportUserJson = util.SafeStringDatasource(plan.ImportUserJson.ValueStringPointer())
+	plan.CreateUsers = util.SafeStringDatasource(plan.CreateUsers.ValueStringPointer())
+	plan.CreateNewEndpoints = util.SafeStringDatasource(plan.CreateNewEndpoints.ValueStringPointer())
+	plan.ManagedAccountType = util.SafeStringDatasource(plan.ManagedAccountType.ValueStringPointer())
+	plan.AccountAttributes = util.SafeStringDatasource(plan.AccountAttributes.ValueStringPointer())
+	plan.ServiceAccountAttributes = util.SafeStringDatasource(plan.ServiceAccountAttributes.ValueStringPointer())
+	plan.DeltaTokensJson = util.SafeStringDatasource(plan.DeltaTokensJson.ValueStringPointer())
+	plan.AccountImportFields = util.SafeStringDatasource(plan.AccountImportFields.ValueStringPointer())
+	plan.ImportDepth = util.SafeStringDatasource(plan.ImportDepth.ValueStringPointer())
+	plan.EntitlementAttribute = util.SafeStringDatasource(plan.EntitlementAttribute.ValueStringPointer())
+	plan.CreateAccountJson = util.SafeStringDatasource(plan.CreateAccountJson.ValueStringPointer())
+	plan.UpdateAccountJson = util.SafeStringDatasource(plan.UpdateAccountJson.ValueStringPointer())
+	plan.EnableAccountJson = util.SafeStringDatasource(plan.EnableAccountJson.ValueStringPointer())
+	plan.DisableAccountJson = util.SafeStringDatasource(plan.DisableAccountJson.ValueStringPointer())
+	plan.AddAccessJson = util.SafeStringDatasource(plan.AddAccessJson.ValueStringPointer())
+	plan.RemoveAccessJson = util.SafeStringDatasource(plan.RemoveAccessJson.ValueStringPointer())
+	plan.UpdateUserJson = util.SafeStringDatasource(plan.UpdateUserJson.ValueStringPointer())
+	plan.RemoveAccountJson = util.SafeStringDatasource(plan.RemoveAccountJson.ValueStringPointer())
+	plan.CreateGroupJson = util.SafeStringDatasource(plan.CreateGroupJson.ValueStringPointer())
+	plan.UpdateGroupJson = util.SafeStringDatasource(plan.UpdateGroupJson.ValueStringPointer())
+	plan.AddAccessToEntitlementJson = util.SafeStringDatasource(plan.AddAccessToEntitlementJson.ValueStringPointer())
+	plan.RemoveAccessFromEntitlementJson = util.SafeStringDatasource(plan.RemoveAccessFromEntitlementJson.ValueStringPointer())
+	plan.DeleteGroupJson = util.SafeStringDatasource(plan.DeleteGroupJson.ValueStringPointer())
+	plan.CreateServicePrincipalJson = util.SafeStringDatasource(plan.CreateServicePrincipalJson.ValueStringPointer())
+	plan.UpdateServicePrincipalJson = util.SafeStringDatasource(plan.UpdateServicePrincipalJson.ValueStringPointer())
+	plan.RemoveServicePrincipalJson = util.SafeStringDatasource(plan.RemoveServicePrincipalJson.ValueStringPointer())
+	plan.EntitlementFilterJson = util.SafeStringDatasource(plan.EntitlementFilterJson.ValueStringPointer())
+	plan.CreateTeamJson = util.SafeStringDatasource(plan.CreateTeamJson.ValueStringPointer())
+	plan.CreateChannelJson = util.SafeStringDatasource(plan.CreateChannelJson.ValueStringPointer())
+	plan.StatusThresholdConfig = util.SafeStringDatasource(plan.StatusThresholdConfig.ValueStringPointer())
+	plan.AccountsFilter = util.SafeStringDatasource(plan.AccountsFilter.ValueStringPointer())
+	plan.PamConfig = util.SafeStringDatasource(plan.PamConfig.ValueStringPointer())
+	plan.EndpointsFilter = util.SafeStringDatasource(plan.EndpointsFilter.ValueStringPointer())
+	plan.ConfigJson = util.SafeStringDatasource(plan.ConfigJson.ValueStringPointer())
+	plan.ModifyUserdataJson = util.SafeStringDatasource(plan.ModifyUserdataJson.ValueStringPointer())
+	plan.EnhancedDirectoryRoles = util.SafeStringDatasource(plan.EnhancedDirectoryRoles.ValueStringPointer())
+	plan.ChangePassJson = util.SafeStringDatasource(plan.ChangePassJson.ValueStringPointer())
+
+	// Set response fields
+	plan.ErrorCode = util.SafeStringDatasource(apiResp.ErrorCode)
+	plan.Msg = util.SafeStringDatasource(apiResp.Msg)
+}
+
+func (r *EntraIdConnectionResource) UpdateModelFromReadResponse(state *EntraIdConnectorResourceModel, apiResp *openapi.GetConnectionDetailsResponse) {
+	// Set basic connection info
+	state.ConnectionKey = types.Int64Value(int64(*apiResp.EntraIDConnectionResponse.Connectionkey))
+	state.ID = types.StringValue(fmt.Sprintf("%d", *apiResp.EntraIDConnectionResponse.Connectionkey))
+	state.ConnectionName = util.SafeStringDatasource(apiResp.EntraIDConnectionResponse.Connectionname)
+	state.Description = util.SafeStringDatasource(apiResp.EntraIDConnectionResponse.Description)
+	state.DefaultSavRoles = util.SafeStringDatasource(apiResp.EntraIDConnectionResponse.Defaultsavroles)
+	state.EmailTemplate = util.SafeStringDatasource(apiResp.EntraIDConnectionResponse.Emailtemplate)
+
+	// Map all EntraID-specific attributes from the connection attributes
+	if apiResp.EntraIDConnectionResponse.Connectionattributes != nil {
+		attrs := apiResp.EntraIDConnectionResponse.Connectionattributes
+
+		// Authentication and endpoint configuration
+		state.ClientId = util.SafeStringDatasource(attrs.CLIENT_ID)
+		state.AadTenantId = util.SafeStringDatasource(attrs.AAD_TENANT_ID)
+		state.AuthenticationEndpoint = util.SafeStringDatasource(attrs.AUTHENTICATION_ENDPOINT)
+		state.MicrosoftGraphEndpoint = util.SafeStringDatasource(attrs.MICROSOFT_GRAPH_ENDPOINT)
+		state.AzureManagementEndpoint = util.SafeStringDatasource(attrs.AZURE_MANAGEMENT_ENDPOINT)
+
+		// User and account management
+		state.ImportUserJson = util.SafeStringDatasource(attrs.ImportUserJSON)
+		state.CreateUsers = util.SafeStringDatasource(attrs.CREATEUSERS)
+		state.CreateNewEndpoints = util.SafeStringDatasource(attrs.CREATE_NEW_ENDPOINTS)
+		state.ManagedAccountType = util.SafeStringDatasource(attrs.MANAGED_ACCOUNT_TYPE)
+		state.AccountAttributes = util.SafeStringDatasource(attrs.ACCOUNT_ATTRIBUTES)
+		state.ServiceAccountAttributes = util.SafeStringDatasource(attrs.SERVICE_ACCOUNT_ATTRIBUTES)
+		state.DeltaTokensJson = util.SafeStringDatasource(attrs.DELTATOKENSJSON)
+		state.AccountImportFields = util.SafeStringDatasource(attrs.ACCOUNT_IMPORT_FIELDS)
+		state.ImportDepth = util.SafeStringDatasource(attrs.IMPORT_DEPTH)
+		state.EntitlementAttribute = util.SafeStringDatasource(attrs.ENTITLEMENT_ATTRIBUTE)
+
+		// Account lifecycle operations
+		state.CreateAccountJson = util.SafeStringDatasource(attrs.CreateAccountJSON)
+		state.UpdateAccountJson = util.SafeStringDatasource(attrs.UpdateAccountJSON)
+		state.EnableAccountJson = util.SafeStringDatasource(attrs.EnableAccountJSON)
+		state.DisableAccountJson = util.SafeStringDatasource(attrs.DisableAccountJSON)
+		state.RemoveAccountJson = util.SafeStringDatasource(attrs.RemoveAccountJSON)
+
+		// Access management
+		state.AddAccessJson = util.SafeStringDatasource(attrs.AddAccessJSON)
+		state.RemoveAccessJson = util.SafeStringDatasource(attrs.RemoveAccessJSON)
+		state.AddAccessToEntitlementJson = util.SafeStringDatasource(attrs.AddAccessToEntitlementJSON)
+		state.RemoveAccessFromEntitlementJson = util.SafeStringDatasource(attrs.RemoveAccessFromEntitlementJSON)
+
+		// User management
+		state.UpdateUserJson = util.SafeStringDatasource(attrs.UpdateUserJSON)
+		state.ChangePassJson = util.SafeStringDatasource(attrs.ChangePassJSON)
+		state.ModifyUserdataJson = util.SafeStringDatasource(attrs.MODIFYUSERDATAJSON)
+
+		// Group management
+		state.CreateGroupJson = util.SafeStringDatasource(attrs.CreateGroupJSON)
+		state.UpdateGroupJson = util.SafeStringDatasource(attrs.UpdateGroupJSON)
+		state.DeleteGroupJson = util.SafeStringDatasource(attrs.DeleteGroupJSON)
+
+		// Service principal management
+		state.CreateServicePrincipalJson = util.SafeStringDatasource(attrs.CreateServicePrincipalJSON)
+		state.UpdateServicePrincipalJson = util.SafeStringDatasource(attrs.UpdateServicePrincipalJSON)
+		state.RemoveServicePrincipalJson = util.SafeStringDatasource(attrs.RemoveServicePrincipalJSON)
+
+		// Teams and channels
+		state.CreateTeamJson = util.SafeStringDatasource(attrs.CreateTeamJSON)
+		state.CreateChannelJson = util.SafeStringDatasource(attrs.CreateChannelJSON)
+
+		// Filtering and configuration
+		state.EntitlementFilterJson = util.SafeStringDatasource(attrs.ENTITLEMENT_FILTER_JSON)
+		state.StatusThresholdConfig = util.SafeStringDatasource(attrs.STATUS_THRESHOLD_CONFIG)
+		state.AccountsFilter = util.SafeStringDatasource(attrs.ACCOUNTS_FILTER)
+		state.PamConfig = util.SafeStringDatasource(attrs.PAM_CONFIG)
+		state.EndpointsFilter = util.SafeStringDatasource(attrs.ENDPOINTS_FILTER)
+		state.ConfigJson = util.SafeStringDatasource(attrs.ConfigJSON)
+		state.EnhancedDirectoryRoles = util.SafeStringDatasource(attrs.ENHANCEDDIRECTORYROLES)
+	}
+}
+
+func (r *EntraIdConnectionResource) ValidateEntraIdConnectionResponse(apiResp *openapi.GetConnectionDetailsResponse) error {
+	if apiResp != nil && apiResp.EntraIDConnectionResponse == nil {
+		return fmt.Errorf("verify the connection type - EntraId connection response is nil")
+	}
+	return nil
 }
 
 func (r *EntraIdConnectionResource) Create(ctx context.Context, req resource.CreateRequest, resp *resource.CreateResponse) {
@@ -873,6 +1030,14 @@ func (r *EntraIdConnectionResource) Read(ctx context.Context, req resource.ReadR
 	// Update the model with the response data
 	r.UpdateModelFromReadResponse(&state, apiResp)
 
+	apiMessage := util.SafeDeref(apiResp.EntraIDConnectionResponse.Msg)
+	if apiMessage == "success" {
+		state.Msg = types.StringValue("Connection Read Successful")
+	} else {
+		state.Msg = types.StringValue(apiMessage)
+	}
+	state.ErrorCode = util.Int32PtrToTFString(apiResp.EntraIDConnectionResponse.Errorcode)
+
 	// Set the state
 	resp.Diagnostics.Append(resp.State.Set(ctx, &state)...)
 	if resp.Diagnostics.HasError() {
@@ -959,7 +1124,7 @@ func (r *EntraIdConnectionResource) Update(ctx context.Context, req resource.Upd
 	}
 
 	// Use the helper method to update the connection
-	_, err := r.UpdateEntraIdConnection(ctx, &plan, &config)
+	updateResp, err := r.UpdateEntraIdConnection(ctx, &plan, &config)
 	if err != nil {
 		opCtx.LogOperationError(ctx, "EntraID connection update failed", "", err)
 		resp.Diagnostics.AddError(
@@ -982,6 +1147,10 @@ func (r *EntraIdConnectionResource) Update(ctx context.Context, req resource.Upd
 
 	// Update the model with the response data (includes read operation)
 	r.UpdateModelFromReadResponse(&plan, getResp)
+
+	apiMessage := util.SafeDeref(updateResp.Msg)
+	plan.Msg = types.StringValue(apiMessage)
+	plan.ErrorCode = types.StringValue(*updateResp.ErrorCode)
 
 	// Set the state
 	resp.Diagnostics.Append(resp.State.Set(ctx, &plan)...)

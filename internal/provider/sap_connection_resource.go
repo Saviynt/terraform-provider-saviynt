@@ -12,6 +12,7 @@ package provider
 import (
 	"context"
 	"fmt"
+	"net/http"
 	"os"
 	"terraform-provider-Saviynt/internal/client"
 	"terraform-provider-Saviynt/util"
@@ -19,9 +20,11 @@ import (
 
 	connectionsutil "terraform-provider-Saviynt/util/connectionsutil"
 
+	"github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
 	"github.com/hashicorp/terraform-plugin-framework/path"
 	"github.com/hashicorp/terraform-plugin-framework/resource"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema"
+	"github.com/hashicorp/terraform-plugin-framework/schema/validator"
 	"github.com/hashicorp/terraform-plugin-framework/types"
 	"github.com/hashicorp/terraform-plugin-log/tflog"
 	openapi "github.com/saviynt/saviynt-api-go-client/connections"
@@ -43,6 +46,7 @@ type SapConnectorResourceModel struct {
 	JcoClient                      types.String `tfsdk:"jco_client"`
 	JcoUser                        types.String `tfsdk:"jco_user"`
 	Password                       types.String `tfsdk:"password"`
+	PasswordWo                     types.String `tfsdk:"password_wo"`
 	JcoLang                        types.String `tfsdk:"jco_lang"`
 	JcoR3Name                      types.String `tfsdk:"jco_r3name"`
 	JcoMshost                      types.String `tfsdk:"jco_mshost"`
@@ -64,6 +68,7 @@ type SapConnectorResourceModel struct {
 	ProvJcoClient                  types.String `tfsdk:"prov_jco_client"`
 	ProvJcoUser                    types.String `tfsdk:"prov_jco_user"`
 	ProvPassword                   types.String `tfsdk:"prov_password"`
+	ProvPasswordWo                 types.String `tfsdk:"prov_password_wo"`
 	ProvJcoLang                    types.String `tfsdk:"prov_jco_lang"`
 	ProvJcoR3Name                  types.String `tfsdk:"prov_jco_r3name"`
 	ProvJcoMshost                  types.String `tfsdk:"prov_jco_mshost"`
@@ -102,6 +107,7 @@ type SapConnectorResourceModel struct {
 type SapConnectionResource struct {
 	client            client.SaviyntClientInterface
 	token             string
+	provider          client.SaviyntProviderInterface
 	connectionFactory client.ConnectionFactoryInterface
 }
 
@@ -154,8 +160,19 @@ func SapConnectorResourceSchema() map[string]schema.Attribute {
 		},
 		"password": schema.StringAttribute{
 			Optional:    true,
+			Sensitive:   true,
+			Description: "Password. Either this or password_wo need to be set to configure the password attribute.",
+			Validators: []validator.String{
+				stringvalidator.ConflictsWith(path.MatchRoot("password_wo")),
+			},
+		},
+		"password_wo": schema.StringAttribute{
+			Optional:    true,
 			WriteOnly:   true,
-			Description: "Password.",
+			Description: "Password write-only attribute. Either this or password need to be set to configure the password attribute.",
+			Validators: []validator.String{
+				stringvalidator.ConflictsWith(path.MatchRoot("password")),
+			},
 		},
 		"jco_lang": schema.StringAttribute{
 			Optional:    true,
@@ -259,8 +276,19 @@ func SapConnectorResourceSchema() map[string]schema.Attribute {
 		},
 		"prov_password": schema.StringAttribute{
 			Optional:    true,
+			Sensitive:   true,
+			Description: "Provpassword. Either this field or the prov_password_wo field must be populated to set the prov_password attribute.",
+			Validators: []validator.String{
+				stringvalidator.ConflictsWith(path.MatchRoot("prov_password_wo")),
+			},
+		},
+		"prov_password_wo": schema.StringAttribute{
+			Optional:    true,
 			WriteOnly:   true,
-			Description: "Provpassword.",
+			Description: "Provpassword write-only attribute. Either this field or the prov_password field must be populated to set the prov_password attribute.",
+			Validators: []validator.String{
+				stringvalidator.ConflictsWith(path.MatchRoot("prov_password")),
+			},
 		},
 		"prov_jco_lang": schema.StringAttribute{
 			Optional:    true,
@@ -451,16 +479,16 @@ func (r *SapConnectionResource) Configure(ctx context.Context, req resource.Conf
 	}
 
 	// Cast provider data to your provider type.
-	prov, ok := req.ProviderData.(*saviyntProvider)
+	prov, ok := req.ProviderData.(*SaviyntProvider)
 	if !ok {
 		errorCode := sapErrorCodes.ProviderConfig()
 		opCtx.LogOperationError(ctx, "Provider configuration failed", errorCode,
-			fmt.Errorf("expected *saviyntProvider, got different type"),
-			map[string]interface{}{"expected_type": "*saviyntProvider"})
+			fmt.Errorf("expected *SaviyntProvider, got different type"),
+			map[string]interface{}{"expected_type": "*SaviyntProvider"})
 
 		resp.Diagnostics.AddError(
 			errorsutil.GetErrorMessage(errorsutil.ErrProviderConfig),
-			fmt.Sprintf("[%s] Expected *saviyntProvider, got different type", errorCode),
+			fmt.Sprintf("[%s] Expected *SaviyntProvider, got different type", errorCode),
 		)
 		return
 	}
@@ -468,6 +496,7 @@ func (r *SapConnectionResource) Configure(ctx context.Context, req resource.Conf
 	// Set the client and token from the provider state using interface wrapper.
 	r.client = &client.SaviyntClientWrapper{Client: prov.client}
 	r.token = prov.accessToken
+	r.provider = &client.SaviyntProviderWrapper{Provider: prov} // Store provider reference for retry logic
 
 	opCtx.LogOperationEnd(ctx, "SAP connection resource configured successfully")
 }
@@ -482,6 +511,11 @@ func (r *SapConnectionResource) SetToken(token string) {
 	r.token = token
 }
 
+// SetProvider sets the provider for testing purposes
+func (r *SapConnectionResource) SetProvider(provider client.SaviyntProviderInterface) {
+	r.provider = provider
+}
+
 func (r *SapConnectionResource) CreateSAPConnection(ctx context.Context, plan *SapConnectorResourceModel, config *SapConnectorResourceModel) (*openapi.CreateOrUpdateResponse, error) {
 	connectionName := plan.ConnectionName.ValueString()
 	opCtx := errorsutil.CreateOperationContext(errorsutil.ConnectorTypeSAP, "create", connectionName)
@@ -491,14 +525,28 @@ func (r *SapConnectionResource) CreateSAPConnection(ctx context.Context, plan *S
 
 	opCtx.LogOperationStart(logCtx, "Starting SAP connection creation")
 
-	// Use the factory to create connection operations
-	connectionOps := r.connectionFactory.CreateConnectionOperations(r.client.APIBaseURL(), r.token)
-
-	// Check if SAP connection already exists (idempotency check)
+	// Check if SAP connection already exists (idempotency check) with retry logic
 	tflog.Debug(logCtx, "Checking if connection already exists")
+	var existingResource *openapi.GetConnectionDetailsResponse
+	var finalHttpResp *http.Response
 
-	// Use original context for API calls to maintain test compatibility
-	existingResource, _, _ := connectionOps.GetConnectionDetails(ctx, connectionName)
+	err := r.provider.AuthenticatedAPICallWithRetry(ctx, "get_connection_details_idempotency", func(token string) error {
+		connectionOps := r.connectionFactory.CreateConnectionOperations(r.client.APIBaseURL(), token)
+		resp, httpResp, err := connectionOps.GetConnectionDetails(ctx, connectionName)
+		if httpResp != nil && httpResp.StatusCode == 401 {
+			return fmt.Errorf("401 unauthorized")
+		}
+		existingResource = resp
+		finalHttpResp = httpResp // Update on every call including retries
+		return err
+	})
+
+	if err != nil && finalHttpResp != nil && finalHttpResp.StatusCode != 412 {
+		errorCode := sapErrorCodes.ReadFailed()
+		opCtx.LogOperationError(logCtx, "Failed to check existing connection", errorCode, err)
+		return nil, errorsutil.CreateStandardError(errorsutil.ConnectorTypeSAP, errorCode, "create", connectionName, err)
+	}
+
 	if existingResource != nil &&
 		existingResource.SAPConnectionResponse != nil &&
 		existingResource.SAPConnectionResponse.Errorcode != nil &&
@@ -518,17 +566,27 @@ func (r *SapConnectionResource) CreateSAPConnection(ctx context.Context, plan *S
 		SAPConnector: &sapConn,
 	}
 
-	// Execute create operation through interface
+	// Execute create operation with retry logic
 	tflog.Debug(ctx, "Executing create operation")
+	var apiResp *openapi.CreateOrUpdateResponse
 
-	apiResp, _, err := connectionOps.CreateOrUpdateConnection(ctx, sapConnRequest)
+	err = r.provider.AuthenticatedAPICallWithRetry(ctx, "create_sap_connection", func(token string) error {
+		connectionOps := r.connectionFactory.CreateConnectionOperations(r.client.APIBaseURL(), token)
+		resp, httpResp, err := connectionOps.CreateOrUpdateConnection(ctx, sapConnRequest)
+		if httpResp != nil && httpResp.StatusCode == 401 {
+			return fmt.Errorf("401 unauthorized")
+		}
+		apiResp = resp
+		return err
+	})
+
 	if err != nil {
 		errorCode := sapErrorCodes.CreateFailed()
 		opCtx.LogOperationError(ctx, "Failed to create SAP connection", errorCode, err)
 		return nil, errorsutil.CreateStandardError(errorsutil.ConnectorTypeSAP, errorCode, "create", connectionName, err)
 	}
 
-	if apiResp != nil && *apiResp.ErrorCode != "0" {
+	if apiResp != nil && apiResp.ErrorCode != nil && *apiResp.ErrorCode != "0" {
 		apiErr := fmt.Errorf("API returned error code %s: %s", *apiResp.ErrorCode, errorsutil.SanitizeMessage(apiResp.Msg))
 		errorCode := sapErrorCodes.APIError()
 		opCtx.LogOperationError(ctx, "SAP connection creation failed with API error", errorCode, apiErr,
@@ -551,6 +609,20 @@ func (r *SapConnectionResource) CreateSAPConnection(ctx context.Context, plan *S
 }
 
 func (r *SapConnectionResource) BuildSAPConnector(plan *SapConnectorResourceModel, config *SapConnectorResourceModel) openapi.SAPConnector {
+	var password string
+	if !config.Password.IsNull() && !config.Password.IsUnknown() {
+		password = config.Password.ValueString()
+	} else if !config.PasswordWo.IsNull() && !config.PasswordWo.IsUnknown() {
+		password = config.PasswordWo.ValueString()
+	}
+
+	var provPassword string
+	if !config.ProvPassword.IsNull() && !config.ProvPassword.IsUnknown() {
+		provPassword = config.ProvPassword.ValueString()
+	} else if !config.ProvPasswordWo.IsNull() && !config.ProvPasswordWo.IsUnknown() {
+		provPassword = config.ProvPasswordWo.ValueString()
+	}
+
 	sapConn := openapi.SAPConnector{
 		BaseConnector: openapi.BaseConnector{
 			Connectiontype:  "SAP",
@@ -564,7 +636,7 @@ func (r *SapConnectionResource) BuildSAPConnector(plan *SapConnectorResourceMode
 		JCO_SYSNR:                          util.StringPointerOrEmpty(plan.JcoSysnr),
 		JCO_CLIENT:                         util.StringPointerOrEmpty(plan.JcoClient),
 		JCO_USER:                           util.StringPointerOrEmpty(plan.JcoUser),
-		PASSWORD:                           util.StringPointerOrEmpty(config.Password),
+		PASSWORD:                           util.StringPointerOrEmpty(types.StringValue(password)),
 		JCO_LANG:                           util.StringPointerOrEmpty(plan.JcoLang),
 		JCOR3NAME:                          util.StringPointerOrEmpty(plan.JcoR3Name),
 		JCO_MSHOST:                         util.StringPointerOrEmpty(plan.JcoMshost),
@@ -585,7 +657,7 @@ func (r *SapConnectionResource) BuildSAPConnector(plan *SapConnectorResourceMode
 		PROV_JCO_SYSNR:                     util.StringPointerOrEmpty(plan.ProvJcoSysnr),
 		PROV_JCO_CLIENT:                    util.StringPointerOrEmpty(plan.ProvJcoClient),
 		PROV_JCO_USER:                      util.StringPointerOrEmpty(plan.ProvJcoUser),
-		PROV_PASSWORD:                      util.StringPointerOrEmpty(config.ProvPassword),
+		PROV_PASSWORD:                      util.StringPointerOrEmpty(types.StringValue(provPassword)),
 		PROV_JCO_LANG:                      util.StringPointerOrEmpty(plan.ProvJcoLang),
 		PROVJCOR3NAME:                      util.StringPointerOrEmpty(plan.ProvJcoR3Name),
 		PROV_JCO_MSHOST:                    util.StringPointerOrEmpty(plan.ProvJcoMshost),
@@ -709,18 +781,32 @@ func (r *SapConnectionResource) ReadSAPConnection(ctx context.Context, connectio
 
 	opCtx.LogOperationStart(logCtx, "Starting SAP connection read operation")
 
-	// Use the factory to create connection operations
-	connectionOps := r.connectionFactory.CreateConnectionOperations(r.client.APIBaseURL(), r.token)
+	// Execute read operation with retry logic
+	var apiResp *openapi.GetConnectionDetailsResponse
 
-	// Execute read operation through interface - use original context for API calls
-	apiResp, _, err := connectionOps.GetConnectionDetails(ctx, connectionName)
+	err := r.provider.AuthenticatedAPICallWithRetry(ctx, "read_sap_connection", func(token string) error {
+		connectionOps := r.connectionFactory.CreateConnectionOperations(r.client.APIBaseURL(), token)
+		resp, httpResp, err := connectionOps.GetConnectionDetails(ctx, connectionName)
+		if httpResp != nil && httpResp.StatusCode == 401 {
+			return fmt.Errorf("401 unauthorized")
+		}
+		apiResp = resp
+		return err
+	})
+
 	if err != nil {
 		errorCode := sapErrorCodes.ReadFailed()
 		opCtx.LogOperationError(logCtx, "Failed to read SAP connection", errorCode, err)
 		return nil, errorsutil.CreateStandardError(errorsutil.ConnectorTypeSAP, errorCode, "read", connectionName, err)
 	}
 
-	if apiResp != nil && apiResp.SAPConnectionResponse != nil && *apiResp.SAPConnectionResponse.Errorcode != 0 {
+	if err := r.ValidateSAPConnectionResponse(apiResp); err != nil {
+		errorCode := sapErrorCodes.APIError()
+		opCtx.LogOperationError(ctx, "Invalid connection type for SAP datasource", errorCode, err)
+		return nil, fmt.Errorf("[%s] Unable to verify connection type for connection %q. The provider could not determine the type of this connection. Please ensure the connection name is correct and belongs to a supported connector type", errorCode, connectionName)
+	}
+
+	if apiResp != nil && apiResp.SAPConnectionResponse != nil && apiResp.SAPConnectionResponse.Errorcode != nil && *apiResp.SAPConnectionResponse.Errorcode != 0 {
 		apiErr := fmt.Errorf("API returned error code %d: %s", *apiResp.SAPConnectionResponse.Errorcode, errorsutil.SanitizeMessage(apiResp.SAPConnectionResponse.Msg))
 		errorCode := sapErrorCodes.APIError()
 		opCtx.LogOperationError(ctx, "SAP connection read failed with API error", errorCode, apiErr,
@@ -809,14 +895,13 @@ func (r *SapConnectionResource) UpdateModelFromReadResponse(state *SapConnectorR
 	state.Userimportjson = util.SafeStringDatasource(apiResp.SAPConnectionResponse.Connectionattributes.USERIMPORTJSON)
 	state.Systemname = util.SafeStringDatasource(apiResp.SAPConnectionResponse.Connectionattributes.SYSTEMNAME)
 	state.Updateaccountjson = util.SafeStringDatasource(apiResp.SAPConnectionResponse.Connectionattributes.UPDATEACCOUNTJSON)
+}
 
-	apiMessage := util.SafeDeref(apiResp.SAPConnectionResponse.Msg)
-	if apiMessage == "success" {
-		state.Msg = types.StringValue("Connection Successful")
-	} else {
-		state.Msg = types.StringValue(apiMessage)
+func (r *SapConnectionResource) ValidateSAPConnectionResponse(apiResp *openapi.GetConnectionDetailsResponse) error {
+	if apiResp != nil && apiResp.SAPConnectionResponse == nil {
+		return fmt.Errorf("verify the connection type - SAP connection response is nil")
 	}
-	state.ErrorCode = util.Int32PtrToTFString(apiResp.SAPConnectionResponse.Errorcode)
+	return nil
 }
 
 func (r *SapConnectionResource) UpdateSAPConnection(ctx context.Context, plan *SapConnectorResourceModel, config *SapConnectorResourceModel) (*openapi.CreateOrUpdateResponse, error) {
@@ -828,37 +913,36 @@ func (r *SapConnectionResource) UpdateSAPConnection(ctx context.Context, plan *S
 
 	opCtx.LogOperationStart(logCtx, "Starting SAP connection update")
 
-	// Use the factory to create connection operations
-	connectionOps := r.connectionFactory.CreateConnectionOperations(r.client.APIBaseURL(), r.token)
-
 	// Build SAP connection update request
 	tflog.Debug(logCtx, "Building SAP connection update request")
 
 	sapConn := r.BuildSAPConnector(plan, config)
 
-	if plan.VaultConnection.ValueString() == "" {
-		emptyStr := ""
-		sapConn.BaseConnector.VaultConnection = &emptyStr
-		sapConn.BaseConnector.VaultConfiguration = &emptyStr
-		sapConn.BaseConnector.Saveinvault = &emptyStr
-	}
-
 	sapConnRequest := openapi.CreateOrUpdateRequest{
 		SAPConnector: &sapConn,
 	}
 
-	// Execute update operation through interface
+	// Execute update operation with retry logic
 	tflog.Debug(logCtx, "Executing update operation")
+	var apiResp *openapi.CreateOrUpdateResponse
 
-	// Use original context for API calls to maintain test compatibility
-	apiResp, _, err := connectionOps.CreateOrUpdateConnection(ctx, sapConnRequest)
+	err := r.provider.AuthenticatedAPICallWithRetry(ctx, "update_sap_connection", func(token string) error {
+		connectionOps := r.connectionFactory.CreateConnectionOperations(r.client.APIBaseURL(), token)
+		resp, httpResp, err := connectionOps.CreateOrUpdateConnection(ctx, sapConnRequest)
+		if httpResp != nil && httpResp.StatusCode == 401 {
+			return fmt.Errorf("401 unauthorized")
+		}
+		apiResp = resp
+		return err
+	})
+
 	if err != nil {
 		errorCode := sapErrorCodes.UpdateFailed()
 		opCtx.LogOperationError(logCtx, "Failed to update SAP connection", errorCode, err)
 		return nil, errorsutil.CreateStandardError(errorsutil.ConnectorTypeSAP, errorCode, "update", connectionName, err)
 	}
 
-	if apiResp != nil && *apiResp.ErrorCode != "0" {
+	if apiResp != nil && apiResp.ErrorCode != nil && *apiResp.ErrorCode != "0" {
 		apiErr := fmt.Errorf("API returned error code %s: %s", *apiResp.ErrorCode, errorsutil.SanitizeMessage(apiResp.Msg))
 		errorCode := sapErrorCodes.APIError()
 		opCtx.LogOperationError(logCtx, "SAP connection update failed with API error", errorCode, apiErr,
@@ -977,6 +1061,14 @@ func (r *SapConnectionResource) Read(ctx context.Context, req resource.ReadReque
 	// Update model from read response
 	r.UpdateModelFromReadResponse(&state, apiResp)
 
+	apiMessage := util.SafeDeref(apiResp.SAPConnectionResponse.Msg)
+	if apiMessage == "success" {
+		state.Msg = types.StringValue("Connection Read Successful")
+	} else {
+		state.Msg = types.StringValue(apiMessage)
+	}
+	state.ErrorCode = util.Int32PtrToTFString(apiResp.SAPConnectionResponse.Errorcode)
+
 	stateDiagnostics := resp.State.Set(ctx, &state)
 	resp.Diagnostics.Append(stateDiagnostics...)
 	if resp.Diagnostics.HasError() {
@@ -1062,7 +1154,7 @@ func (r *SapConnectionResource) Update(ctx context.Context, req resource.UpdateR
 	ctx = opCtx.AddContextToLogger(ctx)
 
 	// Use interface pattern instead of direct API client creation
-	_, err := r.UpdateSAPConnection(ctx, &plan, &config)
+	updateResp, err := r.UpdateSAPConnection(ctx, &plan, &config)
 	if err != nil {
 		opCtx.LogOperationError(ctx, "SAP connection update failed", "", err)
 		resp.Diagnostics.AddError(
@@ -1085,6 +1177,10 @@ func (r *SapConnectionResource) Update(ctx context.Context, req resource.UpdateR
 
 	// Update model from read response
 	r.UpdateModelFromReadResponse(&plan, getResp)
+
+	apiMessage := util.SafeDeref(updateResp.Msg)
+	plan.Msg = types.StringValue(apiMessage)
+	plan.ErrorCode = types.StringValue(*updateResp.ErrorCode)
 
 	stateUpdateDiagnostics := resp.State.Set(ctx, plan)
 	resp.Diagnostics.Append(stateUpdateDiagnostics...)

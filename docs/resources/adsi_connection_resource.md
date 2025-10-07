@@ -425,7 +425,6 @@ resource "saviynt_adsi_connection_resource" "example" {
 - `connection_name` (String) Name of the connection. Example: "Active Directory_Doc"
 - `connection_url` (String) ADSI remote agent Connection URL
 - `forestlist` (String) Forest List (Comma Separated) which we need to manage
-- `password` (String) Service account password
 - `url` (String) Primary/root domain URL list (comma Separated)
 - `username` (String) Service account username
 
@@ -448,15 +447,15 @@ resource "saviynt_adsi_connection_resource" "example" {
 - `enableaccountjson` (String) Specify the actions and attribute updates to be performed for enabling an account.
 - `endpoints_filter` (String) Provide the configuration to create Child Endpoints and import associated accounts and entitlements
 - `entitlement_attribute` (String) Account attribute that contains group membership
-- `error_code` (String) An error code where '0' signifies success and '1' signifies an unsuccessful operation.
 - `group_import_mapping` (String) Map AD group attribute to EIC entitlement attribute for import
 - `group_search_base_dn` (String) Group Search Filter to specify the starting point of the directory from where the groups needs to be imported. You can have multiple BaseDNs here separated by ###.
 - `import_nested_membership` (String) Specify if you want the connector to import all indirect or nested membership of an account or a group during access import
 - `modifyuserdatajson` (String) Specify this parameter to transform the data during user import.
-- `msg` (String) A message indicating the outcome of the operation.
 - `objectfilter` (String) Object Filter is used to filter the objects that will be returned.This filter will be same for all domains.
 - `page_size` (String) Page size defines the number of objects to be returned from each AD operation.
 - `pam_config` (String) JSON to specify Bootstrap Config.
+- `password` (String, Sensitive) Service account password. Set the password. It is a compulsory field. Either this or password_wo need to be set
+- `password_wo` (String) Service account password. Set the password_wo. It is a compulsory field. Either this or password need to be set
 - `provisioning_url` (String) ADSI remote agent Provisioning URL
 - `removeaccessentitlementjson` (String) Configuration to Remove nested group hierarchy
 - `removeaccessjson` (String) Configuration to REMOVE Access (cross domain/forest group membership) to an account.
@@ -475,8 +474,11 @@ resource "saviynt_adsi_connection_resource" "example" {
 - `user_attribute` (String) Map EIC and AD attributes for user import (AD attributes must be in lower case)
 - `vault_configuration` (String) JSON string specifying vault configuration.
 - `vault_connection` (String) Specifies the type of vault connection being used (e.g., 'Hashicorp'). Example: "Hashicorp"
+- `wo_version` (String) Add/change the value of this attribute to update the writeonly attributes like username, password etc in connection resources
 
 ### Read-Only
 
 - `connection_key` (Number) Unique identifier of the connection returned by the API. Example: 1909
+- `error_code` (String) An error code where '0' signifies success and '1' signifies an unsuccessful operation.
 - `id` (String) Resource ID.
+- `msg` (String) A message indicating the outcome of the operation.

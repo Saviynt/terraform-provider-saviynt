@@ -277,7 +277,6 @@ resource "saviynt_ad_connection_resource" "example" {
 ### Required
 
 - `connection_name` (String) Name of the connection. Example: "Active Directory_Doc"
-- `password` (String) Set the Password.
 
 ### Optional
 
@@ -302,7 +301,6 @@ resource "saviynt_ad_connection_resource" "example" {
 - `endpoints_filter` (String) Configuration for child endpoints.
 - `enforce_tree_deletion` (String) Enforce tree deletion flag. Example: "TRUE"
 - `entitlement_attribute` (String) Attribute used for entitlements. Example: "memberOf"
-- `error_code` (String) An error code where '0' signifies success and '1' signifies an unsuccessful operation.
 - `filter` (String) Simple filter string.
 - `group_import_mapping` (String) JSON mapping for LDAP groups. Example: '{"entitlementTypeName":"memberOf", ...}'
 - `group_search_base_dn` (String) Base DN for group search. Example: "CN=Users,DC=Saviynt,DC=ABC,DC=Com"
@@ -311,18 +309,19 @@ resource "saviynt_ad_connection_resource" "example" {
 - `ldap_or_ad` (String) Type of Endpoint - LDAP or AD. Default is 'AD'. Example: "AD"
 - `max_changenumber` (String) Maximum change number. Example: "4"
 - `modify_user_data_json` (String) JSON for inline user data transformation.
-- `msg` (String) A message indicating the outcome of the operation.
 - `objectfilter` (String) LDAP object filter. Example: "(objectClass=inetorgperson)"
 - `org_base` (String) Organization BASE for provisioning.
 - `org_import_json` (String) JSON for organization import configuration.
 - `organization_attribute` (String) Organization attributes.
 - `page_size` (String) LDAP page size. Example: "1000"
 - `pam_config` (String) JSON for PAM bootstrap configuration. Example: '{"Connection":"AD",...}'
+- `password` (String, Sensitive) Set the password. It is a compulsory field. Either this or password_wo need to be set
 - `password_max_length` (String) Maximum password length. Example: "12"
 - `password_min_length` (String) Minimum password length. Example: "8"
 - `password_noofcapsalpha` (String) Number of capital letters required. Example: "2"
 - `password_noofdigits` (String) Number of digits required. Example: "5"
 - `password_noofsplchars` (String) Number of special characters required. Example: "1"
+- `password_wo` (String) Set the password_wo. It is a compulsory field. Either this or password need to be set
 - `read_operational_attributes` (String) Flag for reading operational attributes. Example: "FALSE"
 - `remove_account_action` (String) Action on account removal. Example: '{"removeAction":"DELETE"}'
 - `reset_and_change_passwrd_json` (String) JSON for reset/change password actions. Example: '{"RESET":{"pwdLastSet":"0","title":"password reset"},"CHANGE":{"pwdLastSet":"-1","title":"password changed"}}'
@@ -344,8 +343,11 @@ resource "saviynt_ad_connection_resource" "example" {
 - `username` (String) System admin username.
 - `vault_configuration` (String) JSON string specifying vault configuration.
 - `vault_connection` (String) Specifies the type of vault connection being used (e.g., 'Hashicorp'). Example: "Hashicorp"
+- `wo_version` (String) Add/change the value of this attribute to update the writeonly attributes like username, password etc in connection resources
 
 ### Read-Only
 
 - `connection_key` (Number) Unique identifier of the connection returned by the API. Example: 1909
+- `error_code` (String) An error code where '0' signifies success and '1' signifies an unsuccessful operation.
 - `id` (String) Resource ID.
+- `msg` (String) A message indicating the outcome of the operation.
