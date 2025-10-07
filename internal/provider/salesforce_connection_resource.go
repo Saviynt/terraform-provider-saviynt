@@ -19,9 +19,11 @@ import (
 	connectionsutil "terraform-provider-Saviynt/util/connectionsutil"
 	"terraform-provider-Saviynt/util/errorsutil"
 
+	"github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
 	"github.com/hashicorp/terraform-plugin-framework/path"
 	"github.com/hashicorp/terraform-plugin-framework/resource"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema"
+	"github.com/hashicorp/terraform-plugin-framework/schema/validator"
 	"github.com/hashicorp/terraform-plugin-framework/types"
 	"github.com/hashicorp/terraform-plugin-log/tflog"
 	openapi "github.com/saviynt/saviynt-api-go-client/connections"
@@ -94,22 +96,34 @@ func SalesforceConnectorResourceSchema() map[string]schema.Attribute {
 		"client_secret": schema.StringAttribute{
 			Optional:    true,
 			Sensitive:   true,
-			Description: "The OAuth client secret for Salesforce.",
+			Description: "The OAuth client secret for Salesforce. Either this field or the client_secret_wo field must be provided to configure the client_secret attribute.",
+			Validators: []validator.String{
+				stringvalidator.ConflictsWith(path.MatchRoot("client_secret_wo")),
+			},
 		},
 		"client_secret_wo": schema.StringAttribute{
 			Optional:    true,
 			WriteOnly:   true,
-			Description: "The OAuth client secret for Salesforce (write-only).",
+			Description: "The OAuth client secret for Salesforce (write-only). Either this field or the client_secret field must be provided to configure the client_secret attribute.",
+			Validators: []validator.String{
+				stringvalidator.ConflictsWith(path.MatchRoot("client_secret")),
+			},
 		},
 		"refresh_token": schema.StringAttribute{
 			Optional:    true,
 			Sensitive:   true,
-			Description: "The OAuth refresh token used to get access tokens from Salesforce.",
+			Description: "The OAuth refresh token used to get access tokens from Salesforce. Either this field or the refresh_token_wo field must be provided to configure the refresh_token attribute.",
+			Validators: []validator.String{
+				stringvalidator.ConflictsWith(path.MatchRoot("refresh_token_wo")),
+			},
 		},
 		"refresh_token_wo": schema.StringAttribute{
 			Optional:    true,
 			WriteOnly:   true,
-			Description: "The OAuth refresh token used to get access tokens from Salesforce (write-only).",
+			Description: "The OAuth refresh token used to get access tokens from Salesforce (write-only). Either this field or the refresh_token field must be provided to configure the refresh_token attribute.",
+			Validators: []validator.String{
+				stringvalidator.ConflictsWith(path.MatchRoot("refresh_token")),
+			},
 		},
 		"redirect_uri": schema.StringAttribute{
 			Optional:    true,
@@ -186,22 +200,7 @@ func (r *SalesforceConnectionResource) Schema(ctx context.Context, req resource.
 	}
 }
 
-func (r *SalesforceConnectionResource) ConfigValidators(ctx context.Context) []resource.ConfigValidator {
-	return []resource.ConfigValidator{
-		&connectionsutil.AtMostOneOfValidator{
-			Attrs: []path.Expression{
-				path.MatchRoot("client_secret"),
-				path.MatchRoot("client_secret_wo"),
-			},
-		},
-		&connectionsutil.AtMostOneOfValidator{
-			Attrs: []path.Expression{
-				path.MatchRoot("refresh_token"),
-				path.MatchRoot("refresh_token_wo"),
-			},
-		},
-	}
-}
+
 
 func (r *SalesforceConnectionResource) Configure(ctx context.Context, req resource.ConfigureRequest, resp *resource.ConfigureResponse) {
 	opCtx := errorsutil.CreateOperationContext(errorsutil.ConnectorTypeSalesforce, "configure", "")
@@ -500,14 +499,6 @@ func (r *SalesforceConnectionResource) UpdateModelFromReadResponse(state *Salesf
 	state.CustomCreateaccountUrl = util.SafeStringDatasource(apiResp.SalesforceConnectionResponse.Connectionattributes.CUSTOM_CREATEACCOUNT_URL)
 	state.AccountFilterQuery = util.SafeStringDatasource(apiResp.SalesforceConnectionResponse.Connectionattributes.ACCOUNT_FILTER_QUERY)
 	state.InstanceUrl = util.SafeStringDatasource(apiResp.SalesforceConnectionResponse.Connectionattributes.INSTANCE_URL)
-
-	apiMessage := util.SafeDeref(apiResp.SalesforceConnectionResponse.Msg)
-	if apiMessage == "success" {
-		state.Msg = types.StringValue("Connection Successful")
-	} else {
-		state.Msg = types.StringValue(apiMessage)
-	}
-	state.ErrorCode = util.Int32PtrToTFString(apiResp.SalesforceConnectionResponse.Errorcode)
 }
 
 func (r *SalesforceConnectionResource) ValidateSalesforceConnectionResponse(apiResp *openapi.GetConnectionDetailsResponse) error {
@@ -674,6 +665,14 @@ func (r *SalesforceConnectionResource) Read(ctx context.Context, req resource.Re
 	// Update model from read response
 	r.UpdateModelFromReadResponse(&state, apiResp)
 
+	apiMessage := util.SafeDeref(apiResp.SalesforceConnectionResponse.Msg)
+	if apiMessage == "success" {
+		state.Msg = types.StringValue("Connection Read Successful")
+	} else {
+		state.Msg = types.StringValue(apiMessage)
+	}
+	state.ErrorCode = util.Int32PtrToTFString(apiResp.SalesforceConnectionResponse.Errorcode)
+
 	stateDiagnostics := resp.State.Set(ctx, &state)
 	resp.Diagnostics.Append(stateDiagnostics...)
 	if resp.Diagnostics.HasError() {
@@ -759,7 +758,7 @@ func (r *SalesforceConnectionResource) Update(ctx context.Context, req resource.
 	ctx = opCtx.AddContextToLogger(ctx)
 
 	// Use interface pattern instead of direct API client creation
-	_, err := r.UpdateSalesforceConnection(ctx, &plan, &config)
+	updateResp, err := r.UpdateSalesforceConnection(ctx, &plan, &config)
 	if err != nil {
 		opCtx.LogOperationError(ctx, "Salesforce connection update failed", "", err)
 		resp.Diagnostics.AddError(
@@ -782,6 +781,10 @@ func (r *SalesforceConnectionResource) Update(ctx context.Context, req resource.
 
 	// Update model from read response
 	r.UpdateModelFromReadResponse(&plan, getResp)
+
+	apiMessage := util.SafeDeref(updateResp.Msg)
+	plan.Msg = types.StringValue(apiMessage)
+	plan.ErrorCode = types.StringValue(*updateResp.ErrorCode)
 
 	stateUpdateDiagnostics := resp.State.Set(ctx, plan)
 	resp.Diagnostics.Append(stateUpdateDiagnostics...)
