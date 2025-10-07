@@ -1,0 +1,30 @@
+{
+  "authentications": {
+    "userAuth": {
+      "authType": "oauth2",
+      "url": "https://<domain name>/api/v18.2/auth",
+      "httpMethod": "POST",
+      "httpParams": {
+        "username": "<Username>",
+        "password": "<PASSWORD>"
+      },
+      "httpHeaders": {
+        "contentType": "application/x-www-form-urlencoded"
+      },
+      "httpContentType": "application/x-www-form-urlencoded",
+      "expiryError": "ExpiredAuthenticationToken",
+      "authError": [
+        "InvalidAuthenticationToken",
+        "AuthenticationFailed",
+        "FAILURE",
+        "INVALID_SESSION_ID"
+      ],
+      "timeOutError": "Read timed out",
+      "errorPath": "errors.type",
+      "maxRefreshTryCount": 5,
+      "tokenResponsePath": "sessionId",
+      "tokenType": "Bearer",
+      "accessToken": "<access token>"
+    }
+  }
+}
