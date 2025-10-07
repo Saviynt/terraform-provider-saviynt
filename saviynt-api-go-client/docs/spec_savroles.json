@@ -1,0 +1,288 @@
+{
+  "openapi": "3.1.0",
+  "x-stoplight": {
+    "id": "6la78mjjgjrh6"
+  },
+  "info": {
+    "title": "Saviynt SAV Roles API",
+    "version": "1.0",
+    "description": "Saviynt SAV Roles API",
+    "contact": {
+      "name": "Saviynt Developers Team",
+      "email": "https://github.com/saviynt"
+    }
+  },
+  "servers": [
+    {
+      "url": "http://localhost:3000"
+    }
+  ],
+  "tags": [
+    {
+      "name": "SAV Roles"
+    }
+  ],
+  "paths": {
+    "/ECMv6/api/userms/savroles/{savRoleName}/users": {
+      "parameters": [
+        {
+          "schema": {
+            "type": "string"
+          },
+          "name": "savRoleName",
+          "in": "path",
+          "required": true,
+          "description": "The `ROLENAME` field in geAllSAVRoles API"
+        }
+      ],
+      "get": {
+        "summary": "Get Users Associated with a Particular SAV Role",
+        "tags": [
+          "SAV Roles"
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/GetSAVRoleUsersResponse"
+                }
+              }
+            }
+          }
+        },
+        "operationId": "getSAVRoleUsers",
+        "description": "This API returns a list of users associated with a particular SAV role.\n\n",
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "default": "0"
+            },
+            "in": "query",
+            "name": "limit",
+            "description": "Specifies the number of retrieved results",
+            "required": true
+          },
+          {
+            "schema": {
+              "type": "string",
+              "default": "1000"
+            },
+            "in": "query",
+            "name": "offset",
+            "description": "Specifies the number of rows of the result to skip before any rows are retrieved, and must be used with the `limit` parameter",
+            "required": true
+          }
+        ]
+      }
+    },
+    "/ECMv6/api/userms/savroles": {
+      "get": {
+        "summary": "Get All SAV Roles",
+        "tags": [
+          "SAV Roles"
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/GetAllSAVRolesResponse"
+                }
+              }
+            }
+          }
+        },
+        "operationId": "getAllSAVRoles",
+        "description": "This API returns all out-of-the-box (OOTB) and custom SAV roles along with their properties."
+      },
+      "parameters": []
+    }
+  },
+  "components": {
+    "schemas": {
+      "GetAllSAVRolesResponse": {
+        "title": "GetAllSAVRolesResponse",
+        "x-stoplight": {
+          "id": "qbji4q7oj3c61"
+        },
+        "type": "object",
+        "properties": {
+          "savroles": {
+            "type": "array",
+            "x-stoplight": {
+              "id": "zgro4g0m3s9mh"
+            },
+            "items": {
+              "$ref": "#/components/schemas/SAVRole",
+              "x-stoplight": {
+                "id": "0av992i0qrwb7"
+              }
+            }
+          }
+        },
+        "description": ""
+      },
+      "GetSAVRoleUsersResponse": {
+        "title": "GetSAVRoleUsersResponse",
+        "x-stoplight": {
+          "id": "lktoz32ra9zhz"
+        },
+        "type": "object",
+        "properties": {
+          "users": {
+            "type": "array",
+            "x-stoplight": {
+              "id": "v8woquwbseecb"
+            },
+            "items": {
+              "$ref": "#/components/schemas/SAVRoleUser",
+              "x-stoplight": {
+                "id": "x44f8gwlp2nu9"
+              }
+            }
+          }
+        }
+      },
+      "SAVRole": {
+        "type": "object",
+        "properties": {
+          "UPDATEUSER": {
+            "type": "string"
+          },
+          "CUSTOMPROPERTY20": {
+            "type": "string"
+          },
+          "ROLENAME": {
+            "type": "string"
+          },
+          "HOMEPAGE": {
+            "type": "string"
+          },
+          "CUSTOMPROPERTY10": {
+            "type": "string"
+          },
+          "CUSTOMPROPERTY12": {
+            "type": "string"
+          },
+          "CUSTOMPROPERTY11": {
+            "type": "string"
+          },
+          "CUSTOMPROPERTY14": {
+            "type": "string"
+          },
+          "CUSTOMPROPERTY4": {
+            "type": "string"
+          },
+          "CUSTOMPROPERTY13": {
+            "type": "string"
+          },
+          "CUSTOMPROPERTY5": {
+            "type": "string"
+          },
+          "CUSTOMPROPERTY16": {
+            "type": "string"
+          },
+          "CUSTOMPROPERTY2": {
+            "type": "string"
+          },
+          "CUSTOMPROPERTY15": {
+            "type": "string"
+          },
+          "CUSTOMPROPERTY3": {
+            "type": "string"
+          },
+          "CUSTOMPROPERTY18": {
+            "type": "string"
+          },
+          "CUSTOMPROPERTY1": {
+            "type": "string"
+          },
+          "CUSTOMPROPERTY17": {
+            "type": "string"
+          },
+          "ROLEDESCRIPTION": {
+            "type": "string"
+          },
+          "CUSTOMPROPERTY19": {
+            "type": "string"
+          },
+          "ISOOTB": {
+            "type": "string"
+          },
+          "CUSTOMPROPERTY8": {
+            "type": "string"
+          },
+          "CUSTOMPROPERTY9": {
+            "type": "string"
+          },
+          "CUSTOMPROPERTY6": {
+            "type": "string"
+          },
+          "CUSTOMPROPERTY7": {
+            "type": "string"
+          },
+          "UPDATEDATE": {
+            "type": "string"
+          },
+          "READONLY": {
+            "type": "string"
+          },
+          "STATUSKEY": {
+            "type": "string"
+          }
+        },
+        "x-examples": {
+          "Example 1": {
+            "UPDATEUSER": "admin",
+            "CUSTOMPROPERTY20": "",
+            "ROLENAME": "ROLE_ADMIN",
+            "HOMEPAGE": "null",
+            "CUSTOMPROPERTY10": "null",
+            "CUSTOMPROPERTY12": "null",
+            "CUSTOMPROPERTY11": "null",
+            "CUSTOMPROPERTY14": "null",
+            "CUSTOMPROPERTY4": "null",
+            "CUSTOMPROPERTY13": "null",
+            "CUSTOMPROPERTY5": "null",
+            "CUSTOMPROPERTY16": "",
+            "CUSTOMPROPERTY2": "null",
+            "CUSTOMPROPERTY15": "null",
+            "CUSTOMPROPERTY3": "null",
+            "CUSTOMPROPERTY18": "",
+            "CUSTOMPROPERTY1": "null",
+            "CUSTOMPROPERTY17": "",
+            "ROLEDESCRIPTION": "ADMIN USER",
+            "CUSTOMPROPERTY19": "",
+            "ISOOTB": "true",
+            "CUSTOMPROPERTY8": "null",
+            "CUSTOMPROPERTY9": "null",
+            "CUSTOMPROPERTY6": "null",
+            "CUSTOMPROPERTY7": "null",
+            "UPDATEDATE": "2022-12-06 07:30:18.0",
+            "READONLY": "false",
+            "STATUSKEY": "Active"
+          }
+        }
+      },
+      "SAVRoleUser": {
+        "title": "User",
+        "x-stoplight": {
+          "id": "2uw2ub7z4e8vp"
+        },
+        "type": "object",
+        "properties": {
+          "username": {
+            "type": "string",
+            "x-stoplight": {
+              "id": "28gglgfsfnw9m"
+            }
+          }
+        }
+      }
+    }
+  }
+}
