@@ -1,0 +1,90 @@
+# Copyright (c) Saviynt Inc.
+# SPDX-License-Identifier: MPL-2.0
+
+openapi: 3.1.0
+info:
+  description: API for managing utility in Saviynt.
+  title: Saviynt API
+  version: 1.0.0
+servers:
+- url: http://localhost:3000
+paths:
+  /ECM/oauth/access_token:
+    post:
+      operationId: access_token
+      requestBody:
+        content:
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: "#/components/schemas/AccessTokenRequest"
+        required: true
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AccessTokenResponse"
+          description: Role request created successfully
+      summary: This API call can be used for getting the new access token
+      tags:
+      - utility
+  /ECM/api/v5/getEcmVersion:
+    get:
+      operationId: getEcmVersion
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/GetEcmVersionResponse"
+          description: Role request created successfully
+      summary: This API call can be used for getting the ecm version
+      tags:
+      - utility
+components:
+  schemas:
+    AccessTokenRequest:
+      properties:
+        grant_type:
+          type: string
+        refresh_token:
+          type: string
+      required:
+      - grant_type
+      - refresh_token
+    AccessTokenResponse:
+      example:
+        access_token: access_token
+        refresh_token: ""
+        roles:
+        - ROLE_ADMIN
+        token_type: Bearer
+        expires_in: 1800
+        username: admin
+      properties:
+        username:
+          example: admin
+          type: string
+        roles:
+          example:
+          - ROLE_ADMIN
+          items:
+            type: string
+          type: array
+        token_type:
+          example: Bearer
+          type: string
+        access_token:
+          example: access_token
+          type: string
+        expires_in:
+          example: 1800
+          type: integer
+        refresh_token:
+          example: ""
+          type: string
+    GetEcmVersionResponse:
+      example:
+        version: ""
+      properties:
+        version: {}
