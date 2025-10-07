@@ -107,7 +107,7 @@ func (p *SaviyntProvider) Configure(ctx context.Context, req provider.ConfigureR
 	serverURL = strings.TrimPrefix(strings.TrimPrefix(serverURL, "https://"), "http://")
 
 	client, err := s.NewClient(ctx, s.Credentials{
-		ServerURL: "http://" + serverURL,
+		ServerURL: "https://" + serverURL,
 		Username:  config.Username.ValueString(),
 		Password:  config.Password.ValueString(),
 	})
