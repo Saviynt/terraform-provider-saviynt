@@ -27,7 +27,7 @@ import (
 type endpointsDataSource struct {
 	client   *s.Client
 	token    string
-	provider client.SaviyntProviderInterface 
+	provider client.SaviyntProviderInterface
 }
 
 var _ datasource.DataSource = &endpointsDataSource{}
