@@ -193,6 +193,7 @@ func (d *OktaConnectionsDataSource) Configure(ctx context.Context, req datasourc
 	// Set the client and token from the provider state using interface wrapper.
 	d.client = &client.SaviyntClientWrapper{Client: prov.client}
 	d.token = prov.accessToken
+	d.provider = &client.SaviyntProviderWrapper{Provider: prov} // Store provider reference for retry logic
 
 	opCtx.LogOperationEnd(ctx, "Okta connection datasource configured successfully")
 }

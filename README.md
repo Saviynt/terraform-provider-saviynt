@@ -25,6 +25,7 @@ New to Terraform? Check out the [official Terraform introduction by HashiCorp](h
 
 - Terraform version `>= 1.11+`
 - Saviynt Identity Cloud instance and credentials.
+- **Note**: Write-only attributes (e.g., `password_wo`, `client_secret_wo`) require Terraform version `>= 1.11+`
 
 ---
 
@@ -91,6 +92,113 @@ Check the table to see which attributes are supported in your version before usi
 | **Entitlement Type** | `enable_entitlement_to_role_sync`                                                                           | Yes              | Yes              | No               |
 | **Enterprise Role** | `child_roles`                                                                           | Yes              | No              | No               |
 ---
+
+## Write-Only Attributes Management
+
+### Overview
+
+Connection resources provide two approaches for handling sensitive attributes like passwords and tokens:
+
+1. **Sensitive Attributes** (e.g., `password`) - Marked as `sensitive = true`, stored in state but hidden during plan/apply
+2. **Write-Only Attributes** (e.g., `password_wo`) - Never stored in state, require `wo_version` for updates
+
+### Sensitive vs Write-Only Attributes
+| Aspect               | Sensitive Attributes                                                                           | Write-Only Attributes                                                                                  |
+|----------------------|-----------------------------------------------------------------------------------------------|------------------------------------------------------------------------------------------------------|
+| **State Storage**    | The value **is stored** in the Terraform state file but is encrypted and redacted in outputs. | The value is **never persisted** to the state file. It is sent to the API and then discarded.          |
+| **Plan/Apply Display**| Shows as `(sensitive)` in `plan` and `apply` outputs to prevent exposure.                      | Shows as `(sensitive)` because the value is known but should not be displayed.                         |
+| **Update Mechanism** | To update the value, you change the attribute directly in your Terraform configuration.        | Requires a separate, non-sensitive value (e.g., `wo_version`) to be changed (e.g., incremented) to trigger an update. |
+| **Drift Detection**  | **Supported.** Terraform can detect if the remote resource's value differs from the state.      | **Not supported.** Because the value is not stored in the state, Terraform cannot detect drift.        |
+
+
+### Usage Options
+
+#### Option 1: Sensitive Attributes (Standard)
+```hcl
+resource "saviynt_ad_connection_resource" "example" {
+  connection_name = "My_AD_Connection"
+  username        = "admin"
+  password        = var.db_password  # Sensitive attribute
+}
+```
+
+#### Option 2: Write-Only Attributes (Maximum Security)
+```hcl
+resource "saviynt_ad_connection_resource" "example" {
+  connection_name = "My_AD_Connection"
+  username        = "admin"
+  password_wo     = var.db_password  # Write-only attribute
+  wo_version      = "v1.1"           # Required for updates
+}
+```
+
+### Write-Only Attributes by Connector
+
+| Connector | Sensitive Attributes | Write-Only Equivalents |
+|-----------|---------------------|------------------------|
+| **AD/ADSI** | `password` | `password_wo` |
+| **Database** | `password`, `change_pass_json` | `password_wo`, `change_pass_json_wo` |
+| **EntraID** | `client_secret`, `access_token`, `connection_json` | `client_secret_wo`, `access_token_wo`, `connection_json_wo` |
+| **REST/Github** | `connection_json`, `access_tokens` | `connection_json_wo`, `access_tokens_wo` |
+| **Salesforce** | `client_secret`, `refresh_token` | `client_secret_wo`, `refresh_token_wo` |
+| **SAP** | `password`, `prov_password` | `password_wo`, `prov_password_wo` |
+| **Unix** | `password`, `passphrase`, `ssh_key` | `password_wo`, `passphrase_wo`, `ssh_key_wo` |
+| **Workday** | `password`, `client_secret`, `refresh_token` | `password_wo`, `client_secret_wo`, `refresh_token_wo` |
+| **Okta** | `auth_token` | `auth_token_wo` |
+
+### The `wo_version` Mechanism
+
+When using write-only attributes, the `wo_version` acts as a trigger:
+
+1. **Initial Creation**: Set `wo_version` to any value (e.g., "v1.0")
+2. **Updating Credentials**: 
+   - Modify the write-only attribute value
+   - Change `wo_version` (e.g., "v1.0" → "v1.1")
+   - Run `terraform apply`
+
+```hcl
+resource "saviynt_db_connection_resource" "database" {
+  connection_name = "Production_DB"
+  username        = "db_admin"
+  password_wo     = var.new_db_password
+  wo_version      = "v2.0"  # Increment when password changes
+}
+```
+
+### Choosing the Right Approach
+
+**Use Sensitive Attributes when:**
+- You need drift detection for credentials
+- You want simpler credential management
+
+**Use Write-Only Attributes when:**
+- Maximum security is required (no state storage)
+- Compliance requires credentials never be persisted
+- You can manage the `wo_version` trigger mechanism
+
+### Best Practices
+
+1. **Consistent Approach**: Choose one method per environment and stick to it
+2. **Variable Usage**: Store sensitive values in Terraform variables:
+   ```hcl
+   variable "db_password" {
+     description = "Database password"
+     type        = string
+     sensitive   = true
+   }
+   ```
+3. **Version Naming**: Use meaningful `wo_version` identifiers:
+   - Semantic: "v1.0", "v1.1", "v2.0"
+   - Descriptive: "password-rotation-jan"
+
+4. **Documentation**: Document credential rotation in your infrastructure code
+
+### Important Notes
+
+- **Mutual Exclusivity**: Use either sensitive OR write-only attributes, not both for the same credential
+- **State Behavior**: While both attributes don't offer state management, write only attributes don't get stored in the state file as well.
+- **Ephemeral Resources**: Consider using [ephemeral resources](#feature-ephemeral-file-credential-resource) for temporary credential management
+- **Vault Integration**: Use vault connections for enhanced security when available
 
 ## Importing Existing Resources
 
@@ -180,19 +288,26 @@ EOF
 ```bash
 terraform plan -var-file=prod.tfvars -generate-config-out=generated.tf
 ```
+**2. Generate configuration:**
+```bash
+terraform plan -var-file=prod.tfvars -generate-config-out=generated.tf
+```
+> **Note:**<br>
+> **Role User Task Management:**  
+> When users are added to roles, Saviynt creates tasks that require manual completion. After successful user additions:  
+> 1. Navigate to **Pending Tasks** section in the Saviynt UI  
+> 2. Approve/complete the user assignment tasks manually  
+> 3. After task completion, running `terraform plan` may show drift due to state changes  
+> 4. Use `terraform import` to sync the current state:  
+>    ```
+>    terraform import saviynt_enterprise_roles_resource.resource_name "role-name"
+>   
 
-**Note:** The config generation command may throw errors if the resource contains sensitive data like required passwords, as Terraform cannot retrieve these values from the API. However, the configuration file will still be generated properly - you'll just need to replace sensitive fields with appropriate values (or use ephemeral resources) before applying.
-
-**Role Import Limitation:** When importing enterprise roles, you may encounter an error about the missing `requestor` attribute. This occurs because the `requestor` field is required for role creation but is not returned by the Saviynt API during read operations. To resolve this, manually add the `requestor` field to your generated configuration with an appropriate username value before applying.
-
-**Role User Task Management:** When users are added to roles, Saviynt creates tasks that require manual completion. After successful user additions:
-1. Navigate to **Pending Tasks** section in Saviynt UI
-2. Approve/complete the user assignment tasks manually
-3. After task completion, running `terraform plan` may show drift due to state changes
-4. Use `terraform import` to sync the current state:
-   ```bash
-   terraform import saviynt_enterprise_roles_resource.resource_name "role-name"
-   ```
+**3. Review and move configuration:**
+```bash
+cat generated.tf
+# Move relevant parts to your organized .tf files
+```
 
 **3. Review and move configuration:**
 ```bash
@@ -876,16 +991,16 @@ The following limitations are present in the latest version of the provider. The
   - `4` → `"Decommission Active"`
 
 - **Values for module:**
-- `None`
-- `IT`
-- `Business`
-- `N/A`
+    - `None`
+    - `IT`
+    - `Business`
+    - `N/A`
 
 - **Values for access:**
-- `None`
-- `Read-Only`
-- `Update`
-- `Delete`
+    - `None`
+    - `Read-Only`
+    - `Update`
+    - `Delete`
 
 ---
 
@@ -954,14 +1069,6 @@ Keep all `readlabels` settings set to `true` to ensure compatibility with Terraf
 
 ---
 
-### Summary
-| Change Area           | Description                                         | Action Required                         |
-|------------------------|-----------------------------------------------------|------------------------------------------|
-| `connection_type` Removal | Deprecated from connector resources                | Remove from your resource configuration  |
-| SAV Role Restriction   | May result in 412 errors if enabled                 | Adjust SAV role or disable restriction   |
-| `readlabels` Settings  | Alters field naming in API response                 | Keep values as `true`                    |
-
----
 
 ### 4. User Operation Failures in Role Resources
 
@@ -1018,6 +1125,15 @@ terraform apply
 
 ___
 
+### Summary
+| Change Area              | Description                                          | Action Required                                      |
+|--------------------------|------------------------------------------------------|------------------------------------------------------|
+| `connection_type` Removal| Deprecated from connector resources                 | Remove from your resource configuration              |
+| SAV Role Restriction     | May result in 412 errors if enabled                | Adjust SAV role or disable restriction               |
+| `readlabels` Settings    | Alters field naming in API response                | Keep values as `true`                                |
+| User Operation Failures  | Role creation succeeds but user assignment may fail | Validate users exist and are active before applying |
+
+---
 ##  Contributing
 
 > 👋 **Hey Developer!**
