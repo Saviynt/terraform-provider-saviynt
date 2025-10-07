@@ -1,0 +1,61 @@
+{
+  "authentications": {
+    "userAuth": {
+      "authType": "oauth2",
+      "url": "https://login.microsoftonline.com/<tenantid>/oauth2/token",
+      "httpMethod": "POST",
+      "httpParams": {
+        "grant_type": "client_credentials",
+        "client_secret": "<client_secret>",
+        "client_id": "<client_id>",
+        "resource": "https://graph.microsoft.com/"
+      },
+      "httpHeaders": {
+        "contentType": "application/x-www-form-urlencoded"
+      },
+      "httpContentType": "application/x-www-form-urlencoded",
+      "expiryError": "ExpiredAuthenticationToken",
+      "authError": [
+        "InvalidAuthenticationToken"
+      ],
+      "retryFailureStatusCode": [
+        401
+      ],
+      "timeOutError": "Read timed out",
+      "errorPath": "error.code",
+      "maxRefreshTryCount": 5,
+      "tokenResponsePath": "access_token",
+      "tokenType": "Bearer",
+      "accessToken": "Bearer abcd"
+    },
+    "entAuth": {
+      "authType": "oauth2",
+      "url": "https://login.microsoftonline.com/<tenantid>/oauth2/token",
+      "httpMethod": "POST",
+      "httpParams": {
+        "grant_type": "client_credentials",
+        "client_secret": "<client_secret>",
+        "client_id": "<client_id>",
+        "resource": "https://graph.windows.net/"
+      },
+      "httpHeaders": {
+        "contentType": "application/x-www-form-urlencoded"
+      },
+      "httpContentType": "application/x-www-form-urlencoded",
+      "expiryError": "ExpiredAuthenticationToken",
+      "authError": [
+        "InvalidAuthenticationToken",
+        "Authentication_MissingOrMalformed"
+      ],
+      "retryFailureStatusCode": [
+        401
+      ],
+      "timeOutError": "Read timed out",
+      "errorPath": "odata~dot#error.code",
+      "maxRefreshTryCount": 3,
+      "tokenResponsePath": "access_token",
+      "tokenType": "Bearer",
+      "accessToken": "Bearer abcde"
+    }
+  }
+}
