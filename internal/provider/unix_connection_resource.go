@@ -19,9 +19,11 @@ import (
 	connectionsutil "terraform-provider-Saviynt/util/connectionsutil"
 	"terraform-provider-Saviynt/util/errorsutil"
 
+	"github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
 	"github.com/hashicorp/terraform-plugin-framework/path"
 	"github.com/hashicorp/terraform-plugin-framework/resource"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema"
+	"github.com/hashicorp/terraform-plugin-framework/schema/validator"
 	"github.com/hashicorp/terraform-plugin-framework/types"
 	"github.com/hashicorp/terraform-plugin-log/tflog"
 	openapi "github.com/saviynt/saviynt-api-go-client/connections"
@@ -123,12 +125,18 @@ func UnixConnectorResourceSchema() map[string]schema.Attribute {
 		"password": schema.StringAttribute{
 			Optional:    true,
 			Sensitive:   true,
-			Description: "Property for PASSWORD",
+			Description: "Property for PASSWORD. Either this or password_wo need to be set to configure the password attribute.",
+			Validators: []validator.String{
+				stringvalidator.ConflictsWith(path.MatchRoot("password_wo")),
+			},
 		},
 		"password_wo": schema.StringAttribute{
 			Optional:    true,
 			WriteOnly:   true,
-			Description: "Password write-only attribute.",
+			Description: "Password write-only attribute. Either this or password need to be set to configure the password attribute.",
+			Validators: []validator.String{
+				stringvalidator.ConflictsWith(path.MatchRoot("password")),
+			},
 		},
 		"groups_file": schema.StringAttribute{
 			Optional:    true,
@@ -193,12 +201,18 @@ func UnixConnectorResourceSchema() map[string]schema.Attribute {
 		"passphrase": schema.StringAttribute{
 			Optional:    true,
 			Sensitive:   true,
-			Description: "Property for PASSPHRASE",
+			Description: "Property for PASSPHRASE. Either this or passphrase_wo need to be set to configure the passphrase attribute.",
+			Validators: []validator.String{
+				stringvalidator.ConflictsWith(path.MatchRoot("passphrase_wo")),
+			},
 		},
 		"passphrase_wo": schema.StringAttribute{
 			Optional:    true,
 			WriteOnly:   true,
-			Description: "Passphrase write-only attribute.",
+			Description: "Passphrase write-only attribute. Either this or passphrase need to be set to configure the passphrase attribute.",
+			Validators: []validator.String{
+				stringvalidator.ConflictsWith(path.MatchRoot("passphrase")),
+			},
 		},
 		"update_account_command": schema.StringAttribute{
 			Optional:    true,
@@ -253,12 +267,18 @@ func UnixConnectorResourceSchema() map[string]schema.Attribute {
 		"ssh_key": schema.StringAttribute{
 			Optional:    true,
 			Sensitive:   true,
-			Description: "Property for SSH_KEY",
+			Description: "Property for SSH_KEY. Either this or ssh_key_wo need to be set to configure the ssh_key attribute.",
+			Validators: []validator.String{
+				stringvalidator.ConflictsWith(path.MatchRoot("ssh_key_wo")),
+			},
 		},
 		"ssh_key_wo": schema.StringAttribute{
 			Optional:    true,
 			WriteOnly:   true,
-			Description: "SSH key write-only attribute.",
+			Description: "SSH key write-only attribute. Either this or ssh_key need to be set to configure the ssh_key attribute.",
+			Validators: []validator.String{
+				stringvalidator.ConflictsWith(path.MatchRoot("ssh_key")),
+			},
 		},
 		"lock_account_command": schema.StringAttribute{
 			Optional:    true,
@@ -278,32 +298,50 @@ func UnixConnectorResourceSchema() map[string]schema.Attribute {
 		"ssh_pass_through_password": schema.StringAttribute{
 			Optional:    true,
 			Sensitive:   true,
-			Description: "Property for SSHPassThroughPassword",
+			Description: "Property for SSHPassThroughPassword. Either this or ssh_pass_through_password_wo need to be set to configure the ssh_pass_through_password attribute.",
+			Validators: []validator.String{
+				stringvalidator.ConflictsWith(path.MatchRoot("ssh_pass_through_password_wo")),
+			},
 		},
 		"ssh_pass_through_password_wo": schema.StringAttribute{
 			Optional:    true,
 			WriteOnly:   true,
-			Description: "SSH pass-through password write-only attribute.",
+			Description: "SSH pass-through password write-only attribute. Either this or ssh_pass_through_password need to be set to configure the ssh_pass_through_password attribute.",
+			Validators: []validator.String{
+				stringvalidator.ConflictsWith(path.MatchRoot("ssh_pass_through_password")),
+			},
 		},
 		"ssh_pass_through_sshkey": schema.StringAttribute{
 			Optional:    true,
 			Sensitive:   true,
-			Description: "Property for SSHPassThroughSSHKEY",
+			Description: "Property for SSHPassThroughSSHKEY. Either this or ssh_pass_through_sshkey_wo need to be set to configure the ssh_pass_through_sshkey attribute.",
+			Validators: []validator.String{
+				stringvalidator.ConflictsWith(path.MatchRoot("ssh_pass_through_sshkey_wo")),
+			},
 		},
 		"ssh_pass_through_sshkey_wo": schema.StringAttribute{
 			Optional:    true,
 			WriteOnly:   true,
-			Description: "SSH pass-through SSH key write-only attribute.",
+			Description: "Property for SSHPassThroughSSHKEY. Either this or ssh_pass_through_sshkey need to be set to configure the ssh_pass_through_sshkey attribute.",
+			Validators: []validator.String{
+				stringvalidator.ConflictsWith(path.MatchRoot("ssh_pass_through_sshkey")),
+			},
 		},
 		"ssh_pass_through_passphrase": schema.StringAttribute{
 			Optional:    true,
 			Sensitive:   true,
-			Description: "Property for SSHPassThroughPassphrase",
+			Description: "Property for SSHPassThroughPassphrase. Either this or ssh_pass_through_passphrase_wo need to be set to configure the ssh_pass_through_passphrase attribute.",
+			Validators: []validator.String{
+				stringvalidator.ConflictsWith(path.MatchRoot("ssh_pass_through_passphrase_wo")),
+			},
 		},
 		"ssh_pass_through_passphrase_wo": schema.StringAttribute{
 			Optional:    true,
 			WriteOnly:   true,
-			Description: "SSH pass-through passphrase write-only attribute.",
+			Description: "SSH pass-through passphrase write-only attribute. Either this or ssh_pass_through_passphrase need to be set to configure the ssh_pass_through_passphrase attribute.",
+			Validators: []validator.String{
+				stringvalidator.ConflictsWith(path.MatchRoot("ssh_pass_through_passphrase")),
+			},
 		},
 	}
 }
@@ -312,47 +350,6 @@ func (r *UnixConnectionResource) Schema(ctx context.Context, req resource.Schema
 	resp.Schema = schema.Schema{
 		Description: util.UnixConnDescription,
 		Attributes:  connectionsutil.MergeResourceAttributes(BaseConnectorResourceSchema(), UnixConnectorResourceSchema()),
-	}
-}
-
-func (r *UnixConnectionResource) ConfigValidators(ctx context.Context) []resource.ConfigValidator {
-	return []resource.ConfigValidator{
-		&connectionsutil.AtMostOneOfValidator{
-			Attrs: []path.Expression{
-				path.MatchRoot("password"),
-				path.MatchRoot("password_wo"),
-			},
-		},
-		&connectionsutil.AtMostOneOfValidator{
-			Attrs: []path.Expression{
-				path.MatchRoot("passphrase"),
-				path.MatchRoot("passphrase_wo"),
-			},
-		},
-		&connectionsutil.AtMostOneOfValidator{
-			Attrs: []path.Expression{
-				path.MatchRoot("ssh_key"),
-				path.MatchRoot("ssh_key_wo"),
-			},
-		},
-		&connectionsutil.AtMostOneOfValidator{
-			Attrs: []path.Expression{
-				path.MatchRoot("ssh_pass_through_password"),
-				path.MatchRoot("ssh_pass_through_password_wo"),
-			},
-		},
-		&connectionsutil.AtMostOneOfValidator{
-			Attrs: []path.Expression{
-				path.MatchRoot("ssh_pass_through_sshkey"),
-				path.MatchRoot("ssh_pass_through_sshkey_wo"),
-			},
-		},
-		&connectionsutil.AtMostOneOfValidator{
-			Attrs: []path.Expression{
-				path.MatchRoot("ssh_pass_through_passphrase"),
-				path.MatchRoot("ssh_pass_through_passphrase_wo"),
-			},
-		},
 	}
 }
 
@@ -387,6 +384,7 @@ func (r *UnixConnectionResource) Configure(ctx context.Context, req resource.Con
 	// Set the client and token from the provider state using interface wrapper.
 	r.client = &client.SaviyntClientWrapper{Client: prov.client}
 	r.token = prov.accessToken
+	r.provider = &client.SaviyntProviderWrapper{Provider: prov} // Store provider reference for retry logic
 
 	opCtx.LogOperationEnd(ctx, "Unix connection resource configured successfully")
 }
@@ -732,15 +730,6 @@ func (r *UnixConnectionResource) UpdateModelFromReadResponse(state *UnixConnecto
 		state.UnlockAccountCommand = util.SafeStringDatasource(apiResp.UNIXConnectionResponse.Connectionattributes.UNLOCK_ACCOUNT_COMMAND)
 		state.PassThroughConnectionDetails = util.SafeStringDatasource(apiResp.UNIXConnectionResponse.Connectionattributes.PassThroughConnectionDetails)
 	}
-
-	// Handle API message
-	apiMessage := util.SafeDeref(apiResp.UNIXConnectionResponse.Msg)
-	if apiMessage == "success" {
-		state.Msg = types.StringValue("Connection Successful")
-	} else {
-		state.Msg = types.StringValue(apiMessage)
-	}
-	state.ErrorCode = util.Int32PtrToTFString(apiResp.UNIXConnectionResponse.Errorcode)
 }
 
 func (r *UnixConnectionResource) ValidateUnixConnectionResponse(apiResp *openapi.GetConnectionDetailsResponse) error {
@@ -907,6 +896,14 @@ func (r *UnixConnectionResource) Read(ctx context.Context, req resource.ReadRequ
 	// Update model from read response
 	r.UpdateModelFromReadResponse(&state, apiResp)
 
+	apiMessage := util.SafeDeref(apiResp.UNIXConnectionResponse.Msg)
+	if apiMessage == "success" {
+		state.Msg = types.StringValue("Connection Read Successful")
+	} else {
+		state.Msg = types.StringValue(apiMessage)
+	}
+	state.ErrorCode = util.Int32PtrToTFString(apiResp.UNIXConnectionResponse.Errorcode)
+
 	stateDiagnostics := resp.State.Set(ctx, &state)
 	resp.Diagnostics.Append(stateDiagnostics...)
 	if resp.Diagnostics.HasError() {
@@ -992,7 +989,7 @@ func (r *UnixConnectionResource) Update(ctx context.Context, req resource.Update
 	ctx = opCtx.AddContextToLogger(ctx)
 
 	// Use interface pattern instead of direct API client creation
-	_, err := r.UpdateUnixConnection(ctx, &plan, &config)
+	updateResp, err := r.UpdateUnixConnection(ctx, &plan, &config)
 	if err != nil {
 		opCtx.LogOperationError(ctx, "Unix connection update failed", "", err)
 		resp.Diagnostics.AddError(
@@ -1015,6 +1012,10 @@ func (r *UnixConnectionResource) Update(ctx context.Context, req resource.Update
 
 	// Update model from read response
 	r.UpdateModelFromReadResponse(&plan, getResp)
+
+	apiMessage := util.SafeDeref(updateResp.Msg)
+	plan.Msg = types.StringValue(apiMessage)
+	plan.ErrorCode = types.StringValue(*updateResp.ErrorCode)
 
 	stateUpdateDiagnostics := resp.State.Set(ctx, plan)
 	resp.Diagnostics.Append(stateUpdateDiagnostics...)

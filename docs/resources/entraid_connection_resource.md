@@ -437,11 +437,11 @@ resource "saviynt_entraid_connection_resource" "example" {
 - `azure_mgmt_access_token` (String, Sensitive) Access token for Azure management APIs.
 - `azure_mgmt_access_token_wo` (String) Access token for Azure management APIs (write-only).
 - `change_pass_json` (String) JSON template to change password.
-- `client_secret` (String, Sensitive) Client Secret for authentication.
-- `client_secret_wo` (String) Client Secret for authentication (write-only).
+- `client_secret` (String, Sensitive) Client Secret for authentication. Set the client_secret. It is a compulsory field. Either this or client_secret_wo need to be set
+- `client_secret_wo` (String) Client Secret for authentication (write-only). Set the client_secret_wo. It is a compulsory field. Either this or client_secret need to be set
 - `config_json` (String) Main config JSON.
-- `connection_json` (String, Sensitive) Connection JSON configuration.
-- `connection_json_wo` (String) Connection JSON configuration (write-only).
+- `connection_json` (String, Sensitive) Configuration for the connection in JSON format. Either the connection_json field or the connection_json_wo field must be populated to set the connection_json attribute.
+- `connection_json_wo` (String) Connection JSON configuration (write-only). Either the connection_json field or the connection_json_wo field must be populated to set the connection_json attribute.
 - `create_account_json` (String) JSON template to create an account.
 - `create_channel_json` (String) JSON to create channel.
 - `create_group_json` (String) JSON to create group.

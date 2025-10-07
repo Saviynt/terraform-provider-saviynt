@@ -340,17 +340,18 @@ func (d *adsiConnectionsDataSource) Read(ctx context.Context, req datasource.Rea
 			OBJECTFILTER:                util.SafeStringDatasource(apiResp.ADSIConnectionResponse.Connectionattributes.OBJECTFILTER),
 			UPDATEACCOUNTJSON:           util.SafeStringDatasource(apiResp.ADSIConnectionResponse.Connectionattributes.UPDATEACCOUNTJSON),
 			REMOVEACCOUNTJSON:           util.SafeStringDatasource(apiResp.ADSIConnectionResponse.Connectionattributes.REMOVEACCOUNTJSON),
-			ConnectionTimeoutConfig: ConnectionTimeoutConfig{
+		}
+		if apiResp.ADSIConnectionResponse.Connectionattributes.ConnectionTimeoutConfig != nil {
+			state.ConnectionAttributes.ConnectionTimeoutConfig = ConnectionTimeoutConfig{
 				RetryWait:               util.SafeInt64(apiResp.ADSIConnectionResponse.Connectionattributes.ConnectionTimeoutConfig.RetryWait),
 				TokenRefreshMaxTryCount: util.SafeInt64(apiResp.ADSIConnectionResponse.Connectionattributes.ConnectionTimeoutConfig.TokenRefreshMaxTryCount),
+				RetryFailureStatusCode:  util.SafeInt64(apiResp.ADSIConnectionResponse.Connectionattributes.ConnectionTimeoutConfig.RetryFailureStatusCode),
 				RetryWaitMaxValue:       util.SafeInt64(apiResp.ADSIConnectionResponse.Connectionattributes.ConnectionTimeoutConfig.RetryWaitMaxValue),
 				RetryCount:              util.SafeInt64(apiResp.ADSIConnectionResponse.Connectionattributes.ConnectionTimeoutConfig.RetryCount),
 				ReadTimeout:             util.SafeInt64(apiResp.ADSIConnectionResponse.Connectionattributes.ConnectionTimeoutConfig.ReadTimeout),
 				ConnectionTimeout:       util.SafeInt64(apiResp.ADSIConnectionResponse.Connectionattributes.ConnectionTimeoutConfig.ConnectionTimeout),
-				RetryFailureStatusCode:  util.SafeInt64(apiResp.ADSIConnectionResponse.Connectionattributes.ConnectionTimeoutConfig.RetryFailureStatusCode),
-			},
+			}
 		}
-
 	}
 	if apiResp.ADSIConnectionResponse.Connectionattributes == nil {
 		state.ConnectionAttributes = nil

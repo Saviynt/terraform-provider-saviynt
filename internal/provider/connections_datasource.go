@@ -11,11 +11,10 @@ import (
 	"log"
 	"net/http"
 	"strings"
+	"terraform-provider-Saviynt/internal/client"
 	"terraform-provider-Saviynt/util"
 
 	openapi "github.com/saviynt/saviynt-api-go-client/connections"
-
-	s "github.com/saviynt/saviynt-api-go-client"
 
 	"github.com/hashicorp/terraform-plugin-framework/datasource"
 	"github.com/hashicorp/terraform-plugin-framework/datasource/schema"
@@ -23,8 +22,9 @@ import (
 )
 
 type connectionsDataSource struct {
-	client *s.Client
-	token  string
+	client   client.SaviyntClientInterface
+	token    string
+	provider client.SaviyntProviderInterface
 }
 
 var _ datasource.DataSource = &connectionsDataSource{}
@@ -164,9 +164,10 @@ func (d *connectionsDataSource) Configure(ctx context.Context, req datasource.Co
 		return
 	}
 
-	// Set the client and token from the provider state.
-	d.client = prov.client
+	// Set the client, token, and provider from the provider state.
+	d.client = &client.SaviyntClientWrapper{Client: prov.client}
 	d.token = prov.accessToken
+	d.provider = &client.SaviyntProviderWrapper{Provider: prov} // Store provider reference for retry logic
 }
 
 func (d *connectionsDataSource) Read(ctx context.Context, req datasource.ReadRequest, resp *datasource.ReadResponse) {
@@ -179,52 +180,66 @@ func (d *connectionsDataSource) Read(ctx context.Context, req datasource.ReadReq
 		return
 	}
 
-	cfg := openapi.NewConfiguration()
-	apiBaseURL := strings.TrimPrefix(strings.TrimPrefix(d.client.APIBaseURL(), "https://"), "http://")
+	var connectionsResponse *openapi.GetConnectionsResponse
 
-	cfg.Host = apiBaseURL
-	cfg.Scheme = "https"
-	cfg.AddDefaultHeader("Authorization", "Bearer "+d.token)
-	cfg.HTTPClient = http.DefaultClient
+	// Execute API request with retry logic
+	err := d.provider.AuthenticatedAPICallWithRetry(ctx, "read_connections_datasource", func(token string) error {
+		cfg := openapi.NewConfiguration()
+		apiBaseURL := strings.TrimPrefix(strings.TrimPrefix(d.client.APIBaseURL(), "https://"), "http://")
 
-	apiClient := openapi.NewAPIClient(cfg)
+		cfg.Host = apiBaseURL
+		cfg.Scheme = "https"
+		cfg.AddDefaultHeader("Authorization", "Bearer "+token)
+		cfg.HTTPClient = http.DefaultClient
 
-	areq := openapi.NewGetConnectionsRequest()
+		apiClient := openapi.NewAPIClient(cfg)
 
-	if !state.ConnectionName.IsNull() && state.ConnectionName.ValueString() != "" {
-		connectionName := state.ConnectionName.ValueString()
-		areq.Connectionname = &connectionName
-	}
+		areq := openapi.NewGetConnectionsRequest()
 
-	if !state.ConnectionType.IsNull() && state.ConnectionType.ValueString() != "" {
-		connectionType := state.ConnectionType.ValueString()
-		areq.Connectiontype = &connectionType
-	}
+		if !state.ConnectionName.IsNull() && state.ConnectionName.ValueString() != "" {
+			connectionName := state.ConnectionName.ValueString()
+			areq.Connectionname = &connectionName
+		}
 
-	if !state.Offset.IsNull() && state.Offset.ValueString() != "" {
-		offset := state.Offset.ValueString()
-		areq.Offset = &offset
-	}
+		if !state.ConnectionType.IsNull() && state.ConnectionType.ValueString() != "" {
+			connectionType := state.ConnectionType.ValueString()
+			areq.Connectiontype = &connectionType
+		}
 
-	if !state.Max.IsNull() && state.Max.ValueString() != "" {
-		max := state.Max.ValueString()
-		areq.Max = &max
-	}
+		if !state.Offset.IsNull() && state.Offset.ValueString() != "" {
+			offset := state.Offset.ValueString()
+			areq.Offset = &offset
+		}
 
-	apiReq := apiClient.ConnectionsAPI.GetConnections(ctx).GetConnectionsRequest(*areq)
+		if !state.Max.IsNull() && state.Max.ValueString() != "" {
+			max := state.Max.ValueString()
+			areq.Max = &max
+		}
 
-	connectionsResponse, httpResp, err := apiReq.Execute()
+		apiReq := apiClient.ConnectionsAPI.GetConnections(ctx).GetConnectionsRequest(*areq)
+
+		response, httpResp, apiErr := apiReq.Execute()
+		if httpResp != nil && httpResp.StatusCode == 401 {
+			return fmt.Errorf("401 unauthorized")
+		}
+		connectionsResponse = response
+		return apiErr
+	})
+
 	if err != nil {
 		log.Printf("[ERROR] API Call Failed: %v", err)
 		resp.Diagnostics.AddError("API Call Failed", fmt.Sprintf("Error: %v", err))
 		return
 	}
-	log.Printf("[DEBUG] HTTP Status Code: %d", httpResp.StatusCode)
 
-	state.Msg = types.StringValue(*connectionsResponse.Msg)
-	state.DisplayCount = types.Int64Value(int64(*connectionsResponse.DisplayCount))
-	state.ErrorCode = types.StringValue(*connectionsResponse.ErrorCode)
-	state.TotalCount = types.Int64Value(int64(*connectionsResponse.TotalCount))
+	if connectionsResponse == nil {
+		resp.Diagnostics.AddError("API Response Error", "Received nil response from connections API")
+		return
+	}
+	state.Msg = util.SafeStringDatasource(connectionsResponse.Msg)
+	state.DisplayCount = util.SafeInt64(connectionsResponse.DisplayCount)
+	state.ErrorCode = util.SafeStringDatasource(connectionsResponse.ErrorCode)
+	state.TotalCount = util.SafeInt64(connectionsResponse.TotalCount)
 
 	if connectionsResponse != nil && connectionsResponse.ConnectionList != nil {
 		for _, item := range connectionsResponse.ConnectionList {

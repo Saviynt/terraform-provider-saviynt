@@ -777,7 +777,7 @@ func (d *RolesDataSource) ReadRolesDetails(ctx context.Context, state *RolesData
 			return fmt.Errorf("401 unauthorized")
 		}
 		rolesResponse = resp
-		finalHttpResp = httpResp  // Capture final HTTP response
+		finalHttpResp = httpResp // Capture final HTTP response
 		return err
 	})
 

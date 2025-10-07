@@ -255,7 +255,7 @@ func (d *DynamicAttributeDataSource) Read(ctx context.Context, req datasource.Re
 			return fmt.Errorf("401 unauthorized")
 		}
 		apiResp = resp
-		finalHttpResp = hResp  // Update on every call including retries
+		finalHttpResp = hResp // Update on every call including retries
 		return err
 	})
 
