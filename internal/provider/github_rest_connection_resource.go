@@ -21,9 +21,11 @@ import (
 
 	openapi "github.com/saviynt/saviynt-api-go-client/connections"
 
+	"github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
 	"github.com/hashicorp/terraform-plugin-framework/path"
 	"github.com/hashicorp/terraform-plugin-framework/resource"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema"
+	"github.com/hashicorp/terraform-plugin-framework/schema/validator"
 	"github.com/hashicorp/terraform-plugin-framework/types"
 )
 
@@ -78,12 +80,18 @@ func GithubRestConnectorResourceSchema() map[string]schema.Attribute {
 		"connection_json": schema.StringAttribute{
 			Optional:    true,
 			Sensitive:   true,
-			Description: "Property for ConnectionJSON",
+			Description: "Property for ConnectionJSON. For setting connection_json either this field or connection_json_wo need to be set",
+			Validators: []validator.String{
+				stringvalidator.ConflictsWith(path.MatchRoot("connection_json_wo")),
+			},
 		},
 		"connection_json_wo": schema.StringAttribute{
 			Optional:    true,
 			WriteOnly:   true,
-			Description: "Property for ConnectionJSON (write-only)",
+			Description: "Property for ConnectionJSON (write-only). For setting connection_json either this field or connection_json_wo need to be set",
+			Validators: []validator.String{
+				stringvalidator.ConflictsWith(path.MatchRoot("connection_json")),
+			},
 		},
 		"import_account_ent_json": schema.StringAttribute{
 			Optional:    true,
@@ -93,12 +101,18 @@ func GithubRestConnectorResourceSchema() map[string]schema.Attribute {
 		"access_tokens": schema.StringAttribute{
 			Optional:    true,
 			Sensitive:   true,
-			Description: "Property for ACCESS_TOKENS",
+			Description: "Property for ACCESS_TOKENS. For setting access_tokens either this field or access_tokens_wo need to be set",
+			Validators: []validator.String{
+				stringvalidator.ConflictsWith(path.MatchRoot("access_tokens_wo")),
+			},
 		},
 		"access_tokens_wo": schema.StringAttribute{
 			Optional:    true,
 			WriteOnly:   true,
-			Description: "Property for ACCESS_TOKENS (write-only)",
+			Description: "Property for ACCESS_TOKENS (write-only). For setting access_tokens either this field or access_tokens_wo need to be set",
+			Validators: []validator.String{
+				stringvalidator.ConflictsWith(path.MatchRoot("access_tokens")),
+			},
 		},
 		"organization_list": schema.StringAttribute{
 			Optional:    true,
@@ -117,23 +131,6 @@ func (r *GithubRestConnectionResource) Schema(ctx context.Context, req resource.
 	resp.Schema = schema.Schema{
 		Description: util.GithubRestConnDescription,
 		Attributes:  connectionsutil.MergeResourceAttributes(BaseConnectorResourceSchema(), GithubRestConnectorResourceSchema()),
-	}
-}
-
-func (r *GithubRestConnectionResource) ConfigValidators(ctx context.Context) []resource.ConfigValidator {
-	return []resource.ConfigValidator{
-		&connectionsutil.AtMostOneOfValidator{
-			Attrs: []path.Expression{
-				path.MatchRoot("connection_json"),
-				path.MatchRoot("connection_json_wo"),
-			},
-		},
-		&connectionsutil.AtMostOneOfValidator{
-			Attrs: []path.Expression{
-				path.MatchRoot("access_tokens"),
-				path.MatchRoot("access_tokens_wo"),
-			},
-		},
 	}
 }
 
@@ -422,6 +419,14 @@ func (r *GithubRestConnectionResource) Read(ctx context.Context, req resource.Re
 
 	r.UpdateModelFromReadResponse(&state, apiResp)
 
+	apiMessage := util.SafeDeref(apiResp.GithubRESTConnectionResponse.Msg)
+	if apiMessage == "success" {
+		state.Msg = types.StringValue("Connection Read Successful")
+	} else {
+		state.Msg = types.StringValue(apiMessage)
+	}
+	state.ErrorCode = util.Int32PtrToTFString(apiResp.GithubRESTConnectionResponse.Errorcode)
+
 	stateDiagnostics := resp.State.Set(ctx, &state)
 	resp.Diagnostics.Append(stateDiagnostics...)
 	if resp.Diagnostics.HasError() {
@@ -506,14 +511,6 @@ func (r *GithubRestConnectionResource) UpdateModelFromReadResponse(state *Github
 	state.ImportAccountEntJSON = util.SafeStringDatasource(apiResp.GithubRESTConnectionResponse.Connectionattributes.ImportAccountEntJSON)
 	state.Organization_List = util.SafeStringDatasource(apiResp.GithubRESTConnectionResponse.Connectionattributes.ORGANIZATION_LIST)
 	state.Status_Threshold_Config = util.SafeStringDatasource(apiResp.GithubRESTConnectionResponse.Connectionattributes.STATUS_THRESHOLD_CONFIG)
-
-	apiMessage := util.SafeDeref(apiResp.GithubRESTConnectionResponse.Msg)
-	if apiMessage == "success" {
-		state.Msg = types.StringValue("Connection Successful")
-	} else {
-		state.Msg = types.StringValue(apiMessage)
-	}
-	state.ErrorCode = util.Int32PtrToTFString(apiResp.GithubRESTConnectionResponse.Errorcode)
 }
 
 func (r *GithubRestConnectionResource) ValidateGithubRestConnectionResponse(apiResp *openapi.GetConnectionDetailsResponse) error {
@@ -592,7 +589,7 @@ func (r *GithubRestConnectionResource) Update(ctx context.Context, req resource.
 	ctx = opCtx.AddContextToLogger(ctx)
 
 	// Use interface pattern instead of direct API client creation
-	_, err := r.UpdateGithubRestConnection(ctx, &plan, &config)
+	updateResp, err := r.UpdateGithubRestConnection(ctx, &plan, &config)
 	if err != nil {
 		opCtx.LogOperationError(ctx, "GitHub REST connection update failed", "", err)
 		resp.Diagnostics.AddError(
@@ -614,6 +611,10 @@ func (r *GithubRestConnectionResource) Update(ctx context.Context, req resource.
 	}
 
 	r.UpdateModelFromReadResponse(&plan, getResp)
+
+	apiMessage := util.SafeDeref(updateResp.Msg)
+	plan.Msg = types.StringValue(apiMessage)
+	plan.ErrorCode = types.StringValue(*updateResp.ErrorCode)
 
 	stateUpdateDiagnostics := resp.State.Set(ctx, plan)
 	resp.Diagnostics.Append(stateUpdateDiagnostics...)

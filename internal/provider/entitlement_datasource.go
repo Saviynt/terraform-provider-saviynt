@@ -322,10 +322,10 @@ func (d *entitlementDataSource) ReadEntitlementDetails(ctx context.Context, stat
 			return fmt.Errorf("401 unauthorized")
 		}
 		getResp = resp
-		finalHttpResp = hResp  // Update on every call including retries
+		finalHttpResp = hResp // Update on every call including retries
 		return err
 	})
-	
+
 	if err != nil {
 		tflog.Error(ctx, "API call failed", map[string]interface{}{
 			"error": err.Error(),

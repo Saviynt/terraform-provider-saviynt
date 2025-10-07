@@ -20,9 +20,11 @@ import (
 
 	connectionsutil "terraform-provider-Saviynt/util/connectionsutil"
 
+	"github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
 	"github.com/hashicorp/terraform-plugin-framework/path"
 	"github.com/hashicorp/terraform-plugin-framework/resource"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema"
+	"github.com/hashicorp/terraform-plugin-framework/schema/validator"
 	"github.com/hashicorp/terraform-plugin-framework/types"
 	"github.com/hashicorp/terraform-plugin-log/tflog"
 	openapi "github.com/saviynt/saviynt-api-go-client/connections"
@@ -159,12 +161,18 @@ func SapConnectorResourceSchema() map[string]schema.Attribute {
 		"password": schema.StringAttribute{
 			Optional:    true,
 			Sensitive:   true,
-			Description: "Password.",
+			Description: "Password. Either this or password_wo need to be set to configure the password attribute.",
+			Validators: []validator.String{
+				stringvalidator.ConflictsWith(path.MatchRoot("password_wo")),
+			},
 		},
 		"password_wo": schema.StringAttribute{
 			Optional:    true,
 			WriteOnly:   true,
-			Description: "Password write-only attribute.",
+			Description: "Password write-only attribute. Either this or password need to be set to configure the password attribute.",
+			Validators: []validator.String{
+				stringvalidator.ConflictsWith(path.MatchRoot("password")),
+			},
 		},
 		"jco_lang": schema.StringAttribute{
 			Optional:    true,
@@ -269,12 +277,18 @@ func SapConnectorResourceSchema() map[string]schema.Attribute {
 		"prov_password": schema.StringAttribute{
 			Optional:    true,
 			Sensitive:   true,
-			Description: "Provpassword.",
+			Description: "Provpassword. Either this field or the prov_password_wo field must be populated to set the prov_password attribute.",
+			Validators: []validator.String{
+				stringvalidator.ConflictsWith(path.MatchRoot("prov_password_wo")),
+			},
 		},
 		"prov_password_wo": schema.StringAttribute{
 			Optional:    true,
 			WriteOnly:   true,
-			Description: "Provpassword write-only attribute.",
+			Description: "Provpassword write-only attribute. Either this field or the prov_password field must be populated to set the prov_password attribute.",
+			Validators: []validator.String{
+				stringvalidator.ConflictsWith(path.MatchRoot("prov_password")),
+			},
 		},
 		"prov_jco_lang": schema.StringAttribute{
 			Optional:    true,
@@ -448,23 +462,6 @@ func (r *SapConnectionResource) Schema(ctx context.Context, req resource.SchemaR
 	resp.Schema = schema.Schema{
 		Description: util.SAPConnDescription,
 		Attributes:  connectionsutil.MergeResourceAttributes(BaseConnectorResourceSchema(), SapConnectorResourceSchema()),
-	}
-}
-
-func (r *SapConnectionResource) ConfigValidators(ctx context.Context) []resource.ConfigValidator {
-	return []resource.ConfigValidator{
-		&connectionsutil.AtMostOneOfValidator{
-			Attrs: []path.Expression{
-				path.MatchRoot("password"),
-				path.MatchRoot("password_wo"),
-			},
-		},
-		&connectionsutil.AtMostOneOfValidator{
-			Attrs: []path.Expression{
-				path.MatchRoot("prov_password"),
-				path.MatchRoot("prov_password_wo"),
-			},
-		},
 	}
 }
 
@@ -898,14 +895,6 @@ func (r *SapConnectionResource) UpdateModelFromReadResponse(state *SapConnectorR
 	state.Userimportjson = util.SafeStringDatasource(apiResp.SAPConnectionResponse.Connectionattributes.USERIMPORTJSON)
 	state.Systemname = util.SafeStringDatasource(apiResp.SAPConnectionResponse.Connectionattributes.SYSTEMNAME)
 	state.Updateaccountjson = util.SafeStringDatasource(apiResp.SAPConnectionResponse.Connectionattributes.UPDATEACCOUNTJSON)
-
-	apiMessage := util.SafeDeref(apiResp.SAPConnectionResponse.Msg)
-	if apiMessage == "success" {
-		state.Msg = types.StringValue("Connection Successful")
-	} else {
-		state.Msg = types.StringValue(apiMessage)
-	}
-	state.ErrorCode = util.Int32PtrToTFString(apiResp.SAPConnectionResponse.Errorcode)
 }
 
 func (r *SapConnectionResource) ValidateSAPConnectionResponse(apiResp *openapi.GetConnectionDetailsResponse) error {
@@ -1072,6 +1061,14 @@ func (r *SapConnectionResource) Read(ctx context.Context, req resource.ReadReque
 	// Update model from read response
 	r.UpdateModelFromReadResponse(&state, apiResp)
 
+	apiMessage := util.SafeDeref(apiResp.SAPConnectionResponse.Msg)
+	if apiMessage == "success" {
+		state.Msg = types.StringValue("Connection Read Successful")
+	} else {
+		state.Msg = types.StringValue(apiMessage)
+	}
+	state.ErrorCode = util.Int32PtrToTFString(apiResp.SAPConnectionResponse.Errorcode)
+
 	stateDiagnostics := resp.State.Set(ctx, &state)
 	resp.Diagnostics.Append(stateDiagnostics...)
 	if resp.Diagnostics.HasError() {
@@ -1157,7 +1154,7 @@ func (r *SapConnectionResource) Update(ctx context.Context, req resource.UpdateR
 	ctx = opCtx.AddContextToLogger(ctx)
 
 	// Use interface pattern instead of direct API client creation
-	_, err := r.UpdateSAPConnection(ctx, &plan, &config)
+	updateResp, err := r.UpdateSAPConnection(ctx, &plan, &config)
 	if err != nil {
 		opCtx.LogOperationError(ctx, "SAP connection update failed", "", err)
 		resp.Diagnostics.AddError(
@@ -1180,6 +1177,10 @@ func (r *SapConnectionResource) Update(ctx context.Context, req resource.UpdateR
 
 	// Update model from read response
 	r.UpdateModelFromReadResponse(&plan, getResp)
+
+	apiMessage := util.SafeDeref(updateResp.Msg)
+	plan.Msg = types.StringValue(apiMessage)
+	plan.ErrorCode = types.StringValue(*updateResp.ErrorCode)
 
 	stateUpdateDiagnostics := resp.State.Set(ctx, plan)
 	resp.Diagnostics.Append(stateUpdateDiagnostics...)
