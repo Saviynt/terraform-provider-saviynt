@@ -1193,7 +1193,7 @@ func (r *EntitlementTypeResource) PerformFollowUpUpdate(ctx context.Context, pla
 			return fmt.Errorf("401 unauthorized")
 		}
 		updateResp = resp
-		finalHttpResp = hResp  // Update on every call including retries
+		finalHttpResp = hResp // Update on every call including retries
 		return err
 	})
 

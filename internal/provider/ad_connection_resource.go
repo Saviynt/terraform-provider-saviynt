@@ -20,9 +20,11 @@ import (
 
 	connectionsutil "terraform-provider-Saviynt/util/connectionsutil"
 
+	"github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
 	"github.com/hashicorp/terraform-plugin-framework/path"
 	"github.com/hashicorp/terraform-plugin-framework/resource"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema"
+	"github.com/hashicorp/terraform-plugin-framework/schema/validator"
 	"github.com/hashicorp/terraform-plugin-framework/types"
 	"github.com/hashicorp/terraform-plugin-log/tflog"
 	openapi "github.com/saviynt/saviynt-api-go-client/connections"
@@ -139,12 +141,18 @@ func ADConnectorResourceSchema() map[string]schema.Attribute {
 		"password": schema.StringAttribute{
 			Optional:    true,
 			Sensitive:   true,
-			Description: "Set the Password.",
+			Description: "Set the password. It is a compulsory field. Either this or password_wo need to be set",
+			Validators: []validator.String{
+				stringvalidator.ConflictsWith(path.MatchRoot("password_wo")),
+			},
 		},
 		"password_wo": schema.StringAttribute{
 			Optional:    true,
 			WriteOnly:   true,
-			Description: "Set the Password.",
+			Description: "Set the password_wo. It is a compulsory field. Either this or password need to be set",
+			Validators: []validator.String{
+				stringvalidator.ConflictsWith(path.MatchRoot("password")),
+			},
 		},
 		"ldap_or_ad": schema.StringAttribute{
 			Optional:    true,
@@ -421,17 +429,6 @@ func (r *AdConnectionResource) Schema(ctx context.Context, req resource.SchemaRe
 	}
 }
 
-func (r *AdConnectionResource) ConfigValidators(ctx context.Context) []resource.ConfigValidator {
-	return []resource.ConfigValidator{
-		&connectionsutil.ExactlyOneOfValidator{
-			Attrs: []path.Expression{
-				path.MatchRoot("password"),
-				path.MatchRoot("password_wo"),
-			},
-		},
-	}
-}
-
 func (r *AdConnectionResource) Configure(ctx context.Context, req resource.ConfigureRequest, resp *resource.ConfigureResponse) {
 	opCtx := errorsutil.CreateOperationContext(errorsutil.ConnectorTypeAD, "configure", "")
 	ctx = opCtx.AddContextToLogger(ctx)
@@ -490,7 +487,6 @@ func (r *AdConnectionResource) BuildADConnector(plan *ADConnectorResourceModel, 
 	} else if !config.PasswordWo.IsNull() && !config.PasswordWo.IsUnknown() {
 		password = config.PasswordWo.ValueString()
 	}
-
 	adConn := openapi.ADConnector{
 		BaseConnector: openapi.BaseConnector{
 			//required field
@@ -655,7 +651,7 @@ func (r *AdConnectionResource) CreateADConnection(ctx context.Context, plan *ADC
 			return fmt.Errorf("401 unauthorized")
 		}
 		existingResource = resp
-		finalHttpResp = httpResp  // Update on every call including retries
+		finalHttpResp = httpResp // Update on every call including retries
 		return err
 	})
 
@@ -678,6 +674,10 @@ func (r *AdConnectionResource) CreateADConnection(ctx context.Context, plan *ADC
 
 	// Build AD connection create request
 	tflog.Debug(ctx, "Building AD connection create request")
+
+	if (config.Password.IsNull() || config.Password.IsUnknown()) && (config.PasswordWo.IsNull() || config.PasswordWo.IsUnknown()) {
+		return nil, fmt.Errorf("either password or password_wo must be set")
+	}
 
 	adConn := r.BuildADConnector(plan, config)
 	createReq := openapi.CreateOrUpdateRequest{
@@ -793,6 +793,10 @@ func (r *AdConnectionResource) UpdateADConnection(ctx context.Context, plan *ADC
 	// Build AD connection update request
 	tflog.Debug(logCtx, "Building AD connection update request")
 
+	if (config.Password.IsNull() || config.Password.IsUnknown()) && (config.PasswordWo.IsNull() || config.PasswordWo.IsUnknown()) {
+		return nil, fmt.Errorf("either password or password_wo must be set")
+	}
+
 	adConn := r.BuildADConnector(plan, config)
 
 	updateReq := openapi.CreateOrUpdateRequest{
@@ -903,14 +907,6 @@ func (r *AdConnectionResource) UpdateModelFromReadResponse(state *ADConnectorRes
 	state.CheckForUnique = util.SafeStringDatasource(apiResp.ADConnectionResponse.Connectionattributes.CHECKFORUNIQUE)
 	state.EnableGroupManagement = util.SafeStringDatasource(apiResp.ADConnectionResponse.Connectionattributes.ENABLEGROUPMANAGEMENT)
 	state.OrgImportJson = util.SafeStringDatasource(apiResp.ADConnectionResponse.Connectionattributes.ORGIMPORTJSON)
-
-	apiMessage := util.SafeDeref(apiResp.ADConnectionResponse.Msg)
-	if apiMessage == "success" {
-		state.Msg = types.StringValue("Connection Successful")
-	} else {
-		state.Msg = types.StringValue(apiMessage)
-	}
-	state.ErrorCode = util.Int32PtrToTFString(apiResp.ADConnectionResponse.Errorcode)
 }
 
 func (r *AdConnectionResource) ValidateADConnectionResponse(apiResp *openapi.GetConnectionDetailsResponse) error {
@@ -1016,6 +1012,13 @@ func (r *AdConnectionResource) Read(ctx context.Context, req resource.ReadReques
 
 	// Update model from read response
 	r.UpdateModelFromReadResponse(&state, apiResp)
+	apiMessage := util.SafeDeref(apiResp.ADConnectionResponse.Msg)
+	if apiMessage == "success" {
+		state.Msg = types.StringValue("Connection Read Successful")
+	} else {
+		state.Msg = types.StringValue(apiMessage)
+	}
+	state.ErrorCode = util.Int32PtrToTFString(apiResp.ADConnectionResponse.Errorcode)
 
 	stateDiagnostics := resp.State.Set(ctx, &state)
 	resp.Diagnostics.Append(stateDiagnostics...)
@@ -1102,7 +1105,7 @@ func (r *AdConnectionResource) Update(ctx context.Context, req resource.UpdateRe
 	ctx = opCtx.AddContextToLogger(ctx)
 
 	// Use interface pattern instead of direct API client creation
-	_, err := r.UpdateADConnection(ctx, &plan, &config)
+	updateResp, err := r.UpdateADConnection(ctx, &plan, &config)
 	if err != nil {
 		opCtx.LogOperationError(ctx, "AD connection update failed", "", err)
 		resp.Diagnostics.AddError(
@@ -1125,6 +1128,10 @@ func (r *AdConnectionResource) Update(ctx context.Context, req resource.UpdateRe
 
 	// Update model from read response
 	r.UpdateModelFromReadResponse(&plan, getResp)
+
+	apiMessage := util.SafeDeref(updateResp.Msg)
+	plan.Msg = types.StringValue(apiMessage)
+	plan.ErrorCode = types.StringValue(*updateResp.ErrorCode)
 
 	stateUpdateDiagnostics := resp.State.Set(ctx, plan)
 	resp.Diagnostics.Append(stateUpdateDiagnostics...)

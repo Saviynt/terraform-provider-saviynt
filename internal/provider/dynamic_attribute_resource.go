@@ -360,7 +360,7 @@ func (r *DynamicAttributeResource) CreateDynamicAttribute(ctx context.Context, p
 			return fmt.Errorf("401 unauthorized")
 		}
 		createResp = resp
-		finalHttpResp = hResp  // Update on every call including retries
+		finalHttpResp = hResp // Update on every call including retries
 		return err
 	})
 
@@ -575,7 +575,7 @@ func (r *DynamicAttributeResource) ReadDynamicAttribute(ctx context.Context, end
 			return fmt.Errorf("401 unauthorized")
 		}
 		fetchResp = resp
-		finalHttpResp = hResp  // Update on every call including retries
+		finalHttpResp = hResp // Update on every call including retries
 		return err
 	})
 
@@ -985,7 +985,7 @@ func (r *DynamicAttributeResource) DeleteDynamicAttribute(ctx context.Context, s
 			return fmt.Errorf("401 unauthorized")
 		}
 		deleteResp = resp
-		finalHttpResp = hResp  // Update on every call including retries
+		finalHttpResp = hResp // Update on every call including retries
 		return err
 	})
 
@@ -1020,7 +1020,7 @@ func (r *DynamicAttributeResource) ValidateImportKey(ctx context.Context, endpoi
 		endpointResp = resp
 		return err
 	})
-	
+
 	if err != nil {
 		log.Printf("[ERROR] DynamicAttribute: API Call failed: Failed to fetch endpoint details. Error: %v", err)
 		return "", fmt.Errorf("API Call failed: Failed to fetch endpoint details. Error: %v", err)
