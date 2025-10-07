@@ -454,8 +454,8 @@ resource "saviynt_adsi_connection_resource" "example" {
 - `objectfilter` (String) Object Filter is used to filter the objects that will be returned.This filter will be same for all domains.
 - `page_size` (String) Page size defines the number of objects to be returned from each AD operation.
 - `pam_config` (String) JSON to specify Bootstrap Config.
-- `password` (String, Sensitive) Service account password
-- `password_wo` (String) Service account password
+- `password` (String, Sensitive) Service account password. Set the password. It is a compulsory field. Either this or password_wo need to be set
+- `password_wo` (String) Service account password. Set the password_wo. It is a compulsory field. Either this or password need to be set
 - `provisioning_url` (String) ADSI remote agent Provisioning URL
 - `removeaccessentitlementjson` (String) Configuration to Remove nested group hierarchy
 - `removeaccessjson` (String) Configuration to REMOVE Access (cross domain/forest group membership) to an account.

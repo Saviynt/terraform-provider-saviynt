@@ -36,10 +36,10 @@ data "saviynt_security_system_datasource" "by_name" {
 
 ### Optional
 
-- `connection_type` (String) Owner of the endpoint. If ownerType is User, specify the username of the owner. If ownerType is Usergroup, sepecify the name of the User group.
-- `connectionname` (String) Owner type of the endpoint. It could be User or Usergroup.
-- `max` (Number) Name for the security system that will be displayed in the user interface.
-- `offset` (Number) Security system for which you want to create an endpoint.
+- `connection_type` (String) Filter security systems by connection type (e.g., AD, REST, DB).
+- `connectionname` (String) Filter security systems by connection name.
+- `max` (Number) Maximum number of security systems to return in the response.
+- `offset` (Number) Number of security systems to skip before returning results (for pagination).
 - `systemname` (String) Name of the security systeme.
 
 ### Read-Only
@@ -61,7 +61,7 @@ Read-Only:
 - `automated_provisioning` (String) Enables automated provisioning if set to true.
 - `connection` (String) Primary connection used by the security system.
 - `connection_parameters` (String) Query or parameters to restrict endpoint access to specific users.
-- `connection_type_1` (String) Specify a connection type to view all connections in EIC for the connection type.
+- `connection_type` (String) Specify a connection type to view all connections in EIC for the connection type.
 - `connectionname1` (String) Name of connection used for reconciling identity objects from third-party applications.
 - `create_date` (String) Timestamp indicating when the security system was created.
 - `created_by` (String) Identifier of the user who created the security system.
@@ -88,7 +88,7 @@ Read-Only:
 - `remove_service_account_workflow` (String) Workflow for removing a service account.
 - `service_desk_connection` (String) Connection to service desk or ticketing system integration.
 - `status` (String) Current status of the security system (e.g., enabled, disabled).
-- `systemname1` (String) Specify the security system name.
+- `systemname` (String) Specify the security system name.
 - `update_date` (String) Timestamp indicating the last update to the security system.
 - `updated_by` (String) Identifier of the user who last updated the security system.
 - `use_open_connector` (String) Enables connectivity using open-source connectors such as REST if set to true.

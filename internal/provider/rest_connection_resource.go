@@ -15,9 +15,11 @@ import (
 
 	openapi "github.com/saviynt/saviynt-api-go-client/connections"
 
+	"github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
 	"github.com/hashicorp/terraform-plugin-framework/path"
 	"github.com/hashicorp/terraform-plugin-framework/resource"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema"
+	"github.com/hashicorp/terraform-plugin-framework/schema/validator"
 	"github.com/hashicorp/terraform-plugin-framework/types"
 	"github.com/hashicorp/terraform-plugin-log/tflog"
 )
@@ -96,12 +98,18 @@ func RestConnectorResourceSchema() map[string]schema.Attribute {
 		"connection_json": schema.StringAttribute{
 			Optional:    true,
 			Sensitive:   true,
-			Description: "Dynamic JSON configuration for the connection. Must be a valid JSON object string.",
+			Description: "Dynamic JSON configuration for the connection. Must be a valid JSON object string. Either the connection_json field or the connection_json_wo field must be populated to set the connection_json attribute.",
+			Validators: []validator.String{
+				stringvalidator.ConflictsWith(path.MatchRoot("connection_json_wo")),
+			},
 		},
 		"connection_json_wo": schema.StringAttribute{
 			Optional:    true,
 			WriteOnly:   true,
-			Description: "Dynamic JSON configuration for the connection (write-only). Must be a valid JSON object string.",
+			Description: "Dynamic JSON configuration for the connection (write-only). Must be a valid JSON object string. Either the connection_json field or the connection_json_wo field must be populated to set the connection_json attribute.",
+			Validators: []validator.String{
+				stringvalidator.ConflictsWith(path.MatchRoot("connection_json")),
+			},
 		},
 		"import_user_json": schema.StringAttribute{
 			Optional:    true,
@@ -249,16 +257,7 @@ func (r *RestConnectionResource) Schema(ctx context.Context, req resource.Schema
 	}
 }
 
-func (r *RestConnectionResource) ConfigValidators(ctx context.Context) []resource.ConfigValidator {
-	return []resource.ConfigValidator{
-		&connectionsutil.AtMostOneOfValidator{
-			Attrs: []path.Expression{
-				path.MatchRoot("connection_json"),
-				path.MatchRoot("connection_json_wo"),
-			},
-		},
-	}
-}
+
 
 func (r *RestConnectionResource) Configure(ctx context.Context, req resource.ConfigureRequest, resp *resource.ConfigureResponse) {
 	opCtx := errorsutil.CreateOperationContext(errorsutil.ConnectorTypeREST, "configure", "")
@@ -596,14 +595,6 @@ func (r *RestConnectionResource) UpdateModelFromReadResponse(state *RestConnecto
 	state.CreateEntitlementJson = util.SafeStringDatasource(apiResp.RESTConnectionResponse.Connectionattributes.CreateEntitlementJSON)
 	state.DeleteEntitlementJson = util.SafeStringDatasource(apiResp.RESTConnectionResponse.Connectionattributes.DeleteEntitlementJSON)
 	state.UpdateEntitlementJson = util.SafeStringDatasource(apiResp.RESTConnectionResponse.Connectionattributes.UpdateEntitlementJSON)
-
-	apiMessage := util.SafeDeref(apiResp.RESTConnectionResponse.Msg)
-	if apiMessage == "success" {
-		state.Msg = types.StringValue("Connection Successful")
-	} else {
-		state.Msg = types.StringValue(apiMessage)
-	}
-	state.ErrorCode = util.Int32PtrToTFString(apiResp.RESTConnectionResponse.Errorcode)
 }
 
 func (r *RestConnectionResource) ValidateRESTConnectionResponse(apiResp *openapi.GetConnectionDetailsResponse) error {
@@ -770,6 +761,14 @@ func (r *RestConnectionResource) Read(ctx context.Context, req resource.ReadRequ
 	// Update model from read response
 	r.UpdateModelFromReadResponse(&state, apiResp)
 
+	apiMessage := util.SafeDeref(apiResp.RESTConnectionResponse.Msg)
+	if apiMessage == "success" {
+		state.Msg = types.StringValue("Connection Read Successful")
+	} else {
+		state.Msg = types.StringValue(apiMessage)
+	}
+	state.ErrorCode = util.Int32PtrToTFString(apiResp.RESTConnectionResponse.Errorcode)
+
 	stateDiagnostics := resp.State.Set(ctx, &state)
 	resp.Diagnostics.Append(stateDiagnostics...)
 	if resp.Diagnostics.HasError() {
@@ -855,7 +854,7 @@ func (r *RestConnectionResource) Update(ctx context.Context, req resource.Update
 	ctx = opCtx.AddContextToLogger(ctx)
 
 	// Use interface pattern instead of direct API client creation
-	_, err := r.UpdateRESTConnection(ctx, &plan, &config)
+	updateResp, err := r.UpdateRESTConnection(ctx, &plan, &config)
 	if err != nil {
 		opCtx.LogOperationError(ctx, "REST connection update failed", "", err)
 		resp.Diagnostics.AddError(
@@ -878,6 +877,10 @@ func (r *RestConnectionResource) Update(ctx context.Context, req resource.Update
 
 	// Update model from read response
 	r.UpdateModelFromReadResponse(&plan, getResp)
+
+	apiMessage := util.SafeDeref(updateResp.Msg)
+	plan.Msg = types.StringValue(apiMessage)
+	plan.ErrorCode = types.StringValue(*updateResp.ErrorCode)
 
 	stateUpdateDiagnostics := resp.State.Set(ctx, plan)
 	resp.Diagnostics.Append(stateUpdateDiagnostics...)

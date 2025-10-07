@@ -21,9 +21,11 @@ import (
 
 	connectionsutil "terraform-provider-Saviynt/util/connectionsutil"
 
+	"github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
 	"github.com/hashicorp/terraform-plugin-framework/path"
 	"github.com/hashicorp/terraform-plugin-framework/resource"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema"
+	"github.com/hashicorp/terraform-plugin-framework/schema/validator"
 	"github.com/hashicorp/terraform-plugin-framework/types"
 	"github.com/hashicorp/terraform-plugin-log/tflog"
 	openapi "github.com/saviynt/saviynt-api-go-client/connections"
@@ -123,12 +125,18 @@ func ADSIConnectorResourceSchema() map[string]schema.Attribute {
 		"password": schema.StringAttribute{
 			Optional:    true,
 			Sensitive:   true,
-			Description: "Service account password",
+			Description: "Service account password. Set the password. It is a compulsory field. Either this or password_wo need to be set",
+			Validators: []validator.String{
+				stringvalidator.ConflictsWith(path.MatchRoot("password_wo")),
+			},
 		},
 		"password_wo": schema.StringAttribute{
 			Optional:    true,
 			WriteOnly:   true,
-			Description: "Service account password",
+			Description: "Service account password. Set the password_wo. It is a compulsory field. Either this or password need to be set",
+			Validators: []validator.String{
+				stringvalidator.ConflictsWith(path.MatchRoot("password")),
+			},
 		},
 		"connection_url": schema.StringAttribute{
 			Required:    true,
@@ -328,17 +336,6 @@ func (r *AdsiConnectionResource) Schema(ctx context.Context, req resource.Schema
 	}
 }
 
-func (r *AdsiConnectionResource) ConfigValidators(ctx context.Context) []resource.ConfigValidator {
-	return []resource.ConfigValidator{
-		&connectionsutil.ExactlyOneOfValidator{
-			Attrs: []path.Expression{
-				path.MatchRoot("password"),
-				path.MatchRoot("password_wo"),
-			},
-		},
-	}
-}
-
 func (r *AdsiConnectionResource) Configure(ctx context.Context, req resource.ConfigureRequest, resp *resource.ConfigureResponse) {
 	opCtx := errorsutil.CreateOperationContext(errorsutil.ConnectorTypeADSI, "configure", "")
 	ctx = opCtx.AddContextToLogger(ctx)
@@ -370,7 +367,7 @@ func (r *AdsiConnectionResource) Configure(ctx context.Context, req resource.Con
 	// Set the client and token from the provider state using interface wrapper.
 	r.client = &client.SaviyntClientWrapper{Client: prov.client}
 	r.token = prov.accessToken
-	r.provider = &client.SaviyntProviderWrapper{Provider: prov} // Store provider reference for retry logic 
+	r.provider = &client.SaviyntProviderWrapper{Provider: prov} // Store provider reference for retry logic
 
 	opCtx.LogOperationEnd(ctx, "ADSI connection resource configured successfully")
 }
@@ -433,6 +430,10 @@ func (r *AdsiConnectionResource) CreateADSIConnection(ctx context.Context, plan 
 
 	// Build ADSI connection create request
 	tflog.Debug(ctx, "Building ADSI connection create request")
+
+	if (config.Password.IsNull() || config.Password.IsUnknown()) && (config.PasswordWo.IsNull() || config.PasswordWo.IsUnknown()) {
+		return nil, fmt.Errorf("either password or password_wo must be set")
+	}
 
 	adsiConn := r.BuildADSIConnector(plan, config)
 	createReq := openapi.CreateOrUpdateRequest{
@@ -706,14 +707,6 @@ func (r *AdsiConnectionResource) UpdateModelFromReadResponse(state *ADSIConnecto
 	state.ObjectFilter = util.SafeStringDatasource(apiResp.ADSIConnectionResponse.Connectionattributes.OBJECTFILTER)
 	state.UpdateAccountJson = util.SafeStringDatasource(apiResp.ADSIConnectionResponse.Connectionattributes.UPDATEACCOUNTJSON)
 	state.RemoveAccountJson = util.SafeStringDatasource(apiResp.ADSIConnectionResponse.Connectionattributes.REMOVEACCOUNTJSON)
-
-	apiMessage := util.SafeDeref(apiResp.ADSIConnectionResponse.Msg)
-	if apiMessage == "success" {
-		state.Msg = types.StringValue("Connection Successful")
-	} else {
-		state.Msg = types.StringValue(apiMessage)
-	}
-	state.ErrorCode = util.Int32PtrToTFString(apiResp.ADSIConnectionResponse.Errorcode)
 }
 
 func (r *AdsiConnectionResource) UpdateADSIConnection(ctx context.Context, plan *ADSIConnectorResourceModel, config *ADSIConnectorResourceModel) (*openapi.CreateOrUpdateResponse, error) {
@@ -727,6 +720,10 @@ func (r *AdsiConnectionResource) UpdateADSIConnection(ctx context.Context, plan 
 
 	// Build ADSI connection update request
 	tflog.Debug(logCtx, "Building ADSI connection update request")
+
+	if (config.Password.IsNull() || config.Password.IsUnknown()) && (config.PasswordWo.IsNull() || config.PasswordWo.IsUnknown()) {
+		return nil, fmt.Errorf("either password or password_wo must be set")
+	}
 
 	adsiConn := r.BuildADSIConnector(plan, config)
 
@@ -880,6 +877,14 @@ func (r *AdsiConnectionResource) Read(ctx context.Context, req resource.ReadRequ
 	// Update model from read response
 	r.UpdateModelFromReadResponse(&state, apiResp)
 
+	apiMessage := util.SafeDeref(apiResp.ADSIConnectionResponse.Msg)
+	if apiMessage == "success" {
+		state.Msg = types.StringValue("Connection Read Successful")
+	} else {
+		state.Msg = types.StringValue(apiMessage)
+	}
+	state.ErrorCode = util.Int32PtrToTFString(apiResp.ADSIConnectionResponse.Errorcode)
+
 	stateDiagnostics := resp.State.Set(ctx, &state)
 	resp.Diagnostics.Append(stateDiagnostics...)
 	if resp.Diagnostics.HasError() {
@@ -965,7 +970,7 @@ func (r *AdsiConnectionResource) Update(ctx context.Context, req resource.Update
 	ctx = opCtx.AddContextToLogger(ctx)
 
 	// Use interface pattern instead of direct API client creation
-	_, err := r.UpdateADSIConnection(ctx, &plan, &config)
+	updateResp, err := r.UpdateADSIConnection(ctx, &plan, &config)
 	if err != nil {
 		opCtx.LogOperationError(ctx, "ADSI connection update failed", "", err)
 		resp.Diagnostics.AddError(
@@ -988,6 +993,10 @@ func (r *AdsiConnectionResource) Update(ctx context.Context, req resource.Update
 
 	// Update model from read response
 	r.UpdateModelFromReadResponse(&plan, getResp)
+
+	apiMessage := util.SafeDeref(updateResp.Msg)
+	plan.Msg = types.StringValue(apiMessage)
+	plan.ErrorCode = types.StringValue(*updateResp.ErrorCode)
 
 	stateUpdateDiagnostics := resp.State.Set(ctx, plan)
 	resp.Diagnostics.Append(stateUpdateDiagnostics...)
