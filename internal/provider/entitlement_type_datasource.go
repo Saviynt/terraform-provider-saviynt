@@ -354,7 +354,7 @@ func (d *entitlementTypeDataSource) ReadEntitlementTypeDetails(ctx context.Conte
 			return fmt.Errorf("401 unauthorized")
 		}
 		readResp = resp
-		finalHttpResp = hResp  // Update on every call including retries
+		finalHttpResp = hResp // Update on every call including retries
 		return err
 	})
 

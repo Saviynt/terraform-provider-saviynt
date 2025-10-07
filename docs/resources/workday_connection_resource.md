@@ -413,8 +413,8 @@ resource "saviynt_workday_connection_resource" "soap" {
 - `assign_orgrole_payload` (String) Payload for assigning org role.
 - `base_url` (String) Base URL of the Workday tenant instance.
 - `client_id` (String) OAuth client ID.
-- `client_secret` (String, Sensitive) OAuth client secret.
-- `client_secret_wo` (String) Client secret write-only attribute.
+- `client_secret` (String, Sensitive) OAuth client secret. Either this field or the client_secret_wo field must be populated to set the client_secret attribute.
+- `client_secret_wo` (String) OAuth client secret. Either this field or the client_secret field must be populated to set the client_secret attribute.
 - `create_account_payload` (String) Payload for creating an account.
 - `custom_config` (String) Custom configuration for Workday connector.
 - `defaultsavroles` (String) Default SAV roles for managing the connection. Example: "ROLE_ORG"
@@ -425,11 +425,11 @@ resource "saviynt_workday_connection_resource" "soap" {
 - `orgrole_import_payload` (String) Custom SOAP body for organization role import.
 - `page_size` (String) Number of objects to return per page during import.
 - `pam_config` (String) Privileged Access Management configuration.
-- `password` (String, Sensitive) Password for SOAP authentication.
-- `password_wo` (String) Password write-only attribute.
+- `password` (String, Sensitive) Password for SOAP authentication. Either this field or the password_wo field must be populated to set the password attribute.
+- `password_wo` (String) Password write-only attribute. Either this field or the password field must be populated to set the password attribute.
 - `raas_mapping_json` (String) Overrides default report mapping for RaaS.
-- `refresh_token` (String, Sensitive) OAuth refresh token.
-- `refresh_token_wo` (String) Refresh token write-only attribute.
+- `refresh_token` (String, Sensitive) OAuth refresh token. Either this field or the refresh_token_wo field must be populated to set the refresh_token attribute.
+- `refresh_token_wo` (String) Refresh token write-only attribute. Either this field or the refresh_token field must be populated to set the refresh_token attribute.
 - `remove_orgrole_payload` (String) Payload for removing org role.
 - `report_owner` (String) Account name of the report owner used to build default RaaS URLs.
 - `save_in_vault` (String) Flag indicating whether the encrypted attribute should be saved in the configured vault. Example: "false"

@@ -277,19 +277,21 @@ func (d *restConnectionDatasource) Read(ctx context.Context, req datasource.Read
 			IsTimeoutSupported:       util.SafeBoolDatasource(apiResp.RESTConnectionResponse.Connectionattributes.IsTimeoutSupported),
 			ImportAccountEntJSON:     util.SafeStringDatasource(apiResp.RESTConnectionResponse.Connectionattributes.ImportAccountEntJSON),
 			IsTimeoutConfigValidated: util.SafeBoolDatasource(apiResp.RESTConnectionResponse.Connectionattributes.IsTimeoutConfigValidated),
-			ConnectionTimeoutConfig: ConnectionTimeoutConfig{
-				RetryWait:               util.SafeInt64(apiResp.RESTConnectionResponse.Connectionattributes.ConnectionTimeoutConfig.RetryWait),
-				TokenRefreshMaxTryCount: util.SafeInt64(apiResp.RESTConnectionResponse.Connectionattributes.ConnectionTimeoutConfig.TokenRefreshMaxTryCount),
-				RetryWaitMaxValue:       util.SafeInt64(apiResp.RESTConnectionResponse.Connectionattributes.ConnectionTimeoutConfig.RetryWaitMaxValue),
-				RetryCount:              util.SafeInt64(apiResp.RESTConnectionResponse.Connectionattributes.ConnectionTimeoutConfig.RetryCount),
-				ReadTimeout:             util.SafeInt64(apiResp.RESTConnectionResponse.Connectionattributes.ConnectionTimeoutConfig.ReadTimeout),
-				ConnectionTimeout:       util.SafeInt64(apiResp.RESTConnectionResponse.Connectionattributes.ConnectionTimeoutConfig.ConnectionTimeout),
-				RetryFailureStatusCode:  util.SafeInt64(apiResp.RESTConnectionResponse.Connectionattributes.ConnectionTimeoutConfig.RetryFailureStatusCode),
-			},
 			ApplicationDiscoveryJson: util.SafeStringDatasource(apiResp.RESTConnectionResponse.Connectionattributes.ApplicationDiscoveryJSON),
 			CreateEntitlementJson:    util.SafeStringDatasource(apiResp.RESTConnectionResponse.Connectionattributes.CreateEntitlementJSON),
 			DeleteEntitlementJson:    util.SafeStringDatasource(apiResp.RESTConnectionResponse.Connectionattributes.DeleteEntitlementJSON),
 			UpdateEntitlementJson:    util.SafeStringDatasource(apiResp.RESTConnectionResponse.Connectionattributes.UpdateEntitlementJSON),
+		}
+		if apiResp.RESTConnectionResponse.Connectionattributes.ConnectionTimeoutConfig != nil {
+			state.ConnectionAttributes.ConnectionTimeoutConfig = ConnectionTimeoutConfig{
+				RetryWait:               util.SafeInt64(apiResp.RESTConnectionResponse.Connectionattributes.ConnectionTimeoutConfig.RetryWait),
+				TokenRefreshMaxTryCount: util.SafeInt64(apiResp.RESTConnectionResponse.Connectionattributes.ConnectionTimeoutConfig.TokenRefreshMaxTryCount),
+				RetryFailureStatusCode:  util.SafeInt64(apiResp.RESTConnectionResponse.Connectionattributes.ConnectionTimeoutConfig.RetryFailureStatusCode),
+				RetryWaitMaxValue:       util.SafeInt64(apiResp.RESTConnectionResponse.Connectionattributes.ConnectionTimeoutConfig.RetryWaitMaxValue),
+				RetryCount:              util.SafeInt64(apiResp.RESTConnectionResponse.Connectionattributes.ConnectionTimeoutConfig.RetryCount),
+				ReadTimeout:             util.SafeInt64(apiResp.RESTConnectionResponse.Connectionattributes.ConnectionTimeoutConfig.ReadTimeout),
+				ConnectionTimeout:       util.SafeInt64(apiResp.RESTConnectionResponse.Connectionattributes.ConnectionTimeoutConfig.ConnectionTimeout),
+			}
 		}
 	}
 

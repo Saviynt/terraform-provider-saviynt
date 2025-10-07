@@ -494,10 +494,10 @@ resource "saviynt_github_rest_connection_resource" "example" {
 
 ### Optional
 
-- `access_tokens` (String, Sensitive) Property for ACCESS_TOKENS
-- `access_tokens_wo` (String) Property for ACCESS_TOKENS (write-only)
-- `connection_json` (String, Sensitive) Property for ConnectionJSON
-- `connection_json_wo` (String) Property for ConnectionJSON (write-only)
+- `access_tokens` (String, Sensitive) Property for ACCESS_TOKENS. For setting access_tokens either this field or access_tokens_wo need to be set
+- `access_tokens_wo` (String) Property for ACCESS_TOKENS (write-only). For setting access_tokens either this field or access_tokens_wo need to be set
+- `connection_json` (String, Sensitive) Property for ConnectionJSON. For setting connection_json either this field or connection_json_wo need to be set
+- `connection_json_wo` (String) Property for ConnectionJSON (write-only). For setting connection_json either this field or connection_json_wo need to be set
 - `defaultsavroles` (String) Default SAV roles for managing the connection. Example: "ROLE_ORG"
 - `description` (String) Description for the connection. Example: "ORG_AD"
 - `email_template` (String) Email template for notifications. Example: "New Account Task Creation"

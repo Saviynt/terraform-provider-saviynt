@@ -50,8 +50,8 @@ resource "saviynt_rest_connection_resource" "example" {
 - `application_discovery_json` (String) The ApplicationDiscoveryJSON attribute is specifically implemented for ServiceNow application discovery, allowing automated discovery and import of applications from ServiceNow instances.
 - `change_pass_json` (String) JSON to change a user's password.
 - `config_json` (String) General configuration JSON for the REST connector.
-- `connection_json` (String, Sensitive) Dynamic JSON configuration for the connection. Must be a valid JSON object string.
-- `connection_json_wo` (String) Dynamic JSON configuration for the connection (write-only). Must be a valid JSON object string.
+- `connection_json` (String, Sensitive) Dynamic JSON configuration for the connection. Must be a valid JSON object string. Either the connection_json field or the connection_json_wo field must be populated to set the connection_json attribute.
+- `connection_json_wo` (String) Dynamic JSON configuration for the connection (write-only). Must be a valid JSON object string. Either the connection_json field or the connection_json_wo field must be populated to set the connection_json attribute.
 - `create_account_json` (String) JSON to create an account.
 - `create_entitlement_json` (String) The three entitlement JSON attributes (Create, Update, Delete) are part of a comprehensive entitlement management system for REST connectors, with supporting constants and service classes.
 - `create_ticket_json` (String) JSON to create a ticket.
