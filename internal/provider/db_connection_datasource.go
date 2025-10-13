@@ -7,32 +7,30 @@ package provider
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
-	"log"
-	"net/http"
-	"strconv"
-	"strings"
 	"terraform-provider-Saviynt/internal/client"
 	"terraform-provider-Saviynt/util"
 	connectionsutil "terraform-provider-Saviynt/util/connectionsutil"
+	"terraform-provider-Saviynt/util/errorsutil"
 
 	"github.com/hashicorp/terraform-plugin-framework/datasource"
 	"github.com/hashicorp/terraform-plugin-framework/datasource/schema"
 	"github.com/hashicorp/terraform-plugin-framework/types"
-	s "github.com/saviynt/saviynt-api-go-client"
-
+	"github.com/hashicorp/terraform-plugin-log/tflog"
 	openapi "github.com/saviynt/saviynt-api-go-client/connections"
 )
 
-// Ensure provider defined types fully satisfy framework interfaces.
-var _ datasource.DataSource = &dbConnectionsDataSource{}
+var _ datasource.DataSource = &DbConnectionsDataSource{}
+
+// Initialize error codes for DB Connection datasource operations
+var dbDatasourceErrorCodes = errorsutil.NewConnectorErrorCodes(errorsutil.ConnectorTypeDB)
 
 // DBConnectionsDataSource defines the data source
-type dbConnectionsDataSource struct {
-	client   *s.Client
-	token    string
-	provider client.SaviyntProviderInterface
+type DbConnectionsDataSource struct {
+	client            client.SaviyntClientInterface
+	token             string
+	provider          client.SaviyntProviderInterface
+	connectionFactory client.ConnectionFactoryInterface
 }
 
 type DBConnectionDataSourceModel struct {
@@ -80,13 +78,40 @@ type DBConnectionAttributes struct {
 	UpdateEntitlementJson types.String `tfsdk:"update_entitlement_json"`
 }
 
-var _ datasource.DataSource = &dbConnectionsDataSource{}
+var _ datasource.DataSource = &DbConnectionsDataSource{}
 
+// NewDBConnectionsDataSource creates a new DB connections data source with default factory
 func NewDBConnectionsDataSource() datasource.DataSource {
-	return &dbConnectionsDataSource{}
+	return &DbConnectionsDataSource{
+		connectionFactory: &client.DefaultConnectionFactory{},
+	}
 }
 
-func (d *dbConnectionsDataSource) Metadata(ctx context.Context, req datasource.MetadataRequest, resp *datasource.MetadataResponse) {
+// NewDBConnectionsDataSourceWithFactory creates a new DB connections data source with custom factory
+// Used primarily for testing with mock factories
+func NewDBConnectionsDataSourceWithFactory(factory client.ConnectionFactoryInterface) datasource.DataSource {
+	return &DbConnectionsDataSource{
+		connectionFactory: factory,
+	}
+}
+
+// SetClient sets the client for testing purposes
+func (d *DbConnectionsDataSource) SetClient(client client.SaviyntClientInterface) {
+	d.client = client
+}
+
+// SetToken sets the token for testing purposes
+func (d *DbConnectionsDataSource) SetToken(token string) {
+	d.token = token
+}
+
+// SetProvider sets the provider for testing purposes
+func (d *DbConnectionsDataSource) SetProvider(provider client.SaviyntProviderInterface) {
+	d.provider = provider
+}
+
+// Metadata sets the data source type name for Terraform
+func (d *DbConnectionsDataSource) Metadata(ctx context.Context, req datasource.MetadataRequest, resp *datasource.MetadataResponse) {
 	resp.TypeName = "saviynt_db_connection_datasource"
 }
 
@@ -143,115 +168,226 @@ func DBConnectorsDataSourceSchema() map[string]schema.Attribute {
 	}
 }
 
-// Schema defines the attributes for the data source
-func (d *dbConnectionsDataSource) Schema(ctx context.Context, req datasource.SchemaRequest, resp *datasource.SchemaResponse) {
+// Schema defines the structure and attributes available for the DB connection data source
+func (d *DbConnectionsDataSource) Schema(ctx context.Context, req datasource.SchemaRequest, resp *datasource.SchemaResponse) {
 	resp.Schema = schema.Schema{
 		Description: util.DBConnDataSourceDescription,
 		Attributes:  connectionsutil.MergeDataSourceAttributes(BaseConnectorDataSourceSchema(), DBConnectorsDataSourceSchema()),
 	}
 }
 
-func (d *dbConnectionsDataSource) Configure(ctx context.Context, req datasource.ConfigureRequest, resp *datasource.ConfigureResponse) {
+// Configure initializes the data source with provider configuration
+// Sets up client and authentication token for API operations
+func (d *DbConnectionsDataSource) Configure(ctx context.Context, req datasource.ConfigureRequest, resp *datasource.ConfigureResponse) {
+	opCtx := errorsutil.CreateOperationContext(errorsutil.ConnectorTypeDB, "configure", "")
+	ctx = opCtx.AddContextToLogger(ctx)
+
+	opCtx.LogOperationStart(ctx, "Starting DB connection datasource configuration")
+
 	// Check if provider data is available.
 	if req.ProviderData == nil {
-		log.Println("ProviderData is nil, returning early.")
+		tflog.Debug(ctx, "ProviderData is nil, returning early")
+		opCtx.LogOperationEnd(ctx, "DB connection datasource configuration completed - no provider data")
 		return
 	}
 
 	// Cast provider data to your provider type.
 	prov, ok := req.ProviderData.(*SaviyntProvider)
 	if !ok {
-		resp.Diagnostics.AddError("Unexpected Provider Data", "Expected *SaviyntProvider")
+		errorCode := dbDatasourceErrorCodes.ProviderConfig()
+		opCtx.LogOperationError(ctx, "Provider configuration failed", errorCode,
+			fmt.Errorf("expected *SaviyntProvider, got different type"),
+			map[string]interface{}{"expected_type": "*SaviyntProvider"})
+
+		resp.Diagnostics.AddError(
+			errorsutil.GetErrorMessage(errorsutil.ErrProviderConfig),
+			fmt.Sprintf("[%s] Expected *SaviyntProvider, got different type", errorCode),
+		)
 		return
 	}
 
-	// Set the client and token from the provider state.
-	d.client = prov.client
+	// Set the client and token from the provider state using interface wrapper.
+	d.client = &client.SaviyntClientWrapper{Client: prov.client}
 	d.token = prov.accessToken
 	d.provider = &client.SaviyntProviderWrapper{Provider: prov}
+
+	opCtx.LogOperationEnd(ctx, "DB connection datasource configured successfully")
 }
 
-// SetProvider sets the provider for testing purposes
-func (d *dbConnectionsDataSource) SetProvider(provider client.SaviyntProviderInterface) {
-	d.provider = provider
-}
-
-func (d *dbConnectionsDataSource) Read(ctx context.Context, req datasource.ReadRequest, resp *datasource.ReadResponse) {
+// Read retrieves DB connection details from Saviynt and populates the Terraform state
+// Supports lookup by connection name or connection key with comprehensive error handling
+func (d *DbConnectionsDataSource) Read(ctx context.Context, req datasource.ReadRequest, resp *datasource.ReadResponse) {
 	var state DBConnectionDataSourceModel
 
+	opCtx := errorsutil.CreateOperationContext(errorsutil.ConnectorTypeDB, "datasource_read", "")
+	ctx = opCtx.AddContextToLogger(ctx)
+
+	opCtx.LogOperationStart(ctx, "Starting DB connection datasource read")
+
+	// Extract configuration from request
 	configDiagnostics := req.Config.Get(ctx, &state)
 	resp.Diagnostics.Append(configDiagnostics...)
 	if resp.Diagnostics.HasError() {
+		errorCode := dbDatasourceErrorCodes.ConfigExtraction()
+		opCtx.LogOperationError(ctx, "Failed to get config from request", errorCode,
+			fmt.Errorf("config extraction failed"))
+		resp.Diagnostics.AddError(
+			errorsutil.GetErrorMessage(errorsutil.ErrConfigExtraction),
+			fmt.Sprintf("[%s] Unable to extract Terraform configuration from request", errorCode),
+		)
 		return
 	}
 
-	// Prepare request parameters
-	reqParams := openapi.GetConnectionDetailsRequest{}
-
-	// Set filters based on provided parameters
+	// Update operation context with connection name if available
+	connectionName := ""
 	if !state.ConnectionName.IsNull() && state.ConnectionName.ValueString() != "" {
-		reqParams.SetConnectionname(state.ConnectionName.ValueString())
+		connectionName = state.ConnectionName.ValueString()
+		opCtx.ConnectionName = connectionName
+		ctx = opCtx.AddContextToLogger(ctx)
 	}
+
+	// Prepare connection parameters
+	var connectionKey *int64
 	if !state.ConnectionKey.IsNull() {
-		connectionKeyInt := state.ConnectionKey.ValueInt64()
-		reqParams.SetConnectionkey(strconv.FormatInt(connectionKeyInt, 10))
+		keyValue := state.ConnectionKey.ValueInt64()
+		connectionKey = &keyValue
 	}
+
+	// Validate that at least one identifier is provided
+	if connectionName == "" && connectionKey == nil {
+		errorCode := dbDatasourceErrorCodes.MissingIdentifier()
+		opCtx.LogOperationError(ctx, "Missing connection identifier", errorCode,
+			fmt.Errorf("either connection_name or connection_key must be provided"))
+		resp.Diagnostics.AddError(
+			errorsutil.GetErrorMessage(errorsutil.ErrMissingIdentifier),
+			fmt.Sprintf("[%s] Either 'connection_name' or 'connection_key' must be provided to look up the DB connection.", errorCode),
+		)
+		return
+	}
+
+	// Execute API call to get DB connection details
+	apiResp, err := d.ReadDBConnectionDetails(ctx, connectionName, connectionKey)
+	if err != nil {
+		// Error is already sanitized in ReadDBConnectionDetails method
+		errorCode := dbDatasourceErrorCodes.ReadFailed()
+		opCtx.LogOperationError(ctx, "Failed to read DB connection details", errorCode, err)
+		resp.Diagnostics.AddError(
+			errorsutil.GetErrorMessage(errorsutil.ErrReadFailed),
+			fmt.Sprintf("[%s] %s", errorCode, err.Error()),
+		)
+		return
+	}
+
+	// Validate API response
+	if err := d.ValidateDBConnectionResponse(apiResp); err != nil {
+		errorCode := dbDatasourceErrorCodes.APIError()
+		opCtx.LogOperationError(ctx, "Invalid connection type for DB datasource", errorCode, err)
+		resp.Diagnostics.AddError(
+			errorsutil.GetErrorMessage(errorsutil.ErrAPIError),
+			fmt.Sprintf("[%s] Unable to verify connection type for connection %q. The provider could not determine the type of this connection. Please ensure the connection name is correct and belongs to a supported connector type.", errorCode, connectionName),
+		)
+		return
+	}
+
+	// Map API response to state
+	d.UpdateModelFromDBConnectionResponse(&state, apiResp)
+
+	// Handle authentication logic
+	d.HandleDBAuthenticationLogic(&state, resp)
+
+	// Set final state
+	stateDiagnostics := resp.State.Set(ctx, &state)
+	resp.Diagnostics.Append(stateDiagnostics...)
+	if resp.Diagnostics.HasError() {
+		errorCode := dbDatasourceErrorCodes.StateUpdate()
+		opCtx.LogOperationError(ctx, "Failed to set state", errorCode,
+			fmt.Errorf("state update failed"))
+		resp.Diagnostics.AddError(
+			errorsutil.GetErrorMessage(errorsutil.ErrStateUpdate),
+			fmt.Sprintf("[%s] Unable to update Terraform state for DB connection datasource", errorCode),
+		)
+		return
+	}
+
+	opCtx.LogOperationEnd(ctx, "DB connection datasource read completed successfully",
+		map[string]interface{}{
+			"connection_name": connectionName,
+			"has_attributes":  state.ConnectionAttributes != nil,
+		})
+}
+
+// ReadDBConnectionDetails retrieves DB connection details from Saviynt API
+// Handles both connection name and connection key based lookups using factory pattern
+// Returns standardized errors with proper correlation tracking and sensitive data sanitization
+func (d *DbConnectionsDataSource) ReadDBConnectionDetails(ctx context.Context, connectionName string, connectionKey *int64) (*openapi.GetConnectionDetailsResponse, error) {
+	opCtx := errorsutil.CreateOperationContext(errorsutil.ConnectorTypeDB, "api_read", connectionName)
+	logCtx := opCtx.AddContextToLogger(ctx)
+
+	opCtx.LogOperationStart(logCtx, "Starting DB connection API call")
+
+	tflog.Debug(logCtx, "Executing API request to get DB connection details")
 
 	var apiResp *openapi.GetConnectionDetailsResponse
-	var finalHttpResp *http.Response
 
-	// Execute API call with retry logic
+	// Execute API request with retry logic
 	err := d.provider.AuthenticatedAPICallWithRetry(ctx, "read_db_connection_datasource", func(token string) error {
-		// Configure API client with current token
-		cfg := openapi.NewConfiguration()
-		apiBaseURL := strings.TrimPrefix(strings.TrimPrefix(d.client.APIBaseURL(), "https://"), "http://")
-		cfg.Host = apiBaseURL
-		cfg.Scheme = "https"
-		cfg.AddDefaultHeader("Authorization", "Bearer "+token)
-		cfg.HTTPClient = http.DefaultClient
+		connectionOps := d.connectionFactory.CreateConnectionOperations(d.client.APIBaseURL(), token)
 
-		apiClient := openapi.NewAPIClient(cfg)
-		apiReq := apiClient.ConnectionsAPI.GetConnectionDetails(ctx).GetConnectionDetailsRequest(reqParams)
+		// Build request with both connectionname and connectionkey
+		req := openapi.GetConnectionDetailsRequest{}
+		if connectionName != "" {
+			req.Connectionname = &connectionName
+		}
+		if connectionKey != nil {
+			keyStr := fmt.Sprintf("%d", *connectionKey)
+			req.Connectionkey = &keyStr
+		}
 
-		// Execute API request
-		resp, hResp, err := apiReq.Execute()
-		if hResp != nil && hResp.StatusCode == 401 {
+		resp, httpResp, err := connectionOps.GetConnectionDetailsDataSource(ctx, req)
+		if httpResp != nil && httpResp.StatusCode == 401 {
 			return fmt.Errorf("401 unauthorized")
 		}
 		apiResp = resp
-		finalHttpResp = hResp // Update on every call including retries
 		return err
 	})
 
 	if err != nil {
-		if finalHttpResp != nil && finalHttpResp.StatusCode != 200 {
-			log.Printf("[ERROR] HTTP error while reading DB Connector: %s", finalHttpResp.Status)
-			var fetchResp map[string]interface{}
-			if err := json.NewDecoder(finalHttpResp.Body).Decode(&fetchResp); err != nil {
-				resp.Diagnostics.AddError("Failed to decode error response", err.Error())
-				return
-			}
-			resp.Diagnostics.AddError(
-				"HTTP Error",
-				fmt.Sprintf("HTTP error while reading DB Connector for the reasons: %s", fetchResp["msg"]),
-			)
-
-		} else {
-			log.Printf("[ERROR] API Call Failed: %v", err)
-			resp.Diagnostics.AddError("API Call Failed", fmt.Sprintf("Error: %v", err))
-		}
-		return
+		errorCode := dbDatasourceErrorCodes.ReadFailed()
+		opCtx.LogOperationError(logCtx, "Failed to read DB connection details", errorCode, err)
+		return nil, errorsutil.CreateStandardError(errorsutil.ConnectorTypeDB, errorCode, "api_read", connectionName, err)
 	}
+
+	opCtx.LogOperationEnd(logCtx, "DB connection API call completed successfully")
+
+	return apiResp, nil
+}
+
+// ValidateDBConnectionResponse validates that the API response contains valid DB connection data
+// Returns standardized error if validation fails
+func (d *DbConnectionsDataSource) ValidateDBConnectionResponse(apiResp *openapi.GetConnectionDetailsResponse) error {
 	if apiResp != nil && apiResp.DBConnectionResponse == nil {
-		error := "Verify the connection type"
-		log.Printf("[ERROR]: Verify the connection type given")
-		resp.Diagnostics.AddError("Read of DB connection failed", error)
-		return
+		return fmt.Errorf("verify the connection type - DB connection response is nil")
 	}
-	log.Printf("[DEBUG] HTTP Status Code: %d", finalHttpResp.StatusCode)
+	return nil
+}
 
+// UpdateModelFromDBConnectionResponse maps API response data to the Terraform state model
+// It handles both base connection fields and detailed connection attributes
+func (d *DbConnectionsDataSource) UpdateModelFromDBConnectionResponse(state *DBConnectionDataSourceModel, apiResp *openapi.GetConnectionDetailsResponse) {
+	// Map base connection fields
+	d.MapBaseDBConnectionFields(state, apiResp)
+
+	// Map connection attributes
+	d.MapDBConnectionAttributes(state, apiResp)
+}
+
+// MapBaseDBConnectionFields maps basic connection fields from API response to state model
+// These are common fields available for all connection types
+func (d *DbConnectionsDataSource) MapBaseDBConnectionFields(state *DBConnectionDataSourceModel, apiResp *openapi.GetConnectionDetailsResponse) {
 	state.Msg = util.SafeStringDatasource(apiResp.DBConnectionResponse.Msg)
 	state.ErrorCode = util.SafeInt64(apiResp.DBConnectionResponse.Errorcode)
+	connectionKey := util.SafeInt64(apiResp.DBConnectionResponse.Connectionkey)
+	state.ID = types.StringValue(fmt.Sprintf("ds-db-%d", connectionKey.ValueInt64()))
 	state.ConnectionName = util.SafeStringDatasource(apiResp.DBConnectionResponse.Connectionname)
 	state.ConnectionKey = util.SafeInt64(apiResp.DBConnectionResponse.Connectionkey)
 	state.Description = util.SafeStringDatasource(apiResp.DBConnectionResponse.Description)
@@ -260,70 +396,89 @@ func (d *dbConnectionsDataSource) Read(ctx context.Context, req datasource.ReadR
 	state.CreatedOn = util.SafeStringDatasource(apiResp.DBConnectionResponse.Createdon)
 	state.CreatedBy = util.SafeStringDatasource(apiResp.DBConnectionResponse.Createdby)
 	state.UpdatedBy = util.SafeStringDatasource(apiResp.DBConnectionResponse.Updatedby)
-	state.Msg = util.SafeStringDatasource(apiResp.DBConnectionResponse.Msg)
 	state.EmailTemplate = util.SafeStringDatasource(apiResp.DBConnectionResponse.Emailtemplate)
+}
 
-	if apiResp.DBConnectionResponse.Connectionattributes != nil {
-		state.ConnectionAttributes = &DBConnectionAttributes{
-			PasswordMinLength:        util.SafeStringDatasource(apiResp.DBConnectionResponse.Connectionattributes.PASSWORD_MIN_LENGTH),
-			AccountExistsJSON:        util.SafeStringDatasource(apiResp.DBConnectionResponse.Connectionattributes.ACCOUNTEXISTSJSON),
-			RolesImport:              util.SafeStringDatasource(apiResp.DBConnectionResponse.Connectionattributes.ROLESIMPORT),
-			RoleOwnerImport:          util.SafeStringDatasource(apiResp.DBConnectionResponse.Connectionattributes.ROLEOWNERIMPORT),
-			CreateAccountJSON:        util.SafeStringDatasource(apiResp.DBConnectionResponse.Connectionattributes.CREATEACCOUNTJSON),
-			UserImport:               util.SafeStringDatasource(apiResp.DBConnectionResponse.Connectionattributes.USERIMPORT),
-			DisableAccountJSON:       util.SafeStringDatasource(apiResp.DBConnectionResponse.Connectionattributes.DISABLEACCOUNTJSON),
-			EntitlementValueImport:   util.SafeStringDatasource(apiResp.DBConnectionResponse.Connectionattributes.ENTITLEMENTVALUEIMPORT),
-			ConnectionType:           util.SafeStringDatasource(apiResp.DBConnectionResponse.Connectionattributes.ConnectionType),
-			UpdateUserJSON:           util.SafeStringDatasource(apiResp.DBConnectionResponse.Connectionattributes.UPDATEUSERJSON),
-			PasswordNoOfSplChars:     util.SafeStringDatasource(apiResp.DBConnectionResponse.Connectionattributes.PASSWORD_NOOFSPLCHARS),
-			RevokeAccessJSON:         util.SafeStringDatasource(apiResp.DBConnectionResponse.Connectionattributes.REVOKEACCESSJSON),
-			URL:                      util.SafeStringDatasource(apiResp.DBConnectionResponse.Connectionattributes.URL),
-			SystemImport:             util.SafeStringDatasource(apiResp.DBConnectionResponse.Connectionattributes.SYSTEMIMPORT),
-			DriverName:               util.SafeStringDatasource(apiResp.DBConnectionResponse.Connectionattributes.DRIVERNAME),
-			DeleteAccountJSON:        util.SafeStringDatasource(apiResp.DBConnectionResponse.Connectionattributes.DELETEACCOUNTJSON),
-			StatusThresholdConfig:    util.SafeStringDatasource(apiResp.DBConnectionResponse.Connectionattributes.STATUS_THRESHOLD_CONFIG),
-			IsTimeoutSupported:       util.SafeBoolDatasource(apiResp.DBConnectionResponse.Connectionattributes.IsTimeoutSupported),
-			PasswordNoOfCapsAlpha:    util.SafeStringDatasource(apiResp.DBConnectionResponse.Connectionattributes.PASSWORD_NOOFCAPSALPHA),
-			PasswordNoOfDigits:       util.SafeStringDatasource(apiResp.DBConnectionResponse.Connectionattributes.PASSWORD_NOOFDIGITS),
-			ConnectionProperties:     util.SafeStringDatasource(apiResp.DBConnectionResponse.Connectionattributes.CONNECTIONPROPERTIES),
-			ModifyUserDataJSON:       util.SafeStringDatasource(apiResp.DBConnectionResponse.Connectionattributes.MODIFYUSERDATAJSON),
-			IsTimeoutConfigValidated: util.SafeBoolDatasource(apiResp.DBConnectionResponse.Connectionattributes.IsTimeoutConfigValidated),
-			AccountsImport:           util.SafeStringDatasource(apiResp.DBConnectionResponse.Connectionattributes.ACCOUNTSIMPORT),
-			EnableAccountJSON:        util.SafeStringDatasource(apiResp.DBConnectionResponse.Connectionattributes.ENABLEACCOUNTJSON),
-			PasswordMaxLength:        util.SafeStringDatasource(apiResp.DBConnectionResponse.Connectionattributes.PASSWORD_MAX_LENGTH),
-			MaxPaginationSize:        util.SafeStringDatasource(apiResp.DBConnectionResponse.Connectionattributes.MAX_PAGINATION_SIZE),
-			UpdateAccountJSON:        util.SafeStringDatasource(apiResp.DBConnectionResponse.Connectionattributes.UPDATEACCOUNTJSON),
-			GrantAccessJSON:          util.SafeStringDatasource(apiResp.DBConnectionResponse.Connectionattributes.GRANTACCESSJSON),
-			CliCommandJSON:           util.SafeStringDatasource(apiResp.DBConnectionResponse.Connectionattributes.CLI_COMMAND_JSON),
-			//TER-176
-			CreateEntitlementJson: util.SafeStringDatasource(apiResp.DBConnectionResponse.Connectionattributes.CREATEENTITLEMENTJSON),
-			DeleteEntitlementJson: util.SafeStringDatasource(apiResp.DBConnectionResponse.Connectionattributes.DELETEENTITLEMENTJSON),
-			EntitlementExistJson:  util.SafeStringDatasource(apiResp.DBConnectionResponse.Connectionattributes.ENTITLEMENTEXISTJSON),
-			UpdateEntitlementJson: util.SafeStringDatasource(apiResp.DBConnectionResponse.Connectionattributes.UPDATEENTITLEMENTJSON),
-		}
-		if apiResp.DBConnectionResponse.Connectionattributes.ConnectionTimeoutConfig != nil {
-			state.ConnectionAttributes.ConnectionTimeoutConfig = &ConnectionTimeoutConfig{
-				RetryWait:               util.SafeInt64(apiResp.DBConnectionResponse.Connectionattributes.ConnectionTimeoutConfig.RetryWait),
-				TokenRefreshMaxTryCount: util.SafeInt64(apiResp.DBConnectionResponse.Connectionattributes.ConnectionTimeoutConfig.TokenRefreshMaxTryCount),
-				RetryFailureStatusCode:  util.SafeInt64(apiResp.DBConnectionResponse.Connectionattributes.ConnectionTimeoutConfig.RetryFailureStatusCode),
-				RetryWaitMaxValue:       util.SafeInt64(apiResp.DBConnectionResponse.Connectionattributes.ConnectionTimeoutConfig.RetryWaitMaxValue),
-				RetryCount:              util.SafeInt64(apiResp.DBConnectionResponse.Connectionattributes.ConnectionTimeoutConfig.RetryCount),
-				ReadTimeout:             util.SafeInt64(apiResp.DBConnectionResponse.Connectionattributes.ConnectionTimeoutConfig.ReadTimeout),
-				ConnectionTimeout:       util.SafeInt64(apiResp.DBConnectionResponse.Connectionattributes.ConnectionTimeoutConfig.ConnectionTimeout),
-			}
-		}
-	}
-
+// MapDBConnectionAttributes maps detailed DB connection attributes from API response to state model
+// Returns nil if no connection attributes are present in the response
+func (d *DbConnectionsDataSource) MapDBConnectionAttributes(state *DBConnectionDataSourceModel, apiResp *openapi.GetConnectionDetailsResponse) {
 	if apiResp.DBConnectionResponse.Connectionattributes == nil {
 		state.ConnectionAttributes = nil
+		return
 	}
+
+	attrs := apiResp.DBConnectionResponse.Connectionattributes
+	state.ConnectionAttributes = &DBConnectionAttributes{
+		PasswordMinLength:        util.SafeStringDatasource(attrs.PASSWORD_MIN_LENGTH),
+		AccountExistsJSON:        util.SafeStringDatasource(attrs.ACCOUNTEXISTSJSON),
+		RolesImport:              util.SafeStringDatasource(attrs.ROLESIMPORT),
+		RoleOwnerImport:          util.SafeStringDatasource(attrs.ROLEOWNERIMPORT),
+		CreateAccountJSON:        util.SafeStringDatasource(attrs.CREATEACCOUNTJSON),
+		UserImport:               util.SafeStringDatasource(attrs.USERIMPORT),
+		DisableAccountJSON:       util.SafeStringDatasource(attrs.DISABLEACCOUNTJSON),
+		EntitlementValueImport:   util.SafeStringDatasource(attrs.ENTITLEMENTVALUEIMPORT),
+		ConnectionType:           util.SafeStringDatasource(attrs.ConnectionType),
+		UpdateUserJSON:           util.SafeStringDatasource(attrs.UPDATEUSERJSON),
+		PasswordNoOfSplChars:     util.SafeStringDatasource(attrs.PASSWORD_NOOFSPLCHARS),
+		RevokeAccessJSON:         util.SafeStringDatasource(attrs.REVOKEACCESSJSON),
+		URL:                      util.SafeStringDatasource(attrs.URL),
+		SystemImport:             util.SafeStringDatasource(attrs.SYSTEMIMPORT),
+		DriverName:               util.SafeStringDatasource(attrs.DRIVERNAME),
+		DeleteAccountJSON:        util.SafeStringDatasource(attrs.DELETEACCOUNTJSON),
+		StatusThresholdConfig:    util.SafeStringDatasource(attrs.STATUS_THRESHOLD_CONFIG),
+		IsTimeoutSupported:       util.SafeBoolDatasource(attrs.IsTimeoutSupported),
+		PasswordNoOfCapsAlpha:    util.SafeStringDatasource(attrs.PASSWORD_NOOFCAPSALPHA),
+		PasswordNoOfDigits:       util.SafeStringDatasource(attrs.PASSWORD_NOOFDIGITS),
+		ConnectionProperties:     util.SafeStringDatasource(attrs.CONNECTIONPROPERTIES),
+		ModifyUserDataJSON:       util.SafeStringDatasource(attrs.MODIFYUSERDATAJSON),
+		IsTimeoutConfigValidated: util.SafeBoolDatasource(attrs.IsTimeoutConfigValidated),
+		AccountsImport:           util.SafeStringDatasource(attrs.ACCOUNTSIMPORT),
+		EnableAccountJSON:        util.SafeStringDatasource(attrs.ENABLEACCOUNTJSON),
+		PasswordMaxLength:        util.SafeStringDatasource(attrs.PASSWORD_MAX_LENGTH),
+		MaxPaginationSize:        util.SafeStringDatasource(attrs.MAX_PAGINATION_SIZE),
+		UpdateAccountJSON:        util.SafeStringDatasource(attrs.UPDATEACCOUNTJSON),
+		GrantAccessJSON:          util.SafeStringDatasource(attrs.GRANTACCESSJSON),
+		CliCommandJSON:           util.SafeStringDatasource(attrs.CLI_COMMAND_JSON),
+		// TER-176 entitlement management fields
+		CreateEntitlementJson:    util.SafeStringDatasource(attrs.CREATEENTITLEMENTJSON),
+		DeleteEntitlementJson:    util.SafeStringDatasource(attrs.DELETEENTITLEMENTJSON),
+		EntitlementExistJson:     util.SafeStringDatasource(attrs.ENTITLEMENTEXISTJSON),
+		UpdateEntitlementJson:    util.SafeStringDatasource(attrs.UPDATEENTITLEMENTJSON),
+	}
+
+	// Map connection timeout config if present
+	d.MapDBTimeoutConfig(attrs, state.ConnectionAttributes)
+}
+
+// MapDBTimeoutConfig maps connection timeout configuration from API response to state model
+// Only maps timeout config if it exists in the API response
+func (d *DbConnectionsDataSource) MapDBTimeoutConfig(attrs *openapi.DBConnectionAttributes, connectionAttrs *DBConnectionAttributes) {
+	if attrs.ConnectionTimeoutConfig != nil {
+		connectionAttrs.ConnectionTimeoutConfig = &ConnectionTimeoutConfig{
+			RetryWait:               util.SafeInt64(attrs.ConnectionTimeoutConfig.RetryWait),
+			TokenRefreshMaxTryCount: util.SafeInt64(attrs.ConnectionTimeoutConfig.TokenRefreshMaxTryCount),
+			RetryWaitMaxValue:       util.SafeInt64(attrs.ConnectionTimeoutConfig.RetryWaitMaxValue),
+			RetryCount:              util.SafeInt64(attrs.ConnectionTimeoutConfig.RetryCount),
+			ReadTimeout:             util.SafeInt64(attrs.ConnectionTimeoutConfig.ReadTimeout),
+			ConnectionTimeout:       util.SafeInt64(attrs.ConnectionTimeoutConfig.ConnectionTimeout),
+			RetryFailureStatusCode:  util.SafeInt64(attrs.ConnectionTimeoutConfig.RetryFailureStatusCode),
+		}
+	}
+}
+
+// HandleDBAuthenticationLogic processes the authenticate flag to control sensitive data visibility
+// When authenticate=false, connection_attributes are removed from state to prevent sensitive data exposure
+// When authenticate=true, all connection_attributes are returned in state
+func (d *DbConnectionsDataSource) HandleDBAuthenticationLogic(state *DBConnectionDataSourceModel, resp *datasource.ReadResponse) {
 	if !state.Authenticate.IsNull() && !state.Authenticate.IsUnknown() {
 		if state.Authenticate.ValueBool() {
+			tflog.Info(context.Background(), "Authentication enabled - returning all connection attributes")
 			resp.Diagnostics.AddWarning(
 				"Authentication Enabled",
 				"`authenticate` is true; all connection_attributes will be returned in state.",
 			)
 		} else {
+			tflog.Info(context.Background(), "Authentication disabled - removing connection attributes from state")
 			resp.Diagnostics.AddWarning(
 				"Authentication Disabled",
 				"`authenticate` is false; connection_attributes will be removed from state.",
@@ -331,6 +486,4 @@ func (d *dbConnectionsDataSource) Read(ctx context.Context, req datasource.ReadR
 			state.ConnectionAttributes = nil
 		}
 	}
-	stateDiagnostics := resp.State.Set(ctx, &state)
-	resp.Diagnostics.Append(stateDiagnostics...)
 }

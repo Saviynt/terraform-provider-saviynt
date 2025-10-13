@@ -144,7 +144,7 @@ func (p *SaviyntProvider) DataSources(ctx context.Context) []func() datasource.D
 		NewEndpointsDataSource,
 		NewConnectionsDataSource,
 		NewADConnectionsDataSource,
-		NewRESTConnectionDatasource,
+		NewRESTConnectionsDataSource,
 		NewADSIConnectionsDataSource,
 		NewDBConnectionsDataSource,
 		NewWorkdayConnectionsDataSource,
