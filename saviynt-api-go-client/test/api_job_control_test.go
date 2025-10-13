@@ -192,7 +192,7 @@ func Test_job_control_JobControlAPIService(t *testing.T) {
 			},
 		}
 
-		resp, httpRes, err := apiClient.JobControl.CreateUpdateTrigger(ctx).CreateOrUpdateTriggersRequest(request).Execute()
+		resp, httpRes, err := apiClient.JobControl.CreateOrUpdateTrigger(ctx).CreateOrUpdateTriggersRequest(request).Execute()
 
 		require.Nil(t, err)
 		require.NotNil(t, resp)
@@ -244,7 +244,7 @@ func Test_job_control_JobControlAPIService(t *testing.T) {
 			},
 		}
 
-		resp, httpRes, err := apiClient.JobControl.CreateUpdateTrigger(ctx).CreateOrUpdateTriggersRequest(request).Execute()
+		resp, httpRes, err := apiClient.JobControl.CreateOrUpdateTrigger(ctx).CreateOrUpdateTriggersRequest(request).Execute()
 
 		require.Nil(t, err)
 		require.NotNil(t, resp)
@@ -273,15 +273,15 @@ func Test_job_control_JobControlAPIService(t *testing.T) {
 					},
 					ValueMap: &openapiclient.ApplicationDataImportJobAllOfValueMap{
 						Securitysystems:   []string{"job_control_security_system"},
-						Accountsoraccess:  *openapiclient.PtrString("access"),
-						Externalconn:      *openapiclient.PtrString("4"),
-						Fullorincremental: *openapiclient.PtrString("full"),
+						Accountsoraccess:  openapiclient.PtrString("access"),
+						Externalconn:      openapiclient.PtrString("4"),
+						Fullorincremental: openapiclient.PtrString("full"),
 					},
 				}),
 			},
 		}
 
-		resp, httpRes, err := apiClient.JobControl.CreateUpdateTrigger(ctx).CreateOrUpdateTriggersRequest(request).Execute()
+		resp, httpRes, err := apiClient.JobControl.CreateOrUpdateTrigger(ctx).CreateOrUpdateTriggersRequest(request).Execute()
 
 		require.Nil(t, err)
 		require.NotNil(t, resp)
@@ -315,7 +315,7 @@ func Test_job_control_JobControlAPIService(t *testing.T) {
 			},
 		}
 
-		resp, httpRes, err := apiClient.JobControl.CreateUpdateTrigger(ctx).CreateOrUpdateTriggersRequest(request).Execute()
+		resp, httpRes, err := apiClient.JobControl.CreateOrUpdateTrigger(ctx).CreateOrUpdateTriggersRequest(request).Execute()
 
 		require.Nil(t, err)
 		require.NotNil(t, resp)
@@ -349,7 +349,7 @@ func Test_job_control_JobControlAPIService(t *testing.T) {
 			},
 		}
 
-		resp, httpRes, err := apiClient.JobControl.CreateUpdateTrigger(ctx).CreateOrUpdateTriggersRequest(request).Execute()
+		resp, httpRes, err := apiClient.JobControl.CreateOrUpdateTrigger(ctx).CreateOrUpdateTriggersRequest(request).Execute()
 
 		require.Nil(t, err)
 		require.NotNil(t, resp)
@@ -383,7 +383,7 @@ func Test_job_control_JobControlAPIService(t *testing.T) {
 			},
 		}
 
-		resp, httpRes, err := apiClient.JobControl.CreateUpdateTrigger(ctx).CreateOrUpdateTriggersRequest(request).Execute()
+		resp, httpRes, err := apiClient.JobControl.CreateOrUpdateTrigger(ctx).CreateOrUpdateTriggersRequest(request).Execute()
 
 		require.Nil(t, err)
 		require.NotNil(t, resp)
@@ -785,7 +785,7 @@ func Test_job_control_JobControlAPIService(t *testing.T) {
 			Jobname:     openapiclient.PtrString("SchemaUserJob"),
 		}
 
-		resp, httpRes, err := apiClient.JobControl.ResumePauseJobs(ctx).PauseResumeJobsRequest(request).Execute()
+		resp, httpRes, err := apiClient.JobControl.PauseResumeJobs(ctx).PauseResumeJobsRequest(request).Execute()
 
 		require.Nil(t, err)
 		require.NotNil(t, resp)
@@ -808,7 +808,7 @@ func Test_job_control_JobControlAPIService(t *testing.T) {
 			Jobname:     openapiclient.PtrString("SchemaUserJob"),
 		}
 
-		resp, httpRes, err := apiClient.JobControl.ResumePauseJobs(ctx).PauseResumeJobsRequest(request).Execute()
+		resp, httpRes, err := apiClient.JobControl.PauseResumeJobs(ctx).PauseResumeJobsRequest(request).Execute()
 
 		require.Nil(t, err)
 		require.NotNil(t, resp)
