@@ -36,6 +36,7 @@ func MapmapOfStringarrayOfStringAsCreateTriggersResponse(v *map[string][]string)
 	}
 }
 
+
 // Unmarshal JSON data into one of the pointers in the struct
 func (dst *CreateTriggersResponse) UnmarshalJSON(data []byte) error {
 	var err error
@@ -101,7 +102,7 @@ func (src CreateTriggersResponse) MarshalJSON() ([]byte, error) {
 }
 
 // Get the actual instance
-func (obj *CreateTriggersResponse) GetActualInstance() interface{} {
+func (obj *CreateTriggersResponse) GetActualInstance() (interface{}) {
 	if obj == nil {
 		return nil
 	}
@@ -118,7 +119,7 @@ func (obj *CreateTriggersResponse) GetActualInstance() interface{} {
 }
 
 // Get the actual instance value
-func (obj CreateTriggersResponse) GetActualInstanceValue() interface{} {
+func (obj CreateTriggersResponse) GetActualInstanceValue() (interface{}) {
 	if obj.CreateTriggersResponseOneOf != nil {
 		return *obj.CreateTriggersResponseOneOf
 	}
@@ -166,3 +167,5 @@ func (v *NullableCreateTriggersResponse) UnmarshalJSON(src []byte) error {
 	v.isSet = true
 	return json.Unmarshal(src, &v.value)
 }
+
+
