@@ -40,6 +40,7 @@ Following resources are available for management:
 - Enterprise Role
 - Entitlements
 - Privileges
+- Job Control Resources
 
 Following connectors are available:
 - Active Directory(AD)
@@ -53,6 +54,19 @@ Following connectors are available:
 - Unix
 - Github REST
 - Okta
+
+Following job control resources are available:
+- Application Data Import Job
+- WS Retry Job
+- WS Retry Blocking Job
+- User Import Job
+- ECM Job
+- ECM SAP User Job
+- Accounts Import Full Job
+- Accounts Import Incremental Job
+- Schema Role Job
+- Schema Account Job
+- Schema User Job
 
 Ephemeral resources available:
 - [File ephemeral resource](#feature-ephemeral-file-credential-resource)
@@ -858,10 +872,15 @@ Examples are available for all resources. Follow the following steps to try out 
 The following limitations are present in the latest version of the provider. These are being prioritized for resolution in the upcoming release alongside new feature additions:
 
 ### 1. All Resource objects
- - `terraform destroy` is not supported for any resource except dynamic attributes.
+ - `terraform destroy` is not supported for resources such as:
+    - Security System
+    - Endpoint
+    - Connectors
+    - Enterprise Role
+    - Entitlement
+    - Entitlement Type
 
 ### 2. Endpoints
-
 - **State management is not supported** for the following attributes:
   - `Owner`
   - `ResourceOwner`
@@ -1001,6 +1020,12 @@ The following limitations are present in the latest version of the provider. The
     - `Read-Only`
     - `Update`
     - `Delete`
+
+### 8. Job Control Resources
+- **State management is not supported** for job resources created or modified outside of Terraform (e.g., via Saviynt UI)
+- **Import functionality is not available** for existing job triggers - jobs must be created through Terraform
+- **Manual job modifications** made in Saviynt UI will not be detected by Terraform 
+- Users can only **create**, **update**, and **delete** job triggers through Terraform for the time being
 
 ---
 

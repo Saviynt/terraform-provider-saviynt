@@ -11,7 +11,7 @@ servers:
 paths:
   /ECM/api/v5/createUpdateTrigger:
     post:
-      operationId: createUpdateTrigger
+      operationId: createOrUpdateTrigger
       requestBody:
         content:
           application/json:
@@ -109,7 +109,7 @@ paths:
       - job_control
   /ECM/api/v5/resumePauseJobs:
     post:
-      operationId: resumePauseJobs
+      operationId: pauseResumeJobs
       requestBody:
         content:
           application/json:
@@ -745,9 +745,6 @@ components:
           example: full
           type: string
       required:
-      - accountsoraccess
-      - externalconn
-      - fullorincremental
       - securitysystems
     EcmJob_allOf_valueMap:
       properties:
