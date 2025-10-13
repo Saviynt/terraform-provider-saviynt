@@ -7,29 +7,30 @@ package provider
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
-	"log"
-	"net/http"
-	"strconv"
-	"strings"
 	"terraform-provider-Saviynt/internal/client"
 	"terraform-provider-Saviynt/util"
 	connectionsutil "terraform-provider-Saviynt/util/connectionsutil"
+	"terraform-provider-Saviynt/util/errorsutil"
 
 	"github.com/hashicorp/terraform-plugin-framework/datasource"
 	"github.com/hashicorp/terraform-plugin-framework/datasource/schema"
 	"github.com/hashicorp/terraform-plugin-framework/types"
-	s "github.com/saviynt/saviynt-api-go-client"
-
+	"github.com/hashicorp/terraform-plugin-log/tflog"
 	openapi "github.com/saviynt/saviynt-api-go-client/connections"
 )
 
+var _ datasource.DataSource = &EntraIdConnectionDataSource{}
+
+// Initialize error codes for EntraID Connection datasource operations
+var entraIdDatasourceErrorCodes = errorsutil.NewConnectorErrorCodes(errorsutil.ConnectorTypeEntraID)
+
 // EntraIDConnectionDataSource defines the data source
-type entraIdConnectionDataSource struct {
-	client   *s.Client
-	token    string
-	provider client.SaviyntProviderInterface
+type EntraIdConnectionDataSource struct {
+	client            client.SaviyntClientInterface
+	token             string
+	provider          client.SaviyntProviderInterface
+	connectionFactory client.ConnectionFactoryInterface
 }
 
 type EntraIdConnectionDataSourceModel struct {
@@ -76,13 +77,39 @@ type EntraIdConnectionAttributes struct {
 	ConnectionTimeoutConfig  *ConnectionTimeoutConfig `tfsdk:"connection_timeout_config"`
 }
 
-var _ datasource.DataSource = &entraIdConnectionDataSource{}
+var _ datasource.DataSource = &EntraIdConnectionDataSource{}
 
 func NewEntraIDConnectionsDataSource() datasource.DataSource {
-	return &entraIdConnectionDataSource{}
+	return &EntraIdConnectionDataSource{
+		connectionFactory: &client.DefaultConnectionFactory{},
+	}
 }
 
-func (d *entraIdConnectionDataSource) Metadata(ctx context.Context, req datasource.MetadataRequest, resp *datasource.MetadataResponse) {
+// NewEntraIDConnectionsDataSourceWithFactory creates a new EntraID connections data source with custom factory
+// Used primarily for testing with mock factories
+func NewEntraIDConnectionsDataSourceWithFactory(factory client.ConnectionFactoryInterface) datasource.DataSource {
+	return &EntraIdConnectionDataSource{
+		connectionFactory: factory,
+	}
+}
+
+// SetClient sets the client for testing purposes
+func (d *EntraIdConnectionDataSource) SetClient(client client.SaviyntClientInterface) {
+	d.client = client
+}
+
+// SetToken sets the token for testing purposes
+func (d *EntraIdConnectionDataSource) SetToken(token string) {
+	d.token = token
+}
+
+// SetProvider sets the provider for testing purposes
+func (d *EntraIdConnectionDataSource) SetProvider(provider client.SaviyntProviderInterface) {
+	d.provider = provider
+}
+
+// Metadata sets the data source type name for Terraform
+func (d *EntraIdConnectionDataSource) Metadata(ctx context.Context, req datasource.MetadataRequest, resp *datasource.MetadataResponse) {
 	resp.TypeName = "saviynt_entraid_connection_datasource"
 }
 
@@ -138,116 +165,226 @@ func EntraIDConnectorsDataSourceSchema() map[string]schema.Attribute {
 	}
 }
 
-// Schema defines the attributes for the data source
-func (d *entraIdConnectionDataSource) Schema(ctx context.Context, req datasource.SchemaRequest, resp *datasource.SchemaResponse) {
+// Schema defines the structure and attributes available for the EntraID connection data source
+func (d *EntraIdConnectionDataSource) Schema(ctx context.Context, req datasource.SchemaRequest, resp *datasource.SchemaResponse) {
 	resp.Schema = schema.Schema{
 		Description: util.EntraIDConnDataSourceDescription,
 		Attributes:  connectionsutil.MergeDataSourceAttributes(BaseConnectorDataSourceSchema(), EntraIDConnectorsDataSourceSchema()),
 	}
 }
 
-func (d *entraIdConnectionDataSource) Configure(ctx context.Context, req datasource.ConfigureRequest, resp *datasource.ConfigureResponse) {
+// Configure initializes the data source with provider configuration
+// Sets up client and authentication token for API operations
+func (d *EntraIdConnectionDataSource) Configure(ctx context.Context, req datasource.ConfigureRequest, resp *datasource.ConfigureResponse) {
+	opCtx := errorsutil.CreateOperationContext(errorsutil.ConnectorTypeEntraID, "configure", "")
+	ctx = opCtx.AddContextToLogger(ctx)
+
+	opCtx.LogOperationStart(ctx, "Starting EntraID connection datasource configuration")
+
 	// Check if provider data is available.
 	if req.ProviderData == nil {
-		log.Println("ProviderData is nil, returning early.")
+		tflog.Debug(ctx, "ProviderData is nil, returning early")
+		opCtx.LogOperationEnd(ctx, "EntraID connection datasource configuration completed - no provider data")
 		return
 	}
 
 	// Cast provider data to your provider type.
 	prov, ok := req.ProviderData.(*SaviyntProvider)
 	if !ok {
-		resp.Diagnostics.AddError("Unexpected Provider Data", "Expected *SaviyntProvider")
+		errorCode := entraIdDatasourceErrorCodes.ProviderConfig()
+		opCtx.LogOperationError(ctx, "Provider configuration failed", errorCode,
+			fmt.Errorf("expected *SaviyntProvider, got different type"),
+			map[string]interface{}{"expected_type": "*SaviyntProvider"})
+
+		resp.Diagnostics.AddError(
+			errorsutil.GetErrorMessage(errorsutil.ErrProviderConfig),
+			fmt.Sprintf("[%s] Expected *SaviyntProvider, got different type", errorCode),
+		)
 		return
 	}
 
-	// Set the client and token from the provider state.
-	d.client = prov.client
+	// Set the client and token from the provider state using interface wrapper.
+	d.client = &client.SaviyntClientWrapper{Client: prov.client}
 	d.token = prov.accessToken
 	d.provider = &client.SaviyntProviderWrapper{Provider: prov}
+
+	opCtx.LogOperationEnd(ctx, "EntraID connection datasource configured successfully")
 }
 
-// SetProvider sets the provider for testing purposes
-func (d *entraIdConnectionDataSource) SetProvider(provider client.SaviyntProviderInterface) {
-	d.provider = provider
-}
-
-func (d *entraIdConnectionDataSource) Read(ctx context.Context, req datasource.ReadRequest, resp *datasource.ReadResponse) {
+// Read retrieves EntraID connection details from Saviynt and populates the Terraform state
+// Supports lookup by connection name or connection key with comprehensive error handling
+func (d *EntraIdConnectionDataSource) Read(ctx context.Context, req datasource.ReadRequest, resp *datasource.ReadResponse) {
 	var state EntraIdConnectionDataSourceModel
 
+	opCtx := errorsutil.CreateOperationContext(errorsutil.ConnectorTypeEntraID, "datasource_read", "")
+	ctx = opCtx.AddContextToLogger(ctx)
+
+	opCtx.LogOperationStart(ctx, "Starting EntraID connection datasource read")
+
+	// Extract configuration from request
 	configDiagnostics := req.Config.Get(ctx, &state)
 	resp.Diagnostics.Append(configDiagnostics...)
 	if resp.Diagnostics.HasError() {
+		errorCode := entraIdDatasourceErrorCodes.ConfigExtraction()
+		opCtx.LogOperationError(ctx, "Failed to get config from request", errorCode,
+			fmt.Errorf("config extraction failed"))
+		resp.Diagnostics.AddError(
+			errorsutil.GetErrorMessage(errorsutil.ErrConfigExtraction),
+			fmt.Sprintf("[%s] Unable to extract Terraform configuration from request", errorCode),
+		)
 		return
 	}
 
-	// Prepare request parameters
-	reqParams := openapi.GetConnectionDetailsRequest{}
-
-	// Set filters based on provided parameters
+	// Update operation context with connection name if available
+	connectionName := ""
 	if !state.ConnectionName.IsNull() && state.ConnectionName.ValueString() != "" {
-		reqParams.SetConnectionname(state.ConnectionName.ValueString())
+		connectionName = state.ConnectionName.ValueString()
+		opCtx.ConnectionName = connectionName
+		ctx = opCtx.AddContextToLogger(ctx)
 	}
+
+	// Prepare connection parameters
+	var connectionKey *int64
 	if !state.ConnectionKey.IsNull() {
-		connectionKeyInt := state.ConnectionKey.ValueInt64()
-		reqParams.SetConnectionkey(strconv.FormatInt(connectionKeyInt, 10))
+		keyValue := state.ConnectionKey.ValueInt64()
+		connectionKey = &keyValue
 	}
+
+	// Validate that at least one identifier is provided
+	if connectionName == "" && connectionKey == nil {
+		errorCode := entraIdDatasourceErrorCodes.MissingIdentifier()
+		opCtx.LogOperationError(ctx, "Missing connection identifier", errorCode,
+			fmt.Errorf("either connection_name or connection_key must be provided"))
+		resp.Diagnostics.AddError(
+			errorsutil.GetErrorMessage(errorsutil.ErrMissingIdentifier),
+			fmt.Sprintf("[%s] Either 'connection_name' or 'connection_key' must be provided to look up the EntraID connection.", errorCode),
+		)
+		return
+	}
+
+	// Execute API call to get EntraID connection details
+	apiResp, err := d.ReadEntraIDConnectionDetails(ctx, connectionName, connectionKey)
+	if err != nil {
+		// Error is already sanitized in ReadEntraIDConnectionDetails method
+		errorCode := entraIdDatasourceErrorCodes.ReadFailed()
+		opCtx.LogOperationError(ctx, "Failed to read EntraID connection details", errorCode, err)
+		resp.Diagnostics.AddError(
+			errorsutil.GetErrorMessage(errorsutil.ErrReadFailed),
+			fmt.Sprintf("[%s] %s", errorCode, err.Error()),
+		)
+		return
+	}
+
+	// Validate API response
+	if err := d.ValidateEntraIDConnectionResponse(apiResp); err != nil {
+		errorCode := entraIdDatasourceErrorCodes.APIError()
+		opCtx.LogOperationError(ctx, "Invalid connection type for EntraID datasource", errorCode, err)
+		resp.Diagnostics.AddError(
+			errorsutil.GetErrorMessage(errorsutil.ErrAPIError),
+			fmt.Sprintf("[%s] Unable to verify connection type for connection %q. The provider could not determine the type of this connection. Please ensure the connection name is correct and belongs to a supported connector type.", errorCode, connectionName),
+		)
+		return
+	}
+
+	// Map API response to state
+	d.UpdateModelFromEntraIDConnectionResponse(&state, apiResp)
+
+	// Handle authentication logic
+	d.HandleEntraIDAuthenticationLogic(&state, resp)
+
+	// Set final state
+	stateDiagnostics := resp.State.Set(ctx, &state)
+	resp.Diagnostics.Append(stateDiagnostics...)
+	if resp.Diagnostics.HasError() {
+		errorCode := entraIdDatasourceErrorCodes.StateUpdate()
+		opCtx.LogOperationError(ctx, "Failed to set state", errorCode,
+			fmt.Errorf("state update failed"))
+		resp.Diagnostics.AddError(
+			errorsutil.GetErrorMessage(errorsutil.ErrStateUpdate),
+			fmt.Sprintf("[%s] Unable to update Terraform state for EntraID connection datasource", errorCode),
+		)
+		return
+	}
+
+	opCtx.LogOperationEnd(ctx, "EntraID connection datasource read completed successfully",
+		map[string]interface{}{
+			"connection_name": connectionName,
+			"has_attributes":  state.ConnectionAttributes != nil,
+		})
+}
+
+// ReadEntraIDConnectionDetails retrieves EntraID connection details from Saviynt API
+// Handles both connection name and connection key based lookups using factory pattern
+// Returns standardized errors with proper correlation tracking and sensitive data sanitization
+func (d *EntraIdConnectionDataSource) ReadEntraIDConnectionDetails(ctx context.Context, connectionName string, connectionKey *int64) (*openapi.GetConnectionDetailsResponse, error) {
+	opCtx := errorsutil.CreateOperationContext(errorsutil.ConnectorTypeEntraID, "api_read", connectionName)
+	logCtx := opCtx.AddContextToLogger(ctx)
+
+	opCtx.LogOperationStart(logCtx, "Starting EntraID connection API call")
+
+	tflog.Debug(logCtx, "Executing API request to get EntraID connection details")
 
 	var apiResp *openapi.GetConnectionDetailsResponse
-	var finalHttpResp *http.Response
 
-	// Execute API call with retry logic
+	// Execute API request with retry logic
 	err := d.provider.AuthenticatedAPICallWithRetry(ctx, "read_entraid_connection_datasource", func(token string) error {
-		// Configure API client with current token
-		cfg := openapi.NewConfiguration()
-		apiBaseURL := strings.TrimPrefix(strings.TrimPrefix(d.client.APIBaseURL(), "https://"), "http://")
-		cfg.Host = apiBaseURL
-		cfg.Scheme = "https"
-		cfg.AddDefaultHeader("Authorization", "Bearer "+token)
-		cfg.HTTPClient = http.DefaultClient
+		connectionOps := d.connectionFactory.CreateConnectionOperations(d.client.APIBaseURL(), token)
 
-		apiClient := openapi.NewAPIClient(cfg)
-		apiReq := apiClient.ConnectionsAPI.GetConnectionDetails(ctx).GetConnectionDetailsRequest(reqParams)
+		// Build request with both connectionname and connectionkey
+		req := openapi.GetConnectionDetailsRequest{}
+		if connectionName != "" {
+			req.Connectionname = &connectionName
+		}
+		if connectionKey != nil {
+			keyStr := fmt.Sprintf("%d", *connectionKey)
+			req.Connectionkey = &keyStr
+		}
 
-		// Execute API request
-		resp, hResp, err := apiReq.Execute()
-		if hResp != nil && hResp.StatusCode == 401 {
+		resp, httpResp, err := connectionOps.GetConnectionDetailsDataSource(ctx, req)
+		if httpResp != nil && httpResp.StatusCode == 401 {
 			return fmt.Errorf("401 unauthorized")
 		}
 		apiResp = resp
-		finalHttpResp = hResp // Update on every call including retries
 		return err
 	})
 
 	if err != nil {
-		if finalHttpResp != nil && finalHttpResp.StatusCode != 200 {
-			log.Printf("[ERROR] HTTP error while reading EntraId Connector: %s", finalHttpResp.Status)
-			var fetchResp map[string]interface{}
-			if err := json.NewDecoder(finalHttpResp.Body).Decode(&fetchResp); err != nil {
-				resp.Diagnostics.AddError("Failed to decode error response", err.Error())
-				return
-			}
-			resp.Diagnostics.AddError(
-				"HTTP Error",
-				fmt.Sprintf("HTTP error while reading EntraId Connector for the reasons: %s", fetchResp["msg"]),
-			)
-
-		} else {
-			log.Printf("[ERROR] API Call Failed: %v", err)
-			resp.Diagnostics.AddError("API Call Failed", fmt.Sprintf("Error: %v", err))
-		}
-		return
+		errorCode := entraIdDatasourceErrorCodes.ReadFailed()
+		opCtx.LogOperationError(logCtx, "Failed to read EntraID connection details", errorCode, err)
+		return nil, errorsutil.CreateStandardError(errorsutil.ConnectorTypeEntraID, errorCode, "api_read", connectionName, err)
 	}
+
+	opCtx.LogOperationEnd(logCtx, "EntraID connection API call completed successfully")
+
+	return apiResp, nil
+}
+
+// ValidateEntraIDConnectionResponse validates that the API response contains valid EntraID connection data
+// Returns standardized error if validation fails
+func (d *EntraIdConnectionDataSource) ValidateEntraIDConnectionResponse(apiResp *openapi.GetConnectionDetailsResponse) error {
 	if apiResp != nil && apiResp.EntraIDConnectionResponse == nil {
-		error := "Verify the connection type"
-		log.Printf("[ERROR]: Verify the connection type given")
-		resp.Diagnostics.AddError("Read of EntraID connection failed", error)
-		return
+		return fmt.Errorf("verify the connection type - EntraID connection response is nil")
 	}
+	return nil
+}
 
-	log.Printf("[DEBUG] HTTP Status Code: %d", finalHttpResp.StatusCode)
+// UpdateModelFromEntraIDConnectionResponse maps API response data to the Terraform state model
+// It handles both base connection fields and detailed connection attributes
+func (d *EntraIdConnectionDataSource) UpdateModelFromEntraIDConnectionResponse(state *EntraIdConnectionDataSourceModel, apiResp *openapi.GetConnectionDetailsResponse) {
+	// Map base connection fields
+	d.MapBaseEntraIDConnectionFields(state, apiResp)
 
+	// Map connection attributes
+	d.MapEntraIDConnectionAttributes(state, apiResp)
+}
+
+// MapBaseEntraIDConnectionFields maps basic connection fields from API response to state model
+// These are common fields available for all connection types
+func (d *EntraIdConnectionDataSource) MapBaseEntraIDConnectionFields(state *EntraIdConnectionDataSourceModel, apiResp *openapi.GetConnectionDetailsResponse) {
 	state.Msg = util.SafeStringDatasource(apiResp.EntraIDConnectionResponse.Msg)
 	state.ErrorCode = util.SafeInt64(apiResp.EntraIDConnectionResponse.Errorcode)
+	connectionKey := util.SafeInt64(apiResp.EntraIDConnectionResponse.Connectionkey)
+	state.ID = types.StringValue(fmt.Sprintf("ds-entraid-%d", connectionKey.ValueInt64()))
 	state.ConnectionName = util.SafeStringDatasource(apiResp.EntraIDConnectionResponse.Connectionname)
 	state.ConnectionKey = util.SafeInt64(apiResp.EntraIDConnectionResponse.Connectionkey)
 	state.Description = util.SafeStringDatasource(apiResp.EntraIDConnectionResponse.Description)
@@ -257,67 +394,87 @@ func (d *entraIdConnectionDataSource) Read(ctx context.Context, req datasource.R
 	state.CreatedBy = util.SafeStringDatasource(apiResp.EntraIDConnectionResponse.Createdby)
 	state.UpdatedBy = util.SafeStringDatasource(apiResp.EntraIDConnectionResponse.Updatedby)
 	state.EmailTemplate = util.SafeStringDatasource(apiResp.EntraIDConnectionResponse.Emailtemplate)
+}
 
-	if apiResp.EntraIDConnectionResponse.Connectionattributes != nil {
-		state.ConnectionAttributes = &EntraIdConnectionAttributes{
-			UpdateUserJSON:           util.SafeStringDatasource(apiResp.EntraIDConnectionResponse.Connectionattributes.UpdateUserJSON),
-			MicrosoftGraphEndpoint:   util.SafeStringDatasource(apiResp.EntraIDConnectionResponse.Connectionattributes.MICROSOFT_GRAPH_ENDPOINT),
-			EndpointsFilter:          util.SafeStringDatasource(apiResp.EntraIDConnectionResponse.Connectionattributes.ENDPOINTS_FILTER),
-			ImportUserJSON:           util.SafeStringDatasource(apiResp.EntraIDConnectionResponse.Connectionattributes.ImportUserJSON),
-			ConnectionType:           util.SafeStringDatasource(apiResp.EntraIDConnectionResponse.Connectionattributes.ConnectionType),
-			EnableAccountJSON:        util.SafeStringDatasource(apiResp.EntraIDConnectionResponse.Connectionattributes.EnableAccountJSON),
-			DeleteGroupJSON:          util.SafeStringDatasource(apiResp.EntraIDConnectionResponse.Connectionattributes.DeleteGroupJSON),
-			ConfigJSON:               util.SafeStringDatasource(apiResp.EntraIDConnectionResponse.Connectionattributes.ConfigJSON),
-			AddAccessJSON:            util.SafeStringDatasource(apiResp.EntraIDConnectionResponse.Connectionattributes.AddAccessJSON),
-			CreateChannelJSON:        util.SafeStringDatasource(apiResp.EntraIDConnectionResponse.Connectionattributes.CreateChannelJSON),
-			UpdateAccountJSON:        util.SafeStringDatasource(apiResp.EntraIDConnectionResponse.Connectionattributes.UpdateAccountJSON),
-			IsTimeoutSupported:       util.SafeBoolDatasource(apiResp.EntraIDConnectionResponse.Connectionattributes.IsTimeoutSupported),
-			CreateAccountJSON:        util.SafeStringDatasource(apiResp.EntraIDConnectionResponse.Connectionattributes.CreateAccountJSON),
-			PamConfig:                util.SafeStringDatasource(apiResp.EntraIDConnectionResponse.Connectionattributes.PAM_CONFIG),
-			AzureManagementEndpoint:  util.SafeStringDatasource(apiResp.EntraIDConnectionResponse.Connectionattributes.AZURE_MANAGEMENT_ENDPOINT),
-			EntitlementAttribute:     util.SafeStringDatasource(apiResp.EntraIDConnectionResponse.Connectionattributes.ENTITLEMENT_ATTRIBUTE),
-			AccountsFilter:           util.SafeStringDatasource(apiResp.EntraIDConnectionResponse.Connectionattributes.ACCOUNTS_FILTER),
-			DeltaTokensJSON:          util.SafeStringDatasource(apiResp.EntraIDConnectionResponse.Connectionattributes.DELTATOKENSJSON),
-			CreateTeamJSON:           util.SafeStringDatasource(apiResp.EntraIDConnectionResponse.Connectionattributes.CreateTeamJSON),
-			StatusThresholdConfig:    util.SafeStringDatasource(apiResp.EntraIDConnectionResponse.Connectionattributes.STATUS_THRESHOLD_CONFIG),
-			AccountImportFields:      util.SafeStringDatasource(apiResp.EntraIDConnectionResponse.Connectionattributes.ACCOUNT_IMPORT_FIELDS),
-			RemoveAccountJSON:        util.SafeStringDatasource(apiResp.EntraIDConnectionResponse.Connectionattributes.RemoveAccountJSON),
-			EntitlementFilterJSON:    util.SafeStringDatasource(apiResp.EntraIDConnectionResponse.Connectionattributes.ENTITLEMENT_FILTER_JSON),
-			AuthenticationEndpoint:   util.SafeStringDatasource(apiResp.EntraIDConnectionResponse.Connectionattributes.AUTHENTICATION_ENDPOINT),
-			ModifyUserDataJSON:       util.SafeStringDatasource(apiResp.EntraIDConnectionResponse.Connectionattributes.MODIFYUSERDATAJSON),
-			IsTimeoutConfigValidated: util.SafeBoolDatasource(apiResp.EntraIDConnectionResponse.Connectionattributes.IsTimeoutConfigValidated),
-			RemoveAccessJSON:         util.SafeStringDatasource(apiResp.EntraIDConnectionResponse.Connectionattributes.RemoveAccessJSON),
-			CreateUsers:              util.SafeStringDatasource(apiResp.EntraIDConnectionResponse.Connectionattributes.CREATEUSERS),
-			DisableAccountJSON:       util.SafeStringDatasource(apiResp.EntraIDConnectionResponse.Connectionattributes.DisableAccountJSON),
-			CreateNewEndpoints:       util.SafeStringDatasource(apiResp.EntraIDConnectionResponse.Connectionattributes.CREATE_NEW_ENDPOINTS),
-			AccountAttributes:        util.SafeStringDatasource(apiResp.EntraIDConnectionResponse.Connectionattributes.ACCOUNT_ATTRIBUTES),
-			AadTenantID:              util.SafeStringDatasource(apiResp.EntraIDConnectionResponse.Connectionattributes.AAD_TENANT_ID),
-			UpdateGroupJSON:          util.SafeStringDatasource(apiResp.EntraIDConnectionResponse.Connectionattributes.UpdateGroupJSON),
-			CreateGroupJSON:          util.SafeStringDatasource(apiResp.EntraIDConnectionResponse.Connectionattributes.CreateGroupJSON),
-		}
-		if apiResp.EntraIDConnectionResponse.Connectionattributes.ConnectionTimeoutConfig != nil {
-			state.ConnectionAttributes.ConnectionTimeoutConfig = &ConnectionTimeoutConfig{
-				RetryWait:               util.SafeInt64(apiResp.EntraIDConnectionResponse.Connectionattributes.ConnectionTimeoutConfig.RetryWait),
-				TokenRefreshMaxTryCount: util.SafeInt64(apiResp.EntraIDConnectionResponse.Connectionattributes.ConnectionTimeoutConfig.TokenRefreshMaxTryCount),
-				RetryFailureStatusCode:  util.SafeInt64(apiResp.EntraIDConnectionResponse.Connectionattributes.ConnectionTimeoutConfig.RetryFailureStatusCode),
-				RetryWaitMaxValue:       util.SafeInt64(apiResp.EntraIDConnectionResponse.Connectionattributes.ConnectionTimeoutConfig.RetryWaitMaxValue),
-				RetryCount:              util.SafeInt64(apiResp.EntraIDConnectionResponse.Connectionattributes.ConnectionTimeoutConfig.RetryCount),
-				ReadTimeout:             util.SafeInt64(apiResp.EntraIDConnectionResponse.Connectionattributes.ConnectionTimeoutConfig.ReadTimeout),
-				ConnectionTimeout:       util.SafeInt64(apiResp.EntraIDConnectionResponse.Connectionattributes.ConnectionTimeoutConfig.ConnectionTimeout),
-			}
-		}
-	}
-
+// MapEntraIDConnectionAttributes maps detailed EntraID connection attributes from API response to state model
+// Returns nil if no connection attributes are present in the response
+func (d *EntraIdConnectionDataSource) MapEntraIDConnectionAttributes(state *EntraIdConnectionDataSourceModel, apiResp *openapi.GetConnectionDetailsResponse) {
 	if apiResp.EntraIDConnectionResponse.Connectionattributes == nil {
 		state.ConnectionAttributes = nil
+		return
 	}
+
+	attrs := apiResp.EntraIDConnectionResponse.Connectionattributes
+	state.ConnectionAttributes = &EntraIdConnectionAttributes{
+		UpdateUserJSON:           util.SafeStringDatasource(attrs.UpdateUserJSON),
+		MicrosoftGraphEndpoint:   util.SafeStringDatasource(attrs.MICROSOFT_GRAPH_ENDPOINT),
+		EndpointsFilter:          util.SafeStringDatasource(attrs.ENDPOINTS_FILTER),
+		ImportUserJSON:           util.SafeStringDatasource(attrs.ImportUserJSON),
+		ConnectionType:           util.SafeStringDatasource(attrs.ConnectionType),
+		EnableAccountJSON:        util.SafeStringDatasource(attrs.EnableAccountJSON),
+		DeleteGroupJSON:          util.SafeStringDatasource(attrs.DeleteGroupJSON),
+		ConfigJSON:               util.SafeStringDatasource(attrs.ConfigJSON),
+		AddAccessJSON:            util.SafeStringDatasource(attrs.AddAccessJSON),
+		CreateChannelJSON:        util.SafeStringDatasource(attrs.CreateChannelJSON),
+		UpdateAccountJSON:        util.SafeStringDatasource(attrs.UpdateAccountJSON),
+		IsTimeoutSupported:       util.SafeBoolDatasource(attrs.IsTimeoutSupported),
+		CreateAccountJSON:        util.SafeStringDatasource(attrs.CreateAccountJSON),
+		PamConfig:                util.SafeStringDatasource(attrs.PAM_CONFIG),
+		AzureManagementEndpoint:  util.SafeStringDatasource(attrs.AZURE_MANAGEMENT_ENDPOINT),
+		EntitlementAttribute:     util.SafeStringDatasource(attrs.ENTITLEMENT_ATTRIBUTE),
+		AccountsFilter:           util.SafeStringDatasource(attrs.ACCOUNTS_FILTER),
+		DeltaTokensJSON:          util.SafeStringDatasource(attrs.DELTATOKENSJSON),
+		CreateTeamJSON:           util.SafeStringDatasource(attrs.CreateTeamJSON),
+		StatusThresholdConfig:    util.SafeStringDatasource(attrs.STATUS_THRESHOLD_CONFIG),
+		AccountImportFields:      util.SafeStringDatasource(attrs.ACCOUNT_IMPORT_FIELDS),
+		RemoveAccountJSON:        util.SafeStringDatasource(attrs.RemoveAccountJSON),
+		EntitlementFilterJSON:    util.SafeStringDatasource(attrs.ENTITLEMENT_FILTER_JSON),
+		AuthenticationEndpoint:   util.SafeStringDatasource(attrs.AUTHENTICATION_ENDPOINT),
+		ModifyUserDataJSON:       util.SafeStringDatasource(attrs.MODIFYUSERDATAJSON),
+		IsTimeoutConfigValidated: util.SafeBoolDatasource(attrs.IsTimeoutConfigValidated),
+		RemoveAccessJSON:         util.SafeStringDatasource(attrs.RemoveAccessJSON),
+		CreateUsers:              util.SafeStringDatasource(attrs.CREATEUSERS),
+		DisableAccountJSON:       util.SafeStringDatasource(attrs.DisableAccountJSON),
+		CreateNewEndpoints:       util.SafeStringDatasource(attrs.CREATE_NEW_ENDPOINTS),
+		AccountAttributes:        util.SafeStringDatasource(attrs.ACCOUNT_ATTRIBUTES),
+		AadTenantID:              util.SafeStringDatasource(attrs.AAD_TENANT_ID),
+		UpdateGroupJSON:          util.SafeStringDatasource(attrs.UpdateGroupJSON),
+		CreateGroupJSON:          util.SafeStringDatasource(attrs.CreateGroupJSON),
+	}
+
+	// Map connection timeout config if present
+	d.MapEntraIDTimeoutConfig(attrs, state.ConnectionAttributes)
+}
+
+// MapEntraIDTimeoutConfig maps connection timeout configuration from API response to state model
+// Only maps timeout config if it exists in the API response
+func (d *EntraIdConnectionDataSource) MapEntraIDTimeoutConfig(attrs *openapi.EntraIDConnectionAttributes, connectionAttrs *EntraIdConnectionAttributes) {
+	if attrs.ConnectionTimeoutConfig != nil {
+		connectionAttrs.ConnectionTimeoutConfig = &ConnectionTimeoutConfig{
+			RetryWait:               util.SafeInt64(attrs.ConnectionTimeoutConfig.RetryWait),
+			TokenRefreshMaxTryCount: util.SafeInt64(attrs.ConnectionTimeoutConfig.TokenRefreshMaxTryCount),
+			RetryWaitMaxValue:       util.SafeInt64(attrs.ConnectionTimeoutConfig.RetryWaitMaxValue),
+			RetryCount:              util.SafeInt64(attrs.ConnectionTimeoutConfig.RetryCount),
+			ReadTimeout:             util.SafeInt64(attrs.ConnectionTimeoutConfig.ReadTimeout),
+			ConnectionTimeout:       util.SafeInt64(attrs.ConnectionTimeoutConfig.ConnectionTimeout),
+			RetryFailureStatusCode:  util.SafeInt64(attrs.ConnectionTimeoutConfig.RetryFailureStatusCode),
+		}
+	}
+}
+
+// HandleEntraIDAuthenticationLogic processes the authenticate flag to control sensitive data visibility
+// When authenticate=false, connection_attributes are removed from state to prevent sensitive data exposure
+// When authenticate=true, all connection_attributes are returned in state
+func (d *EntraIdConnectionDataSource) HandleEntraIDAuthenticationLogic(state *EntraIdConnectionDataSourceModel, resp *datasource.ReadResponse) {
 	if !state.Authenticate.IsNull() && !state.Authenticate.IsUnknown() {
 		if state.Authenticate.ValueBool() {
+			tflog.Info(context.Background(), "Authentication enabled - returning all connection attributes")
 			resp.Diagnostics.AddWarning(
 				"Authentication Enabled",
 				"`authenticate` is true; all connection_attributes will be returned in state.",
 			)
 		} else {
+			tflog.Info(context.Background(), "Authentication disabled - removing connection attributes from state")
 			resp.Diagnostics.AddWarning(
 				"Authentication Disabled",
 				"`authenticate` is false; connection_attributes will be removed from state.",
@@ -325,6 +482,4 @@ func (d *entraIdConnectionDataSource) Read(ctx context.Context, req datasource.R
 			state.ConnectionAttributes = nil
 		}
 	}
-	stateDiagnostics := resp.State.Set(ctx, &state)
-	resp.Diagnostics.Append(stateDiagnostics...)
 }
