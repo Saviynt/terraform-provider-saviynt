@@ -7,31 +7,30 @@ package provider
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
-	"log"
-	"net/http"
-	"strconv"
-	"strings"
 	"terraform-provider-Saviynt/internal/client"
 	"terraform-provider-Saviynt/util"
 	connectionsutil "terraform-provider-Saviynt/util/connectionsutil"
+	"terraform-provider-Saviynt/util/errorsutil"
 
 	"github.com/hashicorp/terraform-plugin-framework/datasource"
 	"github.com/hashicorp/terraform-plugin-framework/datasource/schema"
 	"github.com/hashicorp/terraform-plugin-framework/types"
-	s "github.com/saviynt/saviynt-api-go-client"
-
+	"github.com/hashicorp/terraform-plugin-log/tflog"
 	openapi "github.com/saviynt/saviynt-api-go-client/connections"
 )
 
-var _ datasource.DataSource = &unixConnectionDataSource{}
+var _ datasource.DataSource = &UnixConnectionsDataSource{}
 
-// UnixConnectionDataSource defines the data source
-type unixConnectionDataSource struct {
-	client   *s.Client
-	token    string
-	provider client.SaviyntProviderInterface
+// Initialize error codes for Unix Connection datasource operations
+var unixDatasourceErrorCodes = errorsutil.NewConnectorErrorCodes(errorsutil.ConnectorTypeUnix)
+
+// UnixConnectionsDataSource defines the data source
+type UnixConnectionsDataSource struct {
+	client            client.SaviyntClientInterface
+	token             string
+	provider          client.SaviyntProviderInterface
+	connectionFactory client.ConnectionFactoryInterface
 }
 
 type UnixConnectionDataSourceModel struct {
@@ -73,11 +72,38 @@ type UnixConnectionAttributes struct {
 	EnableAccountCommand             types.String             `tfsdk:"enable_account_command"`
 }
 
+// NewUnixConnectionsDataSource creates a new Unix connections data source with default factory
 func NewUnixConnectionsDataSource() datasource.DataSource {
-	return &unixConnectionDataSource{}
+	return &UnixConnectionsDataSource{
+		connectionFactory: &client.DefaultConnectionFactory{},
+	}
 }
 
-func (d *unixConnectionDataSource) Metadata(ctx context.Context, req datasource.MetadataRequest, resp *datasource.MetadataResponse) {
+// NewUnixConnectionsDataSourceWithFactory creates a new Unix connections data source with custom factory
+// Used primarily for testing with mock factories
+func NewUnixConnectionsDataSourceWithFactory(factory client.ConnectionFactoryInterface) datasource.DataSource {
+	return &UnixConnectionsDataSource{
+		connectionFactory: factory,
+	}
+}
+
+// SetClient sets the client for testing purposes
+func (d *UnixConnectionsDataSource) SetClient(client client.SaviyntClientInterface) {
+	d.client = client
+}
+
+// SetToken sets the token for testing purposes
+func (d *UnixConnectionsDataSource) SetToken(token string) {
+	d.token = token
+}
+
+// SetProvider sets the provider for testing purposes
+func (d *UnixConnectionsDataSource) SetProvider(provider client.SaviyntProviderInterface) {
+	d.provider = provider
+}
+
+// Metadata sets the data source type name for Terraform
+func (d *UnixConnectionsDataSource) Metadata(ctx context.Context, req datasource.MetadataRequest, resp *datasource.MetadataResponse) {
 	resp.TypeName = "saviynt_unix_connection_datasource"
 }
 
@@ -128,116 +154,225 @@ func UnixConnectorsDataSourceSchema() map[string]schema.Attribute {
 	}
 }
 
-// Schema defines the attributes for the data source
-func (d *unixConnectionDataSource) Schema(ctx context.Context, req datasource.SchemaRequest, resp *datasource.SchemaResponse) {
+// Schema defines the structure and attributes available for the Unix connection data source
+func (d *UnixConnectionsDataSource) Schema(ctx context.Context, req datasource.SchemaRequest, resp *datasource.SchemaResponse) {
 	resp.Schema = schema.Schema{
 		Description: util.UnixConnDataSourceDescription,
 		Attributes:  connectionsutil.MergeDataSourceAttributes(BaseConnectorDataSourceSchema(), UnixConnectorsDataSourceSchema()),
 	}
 }
 
-func (d *unixConnectionDataSource) Configure(ctx context.Context, req datasource.ConfigureRequest, resp *datasource.ConfigureResponse) {
+// Configure initializes the data source with provider configuration
+// Sets up client and authentication token for API operations
+func (d *UnixConnectionsDataSource) Configure(ctx context.Context, req datasource.ConfigureRequest, resp *datasource.ConfigureResponse) {
+	opCtx := errorsutil.CreateOperationContext(errorsutil.ConnectorTypeUnix, "configure", "")
+	ctx = opCtx.AddContextToLogger(ctx)
+
+	opCtx.LogOperationStart(ctx, "Starting Unix connection datasource configuration")
+
 	// Check if provider data is available.
 	if req.ProviderData == nil {
-		log.Println("ProviderData is nil, returning early.")
+		tflog.Debug(ctx, "ProviderData is nil, returning early")
+		opCtx.LogOperationEnd(ctx, "Unix connection datasource configuration completed - no provider data")
 		return
 	}
 
 	// Cast provider data to your provider type.
 	prov, ok := req.ProviderData.(*SaviyntProvider)
 	if !ok {
-		resp.Diagnostics.AddError("Unexpected Provider Data", "Expected *SaviyntProvider")
+		errorCode := unixDatasourceErrorCodes.ProviderConfig()
+		opCtx.LogOperationError(ctx, "Provider configuration failed", errorCode,
+			fmt.Errorf("expected *SaviyntProvider, got different type"),
+			map[string]interface{}{"expected_type": "*SaviyntProvider"})
+
+		resp.Diagnostics.AddError(
+			errorsutil.GetErrorMessage(errorsutil.ErrProviderConfig),
+			fmt.Sprintf("[%s] Expected *SaviyntProvider, got different type", errorCode),
+		)
 		return
 	}
 
-	// Set the client and token from the provider state.
-	d.client = prov.client
+	// Set the client and token from the provider state using interface wrapper.
+	d.client = &client.SaviyntClientWrapper{Client: prov.client}
 	d.token = prov.accessToken
 	d.provider = &client.SaviyntProviderWrapper{Provider: prov}
+
+	opCtx.LogOperationEnd(ctx, "Unix connection datasource configured successfully")
 }
 
-// SetProvider sets the provider for testing purposes
-func (d *unixConnectionDataSource) SetProvider(provider client.SaviyntProviderInterface) {
-	d.provider = provider
-}
-
-func (d *unixConnectionDataSource) Read(ctx context.Context, req datasource.ReadRequest, resp *datasource.ReadResponse) {
+// Read retrieves Unix connection details from Saviynt and populates the Terraform state
+// Supports lookup by connection name or connection key with comprehensive error handling
+func (d *UnixConnectionsDataSource) Read(ctx context.Context, req datasource.ReadRequest, resp *datasource.ReadResponse) {
 	var state UnixConnectionDataSourceModel
 
+	opCtx := errorsutil.CreateOperationContext(errorsutil.ConnectorTypeUnix, "datasource_read", "")
+	ctx = opCtx.AddContextToLogger(ctx)
+
+	opCtx.LogOperationStart(ctx, "Starting Unix connection datasource read")
+
+	// Extract configuration from request
 	configDiagnostics := req.Config.Get(ctx, &state)
 	resp.Diagnostics.Append(configDiagnostics...)
 	if resp.Diagnostics.HasError() {
+		errorCode := unixDatasourceErrorCodes.ConfigExtraction()
+		opCtx.LogOperationError(ctx, "Failed to get config from request", errorCode,
+			fmt.Errorf("config extraction failed"))
+		resp.Diagnostics.AddError(
+			errorsutil.GetErrorMessage(errorsutil.ErrConfigExtraction),
+			fmt.Sprintf("[%s] Unable to extract Terraform configuration from request", errorCode),
+		)
 		return
 	}
 
-	// Prepare request parameters
-	reqParams := openapi.GetConnectionDetailsRequest{}
-
-	// Set filters based on provided parameters
+	// Update operation context with connection name if available
+	connectionName := ""
 	if !state.ConnectionName.IsNull() && state.ConnectionName.ValueString() != "" {
-		reqParams.SetConnectionname(state.ConnectionName.ValueString())
+		connectionName = state.ConnectionName.ValueString()
+		opCtx.ConnectionName = connectionName
+		ctx = opCtx.AddContextToLogger(ctx)
 	}
+
+	// Prepare connection parameters
+	var connectionKey *int64
 	if !state.ConnectionKey.IsNull() {
-		connectionKeyInt := state.ConnectionKey.ValueInt64()
-		reqParams.SetConnectionkey(strconv.FormatInt(connectionKeyInt, 10))
+		keyValue := state.ConnectionKey.ValueInt64()
+		connectionKey = &keyValue
 	}
+
+	// Validate that at least one identifier is provided
+	if connectionName == "" && connectionKey == nil {
+		errorCode := unixDatasourceErrorCodes.MissingIdentifier()
+		opCtx.LogOperationError(ctx, "Missing connection identifier", errorCode,
+			fmt.Errorf("either connection_name or connection_key must be provided"))
+		resp.Diagnostics.AddError(
+			errorsutil.GetErrorMessage(errorsutil.ErrMissingIdentifier),
+			fmt.Sprintf("[%s] Either 'connection_name' or 'connection_key' must be provided to look up the Unix connection.", errorCode),
+		)
+		return
+	}
+
+	// Execute API call to get Unix connection details
+	apiResp, err := d.ReadUnixConnectionDetails(ctx, connectionName, connectionKey)
+	if err != nil {
+		// Error is already sanitized in ReadUnixConnectionDetails method
+		errorCode := unixDatasourceErrorCodes.ReadFailed()
+		opCtx.LogOperationError(ctx, "Failed to read Unix connection details", errorCode, err)
+		resp.Diagnostics.AddError(
+			errorsutil.GetErrorMessage(errorsutil.ErrReadFailed),
+			fmt.Sprintf("[%s] %s", errorCode, err.Error()),
+		)
+		return
+	}
+
+	// Validate API response
+	if err := d.ValidateUnixConnectionResponse(apiResp); err != nil {
+		errorCode := unixDatasourceErrorCodes.APIError()
+		opCtx.LogOperationError(ctx, "Invalid connection type for Unix datasource", errorCode, err)
+		resp.Diagnostics.AddError(
+			errorsutil.GetErrorMessage(errorsutil.ErrAPIError),
+			fmt.Sprintf("[%s] Unable to verify connection type for connection %q. The provider could not determine the type of this connection. Please ensure the connection name is correct and belongs to a supported connector type.", errorCode, connectionName),
+		)
+		return
+	}
+
+	// Map API response to state
+	d.UpdateModelFromUnixConnectionResponse(&state, apiResp)
+
+	// Handle authentication logic
+	d.HandleUnixAuthenticationLogic(&state, resp)
+
+	// Set final state
+	stateDiagnostics := resp.State.Set(ctx, &state)
+	resp.Diagnostics.Append(stateDiagnostics...)
+	if resp.Diagnostics.HasError() {
+		errorCode := unixDatasourceErrorCodes.StateUpdate()
+		opCtx.LogOperationError(ctx, "Failed to set state", errorCode,
+			fmt.Errorf("state update failed"))
+		resp.Diagnostics.AddError(
+			errorsutil.GetErrorMessage(errorsutil.ErrStateUpdate),
+			fmt.Sprintf("[%s] Unable to update Terraform state for Unix connection datasource", errorCode),
+		)
+		return
+	}
+
+	opCtx.LogOperationEnd(ctx, "Unix connection datasource read completed successfully",
+		map[string]interface{}{
+			"connection_name": connectionName,
+			"has_attributes":  state.ConnectionAttributes != nil,
+		})
+}
+// ReadUnixConnectionDetails retrieves Unix connection details from Saviynt API
+// Handles both connection name and connection key based lookups using factory pattern
+// Returns standardized errors with proper correlation tracking and sensitive data sanitization
+func (d *UnixConnectionsDataSource) ReadUnixConnectionDetails(ctx context.Context, connectionName string, connectionKey *int64) (*openapi.GetConnectionDetailsResponse, error) {
+	opCtx := errorsutil.CreateOperationContext(errorsutil.ConnectorTypeUnix, "api_read", connectionName)
+	logCtx := opCtx.AddContextToLogger(ctx)
+
+	opCtx.LogOperationStart(logCtx, "Starting Unix connection API call")
+
+	tflog.Debug(logCtx, "Executing API request to get Unix connection details")
 
 	var apiResp *openapi.GetConnectionDetailsResponse
-	var finalHttpResp *http.Response
 
-	// Execute API call with retry logic
+	// Execute API request with retry logic
 	err := d.provider.AuthenticatedAPICallWithRetry(ctx, "read_unix_connection_datasource", func(token string) error {
-		// Configure API client with current token
-		cfg := openapi.NewConfiguration()
-		apiBaseURL := strings.TrimPrefix(strings.TrimPrefix(d.client.APIBaseURL(), "https://"), "http://")
-		cfg.Host = apiBaseURL
-		cfg.Scheme = "https"
-		cfg.AddDefaultHeader("Authorization", "Bearer "+token)
-		cfg.HTTPClient = http.DefaultClient
+		connectionOps := d.connectionFactory.CreateConnectionOperations(d.client.APIBaseURL(), token)
 
-		apiClient := openapi.NewAPIClient(cfg)
-		apiReq := apiClient.ConnectionsAPI.GetConnectionDetails(ctx).GetConnectionDetailsRequest(reqParams)
+		// Build request with both connectionname and connectionkey
+		req := openapi.GetConnectionDetailsRequest{}
+		if connectionName != "" {
+			req.Connectionname = &connectionName
+		}
+		if connectionKey != nil {
+			keyStr := fmt.Sprintf("%d", *connectionKey)
+			req.Connectionkey = &keyStr
+		}
 
-		// Execute API request
-		resp, hResp, err := apiReq.Execute()
-		if hResp != nil && hResp.StatusCode == 401 {
+		resp, httpResp, err := connectionOps.GetConnectionDetailsDataSource(ctx, req)
+		if httpResp != nil && httpResp.StatusCode == 401 {
 			return fmt.Errorf("401 unauthorized")
 		}
 		apiResp = resp
-		finalHttpResp = hResp // Update on every call including retries
 		return err
 	})
 
 	if err != nil {
-		if finalHttpResp != nil && finalHttpResp.StatusCode != 200 {
-			log.Printf("[ERROR] HTTP error while reading Unix Connector: %s", finalHttpResp.Status)
-			var fetchResp map[string]interface{}
-			if err := json.NewDecoder(finalHttpResp.Body).Decode(&fetchResp); err != nil {
-				resp.Diagnostics.AddError("Failed to decode error response", err.Error())
-				return
-			}
-			resp.Diagnostics.AddError(
-				"HTTP Error",
-				fmt.Sprintf("HTTP error while reading Unix Connector for the reasons: %s", fetchResp["msg"]),
-			)
-
-		} else {
-			log.Printf("[ERROR] API Call Failed: %v", err)
-			resp.Diagnostics.AddError("API Call Failed", fmt.Sprintf("Error: %v", err))
-		}
-		return
+		errorCode := unixDatasourceErrorCodes.ReadFailed()
+		opCtx.LogOperationError(logCtx, "Failed to read Unix connection details", errorCode, err)
+		return nil, errorsutil.CreateStandardError(errorsutil.ConnectorTypeUnix, errorCode, "api_read", connectionName, err)
 	}
 
+	opCtx.LogOperationEnd(logCtx, "Unix connection API call completed successfully")
+
+	return apiResp, nil
+}
+
+// ValidateUnixConnectionResponse validates that the API response contains valid Unix connection data
+// Returns standardized error if validation fails
+func (d *UnixConnectionsDataSource) ValidateUnixConnectionResponse(apiResp *openapi.GetConnectionDetailsResponse) error {
 	if apiResp != nil && apiResp.UNIXConnectionResponse == nil {
-		error := "Verify the connection type"
-		log.Printf("[ERROR]: Verify the connection type given")
-		resp.Diagnostics.AddError("Read of Unix connection failed", error)
-		return
+		return fmt.Errorf("verify the connection type - Unix connection response is nil")
 	}
-	log.Printf("[DEBUG] HTTP Status Code: %d", finalHttpResp.StatusCode)
+	return nil
+}
 
+// UpdateModelFromUnixConnectionResponse maps API response data to the Terraform state model
+// It handles both base connection fields and detailed connection attributes
+func (d *UnixConnectionsDataSource) UpdateModelFromUnixConnectionResponse(state *UnixConnectionDataSourceModel, apiResp *openapi.GetConnectionDetailsResponse) {
+	// Map base connection fields
+	d.MapBaseUnixConnectionFields(state, apiResp)
+
+	// Map connection attributes
+	d.MapUnixConnectionAttributes(state, apiResp)
+}
+
+// MapBaseUnixConnectionFields maps basic connection fields from API response to state model
+// These are common fields available for all connection types
+func (d *UnixConnectionsDataSource) MapBaseUnixConnectionFields(state *UnixConnectionDataSourceModel, apiResp *openapi.GetConnectionDetailsResponse) {
 	state.Msg = util.SafeStringDatasource(apiResp.UNIXConnectionResponse.Msg)
 	state.ErrorCode = util.SafeInt64(apiResp.UNIXConnectionResponse.Errorcode)
+	connectionKey := util.SafeInt64(apiResp.UNIXConnectionResponse.Connectionkey)
+	state.ID = types.StringValue(fmt.Sprintf("ds-unix-%d", connectionKey.ValueInt64()))
 	state.ConnectionName = util.SafeStringDatasource(apiResp.UNIXConnectionResponse.Connectionname)
 	state.ConnectionKey = util.SafeInt64(apiResp.UNIXConnectionResponse.Connectionkey)
 	state.Description = util.SafeStringDatasource(apiResp.UNIXConnectionResponse.Description)
@@ -247,62 +382,82 @@ func (d *unixConnectionDataSource) Read(ctx context.Context, req datasource.Read
 	state.CreatedBy = util.SafeStringDatasource(apiResp.UNIXConnectionResponse.Createdby)
 	state.UpdatedBy = util.SafeStringDatasource(apiResp.UNIXConnectionResponse.Updatedby)
 	state.EmailTemplate = util.SafeStringDatasource(apiResp.UNIXConnectionResponse.Emailtemplate)
+}
 
-	if apiResp.UNIXConnectionResponse.Connectionattributes != nil {
-		state.ConnectionAttributes = &UnixConnectionAttributes{
-			GroupsFile:                       util.SafeStringDatasource(apiResp.UNIXConnectionResponse.Connectionattributes.GROUPS_FILE),
-			AccountEntitlementMappingCommand: util.SafeStringDatasource(apiResp.UNIXConnectionResponse.Connectionattributes.ACCOUNT_ENTITLEMENT_MAPPING_COMMAND),
-			RemoveAccessCommand:              util.SafeStringDatasource(apiResp.UNIXConnectionResponse.Connectionattributes.REMOVE_ACCESS_COMMAND),
-			PEMKeyFile:                       util.SafeStringDatasource(apiResp.UNIXConnectionResponse.Connectionattributes.PEM_KEY_FILE),
-			PassThroughConnectionDetails:     util.SafeStringDatasource(apiResp.UNIXConnectionResponse.Connectionattributes.PassThroughConnectionDetails),
-			DisableAccountCommand:            util.SafeStringDatasource(apiResp.UNIXConnectionResponse.Connectionattributes.DISABLE_ACCOUNT_COMMAND),
-			PortNumber:                       util.SafeStringDatasource(apiResp.UNIXConnectionResponse.Connectionattributes.PORT_NUMBER),
-			ConnectionType:                   util.SafeStringDatasource(apiResp.UNIXConnectionResponse.Connectionattributes.ConnectionType),
-			CreateGroupCommand:               util.SafeStringDatasource(apiResp.UNIXConnectionResponse.Connectionattributes.CREATE_GROUP_COMMAND),
-			AccountsFile:                     util.SafeStringDatasource(apiResp.UNIXConnectionResponse.Connectionattributes.ACCOUNTS_FILE),
-			DeleteGroupCommand:               util.SafeStringDatasource(apiResp.UNIXConnectionResponse.Connectionattributes.DELETE_GROUP_COMMAND),
-			HostName:                         util.SafeStringDatasource(apiResp.UNIXConnectionResponse.Connectionattributes.HOST_NAME),
-			AddGroupOwnerCommand:             util.SafeStringDatasource(apiResp.UNIXConnectionResponse.Connectionattributes.ADD_GROUP_OWNER_COMMAND),
-			StatusThresholdConfig:            util.SafeStringDatasource(apiResp.UNIXConnectionResponse.Connectionattributes.STATUS_THRESHOLD_CONFIG),
-			InactiveLockAccount:              util.SafeStringDatasource(apiResp.UNIXConnectionResponse.Connectionattributes.INACTIVE_LOCK_ACCOUNT),
-			AddAccessCommand:                 util.SafeStringDatasource(apiResp.UNIXConnectionResponse.Connectionattributes.ADD_ACCESS_COMMAND),
-			UpdateAccountCommand:             util.SafeStringDatasource(apiResp.UNIXConnectionResponse.Connectionattributes.UPDATE_ACCOUNT_COMMAND),
-			ShadowFile:                       util.SafeStringDatasource(apiResp.UNIXConnectionResponse.Connectionattributes.SHADOW_FILE),
-			IsTimeoutSupported:               util.SafeBoolDatasource(apiResp.UNIXConnectionResponse.Connectionattributes.IsTimeoutSupported),
-			ProvisionAccountCommand:          util.SafeStringDatasource(apiResp.UNIXConnectionResponse.Connectionattributes.PROVISION_ACCOUNT_COMMAND),
-			FirefighterIDGrantAccessCommand:  util.SafeStringDatasource(apiResp.UNIXConnectionResponse.Connectionattributes.FIREFIGHTERID_GRANT_ACCESS_COMMAND),
-			UnlockAccountCommand:             util.SafeStringDatasource(apiResp.UNIXConnectionResponse.Connectionattributes.UNLOCK_ACCOUNT_COMMAND),
-			DeprovisionAccountCommand:        util.SafeStringDatasource(apiResp.UNIXConnectionResponse.Connectionattributes.DEPROVISION_ACCOUNT_COMMAND),
-			FirefighterIDRevokeAccessCommand: util.SafeStringDatasource(apiResp.UNIXConnectionResponse.Connectionattributes.FIREFIGHTERID_REVOKE_ACCESS_COMMAND),
-			AddPrimaryGroupCommand:           util.SafeStringDatasource(apiResp.UNIXConnectionResponse.Connectionattributes.ADD_PRIMARY_GROUP_COMMAND),
-			IsTimeoutConfigValidated:         util.SafeBoolDatasource(apiResp.UNIXConnectionResponse.Connectionattributes.IsTimeoutConfigValidated),
-			LockAccountCommand:               util.SafeStringDatasource(apiResp.UNIXConnectionResponse.Connectionattributes.LOCK_ACCOUNT_COMMAND),
-			CustomConfigJSON:                 util.SafeStringDatasource(apiResp.UNIXConnectionResponse.Connectionattributes.CUSTOM_CONFIG_JSON),
-			EnableAccountCommand:             util.SafeStringDatasource(apiResp.UNIXConnectionResponse.Connectionattributes.ENABLE_ACCOUNT_COMMAND),
-		}
-		if apiResp.UNIXConnectionResponse.Connectionattributes.ConnectionTimeoutConfig != nil {
-			state.ConnectionAttributes.ConnectionTimeoutConfig = &ConnectionTimeoutConfig{
-				RetryWait:               util.SafeInt64(apiResp.UNIXConnectionResponse.Connectionattributes.ConnectionTimeoutConfig.RetryWait),
-				TokenRefreshMaxTryCount: util.SafeInt64(apiResp.UNIXConnectionResponse.Connectionattributes.ConnectionTimeoutConfig.TokenRefreshMaxTryCount),
-				RetryFailureStatusCode:  util.SafeInt64(apiResp.UNIXConnectionResponse.Connectionattributes.ConnectionTimeoutConfig.RetryFailureStatusCode),
-				RetryWaitMaxValue:       util.SafeInt64(apiResp.UNIXConnectionResponse.Connectionattributes.ConnectionTimeoutConfig.RetryWaitMaxValue),
-				RetryCount:              util.SafeInt64(apiResp.UNIXConnectionResponse.Connectionattributes.ConnectionTimeoutConfig.RetryCount),
-				ReadTimeout:             util.SafeInt64(apiResp.UNIXConnectionResponse.Connectionattributes.ConnectionTimeoutConfig.ReadTimeout),
-				ConnectionTimeout:       util.SafeInt64(apiResp.UNIXConnectionResponse.Connectionattributes.ConnectionTimeoutConfig.ConnectionTimeout),
-			}
-		}
-	}
-
+// MapUnixConnectionAttributes maps detailed Unix connection attributes from API response to state model
+// Returns nil if no connection attributes are present in the response
+func (d *UnixConnectionsDataSource) MapUnixConnectionAttributes(state *UnixConnectionDataSourceModel, apiResp *openapi.GetConnectionDetailsResponse) {
 	if apiResp.UNIXConnectionResponse.Connectionattributes == nil {
 		state.ConnectionAttributes = nil
+		return
 	}
+
+	attrs := apiResp.UNIXConnectionResponse.Connectionattributes
+	state.ConnectionAttributes = &UnixConnectionAttributes{
+		GroupsFile:                       util.SafeStringDatasource(attrs.GROUPS_FILE),
+		AccountEntitlementMappingCommand: util.SafeStringDatasource(attrs.ACCOUNT_ENTITLEMENT_MAPPING_COMMAND),
+		RemoveAccessCommand:              util.SafeStringDatasource(attrs.REMOVE_ACCESS_COMMAND),
+		PEMKeyFile:                       util.SafeStringDatasource(attrs.PEM_KEY_FILE),
+		PassThroughConnectionDetails:     util.SafeStringDatasource(attrs.PassThroughConnectionDetails),
+		DisableAccountCommand:            util.SafeStringDatasource(attrs.DISABLE_ACCOUNT_COMMAND),
+		PortNumber:                       util.SafeStringDatasource(attrs.PORT_NUMBER),
+		ConnectionType:                   util.SafeStringDatasource(attrs.ConnectionType),
+		CreateGroupCommand:               util.SafeStringDatasource(attrs.CREATE_GROUP_COMMAND),
+		AccountsFile:                     util.SafeStringDatasource(attrs.ACCOUNTS_FILE),
+		DeleteGroupCommand:               util.SafeStringDatasource(attrs.DELETE_GROUP_COMMAND),
+		HostName:                         util.SafeStringDatasource(attrs.HOST_NAME),
+		AddGroupOwnerCommand:             util.SafeStringDatasource(attrs.ADD_GROUP_OWNER_COMMAND),
+		StatusThresholdConfig:            util.SafeStringDatasource(attrs.STATUS_THRESHOLD_CONFIG),
+		InactiveLockAccount:              util.SafeStringDatasource(attrs.INACTIVE_LOCK_ACCOUNT),
+		AddAccessCommand:                 util.SafeStringDatasource(attrs.ADD_ACCESS_COMMAND),
+		UpdateAccountCommand:             util.SafeStringDatasource(attrs.UPDATE_ACCOUNT_COMMAND),
+		ShadowFile:                       util.SafeStringDatasource(attrs.SHADOW_FILE),
+		IsTimeoutSupported:               util.SafeBoolDatasource(attrs.IsTimeoutSupported),
+		ProvisionAccountCommand:          util.SafeStringDatasource(attrs.PROVISION_ACCOUNT_COMMAND),
+		FirefighterIDGrantAccessCommand:  util.SafeStringDatasource(attrs.FIREFIGHTERID_GRANT_ACCESS_COMMAND),
+		UnlockAccountCommand:             util.SafeStringDatasource(attrs.UNLOCK_ACCOUNT_COMMAND),
+		DeprovisionAccountCommand:        util.SafeStringDatasource(attrs.DEPROVISION_ACCOUNT_COMMAND),
+		FirefighterIDRevokeAccessCommand: util.SafeStringDatasource(attrs.FIREFIGHTERID_REVOKE_ACCESS_COMMAND),
+		AddPrimaryGroupCommand:           util.SafeStringDatasource(attrs.ADD_PRIMARY_GROUP_COMMAND),
+		IsTimeoutConfigValidated:         util.SafeBoolDatasource(attrs.IsTimeoutConfigValidated),
+		LockAccountCommand:               util.SafeStringDatasource(attrs.LOCK_ACCOUNT_COMMAND),
+		CustomConfigJSON:                 util.SafeStringDatasource(attrs.CUSTOM_CONFIG_JSON),
+		EnableAccountCommand:             util.SafeStringDatasource(attrs.ENABLE_ACCOUNT_COMMAND),
+	}
+
+	// Map connection timeout config if present
+	d.MapUnixTimeoutConfig(attrs, state.ConnectionAttributes)
+}
+
+// MapUnixTimeoutConfig maps connection timeout configuration from API response to state model
+// Only maps timeout config if it exists in the API response
+func (d *UnixConnectionsDataSource) MapUnixTimeoutConfig(attrs *openapi.UNIXConnectionAttributes, connectionAttrs *UnixConnectionAttributes) {
+	if attrs.ConnectionTimeoutConfig != nil {
+		connectionAttrs.ConnectionTimeoutConfig = &ConnectionTimeoutConfig{
+			RetryWait:               util.SafeInt64(attrs.ConnectionTimeoutConfig.RetryWait),
+			TokenRefreshMaxTryCount: util.SafeInt64(attrs.ConnectionTimeoutConfig.TokenRefreshMaxTryCount),
+			RetryWaitMaxValue:       util.SafeInt64(attrs.ConnectionTimeoutConfig.RetryWaitMaxValue),
+			RetryCount:              util.SafeInt64(attrs.ConnectionTimeoutConfig.RetryCount),
+			ReadTimeout:             util.SafeInt64(attrs.ConnectionTimeoutConfig.ReadTimeout),
+			ConnectionTimeout:       util.SafeInt64(attrs.ConnectionTimeoutConfig.ConnectionTimeout),
+			RetryFailureStatusCode:  util.SafeInt64(attrs.ConnectionTimeoutConfig.RetryFailureStatusCode),
+		}
+	}
+}
+
+// HandleUnixAuthenticationLogic processes the authenticate flag to control sensitive data visibility
+// When authenticate=false, connection_attributes are removed from state to prevent sensitive data exposure
+// When authenticate=true, all connection_attributes are returned in state
+func (d *UnixConnectionsDataSource) HandleUnixAuthenticationLogic(state *UnixConnectionDataSourceModel, resp *datasource.ReadResponse) {
 	if !state.Authenticate.IsNull() && !state.Authenticate.IsUnknown() {
 		if state.Authenticate.ValueBool() {
+			tflog.Info(context.Background(), "Authentication enabled - returning all connection attributes")
 			resp.Diagnostics.AddWarning(
 				"Authentication Enabled",
 				"`authenticate` is true; all connection_attributes will be returned in state.",
 			)
 		} else {
+			tflog.Info(context.Background(), "Authentication disabled - removing connection attributes from state")
 			resp.Diagnostics.AddWarning(
 				"Authentication Disabled",
 				"`authenticate` is false; connection_attributes will be removed from state.",
@@ -310,6 +465,4 @@ func (d *unixConnectionDataSource) Read(ctx context.Context, req datasource.Read
 			state.ConnectionAttributes = nil
 		}
 	}
-	stateDiagnostics := resp.State.Set(ctx, &state)
-	resp.Diagnostics.Append(stateDiagnostics...)
 }
