@@ -7,31 +7,30 @@ package provider
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
-	"log"
-	"net/http"
-	"strconv"
-	"strings"
 	"terraform-provider-Saviynt/internal/client"
 	"terraform-provider-Saviynt/util"
 	connectionsutil "terraform-provider-Saviynt/util/connectionsutil"
+	"terraform-provider-Saviynt/util/errorsutil"
 
 	"github.com/hashicorp/terraform-plugin-framework/datasource"
 	"github.com/hashicorp/terraform-plugin-framework/datasource/schema"
 	"github.com/hashicorp/terraform-plugin-framework/types"
-	s "github.com/saviynt/saviynt-api-go-client"
-
+	"github.com/hashicorp/terraform-plugin-log/tflog"
 	openapi "github.com/saviynt/saviynt-api-go-client/connections"
 )
 
-var _ datasource.DataSource = &salesforceConnectionDataSource{}
+var _ datasource.DataSource = &SalesforceConnectionDataSource{}
+
+// Initialize error codes for Salesforce Connection datasource operations
+var salesforceDatasourceErrorCodes = errorsutil.NewConnectorErrorCodes(errorsutil.ConnectorTypeSalesforce)
 
 // SalesforceConnectionDataSource defines the data source
-type salesforceConnectionDataSource struct {
-	client   *s.Client
-	token    string
-	provider client.SaviyntProviderInterface
+type SalesforceConnectionDataSource struct {
+	client            client.SaviyntClientInterface
+	token             string
+	provider          client.SaviyntProviderInterface
+	connectionFactory client.ConnectionFactoryInterface
 }
 
 type SalesforceConnectionDataSourceModel struct {
@@ -60,11 +59,37 @@ type SalesforceConnectionAttributes struct {
 	InstanceUrl              types.String             `tfsdk:"instance_url"`
 }
 
+// NewSalesforceConnectionsDataSource creates a new Salesforce connections data source with default factory
 func NewSalesforceConnectionsDataSource() datasource.DataSource {
-	return &salesforceConnectionDataSource{}
+	return &SalesforceConnectionDataSource{
+		connectionFactory: &client.DefaultConnectionFactory{},
+	}
 }
 
-func (d *salesforceConnectionDataSource) Metadata(ctx context.Context, req datasource.MetadataRequest, resp *datasource.MetadataResponse) {
+// NewSalesforceConnectionsDataSourceWithFactory creates a new Salesforce connections data source with custom factory
+// Used primarily for testing with mock factories
+func NewSalesforceConnectionsDataSourceWithFactory(factory client.ConnectionFactoryInterface) datasource.DataSource {
+	return &SalesforceConnectionDataSource{
+		connectionFactory: factory,
+	}
+}
+
+// SetClient sets the client for testing purposes
+func (d *SalesforceConnectionDataSource) SetClient(client client.SaviyntClientInterface) {
+	d.client = client
+}
+
+// SetToken sets the token for testing purposes
+func (d *SalesforceConnectionDataSource) SetToken(token string) {
+	d.token = token
+}
+
+// SetProvider sets the provider for testing purposes
+func (d *SalesforceConnectionDataSource) SetProvider(provider client.SaviyntProviderInterface) {
+	d.provider = provider
+}
+
+func (d *SalesforceConnectionDataSource) Metadata(ctx context.Context, req datasource.MetadataRequest, resp *datasource.MetadataResponse) {
 	resp.TypeName = "saviynt_salesforce_connection_datasource"
 }
 
@@ -103,115 +128,224 @@ func SalesforceConnectorsDataSourceSchema() map[string]schema.Attribute {
 }
 
 // Schema defines the attributes for the data source
-func (d *salesforceConnectionDataSource) Schema(ctx context.Context, req datasource.SchemaRequest, resp *datasource.SchemaResponse) {
+func (d *SalesforceConnectionDataSource) Schema(ctx context.Context, req datasource.SchemaRequest, resp *datasource.SchemaResponse) {
 	resp.Schema = schema.Schema{
 		Description: util.SalesforceConnDataSourceDescription,
 		Attributes:  connectionsutil.MergeDataSourceAttributes(BaseConnectorDataSourceSchema(), SalesforceConnectorsDataSourceSchema()),
 	}
 }
 
-func (d *salesforceConnectionDataSource) Configure(ctx context.Context, req datasource.ConfigureRequest, resp *datasource.ConfigureResponse) {
+// Configure initializes the data source with provider configuration
+// Sets up client and authentication token for API operations
+func (d *SalesforceConnectionDataSource) Configure(ctx context.Context, req datasource.ConfigureRequest, resp *datasource.ConfigureResponse) {
+	opCtx := errorsutil.CreateOperationContext(errorsutil.ConnectorTypeSalesforce, "configure", "")
+	ctx = opCtx.AddContextToLogger(ctx)
+
+	opCtx.LogOperationStart(ctx, "Starting Salesforce connection datasource configuration")
+
 	// Check if provider data is available.
 	if req.ProviderData == nil {
-		log.Println("ProviderData is nil, returning early.")
+		tflog.Debug(ctx, "ProviderData is nil, returning early")
+		opCtx.LogOperationEnd(ctx, "Salesforce connection datasource configuration completed - no provider data")
 		return
 	}
 
 	// Cast provider data to your provider type.
 	prov, ok := req.ProviderData.(*SaviyntProvider)
 	if !ok {
-		resp.Diagnostics.AddError("Unexpected Provider Data", "Expected *SaviyntProvider")
+		errorCode := salesforceDatasourceErrorCodes.ProviderConfig()
+		opCtx.LogOperationError(ctx, "Provider configuration failed", errorCode,
+			fmt.Errorf("expected *SaviyntProvider, got different type"),
+			map[string]interface{}{"expected_type": "*SaviyntProvider"})
+
+		resp.Diagnostics.AddError(
+			errorsutil.GetErrorMessage(errorsutil.ErrProviderConfig),
+			fmt.Sprintf("[%s] Expected *SaviyntProvider, got different type", errorCode),
+		)
 		return
 	}
 
-	// Set the client and token from the provider state.
-	d.client = prov.client
+	// Set the client and token from the provider state using interface wrapper.
+	d.client = &client.SaviyntClientWrapper{Client: prov.client}
 	d.token = prov.accessToken
 	d.provider = &client.SaviyntProviderWrapper{Provider: prov}
+
+	opCtx.LogOperationEnd(ctx, "Salesforce connection datasource configured successfully")
 }
 
-// SetProvider sets the provider for testing purposes
-func (d *salesforceConnectionDataSource) SetProvider(provider client.SaviyntProviderInterface) {
-	d.provider = provider
-}
-
-func (d *salesforceConnectionDataSource) Read(ctx context.Context, req datasource.ReadRequest, resp *datasource.ReadResponse) {
+// Read retrieves Salesforce connection details from Saviynt and populates the Terraform state
+// Supports lookup by connection name or connection key with comprehensive error handling
+func (d *SalesforceConnectionDataSource) Read(ctx context.Context, req datasource.ReadRequest, resp *datasource.ReadResponse) {
 	var state SalesforceConnectionDataSourceModel
 
+	opCtx := errorsutil.CreateOperationContext(errorsutil.ConnectorTypeSalesforce, "datasource_read", "")
+	ctx = opCtx.AddContextToLogger(ctx)
+
+	opCtx.LogOperationStart(ctx, "Starting Salesforce connection datasource read")
+
+	// Extract configuration from request
 	configDiagnostics := req.Config.Get(ctx, &state)
 	resp.Diagnostics.Append(configDiagnostics...)
 	if resp.Diagnostics.HasError() {
+		errorCode := salesforceDatasourceErrorCodes.ConfigExtraction()
+		opCtx.LogOperationError(ctx, "Failed to get config from request", errorCode,
+			fmt.Errorf("config extraction failed"))
+		resp.Diagnostics.AddError(
+			errorsutil.GetErrorMessage(errorsutil.ErrConfigExtraction),
+			fmt.Sprintf("[%s] Unable to extract Terraform configuration from request", errorCode),
+		)
 		return
 	}
 
-	// Prepare request parameters
-	reqParams := openapi.GetConnectionDetailsRequest{}
-
-	// Set filters based on provided parameters
+	// Update operation context with connection name if available
+	connectionName := ""
 	if !state.ConnectionName.IsNull() && state.ConnectionName.ValueString() != "" {
-		reqParams.SetConnectionname(state.ConnectionName.ValueString())
+		connectionName = state.ConnectionName.ValueString()
+		opCtx.ConnectionName = connectionName
+		ctx = opCtx.AddContextToLogger(ctx)
 	}
+
+	// Prepare connection parameters
+	var connectionKey *int64
 	if !state.ConnectionKey.IsNull() {
-		connectionKeyInt := state.ConnectionKey.ValueInt64()
-		reqParams.SetConnectionkey(strconv.FormatInt(connectionKeyInt, 10))
+		keyValue := state.ConnectionKey.ValueInt64()
+		connectionKey = &keyValue
 	}
+
+	// Validate that at least one identifier is provided
+	if connectionName == "" && connectionKey == nil {
+		errorCode := salesforceDatasourceErrorCodes.MissingIdentifier()
+		opCtx.LogOperationError(ctx, "Missing connection identifier", errorCode,
+			fmt.Errorf("either connection_name or connection_key must be provided"))
+		resp.Diagnostics.AddError(
+			errorsutil.GetErrorMessage(errorsutil.ErrMissingIdentifier),
+			fmt.Sprintf("[%s] Either 'connection_name' or 'connection_key' must be provided to look up the Salesforce connection.", errorCode),
+		)
+		return
+	}
+
+	// Execute API call to get Salesforce connection details
+	apiResp, err := d.ReadSalesforceConnectionDetails(ctx, connectionName, connectionKey)
+	if err != nil {
+		// Error is already sanitized in ReadSalesforceConnectionDetails method
+		errorCode := salesforceDatasourceErrorCodes.ReadFailed()
+		opCtx.LogOperationError(ctx, "Failed to read Salesforce connection details", errorCode, err)
+		resp.Diagnostics.AddError(
+			errorsutil.GetErrorMessage(errorsutil.ErrReadFailed),
+			fmt.Sprintf("[%s] %s", errorCode, err.Error()),
+		)
+		return
+	}
+
+	// Validate API response
+	if err := d.ValidateSalesforceConnectionResponse(apiResp); err != nil {
+		errorCode := salesforceDatasourceErrorCodes.APIError()
+		opCtx.LogOperationError(ctx, "Invalid connection type for Salesforce datasource", errorCode, err)
+		resp.Diagnostics.AddError(
+			errorsutil.GetErrorMessage(errorsutil.ErrAPIError),
+			fmt.Sprintf("[%s] Unable to verify connection type for connection %q. The provider could not determine the type of this connection. Please ensure the connection name is correct and belongs to a supported connector type.", errorCode, connectionName),
+		)
+		return
+	}
+
+	// Map API response to state
+	d.UpdateModelFromSalesforceConnectionResponse(&state, apiResp)
+
+	// Handle authentication logic
+	d.HandleSalesforceAuthenticationLogic(&state, resp)
+
+	// Set final state
+	stateDiagnostics := resp.State.Set(ctx, &state)
+	resp.Diagnostics.Append(stateDiagnostics...)
+	if resp.Diagnostics.HasError() {
+		errorCode := salesforceDatasourceErrorCodes.StateUpdate()
+		opCtx.LogOperationError(ctx, "Failed to set state", errorCode,
+			fmt.Errorf("state update failed"))
+		resp.Diagnostics.AddError(
+			errorsutil.GetErrorMessage(errorsutil.ErrStateUpdate),
+			fmt.Sprintf("[%s] Unable to update Terraform state for Salesforce connection datasource", errorCode),
+		)
+		return
+	}
+
+	opCtx.LogOperationEnd(ctx, "Salesforce connection datasource read completed successfully",
+		map[string]interface{}{
+			"connection_name": connectionName,
+			"has_attributes":  state.ConnectionAttributes != nil,
+		})
+}
+// ReadSalesforceConnectionDetails retrieves Salesforce connection details from Saviynt API
+// Handles both connection name and connection key based lookups using factory pattern
+// Returns standardized errors with proper correlation tracking and sensitive data sanitization
+func (d *SalesforceConnectionDataSource) ReadSalesforceConnectionDetails(ctx context.Context, connectionName string, connectionKey *int64) (*openapi.GetConnectionDetailsResponse, error) {
+	opCtx := errorsutil.CreateOperationContext(errorsutil.ConnectorTypeSalesforce, "api_read", connectionName)
+	logCtx := opCtx.AddContextToLogger(ctx)
+
+	opCtx.LogOperationStart(logCtx, "Starting Salesforce connection API call")
+
+	tflog.Debug(logCtx, "Executing API request to get Salesforce connection details")
 
 	var apiResp *openapi.GetConnectionDetailsResponse
-	var finalHttpResp *http.Response
 
-	// Execute API call with retry logic
+	// Execute API request with retry logic
 	err := d.provider.AuthenticatedAPICallWithRetry(ctx, "read_salesforce_connection_datasource", func(token string) error {
-		// Configure API client with current token
-		cfg := openapi.NewConfiguration()
-		apiBaseURL := strings.TrimPrefix(strings.TrimPrefix(d.client.APIBaseURL(), "https://"), "http://")
-		cfg.Host = apiBaseURL
-		cfg.Scheme = "https"
-		cfg.AddDefaultHeader("Authorization", "Bearer "+token)
-		cfg.HTTPClient = http.DefaultClient
+		connectionOps := d.connectionFactory.CreateConnectionOperations(d.client.APIBaseURL(), token)
 
-		apiClient := openapi.NewAPIClient(cfg)
-		apiReq := apiClient.ConnectionsAPI.GetConnectionDetails(ctx).GetConnectionDetailsRequest(reqParams)
+		// Build request with both connectionname and connectionkey
+		req := openapi.GetConnectionDetailsRequest{}
+		if connectionName != "" {
+			req.Connectionname = &connectionName
+		}
+		if connectionKey != nil {
+			keyStr := fmt.Sprintf("%d", *connectionKey)
+			req.Connectionkey = &keyStr
+		}
 
-		// Execute API request
-		resp, hResp, err := apiReq.Execute()
-		if hResp != nil && hResp.StatusCode == 401 {
+		resp, httpResp, err := connectionOps.GetConnectionDetailsDataSource(ctx, req)
+		if httpResp != nil && httpResp.StatusCode == 401 {
 			return fmt.Errorf("401 unauthorized")
 		}
 		apiResp = resp
-		finalHttpResp = hResp // Update on every call including retries
 		return err
 	})
 
 	if err != nil {
-		if finalHttpResp != nil && finalHttpResp.StatusCode != 200 {
-			log.Printf("[ERROR] HTTP error while reading Salesforce Connection: %s", finalHttpResp.Status)
-			var fetchResp map[string]interface{}
-			if err := json.NewDecoder(finalHttpResp.Body).Decode(&fetchResp); err != nil {
-				resp.Diagnostics.AddError("Failed to decode error response", err.Error())
-				return
-			}
-			resp.Diagnostics.AddError(
-				"HTTP Error",
-				fmt.Sprintf("HTTP error while reading Salesforce Connection for the reasons: %s", fetchResp["msg"]),
-			)
-
-		} else {
-			log.Printf("[ERROR] API Call Failed: %v", err)
-			resp.Diagnostics.AddError("API Call Failed", fmt.Sprintf("Error: %v", err))
-		}
-		return
+		errorCode := salesforceDatasourceErrorCodes.ReadFailed()
+		opCtx.LogOperationError(logCtx, "Failed to read Salesforce connection details", errorCode, err)
+		return nil, errorsutil.CreateStandardError(errorsutil.ConnectorTypeSalesforce, errorCode, "api_read", connectionName, err)
 	}
 
+	opCtx.LogOperationEnd(logCtx, "Salesforce connection API call completed successfully")
+
+	return apiResp, nil
+}
+
+// ValidateSalesforceConnectionResponse validates that the API response contains valid Salesforce connection data
+// Returns standardized error if validation fails
+func (d *SalesforceConnectionDataSource) ValidateSalesforceConnectionResponse(apiResp *openapi.GetConnectionDetailsResponse) error {
 	if apiResp != nil && apiResp.SalesforceConnectionResponse == nil {
-		error := "Verify the connection type"
-		log.Printf("[ERROR]: Verify the connection type given")
-		resp.Diagnostics.AddError("Read of Salesforce connection failed", error)
-		return
+		return fmt.Errorf("verify the connection type - Salesforce connection response is nil")
 	}
-	log.Printf("[DEBUG] HTTP Status Code: %d", finalHttpResp.StatusCode)
+	return nil
+}
 
+// UpdateModelFromSalesforceConnectionResponse maps API response data to the Terraform state model
+// It handles both base connection fields and detailed connection attributes
+func (d *SalesforceConnectionDataSource) UpdateModelFromSalesforceConnectionResponse(state *SalesforceConnectionDataSourceModel, apiResp *openapi.GetConnectionDetailsResponse) {
+	// Map base connection fields
+	d.MapBaseSalesforceConnectionFields(state, apiResp)
+
+	// Map connection attributes
+	d.MapSalesforceConnectionAttributes(state, apiResp)
+}
+
+// MapBaseSalesforceConnectionFields maps basic connection fields from API response to state model
+// These are common fields available for all connection types
+func (d *SalesforceConnectionDataSource) MapBaseSalesforceConnectionFields(state *SalesforceConnectionDataSourceModel, apiResp *openapi.GetConnectionDetailsResponse) {
 	state.Msg = util.SafeStringDatasource(apiResp.SalesforceConnectionResponse.Msg)
 	state.ErrorCode = util.SafeInt64(apiResp.SalesforceConnectionResponse.Errorcode)
+	connectionKey := util.SafeInt64(apiResp.SalesforceConnectionResponse.Connectionkey)
+	state.ID = types.StringValue(fmt.Sprintf("ds-salesforce-%d", connectionKey.ValueInt64()))
 	state.ConnectionName = util.SafeStringDatasource(apiResp.SalesforceConnectionResponse.Connectionname)
 	state.ConnectionKey = util.SafeInt64(apiResp.SalesforceConnectionResponse.Connectionkey)
 	state.Description = util.SafeStringDatasource(apiResp.SalesforceConnectionResponse.Description)
@@ -221,50 +355,69 @@ func (d *salesforceConnectionDataSource) Read(ctx context.Context, req datasourc
 	state.CreatedBy = util.SafeStringDatasource(apiResp.SalesforceConnectionResponse.Createdby)
 	state.UpdatedBy = util.SafeStringDatasource(apiResp.SalesforceConnectionResponse.Updatedby)
 	state.EmailTemplate = util.SafeStringDatasource(apiResp.SalesforceConnectionResponse.Emailtemplate)
+}
 
-	if apiResp.SalesforceConnectionResponse.Connectionattributes != nil {
-		state.ConnectionAttributes = &SalesforceConnectionAttributes{
-			IsTimeoutSupported:       util.SafeBoolDatasource(apiResp.SalesforceConnectionResponse.Connectionattributes.IsTimeoutSupported),
-			ObjectToBeImported:       util.SafeStringDatasource(apiResp.SalesforceConnectionResponse.Connectionattributes.OBJECT_TO_BE_IMPORTED),
-			FeatureLicenseJson:       util.SafeStringDatasource(apiResp.SalesforceConnectionResponse.Connectionattributes.FEATURE_LICENSE_JSON),
-			CreateAccountJson:        util.SafeStringDatasource(apiResp.SalesforceConnectionResponse.Connectionattributes.CREATEACCOUNTJSON),
-			RedirectUri:              util.SafeStringDatasource(apiResp.SalesforceConnectionResponse.Connectionattributes.REDIRECT_URI),
-			ConnectionType:           util.SafeStringDatasource(apiResp.SalesforceConnectionResponse.Connectionattributes.ConnectionType),
-			ModifyAccountJson:        util.SafeStringDatasource(apiResp.SalesforceConnectionResponse.Connectionattributes.MODIFYACCOUNTJSON),
-			IsTimeoutConfigValidated: util.SafeBoolDatasource(apiResp.SalesforceConnectionResponse.Connectionattributes.IsTimeoutConfigValidated),
-			PamConfig:                util.SafeStringDatasource(apiResp.SalesforceConnectionResponse.Connectionattributes.PAM_CONFIG),
-			CustomConfigJson:         util.SafeStringDatasource(apiResp.SalesforceConnectionResponse.Connectionattributes.CUSTOMCONFIGJSON),
-			FieldMappingJson:         util.SafeStringDatasource(apiResp.SalesforceConnectionResponse.Connectionattributes.FIELD_MAPPING_JSON),
-			StatusThresholdConfig:    util.SafeStringDatasource(apiResp.SalesforceConnectionResponse.Connectionattributes.STATUS_THRESHOLD_CONFIG),
-			AccountFieldQuery:        util.SafeStringDatasource(apiResp.SalesforceConnectionResponse.Connectionattributes.ACCOUNT_FIELD_QUERY),
-			CustomCreateAccountUrl:   util.SafeStringDatasource(apiResp.SalesforceConnectionResponse.Connectionattributes.CUSTOM_CREATEACCOUNT_URL),
-			AccountFilterQuery:       util.SafeStringDatasource(apiResp.SalesforceConnectionResponse.Connectionattributes.ACCOUNT_FILTER_QUERY),
-			InstanceUrl:              util.SafeStringDatasource(apiResp.SalesforceConnectionResponse.Connectionattributes.INSTANCE_URL),
-		}
-
-		if apiResp.SalesforceConnectionResponse.Connectionattributes.ConnectionTimeoutConfig != nil {
-			state.ConnectionAttributes.ConnectionTimeoutConfig = &ConnectionTimeoutConfig{
-				RetryWait:               util.SafeInt64(apiResp.SalesforceConnectionResponse.Connectionattributes.ConnectionTimeoutConfig.RetryWait),
-				TokenRefreshMaxTryCount: util.SafeInt64(apiResp.SalesforceConnectionResponse.Connectionattributes.ConnectionTimeoutConfig.TokenRefreshMaxTryCount),
-				RetryFailureStatusCode:  util.SafeInt64(apiResp.SalesforceConnectionResponse.Connectionattributes.ConnectionTimeoutConfig.RetryFailureStatusCode),
-				RetryWaitMaxValue:       util.SafeInt64(apiResp.SalesforceConnectionResponse.Connectionattributes.ConnectionTimeoutConfig.RetryWaitMaxValue),
-				RetryCount:              util.SafeInt64(apiResp.SalesforceConnectionResponse.Connectionattributes.ConnectionTimeoutConfig.RetryCount),
-				ReadTimeout:             util.SafeInt64(apiResp.SalesforceConnectionResponse.Connectionattributes.ConnectionTimeoutConfig.ReadTimeout),
-				ConnectionTimeout:       util.SafeInt64(apiResp.SalesforceConnectionResponse.Connectionattributes.ConnectionTimeoutConfig.ConnectionTimeout),
-			}
-		}
-	}
-
+// MapSalesforceConnectionAttributes maps detailed Salesforce connection attributes from API response to state model
+// Returns nil if no connection attributes are present in the response
+func (d *SalesforceConnectionDataSource) MapSalesforceConnectionAttributes(state *SalesforceConnectionDataSourceModel, apiResp *openapi.GetConnectionDetailsResponse) {
 	if apiResp.SalesforceConnectionResponse.Connectionattributes == nil {
 		state.ConnectionAttributes = nil
+		return
 	}
+
+	attrs := apiResp.SalesforceConnectionResponse.Connectionattributes
+	state.ConnectionAttributes = &SalesforceConnectionAttributes{
+		IsTimeoutSupported:       util.SafeBoolDatasource(attrs.IsTimeoutSupported),
+		ObjectToBeImported:       util.SafeStringDatasource(attrs.OBJECT_TO_BE_IMPORTED),
+		FeatureLicenseJson:       util.SafeStringDatasource(attrs.FEATURE_LICENSE_JSON),
+		CreateAccountJson:        util.SafeStringDatasource(attrs.CREATEACCOUNTJSON),
+		RedirectUri:              util.SafeStringDatasource(attrs.REDIRECT_URI),
+		ConnectionType:           util.SafeStringDatasource(attrs.ConnectionType),
+		ModifyAccountJson:        util.SafeStringDatasource(attrs.MODIFYACCOUNTJSON),
+		IsTimeoutConfigValidated: util.SafeBoolDatasource(attrs.IsTimeoutConfigValidated),
+		PamConfig:                util.SafeStringDatasource(attrs.PAM_CONFIG),
+		CustomConfigJson:         util.SafeStringDatasource(attrs.CUSTOMCONFIGJSON),
+		FieldMappingJson:         util.SafeStringDatasource(attrs.FIELD_MAPPING_JSON),
+		StatusThresholdConfig:    util.SafeStringDatasource(attrs.STATUS_THRESHOLD_CONFIG),
+		AccountFieldQuery:        util.SafeStringDatasource(attrs.ACCOUNT_FIELD_QUERY),
+		CustomCreateAccountUrl:   util.SafeStringDatasource(attrs.CUSTOM_CREATEACCOUNT_URL),
+		AccountFilterQuery:       util.SafeStringDatasource(attrs.ACCOUNT_FILTER_QUERY),
+		InstanceUrl:              util.SafeStringDatasource(attrs.INSTANCE_URL),
+	}
+
+	// Map connection timeout config if present
+	d.MapSalesforceTimeoutConfig(attrs, state.ConnectionAttributes)
+}
+
+// MapSalesforceTimeoutConfig maps connection timeout configuration from API response to state model
+// Only maps timeout config if it exists in the API response
+func (d *SalesforceConnectionDataSource) MapSalesforceTimeoutConfig(attrs *openapi.SalesforceConnectionAttributes, connectionAttrs *SalesforceConnectionAttributes) {
+	if attrs.ConnectionTimeoutConfig != nil {
+		connectionAttrs.ConnectionTimeoutConfig = &ConnectionTimeoutConfig{
+			RetryWait:               util.SafeInt64(attrs.ConnectionTimeoutConfig.RetryWait),
+			TokenRefreshMaxTryCount: util.SafeInt64(attrs.ConnectionTimeoutConfig.TokenRefreshMaxTryCount),
+			RetryWaitMaxValue:       util.SafeInt64(attrs.ConnectionTimeoutConfig.RetryWaitMaxValue),
+			RetryCount:              util.SafeInt64(attrs.ConnectionTimeoutConfig.RetryCount),
+			ReadTimeout:             util.SafeInt64(attrs.ConnectionTimeoutConfig.ReadTimeout),
+			ConnectionTimeout:       util.SafeInt64(attrs.ConnectionTimeoutConfig.ConnectionTimeout),
+			RetryFailureStatusCode:  util.SafeInt64(attrs.ConnectionTimeoutConfig.RetryFailureStatusCode),
+		}
+	}
+}
+
+// HandleSalesforceAuthenticationLogic processes the authenticate flag to control sensitive data visibility
+// When authenticate=false, connection_attributes are removed from state to prevent sensitive data exposure
+// When authenticate=true, all connection_attributes are returned in state
+func (d *SalesforceConnectionDataSource) HandleSalesforceAuthenticationLogic(state *SalesforceConnectionDataSourceModel, resp *datasource.ReadResponse) {
 	if !state.Authenticate.IsNull() && !state.Authenticate.IsUnknown() {
 		if state.Authenticate.ValueBool() {
+			tflog.Info(context.Background(), "Authentication enabled - returning all connection attributes")
 			resp.Diagnostics.AddWarning(
 				"Authentication Enabled",
 				"`authenticate` is true; all connection_attributes will be returned in state.",
 			)
 		} else {
+			tflog.Info(context.Background(), "Authentication disabled - removing connection attributes from state")
 			resp.Diagnostics.AddWarning(
 				"Authentication Disabled",
 				"`authenticate` is false; connection_attributes will be removed from state.",
@@ -272,6 +425,4 @@ func (d *salesforceConnectionDataSource) Read(ctx context.Context, req datasourc
 			state.ConnectionAttributes = nil
 		}
 	}
-	stateDiagnostics := resp.State.Set(ctx, &state)
-	resp.Diagnostics.Append(stateDiagnostics...)
 }
