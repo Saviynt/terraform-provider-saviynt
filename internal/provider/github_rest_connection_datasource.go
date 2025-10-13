@@ -7,31 +7,30 @@ package provider
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
-	"log"
-	"net/http"
-	"strconv"
-	"strings"
 	"terraform-provider-Saviynt/internal/client"
 	"terraform-provider-Saviynt/util"
 	connectionsutil "terraform-provider-Saviynt/util/connectionsutil"
+	"terraform-provider-Saviynt/util/errorsutil"
 
 	"github.com/hashicorp/terraform-plugin-framework/datasource"
 	"github.com/hashicorp/terraform-plugin-framework/datasource/schema"
 	"github.com/hashicorp/terraform-plugin-framework/types"
-	s "github.com/saviynt/saviynt-api-go-client"
-
+	"github.com/hashicorp/terraform-plugin-log/tflog"
 	openapi "github.com/saviynt/saviynt-api-go-client/connections"
 )
 
-var _ datasource.DataSource = &githubRestConnectionDataSource{}
+var _ datasource.DataSource = &GithubRestConnectionDataSource{}
+
+// Initialize error codes for GitHub REST Connection datasource operations
+var githubRestDatasourceErrorCodes = errorsutil.NewConnectorErrorCodes(errorsutil.ConnectorTypeGithubREST)
 
 // GithubRestConnectionDataSource defines the data source
-type githubRestConnectionDataSource struct {
-	client   *s.Client
-	token    string
-	provider client.SaviyntProviderInterface
+type GithubRestConnectionDataSource struct {
+	client            client.SaviyntClientInterface
+	token             string
+	provider          client.SaviyntProviderInterface
+	connectionFactory client.ConnectionFactoryInterface
 }
 
 type GithubRestConnectionDataSourceModel struct {
@@ -49,11 +48,37 @@ type GithubRestConnectionAttributes struct {
 	IsTimeoutConfigValidated types.Bool               `tfsdk:"is_timeout_config_validated"`
 }
 
+// NewGithubRestConnectionsDataSource creates a new GitHub REST connections data source with default factory
 func NewGithubRestConnectionsDataSource() datasource.DataSource {
-	return &githubRestConnectionDataSource{}
+	return &GithubRestConnectionDataSource{
+		connectionFactory: &client.DefaultConnectionFactory{},
+	}
 }
 
-func (d *githubRestConnectionDataSource) Metadata(ctx context.Context, req datasource.MetadataRequest, resp *datasource.MetadataResponse) {
+// NewGithubRestConnectionsDataSourceWithFactory creates a new GitHub REST connections data source with custom factory
+// Used primarily for testing with mock factories
+func NewGithubRestConnectionsDataSourceWithFactory(factory client.ConnectionFactoryInterface) datasource.DataSource {
+	return &GithubRestConnectionDataSource{
+		connectionFactory: factory,
+	}
+}
+
+// SetClient sets the client for testing purposes
+func (d *GithubRestConnectionDataSource) SetClient(client client.SaviyntClientInterface) {
+	d.client = client
+}
+
+// SetToken sets the token for testing purposes
+func (d *GithubRestConnectionDataSource) SetToken(token string) {
+	d.token = token
+}
+
+// SetProvider sets the provider for testing purposes
+func (d *GithubRestConnectionDataSource) SetProvider(provider client.SaviyntProviderInterface) {
+	d.provider = provider
+}
+
+func (d *GithubRestConnectionDataSource) Metadata(ctx context.Context, req datasource.MetadataRequest, resp *datasource.MetadataResponse) {
 	resp.TypeName = "saviynt_github_rest_connection_datasource"
 }
 
@@ -81,114 +106,225 @@ func GithubRestConnectorsDataSourceSchema() map[string]schema.Attribute {
 }
 
 // Schema defines the attributes for the data source
-func (d *githubRestConnectionDataSource) Schema(ctx context.Context, req datasource.SchemaRequest, resp *datasource.SchemaResponse) {
+func (d *GithubRestConnectionDataSource) Schema(ctx context.Context, req datasource.SchemaRequest, resp *datasource.SchemaResponse) {
 	resp.Schema = schema.Schema{
 		Description: util.GithubRestConnDataSourceDescription,
 		Attributes:  connectionsutil.MergeDataSourceAttributes(BaseConnectorDataSourceSchema(), GithubRestConnectorsDataSourceSchema()),
 	}
 }
 
-func (d *githubRestConnectionDataSource) Configure(ctx context.Context, req datasource.ConfigureRequest, resp *datasource.ConfigureResponse) {
+// Configure initializes the data source with provider configuration
+// Sets up client and authentication token for API operations
+func (d *GithubRestConnectionDataSource) Configure(ctx context.Context, req datasource.ConfigureRequest, resp *datasource.ConfigureResponse) {
+	opCtx := errorsutil.CreateOperationContext(errorsutil.ConnectorTypeGithubREST, "configure", "")
+	ctx = opCtx.AddContextToLogger(ctx)
+
+	opCtx.LogOperationStart(ctx, "Starting GitHub REST connection datasource configuration")
+
 	// Check if provider data is available.
 	if req.ProviderData == nil {
-		log.Println("ProviderData is nil, returning early.")
+		tflog.Debug(ctx, "ProviderData is nil, returning early")
+		opCtx.LogOperationEnd(ctx, "GitHub REST connection datasource configuration completed - no provider data")
 		return
 	}
 
 	// Cast provider data to your provider type.
 	prov, ok := req.ProviderData.(*SaviyntProvider)
 	if !ok {
-		resp.Diagnostics.AddError("Unexpected Provider Data", "Expected *SaviyntProvider")
+		errorCode := githubRestDatasourceErrorCodes.ProviderConfig()
+		opCtx.LogOperationError(ctx, "Provider configuration failed", errorCode,
+			fmt.Errorf("expected *SaviyntProvider, got different type"),
+			map[string]interface{}{"expected_type": "*SaviyntProvider"})
+
+		resp.Diagnostics.AddError(
+			errorsutil.GetErrorMessage(errorsutil.ErrProviderConfig),
+			fmt.Sprintf("[%s] Expected *SaviyntProvider, got different type", errorCode),
+		)
 		return
 	}
 
-	// Set the client and token from the provider state.
-	d.client = prov.client
+	// Set the client and token from the provider state using interface wrapper.
+	d.client = &client.SaviyntClientWrapper{Client: prov.client}
 	d.token = prov.accessToken
 	d.provider = &client.SaviyntProviderWrapper{Provider: prov}
+
+	opCtx.LogOperationEnd(ctx, "GitHub REST connection datasource configured successfully")
 }
 
-// SetProvider sets the provider for testing purposes
-func (d *githubRestConnectionDataSource) SetProvider(provider client.SaviyntProviderInterface) {
-	d.provider = provider
-}
-
-func (d *githubRestConnectionDataSource) Read(ctx context.Context, req datasource.ReadRequest, resp *datasource.ReadResponse) {
+// Read retrieves GitHub REST connection details from Saviynt and populates the Terraform state
+// Supports lookup by connection name or connection key with comprehensive error handling
+func (d *GithubRestConnectionDataSource) Read(ctx context.Context, req datasource.ReadRequest, resp *datasource.ReadResponse) {
 	var state GithubRestConnectionDataSourceModel
 
+	opCtx := errorsutil.CreateOperationContext(errorsutil.ConnectorTypeGithubREST, "datasource_read", "")
+	ctx = opCtx.AddContextToLogger(ctx)
+
+	opCtx.LogOperationStart(ctx, "Starting GitHub REST connection datasource read")
+
+	// Extract configuration from request
 	configDiagnostics := req.Config.Get(ctx, &state)
 	resp.Diagnostics.Append(configDiagnostics...)
 	if resp.Diagnostics.HasError() {
+		errorCode := githubRestDatasourceErrorCodes.ConfigExtraction()
+		opCtx.LogOperationError(ctx, "Failed to get config from request", errorCode,
+			fmt.Errorf("config extraction failed"))
+		resp.Diagnostics.AddError(
+			errorsutil.GetErrorMessage(errorsutil.ErrConfigExtraction),
+			fmt.Sprintf("[%s] Unable to extract Terraform configuration from request", errorCode),
+		)
 		return
 	}
 
-	// Prepare request parameters
-	reqParams := openapi.GetConnectionDetailsRequest{}
-
-	// Set filters based on provided parameters
+	// Update operation context with connection name if available
+	connectionName := ""
 	if !state.ConnectionName.IsNull() && state.ConnectionName.ValueString() != "" {
-		reqParams.SetConnectionname(state.ConnectionName.ValueString())
+		connectionName = state.ConnectionName.ValueString()
+		opCtx.ConnectionName = connectionName
+		ctx = opCtx.AddContextToLogger(ctx)
 	}
+
+	// Prepare connection parameters
+	var connectionKey *int64
 	if !state.ConnectionKey.IsNull() {
-		connectionKeyInt := state.ConnectionKey.ValueInt64()
-		reqParams.SetConnectionkey(strconv.FormatInt(connectionKeyInt, 10))
+		keyValue := state.ConnectionKey.ValueInt64()
+		connectionKey = &keyValue
 	}
+
+	// Validate that at least one identifier is provided
+	if connectionName == "" && connectionKey == nil {
+		errorCode := githubRestDatasourceErrorCodes.MissingIdentifier()
+		opCtx.LogOperationError(ctx, "Missing connection identifier", errorCode,
+			fmt.Errorf("either connection_name or connection_key must be provided"))
+		resp.Diagnostics.AddError(
+			errorsutil.GetErrorMessage(errorsutil.ErrMissingIdentifier),
+			fmt.Sprintf("[%s] Either 'connection_name' or 'connection_key' must be provided to look up the GitHub REST connection.", errorCode),
+		)
+		return
+	}
+
+	// Execute API call to get GitHub REST connection details
+	apiResp, err := d.ReadGithubRestConnectionDetails(ctx, connectionName, connectionKey)
+	if err != nil {
+		// Error is already sanitized in ReadGithubRestConnectionDetails method
+		errorCode := githubRestDatasourceErrorCodes.ReadFailed()
+		opCtx.LogOperationError(ctx, "Failed to read GitHub REST connection details", errorCode, err)
+		resp.Diagnostics.AddError(
+			errorsutil.GetErrorMessage(errorsutil.ErrReadFailed),
+			fmt.Sprintf("[%s] %s", errorCode, err.Error()),
+		)
+		return
+	}
+
+	// Validate API response
+	if err := d.ValidateGithubRestConnectionResponse(apiResp); err != nil {
+		errorCode := githubRestDatasourceErrorCodes.APIError()
+		opCtx.LogOperationError(ctx, "Invalid connection type for GitHub REST datasource", errorCode, err)
+		resp.Diagnostics.AddError(
+			errorsutil.GetErrorMessage(errorsutil.ErrAPIError),
+			fmt.Sprintf("[%s] Unable to verify connection type for connection %q. The provider could not determine the type of this connection. Please ensure the connection name is correct and belongs to a supported connector type.", errorCode, connectionName),
+		)
+		return
+	}
+
+	// Map API response to state
+	d.UpdateModelFromGithubRestConnectionResponse(&state, apiResp)
+
+	// Handle authentication logic
+	d.HandleGithubRestAuthenticationLogic(&state, resp)
+
+	// Set final state
+	stateDiagnostics := resp.State.Set(ctx, &state)
+	resp.Diagnostics.Append(stateDiagnostics...)
+	if resp.Diagnostics.HasError() {
+		errorCode := githubRestDatasourceErrorCodes.StateUpdate()
+		opCtx.LogOperationError(ctx, "Failed to set state", errorCode,
+			fmt.Errorf("state update failed"))
+		resp.Diagnostics.AddError(
+			errorsutil.GetErrorMessage(errorsutil.ErrStateUpdate),
+			fmt.Sprintf("[%s] Unable to update Terraform state for GitHub REST connection datasource", errorCode),
+		)
+		return
+	}
+
+	opCtx.LogOperationEnd(ctx, "GitHub REST connection datasource read completed successfully",
+		map[string]interface{}{
+			"connection_name": connectionName,
+			"has_attributes":  state.ConnectionAttributes != nil,
+		})
+}
+
+// ReadGithubRestConnectionDetails retrieves GitHub REST connection details from Saviynt API
+// Handles both connection name and connection key based lookups using factory pattern
+// Returns standardized errors with proper correlation tracking and sensitive data sanitization
+func (d *GithubRestConnectionDataSource) ReadGithubRestConnectionDetails(ctx context.Context, connectionName string, connectionKey *int64) (*openapi.GetConnectionDetailsResponse, error) {
+	opCtx := errorsutil.CreateOperationContext(errorsutil.ConnectorTypeGithubREST, "api_read", connectionName)
+	logCtx := opCtx.AddContextToLogger(ctx)
+
+	opCtx.LogOperationStart(logCtx, "Starting GitHub REST connection API call")
+
+	tflog.Debug(logCtx, "Executing API request to get GitHub REST connection details")
 
 	var apiResp *openapi.GetConnectionDetailsResponse
-	var finalHttpResp *http.Response
 
-	// Execute API call with retry logic
+	// Execute API request with retry logic
 	err := d.provider.AuthenticatedAPICallWithRetry(ctx, "read_githubrest_connection_datasource", func(token string) error {
-		// Configure API client with current token
-		cfg := openapi.NewConfiguration()
-		apiBaseURL := strings.TrimPrefix(strings.TrimPrefix(d.client.APIBaseURL(), "https://"), "http://")
-		cfg.Host = apiBaseURL
-		cfg.Scheme = "https"
-		cfg.AddDefaultHeader("Authorization", "Bearer "+token)
-		cfg.HTTPClient = http.DefaultClient
+		connectionOps := d.connectionFactory.CreateConnectionOperations(d.client.APIBaseURL(), token)
 
-		apiClient := openapi.NewAPIClient(cfg)
-		apiReq := apiClient.ConnectionsAPI.GetConnectionDetails(ctx).GetConnectionDetailsRequest(reqParams)
+		// Build request with both connectionname and connectionkey
+		req := openapi.GetConnectionDetailsRequest{}
+		if connectionName != "" {
+			req.Connectionname = &connectionName
+		}
+		if connectionKey != nil {
+			keyStr := fmt.Sprintf("%d", *connectionKey)
+			req.Connectionkey = &keyStr
+		}
 
-		// Execute API request
-		resp, hResp, err := apiReq.Execute()
-		if hResp != nil && hResp.StatusCode == 401 {
+		resp, httpResp, err := connectionOps.GetConnectionDetailsDataSource(ctx, req)
+		if httpResp != nil && httpResp.StatusCode == 401 {
 			return fmt.Errorf("401 unauthorized")
 		}
 		apiResp = resp
-		finalHttpResp = hResp // Update on every call including retries
 		return err
 	})
 
 	if err != nil {
-		if finalHttpResp != nil && finalHttpResp.StatusCode != 200 {
-			log.Printf("[ERROR] HTTP error while reading GithubRest Connector: %s", finalHttpResp.Status)
-			var fetchResp map[string]interface{}
-			if err := json.NewDecoder(finalHttpResp.Body).Decode(&fetchResp); err != nil {
-				resp.Diagnostics.AddError("Failed to decode error response", err.Error())
-				return
-			}
-			resp.Diagnostics.AddError(
-				"HTTP Error",
-				fmt.Sprintf("HTTP error while reading GithubRest Connector for the reasons: %s", fetchResp["msg"]),
-			)
-
-		} else {
-			log.Printf("[ERROR] API Call Failed: %v", err)
-			resp.Diagnostics.AddError("API Call Failed", fmt.Sprintf("Error: %v", err))
-		}
-		return
+		errorCode := githubRestDatasourceErrorCodes.ReadFailed()
+		opCtx.LogOperationError(logCtx, "Failed to read GitHub REST connection details", errorCode, err)
+		return nil, errorsutil.CreateStandardError(errorsutil.ConnectorTypeGithubREST, errorCode, "api_read", connectionName, err)
 	}
+
+	opCtx.LogOperationEnd(logCtx, "GitHub REST connection API call completed successfully")
+
+	return apiResp, nil
+}
+
+// ValidateGithubRestConnectionResponse validates that the API response contains valid GitHub REST connection data
+// Returns standardized error if validation fails
+func (d *GithubRestConnectionDataSource) ValidateGithubRestConnectionResponse(apiResp *openapi.GetConnectionDetailsResponse) error {
 	if apiResp != nil && apiResp.GithubRESTConnectionResponse == nil {
-		error := "Verify the connection type"
-		log.Printf("[ERROR]: Verify the connection type given")
-		resp.Diagnostics.AddError("Read of Github_Rest connection failed", error)
-		return
+		return fmt.Errorf("verify the connection type - GitHub REST connection response is nil")
 	}
-	log.Printf("[DEBUG] HTTP Status Code: %d", finalHttpResp.StatusCode)
+	return nil
+}
 
+// UpdateModelFromGithubRestConnectionResponse maps API response data to the Terraform state model
+// It handles both base connection fields and detailed connection attributes
+func (d *GithubRestConnectionDataSource) UpdateModelFromGithubRestConnectionResponse(state *GithubRestConnectionDataSourceModel, apiResp *openapi.GetConnectionDetailsResponse) {
+	// Map base connection fields
+	d.MapBaseGithubRestConnectionFields(state, apiResp)
+
+	// Map connection attributes
+	d.MapGithubRestConnectionAttributes(state, apiResp)
+}
+
+// MapBaseGithubRestConnectionFields maps basic connection fields from API response to state model
+// These are common fields available for all connection types
+func (d *GithubRestConnectionDataSource) MapBaseGithubRestConnectionFields(state *GithubRestConnectionDataSourceModel, apiResp *openapi.GetConnectionDetailsResponse) {
 	state.Msg = util.SafeStringDatasource(apiResp.GithubRESTConnectionResponse.Msg)
 	state.ErrorCode = util.SafeInt64(apiResp.GithubRESTConnectionResponse.Errorcode)
+	connectionKey := util.SafeInt64(apiResp.GithubRESTConnectionResponse.Connectionkey)
+	state.ID = types.StringValue(fmt.Sprintf("ds-githubrest-%d", connectionKey.ValueInt64()))
 	state.ConnectionName = util.SafeStringDatasource(apiResp.GithubRESTConnectionResponse.Connectionname)
 	state.ConnectionKey = util.SafeInt64(apiResp.GithubRESTConnectionResponse.Connectionkey)
 	state.Description = util.SafeStringDatasource(apiResp.GithubRESTConnectionResponse.Description)
@@ -198,39 +334,58 @@ func (d *githubRestConnectionDataSource) Read(ctx context.Context, req datasourc
 	state.CreatedBy = util.SafeStringDatasource(apiResp.GithubRESTConnectionResponse.Createdby)
 	state.UpdatedBy = util.SafeStringDatasource(apiResp.GithubRESTConnectionResponse.Updatedby)
 	state.EmailTemplate = util.SafeStringDatasource(apiResp.GithubRESTConnectionResponse.Emailtemplate)
+}
 
-	if apiResp.GithubRESTConnectionResponse.Connectionattributes != nil {
-
-		state.ConnectionAttributes = &GithubRestConnectionAttributes{
-			IsTimeoutSupported:       util.SafeBoolDatasource(apiResp.GithubRESTConnectionResponse.Connectionattributes.IsTimeoutSupported),
-			OrganizationList:         util.SafeStringDatasource(apiResp.GithubRESTConnectionResponse.Connectionattributes.ORGANIZATION_LIST),
-			ImportAccountEntJSON:     util.SafeStringDatasource(apiResp.GithubRESTConnectionResponse.Connectionattributes.ImportAccountEntJSON),
-			ConnectionType:           util.SafeStringDatasource(apiResp.GithubRESTConnectionResponse.Connectionattributes.ConnectionType),
-			IsTimeoutConfigValidated: util.SafeBoolDatasource(apiResp.GithubRESTConnectionResponse.Connectionattributes.IsTimeoutConfigValidated),
-		}
-		if apiResp.GithubRESTConnectionResponse.Connectionattributes.ConnectionTimeoutConfig != nil {
-			state.ConnectionAttributes.ConnectionTimeoutConfig = &ConnectionTimeoutConfig{
-				RetryWait:               util.SafeInt64(apiResp.GithubRESTConnectionResponse.Connectionattributes.ConnectionTimeoutConfig.RetryWait),
-				TokenRefreshMaxTryCount: util.SafeInt64(apiResp.GithubRESTConnectionResponse.Connectionattributes.ConnectionTimeoutConfig.TokenRefreshMaxTryCount),
-				RetryFailureStatusCode:  util.SafeInt64(apiResp.GithubRESTConnectionResponse.Connectionattributes.ConnectionTimeoutConfig.RetryFailureStatusCode),
-				RetryWaitMaxValue:       util.SafeInt64(apiResp.GithubRESTConnectionResponse.Connectionattributes.ConnectionTimeoutConfig.RetryWaitMaxValue),
-				RetryCount:              util.SafeInt64(apiResp.GithubRESTConnectionResponse.Connectionattributes.ConnectionTimeoutConfig.RetryCount),
-				ReadTimeout:             util.SafeInt64(apiResp.GithubRESTConnectionResponse.Connectionattributes.ConnectionTimeoutConfig.ReadTimeout),
-				ConnectionTimeout:       util.SafeInt64(apiResp.GithubRESTConnectionResponse.Connectionattributes.ConnectionTimeoutConfig.ConnectionTimeout),
-			}
-		}
-	}
-
+// MapGithubRestConnectionAttributes maps detailed GitHub REST connection attributes from API response to state model
+// Returns nil if no connection attributes are present in the response
+func (d *GithubRestConnectionDataSource) MapGithubRestConnectionAttributes(state *GithubRestConnectionDataSourceModel, apiResp *openapi.GetConnectionDetailsResponse) {
 	if apiResp.GithubRESTConnectionResponse.Connectionattributes == nil {
 		state.ConnectionAttributes = nil
+		return
 	}
+
+	attrs := apiResp.GithubRESTConnectionResponse.Connectionattributes
+	state.ConnectionAttributes = &GithubRestConnectionAttributes{
+		IsTimeoutSupported:       util.SafeBoolDatasource(attrs.IsTimeoutSupported),
+		OrganizationList:         util.SafeStringDatasource(attrs.ORGANIZATION_LIST),
+		ImportAccountEntJSON:     util.SafeStringDatasource(attrs.ImportAccountEntJSON),
+		ConnectionType:           util.SafeStringDatasource(attrs.ConnectionType),
+		IsTimeoutConfigValidated: util.SafeBoolDatasource(attrs.IsTimeoutConfigValidated),
+	}
+
+	// Map connection timeout config if present
+	d.MapGithubRestTimeoutConfig(attrs, state.ConnectionAttributes)
+}
+
+// MapGithubRestTimeoutConfig maps connection timeout configuration from API response to state model
+// Only maps timeout config if it exists in the API response
+func (d *GithubRestConnectionDataSource) MapGithubRestTimeoutConfig(attrs *openapi.GithubRESTConnectionAttributes, connectionAttrs *GithubRestConnectionAttributes) {
+	if attrs.ConnectionTimeoutConfig != nil {
+		connectionAttrs.ConnectionTimeoutConfig = &ConnectionTimeoutConfig{
+			RetryWait:               util.SafeInt64(attrs.ConnectionTimeoutConfig.RetryWait),
+			TokenRefreshMaxTryCount: util.SafeInt64(attrs.ConnectionTimeoutConfig.TokenRefreshMaxTryCount),
+			RetryWaitMaxValue:       util.SafeInt64(attrs.ConnectionTimeoutConfig.RetryWaitMaxValue),
+			RetryCount:              util.SafeInt64(attrs.ConnectionTimeoutConfig.RetryCount),
+			ReadTimeout:             util.SafeInt64(attrs.ConnectionTimeoutConfig.ReadTimeout),
+			ConnectionTimeout:       util.SafeInt64(attrs.ConnectionTimeoutConfig.ConnectionTimeout),
+			RetryFailureStatusCode:  util.SafeInt64(attrs.ConnectionTimeoutConfig.RetryFailureStatusCode),
+		}
+	}
+}
+
+// HandleGithubRestAuthenticationLogic processes the authenticate flag to control sensitive data visibility
+// When authenticate=false, connection_attributes are removed from state to prevent sensitive data exposure
+// When authenticate=true, all connection_attributes are returned in state
+func (d *GithubRestConnectionDataSource) HandleGithubRestAuthenticationLogic(state *GithubRestConnectionDataSourceModel, resp *datasource.ReadResponse) {
 	if !state.Authenticate.IsNull() && !state.Authenticate.IsUnknown() {
 		if state.Authenticate.ValueBool() {
+			tflog.Info(context.Background(), "Authentication enabled - returning all connection attributes")
 			resp.Diagnostics.AddWarning(
 				"Authentication Enabled",
 				"`authenticate` is true; all connection_attributes will be returned in state.",
 			)
 		} else {
+			tflog.Info(context.Background(), "Authentication disabled - removing connection attributes from state")
 			resp.Diagnostics.AddWarning(
 				"Authentication Disabled",
 				"`authenticate` is false; connection_attributes will be removed from state.",
@@ -238,6 +393,4 @@ func (d *githubRestConnectionDataSource) Read(ctx context.Context, req datasourc
 			state.ConnectionAttributes = nil
 		}
 	}
-	stateDiagnostics := resp.State.Set(ctx, &state)
-	resp.Diagnostics.Append(stateDiagnostics...)
 }
