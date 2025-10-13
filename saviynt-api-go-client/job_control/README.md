@@ -79,15 +79,15 @@ All URIs are relative to *http://localhost:3000*
 Class | Method | HTTP request | Description
 ------------ | ------------- | ------------- | -------------
 *JobControlAPI* | [**CheckJobStatus**](docs/JobControlAPI.md#checkjobstatus) | **Post** /ECM/api/v5/checkJobStatus | This API is used to fetch the status of any job other that Data Import Job.
+*JobControlAPI* | [**CreateOrUpdateTrigger**](docs/JobControlAPI.md#createorupdatetrigger) | **Post** /ECM/api/v5/createUpdateTrigger | This API call can be used for create and update a trigger for a particular jobgroup in EIC.
 *JobControlAPI* | [**CreateTrigger**](docs/JobControlAPI.md#createtrigger) | **Post** /ECM/api/v5/createTriggers | This API call can be used for create and update a trigger for a particular jobgroup in EIC.
-*JobControlAPI* | [**CreateUpdateTrigger**](docs/JobControlAPI.md#createupdatetrigger) | **Post** /ECM/api/v5/createUpdateTrigger | This API call can be used for create and update a trigger for a particular jobgroup in EIC.
 *JobControlAPI* | [**DeleteTrigger**](docs/JobControlAPI.md#deletetrigger) | **Post** /ECM/api/v5/deleteTrigger | This API call can be used to delete a trigger for a particular \&quot;jobgroup\&quot; in SSM.
 *JobControlAPI* | [**FetchJobMetadata**](docs/JobControlAPI.md#fetchjobmetadata) | **Post** /ECM/api/v5/fetchJobMetadata | This API call return job metadata for the last run of a job in SSM.
 *JobControlAPI* | [**PauseAllJobs**](docs/JobControlAPI.md#pausealljobs) | **Put** /ECM/api/v5/jobs/pause-all | Use this API to pause all running jobs.
 *JobControlAPI* | [**PauseJob**](docs/JobControlAPI.md#pausejob) | **Put** /ECM/api/v5/jobs/pause | Use this API to pause a selected running job.
+*JobControlAPI* | [**PauseResumeJobs**](docs/JobControlAPI.md#pauseresumejobs) | **Post** /ECM/api/v5/resumePauseJobs | The resumePauseJobs API enables you to pause jobs based on their job type and job name.When a job is paused, its status is displayed as Paused on the Job Control Panel page.
 *JobControlAPI* | [**ResumeAllJobs**](docs/JobControlAPI.md#resumealljobs) | **Put** /ECM/api/v5/jobs/resume-all | Use this API to resume all paused jobs.
 *JobControlAPI* | [**ResumeJob**](docs/JobControlAPI.md#resumejob) | **Put** /ECM/api/v5/jobs/resume | Use this API to resume a selected pause job.
-*JobControlAPI* | [**ResumePauseJobs**](docs/JobControlAPI.md#resumepausejobs) | **Post** /ECM/api/v5/resumePauseJobs | The resumePauseJobs API enables you to pause jobs based on their job type and job name.When a job is paused, its status is displayed as Paused on the Job Control Panel page.
 *JobControlAPI* | [**RunJobTrigger**](docs/JobControlAPI.md#runjobtrigger) | **Post** /ECM/api/v5/runJobTrigger | This API call can be used to run a job trigger in SSM.
 
 
