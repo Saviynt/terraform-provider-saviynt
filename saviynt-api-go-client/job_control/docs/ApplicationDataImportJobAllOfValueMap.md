@@ -5,15 +5,15 @@
 Name | Type | Description | Notes
 ------------ | ------------- | ------------- | -------------
 **Securitysystems** | **[]string** |  | 
-**Accountsoraccess** | **string** |  | 
-**Externalconn** | **string** |  | 
-**Fullorincremental** | **string** |  | 
+**Accountsoraccess** | Pointer to **string** |  | [optional] 
+**Externalconn** | Pointer to **string** |  | [optional] 
+**Fullorincremental** | Pointer to **string** |  | [optional] 
 
 ## Methods
 
 ### NewApplicationDataImportJobAllOfValueMap
 
-`func NewApplicationDataImportJobAllOfValueMap(securitysystems []string, accountsoraccess string, externalconn string, fullorincremental string, ) *ApplicationDataImportJobAllOfValueMap`
+`func NewApplicationDataImportJobAllOfValueMap(securitysystems []string, ) *ApplicationDataImportJobAllOfValueMap`
 
 NewApplicationDataImportJobAllOfValueMap instantiates a new ApplicationDataImportJobAllOfValueMap object
 This constructor will assign default values to properties that have it defined,
@@ -67,6 +67,11 @@ and a boolean to check if the value has been set.
 
 SetAccountsoraccess sets Accountsoraccess field to given value.
 
+### HasAccountsoraccess
+
+`func (o *ApplicationDataImportJobAllOfValueMap) HasAccountsoraccess() bool`
+
+HasAccountsoraccess returns a boolean if a field has been set.
 
 ### GetExternalconn
 
@@ -87,6 +92,11 @@ and a boolean to check if the value has been set.
 
 SetExternalconn sets Externalconn field to given value.
 
+### HasExternalconn
+
+`func (o *ApplicationDataImportJobAllOfValueMap) HasExternalconn() bool`
+
+HasExternalconn returns a boolean if a field has been set.
 
 ### GetFullorincremental
 
@@ -107,6 +117,11 @@ and a boolean to check if the value has been set.
 
 SetFullorincremental sets Fullorincremental field to given value.
 
+### HasFullorincremental
+
+`func (o *ApplicationDataImportJobAllOfValueMap) HasFullorincremental() bool`
+
+HasFullorincremental returns a boolean if a field has been set.
 
 
 [[Back to Model list]](../README.md#documentation-for-models) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to README]](../README.md)

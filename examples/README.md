@@ -23,6 +23,17 @@ Below are example configurations to help guide you through your Terraform journe
 - [saviynt_okta_connection_resource](./resources/saviynt_okta_connection_resource) For managing Okta connections.
 - [saviynt_entitlement_type_resource](./resources/saviynt_entitlement_type_resource) For managing entitlement types.
 - [saviynt_enterprise_roles_resource](./resources/saviynt_enterprise_roles_resource) For managing enterprise roles.
+- [saviynt_application_data_import_job_resource](./resources/saviynt_application_data_import_job_resource) For managing Application Data Import Job triggers with bulk operations support.
+- [saviynt_ws_retry_job_resource](./resources/saviynt_ws_retry_job_resource) For managing WS Retry Job triggers with bulk operations support.
+- [saviynt_ws_retry_blocking_job_resource](./resources/saviynt_ws_retry_blocking_job_resource) For managing WS Blocking Retry Job triggers with bulk operations support.
+- [saviynt_user_import_job_resource](./resources/saviynt_user_import_job_resource) For managing User Import Job triggers with bulk operations support.
+- [saviynt_ecm_job_resource](./resources/saviynt_ecm_job_resource) For managing ECM Job triggers with bulk operations support.
+- [saviynt_ecm_sap_user_job_resource](./resources/saviynt_ecm_sap_user_job_resource) For managing ECM SAP User Job triggers with bulk operations support.
+- [saviynt_accounts_import_full_job_resource](./resources/saviynt_accounts_import_full_job_resource) For managing Accounts Import Full Job triggers with bulk operations support.
+- [saviynt_accounts_import_incremental_job_resource](./resources/saviynt_accounts_import_incremental_job_resource) For managing Accounts Import Incremental Job triggers with bulk operations support.
+- [saviynt_schema_role_job_resource](./resources/saviynt_schema_role_job_resource) For managing Schema Role Job triggers with bulk operations support.
+- [saviynt_schema_account_job_resource](./resources/saviynt_schema_account_job_resource) For managing Schema Account Job triggers with bulk operations support.
+- [saviynt_schema_user_job_resource](./resources/saviynt_schema_user_job_resource) For managing Schema User Job triggers with bulk operations support.
 
 ## Supported Data Sources
 

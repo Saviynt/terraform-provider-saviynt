@@ -183,6 +183,17 @@ func (p *SaviyntProvider) Resources(ctx context.Context) []func() resource.Resou
 		NewEntitlementTypeResource,
 		NewEntitlementResource,
 		NewPrivilegeResource,
+		NewApplicationDataImportJobResource,
+		NewAccountsImportFullJobResource,
+		NewWSRetryJobResource,
+		NewWSRetryBlockingJobResource,
+		NewEcmJobResource,
+		NewEcmSapUserJobResource,
+		NewUserImportJobResource,
+		NewAccountsImportIncrementalJobResource,
+		NewSchemaAccountJobResource,
+		NewSchemaRoleJobResource,
+		NewSchemaUserJobResource,
 	}
 }
 func (p *SaviyntProvider) EphemeralResources(ctx context.Context) []func() ephemeral.EphemeralResource {
