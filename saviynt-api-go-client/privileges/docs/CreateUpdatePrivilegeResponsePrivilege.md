@@ -1,0 +1,30 @@
+# CreateUpdatePrivilegeResponsePrivilege
+
+## Properties
+
+Name | Type | Description | Notes
+------------ | ------------- | ------------- | -------------
+
+## Methods
+
+### NewCreateUpdatePrivilegeResponsePrivilege
+
+`func NewCreateUpdatePrivilegeResponsePrivilege() *CreateUpdatePrivilegeResponsePrivilege`
+
+NewCreateUpdatePrivilegeResponsePrivilege instantiates a new CreateUpdatePrivilegeResponsePrivilege object
+This constructor will assign default values to properties that have it defined,
+and makes sure properties required by API are set, but the set of arguments
+will change when the set of required properties is changed
+
+### NewCreateUpdatePrivilegeResponsePrivilegeWithDefaults
+
+`func NewCreateUpdatePrivilegeResponsePrivilegeWithDefaults() *CreateUpdatePrivilegeResponsePrivilege`
+
+NewCreateUpdatePrivilegeResponsePrivilegeWithDefaults instantiates a new CreateUpdatePrivilegeResponsePrivilege object
+This constructor will only assign default values to properties that have it defined,
+but it doesn't guarantee that properties required by API are set
+
+
+[[Back to Model list]](../README.md#documentation-for-models) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to README]](../README.md)
+
+

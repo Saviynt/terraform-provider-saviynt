@@ -1,0 +1,193 @@
+# Copyright (c) Saviynt Inc.
+# SPDX-License-Identifier: MPL-2.0
+
+
+openapi: 3.1.0
+info:
+  contact:
+    email: https://github.com/saviynt
+    name: Saviynt Developers Team
+  description: Saviynt Users API
+  title: Saviynt Users API
+  version: "1.0"
+servers:
+- url: http://localhost:3000
+tags:
+- name: Users
+paths:
+  /ECM/api/v5/getUser:
+    post:
+      description: This method returns a List of Users in Saviynt.
+      operationId: getUser
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/GetUserRequest'
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GetUserResponse'
+          description: OK
+      summary: Get User Details
+      tags:
+      - Users
+components:
+  schemas:
+    GetUserRequest:
+      description: "Note - By default, if no responsefields param is passed, required\
+        \ attrs that will always return are username, email, statuskey, firstname,\
+        \ lastname, employeeid along with other attributes with nonblank values only."
+      example:
+        secondarymanager: secondarymanager
+        offset: 6
+        manager: manager
+        max: 0
+        searchCriteria: searchCriteria
+        responsefields:
+        - ""
+        - ""
+        advsearchcriteria: advsearchcriteria
+        userQuery: userQuery
+        filtercriteria: "{}"
+        showsecurityanswers: showsecurityanswers
+        username: username
+        order: order
+      properties:
+        username:
+          description: Specify the username for which you want to get the user attribute
+            details
+          type: string
+          x-stoplight:
+            id: 5vdioatm7fxm6
+        responsefields:
+          description: "User attributes which you want to see in the response(for\
+            \ encrypted values, mention ecp<1-5>, and for hashed values, mention hcp<1-5>)"
+          items: {}
+          type: array
+          x-stoplight:
+            id: 7va47nfqpz2j7
+        max:
+          type: integer
+          x-stoplight:
+            id: 3i28kqxmzng2c
+        offset:
+          type: integer
+          x-stoplight:
+            id: 5up263ahshv5k
+        order:
+          type: string
+          x-stoplight:
+            id: xz6t6f9if6bw6
+        manager:
+          description: username
+          type: string
+          x-stoplight:
+            id: ms90im7k0znkz
+        secondarymanager:
+          description: userkey OR `secondaryManager` - username
+          type: string
+          x-stoplight:
+            id: korobvxvxvuzl
+        showsecurityanswers:
+          description: '"0"/"1" to display encrypted security answers for the user'
+          type: string
+          x-stoplight:
+            id: yq5qkor0chrn9
+        filtercriteria:
+          type: object
+          x-stoplight:
+            id: 65zepm9wb9agk
+        searchCriteria:
+          type: string
+          x-stoplight:
+            id: lmd3jk9cti289
+        advsearchcriteria:
+          type: string
+          x-stoplight:
+            id: h2ih4de0d8mob
+        userQuery:
+          type: string
+          x-stoplight:
+            id: 85yn4a081dwx9
+      title: GetUserRequest
+      x-stoplight:
+        id: w4hrcn4swva93
+    GetUserResponse:
+      example:
+        msg: msg
+        displaycount: displaycount
+        totalcount: totalcount
+        userdetails:
+        - firstname: firstname
+          statuskey: statuskey
+          displayname: displayname
+          userKey: 0
+          username: username
+        - firstname: firstname
+          statuskey: statuskey
+          displayname: displayname
+          userKey: 0
+          username: username
+        errorCode: errorCode
+      properties:
+        msg:
+          type: string
+          x-stoplight:
+            id: oi9cm2o66r4by
+        displaycount:
+          type: string
+          x-stoplight:
+            id: c0it9o4mbfb6z
+        totalcount:
+          type: string
+          x-stoplight:
+            id: 21ymo3imf7eah
+        errorCode:
+          type: string
+          x-stoplight:
+            id: n9equ9c5sitvv
+        userdetails:
+          items:
+            $ref: '#/components/schemas/User'
+          type: array
+          x-stoplight:
+            id: xpfhxj7e1k935
+      title: GetUserResponse
+      x-stoplight:
+        id: 81wgmqii4nyym
+    User:
+      example:
+        firstname: firstname
+        statuskey: statuskey
+        displayname: displayname
+        userKey: 0
+        username: username
+      properties:
+        displayname:
+          type: string
+          x-stoplight:
+            id: z1kihkv0lfz24
+        firstname:
+          type: string
+          x-stoplight:
+            id: y466wvn24q6pj
+        statuskey:
+          type: string
+          x-stoplight:
+            id: 48ztn3751301d
+        userKey:
+          type: integer
+          x-stoplight:
+            id: ne6qzizzvqr3b
+        username:
+          type: string
+          x-stoplight:
+            id: qkdtzzhc2ppoq
+      title: User
+      x-stoplight:
+        id: uhnhmn93bi53q
+x-stoplight:
+  id: 5n9hn2bob8z27
