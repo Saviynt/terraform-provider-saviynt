@@ -5,15 +5,15 @@ All URIs are relative to *http://localhost:3000*
 Method | HTTP request | Description
 ------------- | ------------- | -------------
 [**CheckJobStatus**](JobControlAPI.md#CheckJobStatus) | **Post** /ECM/api/v5/checkJobStatus | This API is used to fetch the status of any job other that Data Import Job.
+[**CreateOrUpdateTrigger**](JobControlAPI.md#CreateOrUpdateTrigger) | **Post** /ECM/api/v5/createUpdateTrigger | This API call can be used for create and update a trigger for a particular jobgroup in EIC.
 [**CreateTrigger**](JobControlAPI.md#CreateTrigger) | **Post** /ECM/api/v5/createTriggers | This API call can be used for create and update a trigger for a particular jobgroup in EIC.
-[**CreateUpdateTrigger**](JobControlAPI.md#CreateUpdateTrigger) | **Post** /ECM/api/v5/createUpdateTrigger | This API call can be used for create and update a trigger for a particular jobgroup in EIC.
 [**DeleteTrigger**](JobControlAPI.md#DeleteTrigger) | **Post** /ECM/api/v5/deleteTrigger | This API call can be used to delete a trigger for a particular \&quot;jobgroup\&quot; in SSM.
 [**FetchJobMetadata**](JobControlAPI.md#FetchJobMetadata) | **Post** /ECM/api/v5/fetchJobMetadata | This API call return job metadata for the last run of a job in SSM.
 [**PauseAllJobs**](JobControlAPI.md#PauseAllJobs) | **Put** /ECM/api/v5/jobs/pause-all | Use this API to pause all running jobs.
 [**PauseJob**](JobControlAPI.md#PauseJob) | **Put** /ECM/api/v5/jobs/pause | Use this API to pause a selected running job.
+[**PauseResumeJobs**](JobControlAPI.md#PauseResumeJobs) | **Post** /ECM/api/v5/resumePauseJobs | The resumePauseJobs API enables you to pause jobs based on their job type and job name.When a job is paused, its status is displayed as Paused on the Job Control Panel page.
 [**ResumeAllJobs**](JobControlAPI.md#ResumeAllJobs) | **Put** /ECM/api/v5/jobs/resume-all | Use this API to resume all paused jobs.
 [**ResumeJob**](JobControlAPI.md#ResumeJob) | **Put** /ECM/api/v5/jobs/resume | Use this API to resume a selected pause job.
-[**ResumePauseJobs**](JobControlAPI.md#ResumePauseJobs) | **Post** /ECM/api/v5/resumePauseJobs | The resumePauseJobs API enables you to pause jobs based on their job type and job name.When a job is paused, its status is displayed as Paused on the Job Control Panel page.
 [**RunJobTrigger**](JobControlAPI.md#RunJobTrigger) | **Post** /ECM/api/v5/runJobTrigger | This API call can be used to run a job trigger in SSM.
 
 
@@ -82,6 +82,70 @@ No authorization required
 [[Back to README]](../README.md)
 
 
+## CreateOrUpdateTrigger
+
+> CreateOrUpdateTriggersResponse CreateOrUpdateTrigger(ctx).CreateOrUpdateTriggersRequest(createOrUpdateTriggersRequest).Execute()
+
+This API call can be used for create and update a trigger for a particular jobgroup in EIC.
+
+### Example
+
+```go
+package main
+
+import (
+	"context"
+	"fmt"
+	"os"
+	openapiclient "github.com/GIT_USER_ID/GIT_REPO_ID"
+)
+
+func main() {
+	createOrUpdateTriggersRequest := *openapiclient.NewCreateOrUpdateTriggersRequest([]openapiclient.TriggerItem{openapiclient.TriggerItem{AccountsImportFullJob: openapiclient.NewAccountsImportFullJob("MyTrigger_001", "WSRetryJob", "utility", "0 0 2 * * ?")}}) // CreateOrUpdateTriggersRequest | 
+
+	configuration := openapiclient.NewConfiguration()
+	apiClient := openapiclient.NewAPIClient(configuration)
+	resp, r, err := apiClient.JobControlAPI.CreateOrUpdateTrigger(context.Background()).CreateOrUpdateTriggersRequest(createOrUpdateTriggersRequest).Execute()
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "Error when calling `JobControlAPI.CreateOrUpdateTrigger``: %v\n", err)
+		fmt.Fprintf(os.Stderr, "Full HTTP response: %v\n", r)
+	}
+	// response from `CreateOrUpdateTrigger`: CreateOrUpdateTriggersResponse
+	fmt.Fprintf(os.Stdout, "Response from `JobControlAPI.CreateOrUpdateTrigger`: %v\n", resp)
+}
+```
+
+### Path Parameters
+
+
+
+### Other Parameters
+
+Other parameters are passed through a pointer to a apiCreateOrUpdateTriggerRequest struct via the builder pattern
+
+
+Name | Type | Description  | Notes
+------------- | ------------- | ------------- | -------------
+ **createOrUpdateTriggersRequest** | [**CreateOrUpdateTriggersRequest**](CreateOrUpdateTriggersRequest.md) |  | 
+
+### Return type
+
+[**CreateOrUpdateTriggersResponse**](CreateOrUpdateTriggersResponse.md)
+
+### Authorization
+
+No authorization required
+
+### HTTP request headers
+
+- **Content-Type**: application/json
+- **Accept**: application/json
+
+[[Back to top]](#) [[Back to API list]](../README.md#documentation-for-api-endpoints)
+[[Back to Model list]](../README.md#documentation-for-models)
+[[Back to README]](../README.md)
+
+
 ## CreateTrigger
 
 > CreateTriggersResponse CreateTrigger(ctx).JobTriggerRequest(jobTriggerRequest).Execute()
@@ -131,70 +195,6 @@ Name | Type | Description  | Notes
 ### Return type
 
 [**CreateTriggersResponse**](CreateTriggersResponse.md)
-
-### Authorization
-
-No authorization required
-
-### HTTP request headers
-
-- **Content-Type**: application/json
-- **Accept**: application/json
-
-[[Back to top]](#) [[Back to API list]](../README.md#documentation-for-api-endpoints)
-[[Back to Model list]](../README.md#documentation-for-models)
-[[Back to README]](../README.md)
-
-
-## CreateUpdateTrigger
-
-> CreateOrUpdateTriggersResponse CreateUpdateTrigger(ctx).CreateOrUpdateTriggersRequest(createOrUpdateTriggersRequest).Execute()
-
-This API call can be used for create and update a trigger for a particular jobgroup in EIC.
-
-### Example
-
-```go
-package main
-
-import (
-	"context"
-	"fmt"
-	"os"
-	openapiclient "github.com/GIT_USER_ID/GIT_REPO_ID"
-)
-
-func main() {
-	createOrUpdateTriggersRequest := *openapiclient.NewCreateOrUpdateTriggersRequest([]openapiclient.TriggerItem{openapiclient.TriggerItem{AccountsImportFullJob: openapiclient.NewAccountsImportFullJob("MyTrigger_001", "WSRetryJob", "utility", "0 0 2 * * ?")}}) // CreateOrUpdateTriggersRequest | 
-
-	configuration := openapiclient.NewConfiguration()
-	apiClient := openapiclient.NewAPIClient(configuration)
-	resp, r, err := apiClient.JobControlAPI.CreateUpdateTrigger(context.Background()).CreateOrUpdateTriggersRequest(createOrUpdateTriggersRequest).Execute()
-	if err != nil {
-		fmt.Fprintf(os.Stderr, "Error when calling `JobControlAPI.CreateUpdateTrigger``: %v\n", err)
-		fmt.Fprintf(os.Stderr, "Full HTTP response: %v\n", r)
-	}
-	// response from `CreateUpdateTrigger`: CreateOrUpdateTriggersResponse
-	fmt.Fprintf(os.Stdout, "Response from `JobControlAPI.CreateUpdateTrigger`: %v\n", resp)
-}
-```
-
-### Path Parameters
-
-
-
-### Other Parameters
-
-Other parameters are passed through a pointer to a apiCreateUpdateTriggerRequest struct via the builder pattern
-
-
-Name | Type | Description  | Notes
-------------- | ------------- | ------------- | -------------
- **createOrUpdateTriggersRequest** | [**CreateOrUpdateTriggersRequest**](CreateOrUpdateTriggersRequest.md) |  | 
-
-### Return type
-
-[**CreateOrUpdateTriggersResponse**](CreateOrUpdateTriggersResponse.md)
 
 ### Authorization
 
@@ -461,6 +461,70 @@ No authorization required
 [[Back to README]](../README.md)
 
 
+## PauseResumeJobs
+
+> string PauseResumeJobs(ctx).PauseResumeJobsRequest(pauseResumeJobsRequest).Execute()
+
+The resumePauseJobs API enables you to pause jobs based on their job type and job name.When a job is paused, its status is displayed as Paused on the Job Control Panel page.
+
+### Example
+
+```go
+package main
+
+import (
+	"context"
+	"fmt"
+	"os"
+	openapiclient "github.com/GIT_USER_ID/GIT_REPO_ID"
+)
+
+func main() {
+	pauseResumeJobsRequest := *openapiclient.NewPauseResumeJobsRequest("PAUSE") // PauseResumeJobsRequest | 
+
+	configuration := openapiclient.NewConfiguration()
+	apiClient := openapiclient.NewAPIClient(configuration)
+	resp, r, err := apiClient.JobControlAPI.PauseResumeJobs(context.Background()).PauseResumeJobsRequest(pauseResumeJobsRequest).Execute()
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "Error when calling `JobControlAPI.PauseResumeJobs``: %v\n", err)
+		fmt.Fprintf(os.Stderr, "Full HTTP response: %v\n", r)
+	}
+	// response from `PauseResumeJobs`: string
+	fmt.Fprintf(os.Stdout, "Response from `JobControlAPI.PauseResumeJobs`: %v\n", resp)
+}
+```
+
+### Path Parameters
+
+
+
+### Other Parameters
+
+Other parameters are passed through a pointer to a apiPauseResumeJobsRequest struct via the builder pattern
+
+
+Name | Type | Description  | Notes
+------------- | ------------- | ------------- | -------------
+ **pauseResumeJobsRequest** | [**PauseResumeJobsRequest**](PauseResumeJobsRequest.md) |  | 
+
+### Return type
+
+**string**
+
+### Authorization
+
+No authorization required
+
+### HTTP request headers
+
+- **Content-Type**: application/json
+- **Accept**: text/plain
+
+[[Back to top]](#) [[Back to API list]](../README.md#documentation-for-api-endpoints)
+[[Back to Model list]](../README.md#documentation-for-models)
+[[Back to README]](../README.md)
+
+
 ## ResumeAllJobs
 
 > PauseResumeJobsResponse ResumeAllJobs(ctx).Execute()
@@ -578,70 +642,6 @@ No authorization required
 
 - **Content-Type**: application/json
 - **Accept**: application/json
-
-[[Back to top]](#) [[Back to API list]](../README.md#documentation-for-api-endpoints)
-[[Back to Model list]](../README.md#documentation-for-models)
-[[Back to README]](../README.md)
-
-
-## ResumePauseJobs
-
-> string ResumePauseJobs(ctx).PauseResumeJobsRequest(pauseResumeJobsRequest).Execute()
-
-The resumePauseJobs API enables you to pause jobs based on their job type and job name.When a job is paused, its status is displayed as Paused on the Job Control Panel page.
-
-### Example
-
-```go
-package main
-
-import (
-	"context"
-	"fmt"
-	"os"
-	openapiclient "github.com/GIT_USER_ID/GIT_REPO_ID"
-)
-
-func main() {
-	pauseResumeJobsRequest := *openapiclient.NewPauseResumeJobsRequest("PAUSE") // PauseResumeJobsRequest | 
-
-	configuration := openapiclient.NewConfiguration()
-	apiClient := openapiclient.NewAPIClient(configuration)
-	resp, r, err := apiClient.JobControlAPI.ResumePauseJobs(context.Background()).PauseResumeJobsRequest(pauseResumeJobsRequest).Execute()
-	if err != nil {
-		fmt.Fprintf(os.Stderr, "Error when calling `JobControlAPI.ResumePauseJobs``: %v\n", err)
-		fmt.Fprintf(os.Stderr, "Full HTTP response: %v\n", r)
-	}
-	// response from `ResumePauseJobs`: string
-	fmt.Fprintf(os.Stdout, "Response from `JobControlAPI.ResumePauseJobs`: %v\n", resp)
-}
-```
-
-### Path Parameters
-
-
-
-### Other Parameters
-
-Other parameters are passed through a pointer to a apiResumePauseJobsRequest struct via the builder pattern
-
-
-Name | Type | Description  | Notes
-------------- | ------------- | ------------- | -------------
- **pauseResumeJobsRequest** | [**PauseResumeJobsRequest**](PauseResumeJobsRequest.md) |  | 
-
-### Return type
-
-**string**
-
-### Authorization
-
-No authorization required
-
-### HTTP request headers
-
-- **Content-Type**: application/json
-- **Accept**: text/plain
 
 [[Back to top]](#) [[Back to API list]](../README.md#documentation-for-api-endpoints)
 [[Back to Model list]](../README.md#documentation-for-models)

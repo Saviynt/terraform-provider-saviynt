@@ -11,8 +11,8 @@ API version: 1.0.0
 package job_control
 
 import (
-	"bytes"
 	"encoding/json"
+	"bytes"
 	"fmt"
 )
 
@@ -21,10 +21,10 @@ var _ MappedNullable = &ApplicationDataImportJobAllOfValueMap{}
 
 // ApplicationDataImportJobAllOfValueMap struct for ApplicationDataImportJobAllOfValueMap
 type ApplicationDataImportJobAllOfValueMap struct {
-	Securitysystems   []string `json:"securitysystems"`
-	Accountsoraccess  string   `json:"accountsoraccess"`
-	Externalconn      string   `json:"externalconn"`
-	Fullorincremental string   `json:"fullorincremental"`
+	Securitysystems []string `json:"securitysystems"`
+	Accountsoraccess *string `json:"accountsoraccess,omitempty"`
+	Externalconn *string `json:"externalconn,omitempty"`
+	Fullorincremental *string `json:"fullorincremental,omitempty"`
 }
 
 type _ApplicationDataImportJobAllOfValueMap ApplicationDataImportJobAllOfValueMap
@@ -33,12 +33,9 @@ type _ApplicationDataImportJobAllOfValueMap ApplicationDataImportJobAllOfValueMa
 // This constructor will assign default values to properties that have it defined,
 // and makes sure properties required by API are set, but the set of arguments
 // will change when the set of required properties is changed
-func NewApplicationDataImportJobAllOfValueMap(securitysystems []string, accountsoraccess string, externalconn string, fullorincremental string) *ApplicationDataImportJobAllOfValueMap {
+func NewApplicationDataImportJobAllOfValueMap(securitysystems []string) *ApplicationDataImportJobAllOfValueMap {
 	this := ApplicationDataImportJobAllOfValueMap{}
 	this.Securitysystems = securitysystems
-	this.Accountsoraccess = accountsoraccess
-	this.Externalconn = externalconn
-	this.Fullorincremental = fullorincremental
 	return &this
 }
 
@@ -74,80 +71,104 @@ func (o *ApplicationDataImportJobAllOfValueMap) SetSecuritysystems(v []string) {
 	o.Securitysystems = v
 }
 
-// GetAccountsoraccess returns the Accountsoraccess field value
+// GetAccountsoraccess returns the Accountsoraccess field value if set, zero value otherwise.
 func (o *ApplicationDataImportJobAllOfValueMap) GetAccountsoraccess() string {
-	if o == nil {
+	if o == nil || IsNil(o.Accountsoraccess) {
 		var ret string
 		return ret
 	}
-
-	return o.Accountsoraccess
+	return *o.Accountsoraccess
 }
 
-// GetAccountsoraccessOk returns a tuple with the Accountsoraccess field value
+// GetAccountsoraccessOk returns a tuple with the Accountsoraccess field value if set, nil otherwise
 // and a boolean to check if the value has been set.
 func (o *ApplicationDataImportJobAllOfValueMap) GetAccountsoraccessOk() (*string, bool) {
-	if o == nil {
+	if o == nil || IsNil(o.Accountsoraccess) {
 		return nil, false
 	}
-	return &o.Accountsoraccess, true
+	return o.Accountsoraccess, true
 }
 
-// SetAccountsoraccess sets field value
+// HasAccountsoraccess returns a boolean if a field has been set.
+func (o *ApplicationDataImportJobAllOfValueMap) HasAccountsoraccess() bool {
+	if o != nil && !IsNil(o.Accountsoraccess) {
+		return true
+	}
+
+	return false
+}
+
+// SetAccountsoraccess gets a reference to the given string and assigns it to the Accountsoraccess field.
 func (o *ApplicationDataImportJobAllOfValueMap) SetAccountsoraccess(v string) {
-	o.Accountsoraccess = v
+	o.Accountsoraccess = &v
 }
 
-// GetExternalconn returns the Externalconn field value
+// GetExternalconn returns the Externalconn field value if set, zero value otherwise.
 func (o *ApplicationDataImportJobAllOfValueMap) GetExternalconn() string {
-	if o == nil {
+	if o == nil || IsNil(o.Externalconn) {
 		var ret string
 		return ret
 	}
-
-	return o.Externalconn
+	return *o.Externalconn
 }
 
-// GetExternalconnOk returns a tuple with the Externalconn field value
+// GetExternalconnOk returns a tuple with the Externalconn field value if set, nil otherwise
 // and a boolean to check if the value has been set.
 func (o *ApplicationDataImportJobAllOfValueMap) GetExternalconnOk() (*string, bool) {
-	if o == nil {
+	if o == nil || IsNil(o.Externalconn) {
 		return nil, false
 	}
-	return &o.Externalconn, true
+	return o.Externalconn, true
 }
 
-// SetExternalconn sets field value
+// HasExternalconn returns a boolean if a field has been set.
+func (o *ApplicationDataImportJobAllOfValueMap) HasExternalconn() bool {
+	if o != nil && !IsNil(o.Externalconn) {
+		return true
+	}
+
+	return false
+}
+
+// SetExternalconn gets a reference to the given string and assigns it to the Externalconn field.
 func (o *ApplicationDataImportJobAllOfValueMap) SetExternalconn(v string) {
-	o.Externalconn = v
+	o.Externalconn = &v
 }
 
-// GetFullorincremental returns the Fullorincremental field value
+// GetFullorincremental returns the Fullorincremental field value if set, zero value otherwise.
 func (o *ApplicationDataImportJobAllOfValueMap) GetFullorincremental() string {
-	if o == nil {
+	if o == nil || IsNil(o.Fullorincremental) {
 		var ret string
 		return ret
 	}
-
-	return o.Fullorincremental
+	return *o.Fullorincremental
 }
 
-// GetFullorincrementalOk returns a tuple with the Fullorincremental field value
+// GetFullorincrementalOk returns a tuple with the Fullorincremental field value if set, nil otherwise
 // and a boolean to check if the value has been set.
 func (o *ApplicationDataImportJobAllOfValueMap) GetFullorincrementalOk() (*string, bool) {
-	if o == nil {
+	if o == nil || IsNil(o.Fullorincremental) {
 		return nil, false
 	}
-	return &o.Fullorincremental, true
+	return o.Fullorincremental, true
 }
 
-// SetFullorincremental sets field value
+// HasFullorincremental returns a boolean if a field has been set.
+func (o *ApplicationDataImportJobAllOfValueMap) HasFullorincremental() bool {
+	if o != nil && !IsNil(o.Fullorincremental) {
+		return true
+	}
+
+	return false
+}
+
+// SetFullorincremental gets a reference to the given string and assigns it to the Fullorincremental field.
 func (o *ApplicationDataImportJobAllOfValueMap) SetFullorincremental(v string) {
-	o.Fullorincremental = v
+	o.Fullorincremental = &v
 }
 
 func (o ApplicationDataImportJobAllOfValueMap) MarshalJSON() ([]byte, error) {
-	toSerialize, err := o.ToMap()
+	toSerialize,err := o.ToMap()
 	if err != nil {
 		return []byte{}, err
 	}
@@ -157,9 +178,15 @@ func (o ApplicationDataImportJobAllOfValueMap) MarshalJSON() ([]byte, error) {
 func (o ApplicationDataImportJobAllOfValueMap) ToMap() (map[string]interface{}, error) {
 	toSerialize := map[string]interface{}{}
 	toSerialize["securitysystems"] = o.Securitysystems
-	toSerialize["accountsoraccess"] = o.Accountsoraccess
-	toSerialize["externalconn"] = o.Externalconn
-	toSerialize["fullorincremental"] = o.Fullorincremental
+	if !IsNil(o.Accountsoraccess) {
+		toSerialize["accountsoraccess"] = o.Accountsoraccess
+	}
+	if !IsNil(o.Externalconn) {
+		toSerialize["externalconn"] = o.Externalconn
+	}
+	if !IsNil(o.Fullorincremental) {
+		toSerialize["fullorincremental"] = o.Fullorincremental
+	}
 	return toSerialize, nil
 }
 
@@ -169,9 +196,6 @@ func (o *ApplicationDataImportJobAllOfValueMap) UnmarshalJSON(data []byte) (err 
 	// that every required field exists as a key in the generic map.
 	requiredProperties := []string{
 		"securitysystems",
-		"accountsoraccess",
-		"externalconn",
-		"fullorincremental",
 	}
 
 	allProperties := make(map[string]interface{})
@@ -179,10 +203,10 @@ func (o *ApplicationDataImportJobAllOfValueMap) UnmarshalJSON(data []byte) (err 
 	err = json.Unmarshal(data, &allProperties)
 
 	if err != nil {
-		return err
+		return err;
 	}
 
-	for _, requiredProperty := range requiredProperties {
+	for _, requiredProperty := range(requiredProperties) {
 		if _, exists := allProperties[requiredProperty]; !exists {
 			return fmt.Errorf("no value given for required property %v", requiredProperty)
 		}
@@ -238,3 +262,5 @@ func (v *NullableApplicationDataImportJobAllOfValueMap) UnmarshalJSON(src []byte
 	v.isSet = true
 	return json.Unmarshal(src, &v.value)
 }
+
+
