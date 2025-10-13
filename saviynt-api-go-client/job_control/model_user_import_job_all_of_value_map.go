@@ -11,8 +11,8 @@ API version: 1.0.0
 package job_control
 
 import (
-	"bytes"
 	"encoding/json"
+	"bytes"
 	"fmt"
 )
 
@@ -21,24 +21,24 @@ var _ MappedNullable = &UserImportJobAllOfValueMap{}
 
 // UserImportJobAllOfValueMap struct for UserImportJobAllOfValueMap
 type UserImportJobAllOfValueMap struct {
-	Externalconn                       string  `json:"externalconn"`
-	Fullorincremental                  *string `json:"fullorincremental,omitempty"`
-	UserNotInFeedAction                *string `json:"userNotInFeedAction,omitempty"`
-	UserOperationsAllowed              *string `json:"userOperationsAllowed,omitempty"`
-	ZeroDayProvisioning                *string `json:"zeroDayProvisioning,omitempty"`
-	GenerateSystemUsername             *string `json:"generateSystemUsername,omitempty"`
-	GenerateEmail                      *string `json:"generateEmail,omitempty"`
-	CheckRules                         *string `json:"checkRules,omitempty"`
-	BuildUserMap                       *string `json:"buildUserMap,omitempty"`
-	UserThreshold                      *string `json:"userThreshold,omitempty"`
-	OnFailure                          *string `json:"onFailure,omitempty"`
-	ZeroDayLimit                       *string `json:"zeroDayLimit,omitempty"`
-	TermUserLimit                      *string `json:"termUserLimit,omitempty"`
-	Importsavconnect                   *string `json:"importsavconnect,omitempty"`
-	Exporttosavcloud                   *string `json:"exporttosavcloud,omitempty"`
-	UserReconcillationField            *string `json:"userReconcillationField,omitempty"`
-	UserDefaultSavRole                 *string `json:"userDefaultSavRole,omitempty"`
-	UserStatusConfig                   *string `json:"userStatusConfig,omitempty"`
+	Externalconn string `json:"externalconn"`
+	Fullorincremental *string `json:"fullorincremental,omitempty"`
+	UserNotInFeedAction *string `json:"userNotInFeedAction,omitempty"`
+	UserOperationsAllowed *string `json:"userOperationsAllowed,omitempty"`
+	ZeroDayProvisioning *string `json:"zeroDayProvisioning,omitempty"`
+	GenerateSystemUsername *string `json:"generateSystemUsername,omitempty"`
+	GenerateEmail *string `json:"generateEmail,omitempty"`
+	CheckRules *string `json:"checkRules,omitempty"`
+	BuildUserMap *string `json:"buildUserMap,omitempty"`
+	UserThreshold *string `json:"userThreshold,omitempty"`
+	OnFailure *string `json:"onFailure,omitempty"`
+	ZeroDayLimit *string `json:"zeroDayLimit,omitempty"`
+	TermUserLimit *string `json:"termUserLimit,omitempty"`
+	Importsavconnect *string `json:"importsavconnect,omitempty"`
+	Exporttosavcloud *string `json:"exporttosavcloud,omitempty"`
+	UserReconcillationField *string `json:"userReconcillationField,omitempty"`
+	UserDefaultSavRole *string `json:"userDefaultSavRole,omitempty"`
+	UserStatusConfig *string `json:"userStatusConfig,omitempty"`
 	EndpointsToAssociateOrphanAccounts *string `json:"endpointsToAssociateOrphanAccounts,omitempty"`
 }
 
@@ -663,7 +663,7 @@ func (o *UserImportJobAllOfValueMap) SetEndpointsToAssociateOrphanAccounts(v str
 }
 
 func (o UserImportJobAllOfValueMap) MarshalJSON() ([]byte, error) {
-	toSerialize, err := o.ToMap()
+	toSerialize,err := o.ToMap()
 	if err != nil {
 		return []byte{}, err
 	}
@@ -743,10 +743,10 @@ func (o *UserImportJobAllOfValueMap) UnmarshalJSON(data []byte) (err error) {
 	err = json.Unmarshal(data, &allProperties)
 
 	if err != nil {
-		return err
+		return err;
 	}
 
-	for _, requiredProperty := range requiredProperties {
+	for _, requiredProperty := range(requiredProperties) {
 		if _, exists := allProperties[requiredProperty]; !exists {
 			return fmt.Errorf("no value given for required property %v", requiredProperty)
 		}
@@ -802,3 +802,5 @@ func (v *NullableUserImportJobAllOfValueMap) UnmarshalJSON(src []byte) error {
 	v.isSet = true
 	return json.Unmarshal(src, &v.value)
 }
+
+
