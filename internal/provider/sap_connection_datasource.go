@@ -7,31 +7,30 @@ package provider
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
-	"log"
-	"net/http"
-	"strconv"
-	"strings"
 	"terraform-provider-Saviynt/internal/client"
 	"terraform-provider-Saviynt/util"
 	connectionsutil "terraform-provider-Saviynt/util/connectionsutil"
+	"terraform-provider-Saviynt/util/errorsutil"
 
 	"github.com/hashicorp/terraform-plugin-framework/datasource"
 	"github.com/hashicorp/terraform-plugin-framework/datasource/schema"
 	"github.com/hashicorp/terraform-plugin-framework/types"
-	s "github.com/saviynt/saviynt-api-go-client"
-
+	"github.com/hashicorp/terraform-plugin-log/tflog"
 	openapi "github.com/saviynt/saviynt-api-go-client/connections"
 )
 
-var _ datasource.DataSource = &sapConnectionDataSource{}
+var _ datasource.DataSource = &SapConnectionDataSource{}
+
+// Initialize error codes for SAP Connection datasource operations
+var sapDatasourceErrorCodes = errorsutil.NewConnectorErrorCodes(errorsutil.ConnectorTypeSAP)
 
 // SAPConnectionDataSource defines the data source
-type sapConnectionDataSource struct {
-	client   *s.Client
-	token    string
-	provider client.SaviyntProviderInterface
+type SapConnectionDataSource struct {
+	client            client.SaviyntClientInterface
+	token             string
+	provider          client.SaviyntProviderInterface
+	connectionFactory client.ConnectionFactoryInterface
 }
 
 type SapConnectionDataSourceModel struct {
@@ -105,11 +104,38 @@ type SapConnectionAttributes struct {
 	UpdateAccountJson              types.String             `tfsdk:"update_account_json"`
 }
 
+// NewSAPConnectionsDataSource creates a new SAP connections data source with default factory
 func NewSAPConnectionsDataSource() datasource.DataSource {
-	return &sapConnectionDataSource{}
+	return &SapConnectionDataSource{
+		connectionFactory: &client.DefaultConnectionFactory{},
+	}
 }
 
-func (d *sapConnectionDataSource) Metadata(ctx context.Context, req datasource.MetadataRequest, resp *datasource.MetadataResponse) {
+// NewSAPConnectionsDataSourceWithFactory creates a new SAP connections data source with custom factory
+// Used primarily for testing with mock factories
+func NewSAPConnectionsDataSourceWithFactory(factory client.ConnectionFactoryInterface) datasource.DataSource {
+	return &SapConnectionDataSource{
+		connectionFactory: factory,
+	}
+}
+
+// SetClient sets the client for testing purposes
+func (d *SapConnectionDataSource) SetClient(client client.SaviyntClientInterface) {
+	d.client = client
+}
+
+// SetToken sets the token for testing purposes
+func (d *SapConnectionDataSource) SetToken(token string) {
+	d.token = token
+}
+
+// SetProvider sets the provider for testing purposes
+func (d *SapConnectionDataSource) SetProvider(provider client.SaviyntProviderInterface) {
+	d.provider = provider
+}
+
+// Metadata sets the data source type name for Terraform
+func (d *SapConnectionDataSource) Metadata(ctx context.Context, req datasource.MetadataRequest, resp *datasource.MetadataResponse) {
 	resp.TypeName = "saviynt_sap_connection_datasource"
 }
 
@@ -192,115 +218,225 @@ func SapConnectorsDataSourceSchema() map[string]schema.Attribute {
 	}
 }
 
-// Schema defines the attributes for the data source
-func (d *sapConnectionDataSource) Schema(ctx context.Context, req datasource.SchemaRequest, resp *datasource.SchemaResponse) {
+// Schema defines the structure and attributes available for the SAP connection data source
+func (d *SapConnectionDataSource) Schema(ctx context.Context, req datasource.SchemaRequest, resp *datasource.SchemaResponse) {
 	resp.Schema = schema.Schema{
 		Description: util.SAPConnDataSourceDescription,
 		Attributes:  connectionsutil.MergeDataSourceAttributes(BaseConnectorDataSourceSchema(), SapConnectorsDataSourceSchema()),
 	}
 }
 
-func (d *sapConnectionDataSource) Configure(ctx context.Context, req datasource.ConfigureRequest, resp *datasource.ConfigureResponse) {
+// Configure initializes the data source with provider configuration
+// Sets up client and authentication token for API operations
+func (d *SapConnectionDataSource) Configure(ctx context.Context, req datasource.ConfigureRequest, resp *datasource.ConfigureResponse) {
+	opCtx := errorsutil.CreateOperationContext(errorsutil.ConnectorTypeSAP, "configure", "")
+	ctx = opCtx.AddContextToLogger(ctx)
+
+	opCtx.LogOperationStart(ctx, "Starting SAP connection datasource configuration")
+
 	// Check if provider data is available.
 	if req.ProviderData == nil {
-		log.Println("ProviderData is nil, returning early.")
+		tflog.Debug(ctx, "ProviderData is nil, returning early")
+		opCtx.LogOperationEnd(ctx, "SAP connection datasource configuration completed - no provider data")
 		return
 	}
 
 	// Cast provider data to your provider type.
 	prov, ok := req.ProviderData.(*SaviyntProvider)
 	if !ok {
-		resp.Diagnostics.AddError("Unexpected Provider Data", "Expected *SaviyntProvider")
+		errorCode := sapDatasourceErrorCodes.ProviderConfig()
+		opCtx.LogOperationError(ctx, "Provider configuration failed", errorCode,
+			fmt.Errorf("expected *SaviyntProvider, got different type"),
+			map[string]interface{}{"expected_type": "*SaviyntProvider"})
+
+		resp.Diagnostics.AddError(
+			errorsutil.GetErrorMessage(errorsutil.ErrProviderConfig),
+			fmt.Sprintf("[%s] Expected *SaviyntProvider, got different type", errorCode),
+		)
 		return
 	}
 
-	// Set the client and token from the provider state.
-	d.client = prov.client
+	// Set the client and token from the provider state using interface wrapper.
+	d.client = &client.SaviyntClientWrapper{Client: prov.client}
 	d.token = prov.accessToken
 	d.provider = &client.SaviyntProviderWrapper{Provider: prov}
+
+	opCtx.LogOperationEnd(ctx, "SAP connection datasource configured successfully")
 }
 
-// SetProvider sets the provider for testing purposes
-func (d *sapConnectionDataSource) SetProvider(provider client.SaviyntProviderInterface) {
-	d.provider = provider
-}
-
-func (d *sapConnectionDataSource) Read(ctx context.Context, req datasource.ReadRequest, resp *datasource.ReadResponse) {
+// Read retrieves SAP connection details from Saviynt and populates the Terraform state
+// Supports lookup by connection name or connection key with comprehensive error handling
+func (d *SapConnectionDataSource) Read(ctx context.Context, req datasource.ReadRequest, resp *datasource.ReadResponse) {
 	var state SapConnectionDataSourceModel
 
+	opCtx := errorsutil.CreateOperationContext(errorsutil.ConnectorTypeSAP, "datasource_read", "")
+	ctx = opCtx.AddContextToLogger(ctx)
+
+	opCtx.LogOperationStart(ctx, "Starting SAP connection datasource read")
+
+	// Extract configuration from request
 	configDiagnostics := req.Config.Get(ctx, &state)
 	resp.Diagnostics.Append(configDiagnostics...)
 	if resp.Diagnostics.HasError() {
+		errorCode := sapDatasourceErrorCodes.ConfigExtraction()
+		opCtx.LogOperationError(ctx, "Failed to get config from request", errorCode,
+			fmt.Errorf("config extraction failed"))
+		resp.Diagnostics.AddError(
+			errorsutil.GetErrorMessage(errorsutil.ErrConfigExtraction),
+			fmt.Sprintf("[%s] Unable to extract Terraform configuration from request", errorCode),
+		)
 		return
 	}
 
-	// Prepare request parameters
-	reqParams := openapi.GetConnectionDetailsRequest{}
-
-	// Set filters based on provided parameters
+	// Update operation context with connection name if available
+	connectionName := ""
 	if !state.ConnectionName.IsNull() && state.ConnectionName.ValueString() != "" {
-		reqParams.SetConnectionname(state.ConnectionName.ValueString())
+		connectionName = state.ConnectionName.ValueString()
+		opCtx.ConnectionName = connectionName
+		ctx = opCtx.AddContextToLogger(ctx)
 	}
+
+	// Prepare connection parameters
+	var connectionKey *int64
 	if !state.ConnectionKey.IsNull() {
-		connectionKeyInt := state.ConnectionKey.ValueInt64()
-		reqParams.SetConnectionkey(strconv.FormatInt(connectionKeyInt, 10))
+		keyValue := state.ConnectionKey.ValueInt64()
+		connectionKey = &keyValue
 	}
+
+	// Validate that at least one identifier is provided
+	if connectionName == "" && connectionKey == nil {
+		errorCode := sapDatasourceErrorCodes.MissingIdentifier()
+		opCtx.LogOperationError(ctx, "Missing connection identifier", errorCode,
+			fmt.Errorf("either connection_name or connection_key must be provided"))
+		resp.Diagnostics.AddError(
+			errorsutil.GetErrorMessage(errorsutil.ErrMissingIdentifier),
+			fmt.Sprintf("[%s] Either 'connection_name' or 'connection_key' must be provided to look up the SAP connection.", errorCode),
+		)
+		return
+	}
+
+	// Execute API call to get SAP connection details
+	apiResp, err := d.ReadSAPConnectionDetails(ctx, connectionName, connectionKey)
+	if err != nil {
+		// Error is already sanitized in ReadSAPConnectionDetails method
+		errorCode := sapDatasourceErrorCodes.ReadFailed()
+		opCtx.LogOperationError(ctx, "Failed to read SAP connection details", errorCode, err)
+		resp.Diagnostics.AddError(
+			errorsutil.GetErrorMessage(errorsutil.ErrReadFailed),
+			fmt.Sprintf("[%s] %s", errorCode, err.Error()),
+		)
+		return
+	}
+
+	// Validate API response
+	if err := d.ValidateSAPConnectionResponse(apiResp); err != nil {
+		errorCode := sapDatasourceErrorCodes.APIError()
+		opCtx.LogOperationError(ctx, "Invalid connection type for SAP datasource", errorCode, err)
+		resp.Diagnostics.AddError(
+			errorsutil.GetErrorMessage(errorsutil.ErrAPIError),
+			fmt.Sprintf("[%s] Unable to verify connection type for connection %q. The provider could not determine the type of this connection. Please ensure the connection name is correct and belongs to a supported connector type.", errorCode, connectionName),
+		)
+		return
+	}
+
+	// Map API response to state
+	d.UpdateModelFromSAPConnectionResponse(&state, apiResp)
+
+	// Handle authentication logic
+	d.HandleSAPAuthenticationLogic(&state, resp)
+
+	// Set final state
+	stateDiagnostics := resp.State.Set(ctx, &state)
+	resp.Diagnostics.Append(stateDiagnostics...)
+	if resp.Diagnostics.HasError() {
+		errorCode := sapDatasourceErrorCodes.StateUpdate()
+		opCtx.LogOperationError(ctx, "Failed to set state", errorCode,
+			fmt.Errorf("state update failed"))
+		resp.Diagnostics.AddError(
+			errorsutil.GetErrorMessage(errorsutil.ErrStateUpdate),
+			fmt.Sprintf("[%s] Unable to update Terraform state for SAP connection datasource", errorCode),
+		)
+		return
+	}
+
+	opCtx.LogOperationEnd(ctx, "SAP connection datasource read completed successfully",
+		map[string]interface{}{
+			"connection_name": connectionName,
+			"has_attributes":  state.ConnectionAttributes != nil,
+		})
+}
+// ReadSAPConnectionDetails retrieves SAP connection details from Saviynt API
+// Handles both connection name and connection key based lookups using factory pattern
+// Returns standardized errors with proper correlation tracking and sensitive data sanitization
+func (d *SapConnectionDataSource) ReadSAPConnectionDetails(ctx context.Context, connectionName string, connectionKey *int64) (*openapi.GetConnectionDetailsResponse, error) {
+	opCtx := errorsutil.CreateOperationContext(errorsutil.ConnectorTypeSAP, "api_read", connectionName)
+	logCtx := opCtx.AddContextToLogger(ctx)
+
+	opCtx.LogOperationStart(logCtx, "Starting SAP connection API call")
+
+	tflog.Debug(logCtx, "Executing API request to get SAP connection details")
 
 	var apiResp *openapi.GetConnectionDetailsResponse
-	var finalHttpResp *http.Response
 
-	// Execute API call with retry logic
+	// Execute API request with retry logic
 	err := d.provider.AuthenticatedAPICallWithRetry(ctx, "read_sap_connection_datasource", func(token string) error {
-		// Configure API client with current token
-		cfg := openapi.NewConfiguration()
-		apiBaseURL := strings.TrimPrefix(strings.TrimPrefix(d.client.APIBaseURL(), "https://"), "http://")
-		cfg.Host = apiBaseURL
-		cfg.Scheme = "https"
-		cfg.AddDefaultHeader("Authorization", "Bearer "+token)
-		cfg.HTTPClient = http.DefaultClient
+		connectionOps := d.connectionFactory.CreateConnectionOperations(d.client.APIBaseURL(), token)
 
-		apiClient := openapi.NewAPIClient(cfg)
-		apiReq := apiClient.ConnectionsAPI.GetConnectionDetails(ctx).GetConnectionDetailsRequest(reqParams)
+		// Build request with both connectionname and connectionkey
+		req := openapi.GetConnectionDetailsRequest{}
+		if connectionName != "" {
+			req.Connectionname = &connectionName
+		}
+		if connectionKey != nil {
+			keyStr := fmt.Sprintf("%d", *connectionKey)
+			req.Connectionkey = &keyStr
+		}
 
-		// Execute API request
-		resp, hResp, err := apiReq.Execute()
-		if hResp != nil && hResp.StatusCode == 401 {
+		resp, httpResp, err := connectionOps.GetConnectionDetailsDataSource(ctx, req)
+		if httpResp != nil && httpResp.StatusCode == 401 {
 			return fmt.Errorf("401 unauthorized")
 		}
 		apiResp = resp
-		finalHttpResp = hResp // Update on every call including retries
 		return err
 	})
 
 	if err != nil {
-		if finalHttpResp != nil && finalHttpResp.StatusCode != 200 {
-			log.Printf("[ERROR] HTTP error while reading Sap Connection: %s", finalHttpResp.Status)
-			var fetchResp map[string]interface{}
-			if err := json.NewDecoder(finalHttpResp.Body).Decode(&fetchResp); err != nil {
-				resp.Diagnostics.AddError("Failed to decode error response", err.Error())
-				return
-			}
-			resp.Diagnostics.AddError(
-				"HTTP Error",
-				fmt.Sprintf("HTTP error while reading Sap Connection for the reasons: %s", fetchResp["msg"]),
-			)
-
-		} else {
-			log.Printf("[ERROR] API Call Failed: %v", err)
-			resp.Diagnostics.AddError("API Call Failed", fmt.Sprintf("Error: %v", err))
-		}
-		return
+		errorCode := sapDatasourceErrorCodes.ReadFailed()
+		opCtx.LogOperationError(logCtx, "Failed to read SAP connection details", errorCode, err)
+		return nil, errorsutil.CreateStandardError(errorsutil.ConnectorTypeSAP, errorCode, "api_read", connectionName, err)
 	}
+
+	opCtx.LogOperationEnd(logCtx, "SAP connection API call completed successfully")
+
+	return apiResp, nil
+}
+
+// ValidateSAPConnectionResponse validates that the API response contains valid SAP connection data
+// Returns standardized error if validation fails
+func (d *SapConnectionDataSource) ValidateSAPConnectionResponse(apiResp *openapi.GetConnectionDetailsResponse) error {
 	if apiResp != nil && apiResp.SAPConnectionResponse == nil {
-		error := "Verify the connection type"
-		log.Printf("[ERROR]: Verify the connection type given")
-		resp.Diagnostics.AddError("Read of Sap connection failed", error)
-		return
+		return fmt.Errorf("verify the connection type - SAP connection response is nil")
 	}
-	log.Printf("[DEBUG] HTTP Status Code: %d", finalHttpResp.StatusCode)
+	return nil
+}
 
+// UpdateModelFromSAPConnectionResponse maps API response data to the Terraform state model
+// It handles both base connection fields and detailed connection attributes
+func (d *SapConnectionDataSource) UpdateModelFromSAPConnectionResponse(state *SapConnectionDataSourceModel, apiResp *openapi.GetConnectionDetailsResponse) {
+	// Map base connection fields
+	d.MapBaseSAPConnectionFields(state, apiResp)
+
+	// Map connection attributes
+	d.MapSAPConnectionAttributes(state, apiResp)
+}
+
+// MapBaseSAPConnectionFields maps basic connection fields from API response to state model
+// These are common fields available for all connection types
+func (d *SapConnectionDataSource) MapBaseSAPConnectionFields(state *SapConnectionDataSourceModel, apiResp *openapi.GetConnectionDetailsResponse) {
 	state.Msg = util.SafeStringDatasource(apiResp.SAPConnectionResponse.Msg)
 	state.ErrorCode = util.SafeInt64(apiResp.SAPConnectionResponse.Errorcode)
+	connectionKey := util.SafeInt64(apiResp.SAPConnectionResponse.Connectionkey)
+	state.ID = types.StringValue(fmt.Sprintf("ds-sap-%d", connectionKey.ValueInt64()))
 	state.ConnectionName = util.SafeStringDatasource(apiResp.SAPConnectionResponse.Connectionname)
 	state.ConnectionKey = util.SafeInt64(apiResp.SAPConnectionResponse.Connectionkey)
 	state.Description = util.SafeStringDatasource(apiResp.SAPConnectionResponse.Description)
@@ -310,94 +446,114 @@ func (d *sapConnectionDataSource) Read(ctx context.Context, req datasource.ReadR
 	state.CreatedBy = util.SafeStringDatasource(apiResp.SAPConnectionResponse.Createdby)
 	state.UpdatedBy = util.SafeStringDatasource(apiResp.SAPConnectionResponse.Updatedby)
 	state.EmailTemplate = util.SafeStringDatasource(apiResp.SAPConnectionResponse.Emailtemplate)
+}
 
-	if apiResp.SAPConnectionResponse.Connectionattributes != nil {
-		state.ConnectionAttributes = &SapConnectionAttributes{
-			CreateAccountJson:              util.SafeStringDatasource(apiResp.SAPConnectionResponse.Connectionattributes.CREATEACCOUNTJSON),
-			AuditLogJson:                   util.SafeStringDatasource(apiResp.SAPConnectionResponse.Connectionattributes.AUDIT_LOG_JSON),
-			ConnectionType:                 util.SafeStringDatasource(apiResp.SAPConnectionResponse.Connectionattributes.ConnectionType),
-			SapTableFilterLang:             util.SafeStringDatasource(apiResp.SAPConnectionResponse.Connectionattributes.SAPTABLE_FILTER_LANG),
-			PasswordNoOfSplChars:           util.SafeStringDatasource(apiResp.SAPConnectionResponse.Connectionattributes.PASSWORD_NOOFSPLCHARS),
-			TerminatedUserGroup:            util.SafeStringDatasource(apiResp.SAPConnectionResponse.Connectionattributes.TERMINATEDUSERGROUP),
-			LogsTableFilter:                util.SafeStringDatasource(apiResp.SAPConnectionResponse.Connectionattributes.LOGS_TABLE_FILTER),
-			EccOrS4Hana:                    util.SafeStringDatasource(apiResp.SAPConnectionResponse.Connectionattributes.ECCORS4HANA),
-			FirefighterIdRevokeAccessJson:  util.SafeStringDatasource(apiResp.SAPConnectionResponse.Connectionattributes.FIREFIGHTERID_REVOKE_ACCESS_JSON),
-			ConfigJson:                     util.SafeStringDatasource(apiResp.SAPConnectionResponse.Connectionattributes.ConfigJSON),
-			FirefighterIdGrantAccessJson:   util.SafeStringDatasource(apiResp.SAPConnectionResponse.Connectionattributes.FIREFIGHTERID_GRANT_ACCESS_JSON),
-			JcoSncLibrary:                  util.SafeStringDatasource(apiResp.SAPConnectionResponse.Connectionattributes.JCO_SNC_LIBRARY),
-			IsTimeoutSupported:             util.SafeBoolDatasource(apiResp.SAPConnectionResponse.Connectionattributes.IsTimeoutSupported),
-			JcoR3Name:                      util.SafeStringDatasource(apiResp.SAPConnectionResponse.Connectionattributes.JCOR3NAME),
-			ExternalSodEvalJson:            util.SafeStringDatasource(apiResp.SAPConnectionResponse.Connectionattributes.EXTERNAL_SOD_EVAL_JSON),
-			JcoAshost:                      util.SafeStringDatasource(apiResp.SAPConnectionResponse.Connectionattributes.JCO_ASHOST),
-			PasswordNoOfDigits:             util.SafeStringDatasource(apiResp.SAPConnectionResponse.Connectionattributes.PASSWORD_NOOFDIGITS),
-			ProvJcoMsHost:                  util.SafeStringDatasource(apiResp.SAPConnectionResponse.Connectionattributes.PROV_JCO_MSHOST),
-			PamConfig:                      util.SafeStringDatasource(apiResp.SAPConnectionResponse.Connectionattributes.PAM_CONFIG),
-			JcoSncMyName:                   util.SafeStringDatasource(apiResp.SAPConnectionResponse.Connectionattributes.JCO_SNC_MYNAME),
-			EnforcePasswordChange:          util.SafeStringDatasource(apiResp.SAPConnectionResponse.Connectionattributes.ENFORCEPASSWORDCHANGE),
-			JcoUser:                        util.SafeStringDatasource(apiResp.SAPConnectionResponse.Connectionattributes.JCO_USER),
-			JcoSncMode:                     util.SafeStringDatasource(apiResp.SAPConnectionResponse.Connectionattributes.JCO_SNC_MODE),
-			ProvJcoMsServ:                  util.SafeStringDatasource(apiResp.SAPConnectionResponse.Connectionattributes.PROV_JCO_MSSERV),
-			HanaRefTableJson:               util.SafeStringDatasource(apiResp.SAPConnectionResponse.Connectionattributes.HANAREFTABLEJSON),
-			PasswordMinLength:              util.SafeStringDatasource(apiResp.SAPConnectionResponse.Connectionattributes.PASSWORD_MIN_LENGTH),
-			JcoClient:                      util.SafeStringDatasource(apiResp.SAPConnectionResponse.Connectionattributes.JCO_CLIENT),
-			TerminatedUserRoleAction:       util.SafeStringDatasource(apiResp.SAPConnectionResponse.Connectionattributes.TERMINATED_USER_ROLE_ACTION),
-			ResetPwdForNewAccount:          util.SafeStringDatasource(apiResp.SAPConnectionResponse.Connectionattributes.RESET_PWD_FOR_NEWACCOUNT),
-			ProvJcoClient:                  util.SafeStringDatasource(apiResp.SAPConnectionResponse.Connectionattributes.PROV_JCO_CLIENT),
-			Snc:                            util.SafeStringDatasource(apiResp.SAPConnectionResponse.Connectionattributes.SNC),
-			JcoMsServ:                      util.SafeStringDatasource(apiResp.SAPConnectionResponse.Connectionattributes.JCO_MSSERV),
-			ProvCuaSnc:                     util.SafeStringDatasource(apiResp.SAPConnectionResponse.Connectionattributes.PROV_CUA_SNC),
-			ProvJcoUser:                    util.SafeStringDatasource(apiResp.SAPConnectionResponse.Connectionattributes.PROV_JCO_USER),
-			JcoLang:                        util.SafeStringDatasource(apiResp.SAPConnectionResponse.Connectionattributes.JCO_LANG),
-			JcoSncPartnerName:              util.SafeStringDatasource(apiResp.SAPConnectionResponse.Connectionattributes.JCO_SNC_PARTNERNAME),
-			StatusThresholdConfig:          util.SafeStringDatasource(apiResp.SAPConnectionResponse.Connectionattributes.STATUS_THRESHOLD_CONFIG),
-			ProvJcoSysNr:                   util.SafeStringDatasource(apiResp.SAPConnectionResponse.Connectionattributes.PROV_JCO_SYSNR),
-			SetCuaSystem:                   util.SafeStringDatasource(apiResp.SAPConnectionResponse.Connectionattributes.SETCUASYSTEM),
-			MessageServer:                  util.SafeStringDatasource(apiResp.SAPConnectionResponse.Connectionattributes.MESSAGESERVER),
-			ProvJcoAshost:                  util.SafeStringDatasource(apiResp.SAPConnectionResponse.Connectionattributes.PROV_JCO_ASHOST),
-			ProvJcoGroup:                   util.SafeStringDatasource(apiResp.SAPConnectionResponse.Connectionattributes.PROV_JCO_GROUP),
-			ProvCuaEnabled:                 util.SafeStringDatasource(apiResp.SAPConnectionResponse.Connectionattributes.PROV_CUA_ENABLED),
-			JcoMsHost:                      util.SafeStringDatasource(apiResp.SAPConnectionResponse.Connectionattributes.JCO_MSHOST),
-			ProvJcoR3Name:                  util.SafeStringDatasource(apiResp.SAPConnectionResponse.Connectionattributes.PROVJCOR3NAME),
-			PasswordNoOfCapsAlpha:          util.SafeStringDatasource(apiResp.SAPConnectionResponse.Connectionattributes.PASSWORD_NOOFCAPSALPHA),
-			ModifyUserDataJson:             util.SafeStringDatasource(apiResp.SAPConnectionResponse.Connectionattributes.MODIFYUSERDATAJSON),
-			IsTimeoutConfigValidated:       util.SafeBoolDatasource(apiResp.SAPConnectionResponse.Connectionattributes.IsTimeoutConfigValidated),
-			JcoSncQop:                      util.SafeStringDatasource(apiResp.SAPConnectionResponse.Connectionattributes.JCO_SNC_QOP),
-			Tables:                         util.SafeStringDatasource(apiResp.SAPConnectionResponse.Connectionattributes.TABLES),
-			ProvJcoLang:                    util.SafeStringDatasource(apiResp.SAPConnectionResponse.Connectionattributes.PROV_JCO_LANG),
-			JcoSysNr:                       util.SafeStringDatasource(apiResp.SAPConnectionResponse.Connectionattributes.JCO_SYSNR),
-			ExternalSodEvalJsonDetail:      util.SafeStringDatasource(apiResp.SAPConnectionResponse.Connectionattributes.EXTERNAL_SOD_EVAL_JSON_DETAIL),
-			DataImportFilter:               util.SafeStringDatasource(apiResp.SAPConnectionResponse.Connectionattributes.DATA_IMPORT_FILTER),
-			EnableAccountJson:              util.SafeStringDatasource(apiResp.SAPConnectionResponse.Connectionattributes.ENABLEACCOUNTJSON),
-			AlternateOutputParameterEtData: util.SafeStringDatasource(apiResp.SAPConnectionResponse.Connectionattributes.ALTERNATE_OUTPUT_PARAMETER_ET_DATA),
-			JcoGroup:                       util.SafeStringDatasource(apiResp.SAPConnectionResponse.Connectionattributes.JCO_GROUP),
-			PasswordMaxLength:              util.SafeStringDatasource(apiResp.SAPConnectionResponse.Connectionattributes.PASSWORD_MAX_LENGTH),
-			UserImportJson:                 util.SafeStringDatasource(apiResp.SAPConnectionResponse.Connectionattributes.USERIMPORTJSON),
-			SystemName:                     util.SafeStringDatasource(apiResp.SAPConnectionResponse.Connectionattributes.SYSTEMNAME),
-			UpdateAccountJson:              util.SafeStringDatasource(apiResp.SAPConnectionResponse.Connectionattributes.UPDATEACCOUNTJSON),
-		}
-		if apiResp.SAPConnectionResponse.Connectionattributes.ConnectionTimeoutConfig != nil {
-			state.ConnectionAttributes.ConnectionTimeoutConfig = &ConnectionTimeoutConfig{
-				RetryWait:               util.SafeInt64(apiResp.SAPConnectionResponse.Connectionattributes.ConnectionTimeoutConfig.RetryWait),
-				TokenRefreshMaxTryCount: util.SafeInt64(apiResp.SAPConnectionResponse.Connectionattributes.ConnectionTimeoutConfig.TokenRefreshMaxTryCount),
-				RetryFailureStatusCode:  util.SafeInt64(apiResp.SAPConnectionResponse.Connectionattributes.ConnectionTimeoutConfig.RetryFailureStatusCode),
-				RetryWaitMaxValue:       util.SafeInt64(apiResp.SAPConnectionResponse.Connectionattributes.ConnectionTimeoutConfig.RetryWaitMaxValue),
-				RetryCount:              util.SafeInt64(apiResp.SAPConnectionResponse.Connectionattributes.ConnectionTimeoutConfig.RetryCount),
-				ReadTimeout:             util.SafeInt64(apiResp.SAPConnectionResponse.Connectionattributes.ConnectionTimeoutConfig.ReadTimeout),
-				ConnectionTimeout:       util.SafeInt64(apiResp.SAPConnectionResponse.Connectionattributes.ConnectionTimeoutConfig.ConnectionTimeout),
-			}
-		}
-	}
-
+// MapSAPConnectionAttributes maps detailed SAP connection attributes from API response to state model
+// Returns nil if no connection attributes are present in the response
+func (d *SapConnectionDataSource) MapSAPConnectionAttributes(state *SapConnectionDataSourceModel, apiResp *openapi.GetConnectionDetailsResponse) {
 	if apiResp.SAPConnectionResponse.Connectionattributes == nil {
 		state.ConnectionAttributes = nil
+		return
 	}
+
+	attrs := apiResp.SAPConnectionResponse.Connectionattributes
+	state.ConnectionAttributes = &SapConnectionAttributes{
+		CreateAccountJson:              util.SafeStringDatasource(attrs.CREATEACCOUNTJSON),
+		AuditLogJson:                   util.SafeStringDatasource(attrs.AUDIT_LOG_JSON),
+		ConnectionType:                 util.SafeStringDatasource(attrs.ConnectionType),
+		SapTableFilterLang:             util.SafeStringDatasource(attrs.SAPTABLE_FILTER_LANG),
+		PasswordNoOfSplChars:           util.SafeStringDatasource(attrs.PASSWORD_NOOFSPLCHARS),
+		TerminatedUserGroup:            util.SafeStringDatasource(attrs.TERMINATEDUSERGROUP),
+		LogsTableFilter:                util.SafeStringDatasource(attrs.LOGS_TABLE_FILTER),
+		EccOrS4Hana:                    util.SafeStringDatasource(attrs.ECCORS4HANA),
+		FirefighterIdRevokeAccessJson:  util.SafeStringDatasource(attrs.FIREFIGHTERID_REVOKE_ACCESS_JSON),
+		ConfigJson:                     util.SafeStringDatasource(attrs.ConfigJSON),
+		FirefighterIdGrantAccessJson:   util.SafeStringDatasource(attrs.FIREFIGHTERID_GRANT_ACCESS_JSON),
+		JcoSncLibrary:                  util.SafeStringDatasource(attrs.JCO_SNC_LIBRARY),
+		IsTimeoutSupported:             util.SafeBoolDatasource(attrs.IsTimeoutSupported),
+		JcoR3Name:                      util.SafeStringDatasource(attrs.JCOR3NAME),
+		ExternalSodEvalJson:            util.SafeStringDatasource(attrs.EXTERNAL_SOD_EVAL_JSON),
+		JcoAshost:                      util.SafeStringDatasource(attrs.JCO_ASHOST),
+		PasswordNoOfDigits:             util.SafeStringDatasource(attrs.PASSWORD_NOOFDIGITS),
+		ProvJcoMsHost:                  util.SafeStringDatasource(attrs.PROV_JCO_MSHOST),
+		PamConfig:                      util.SafeStringDatasource(attrs.PAM_CONFIG),
+		JcoSncMyName:                   util.SafeStringDatasource(attrs.JCO_SNC_MYNAME),
+		EnforcePasswordChange:          util.SafeStringDatasource(attrs.ENFORCEPASSWORDCHANGE),
+		JcoUser:                        util.SafeStringDatasource(attrs.JCO_USER),
+		JcoSncMode:                     util.SafeStringDatasource(attrs.JCO_SNC_MODE),
+		ProvJcoMsServ:                  util.SafeStringDatasource(attrs.PROV_JCO_MSSERV),
+		HanaRefTableJson:               util.SafeStringDatasource(attrs.HANAREFTABLEJSON),
+		PasswordMinLength:              util.SafeStringDatasource(attrs.PASSWORD_MIN_LENGTH),
+		JcoClient:                      util.SafeStringDatasource(attrs.JCO_CLIENT),
+		TerminatedUserRoleAction:       util.SafeStringDatasource(attrs.TERMINATED_USER_ROLE_ACTION),
+		ResetPwdForNewAccount:          util.SafeStringDatasource(attrs.RESET_PWD_FOR_NEWACCOUNT),
+		ProvJcoClient:                  util.SafeStringDatasource(attrs.PROV_JCO_CLIENT),
+		Snc:                            util.SafeStringDatasource(attrs.SNC),
+		JcoMsServ:                      util.SafeStringDatasource(attrs.JCO_MSSERV),
+		ProvCuaSnc:                     util.SafeStringDatasource(attrs.PROV_CUA_SNC),
+		ProvJcoUser:                    util.SafeStringDatasource(attrs.PROV_JCO_USER),
+		JcoLang:                        util.SafeStringDatasource(attrs.JCO_LANG),
+		JcoSncPartnerName:              util.SafeStringDatasource(attrs.JCO_SNC_PARTNERNAME),
+		StatusThresholdConfig:          util.SafeStringDatasource(attrs.STATUS_THRESHOLD_CONFIG),
+		ProvJcoSysNr:                   util.SafeStringDatasource(attrs.PROV_JCO_SYSNR),
+		SetCuaSystem:                   util.SafeStringDatasource(attrs.SETCUASYSTEM),
+		MessageServer:                  util.SafeStringDatasource(attrs.MESSAGESERVER),
+		ProvJcoAshost:                  util.SafeStringDatasource(attrs.PROV_JCO_ASHOST),
+		ProvJcoGroup:                   util.SafeStringDatasource(attrs.PROV_JCO_GROUP),
+		ProvCuaEnabled:                 util.SafeStringDatasource(attrs.PROV_CUA_ENABLED),
+		JcoMsHost:                      util.SafeStringDatasource(attrs.JCO_MSHOST),
+		ProvJcoR3Name:                  util.SafeStringDatasource(attrs.PROVJCOR3NAME),
+		PasswordNoOfCapsAlpha:          util.SafeStringDatasource(attrs.PASSWORD_NOOFCAPSALPHA),
+		ModifyUserDataJson:             util.SafeStringDatasource(attrs.MODIFYUSERDATAJSON),
+		IsTimeoutConfigValidated:       util.SafeBoolDatasource(attrs.IsTimeoutConfigValidated),
+		JcoSncQop:                      util.SafeStringDatasource(attrs.JCO_SNC_QOP),
+		Tables:                         util.SafeStringDatasource(attrs.TABLES),
+		ProvJcoLang:                    util.SafeStringDatasource(attrs.PROV_JCO_LANG),
+		JcoSysNr:                       util.SafeStringDatasource(attrs.JCO_SYSNR),
+		ExternalSodEvalJsonDetail:      util.SafeStringDatasource(attrs.EXTERNAL_SOD_EVAL_JSON_DETAIL),
+		DataImportFilter:               util.SafeStringDatasource(attrs.DATA_IMPORT_FILTER),
+		EnableAccountJson:              util.SafeStringDatasource(attrs.ENABLEACCOUNTJSON),
+		AlternateOutputParameterEtData: util.SafeStringDatasource(attrs.ALTERNATE_OUTPUT_PARAMETER_ET_DATA),
+		JcoGroup:                       util.SafeStringDatasource(attrs.JCO_GROUP),
+		PasswordMaxLength:              util.SafeStringDatasource(attrs.PASSWORD_MAX_LENGTH),
+		UserImportJson:                 util.SafeStringDatasource(attrs.USERIMPORTJSON),
+		SystemName:                     util.SafeStringDatasource(attrs.SYSTEMNAME),
+		UpdateAccountJson:              util.SafeStringDatasource(attrs.UPDATEACCOUNTJSON),
+	}
+
+	// Map connection timeout config if present
+	d.MapSAPTimeoutConfig(attrs, state.ConnectionAttributes)
+}
+
+// MapSAPTimeoutConfig maps connection timeout configuration from API response to state model
+// Only maps timeout config if it exists in the API response
+func (d *SapConnectionDataSource) MapSAPTimeoutConfig(attrs *openapi.SAPConnectionAttributes, connectionAttrs *SapConnectionAttributes) {
+	if attrs.ConnectionTimeoutConfig != nil {
+		connectionAttrs.ConnectionTimeoutConfig = &ConnectionTimeoutConfig{
+			RetryWait:               util.SafeInt64(attrs.ConnectionTimeoutConfig.RetryWait),
+			TokenRefreshMaxTryCount: util.SafeInt64(attrs.ConnectionTimeoutConfig.TokenRefreshMaxTryCount),
+			RetryWaitMaxValue:       util.SafeInt64(attrs.ConnectionTimeoutConfig.RetryWaitMaxValue),
+			RetryCount:              util.SafeInt64(attrs.ConnectionTimeoutConfig.RetryCount),
+			ReadTimeout:             util.SafeInt64(attrs.ConnectionTimeoutConfig.ReadTimeout),
+			ConnectionTimeout:       util.SafeInt64(attrs.ConnectionTimeoutConfig.ConnectionTimeout),
+			RetryFailureStatusCode:  util.SafeInt64(attrs.ConnectionTimeoutConfig.RetryFailureStatusCode),
+		}
+	}
+}
+
+// HandleSAPAuthenticationLogic processes the authenticate flag to control sensitive data visibility
+// When authenticate=false, connection_attributes are removed from state to prevent sensitive data exposure
+// When authenticate=true, all connection_attributes are returned in state
+func (d *SapConnectionDataSource) HandleSAPAuthenticationLogic(state *SapConnectionDataSourceModel, resp *datasource.ReadResponse) {
 	if !state.Authenticate.IsNull() && !state.Authenticate.IsUnknown() {
 		if state.Authenticate.ValueBool() {
+			tflog.Info(context.Background(), "Authentication enabled - returning all connection attributes")
 			resp.Diagnostics.AddWarning(
 				"Authentication Enabled",
 				"`authenticate` is true; all connection_attributes will be returned in state.",
 			)
 		} else {
+			tflog.Info(context.Background(), "Authentication disabled - removing connection attributes from state")
 			resp.Diagnostics.AddWarning(
 				"Authentication Disabled",
 				"`authenticate` is false; connection_attributes will be removed from state.",
@@ -405,6 +561,4 @@ func (d *sapConnectionDataSource) Read(ctx context.Context, req datasource.ReadR
 			state.ConnectionAttributes = nil
 		}
 	}
-	stateDiagnostics := resp.State.Set(ctx, &state)
-	resp.Diagnostics.Append(stateDiagnostics...)
 }
