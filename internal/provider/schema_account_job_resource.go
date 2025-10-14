@@ -132,17 +132,30 @@ func (r *SchemaAccountJobResource) Configure(ctx context.Context, req resource.C
 	tflog.Info(ctx, "SchemaAccountJobResource configuration completed successfully")
 }
 
-func (r *SchemaAccountJobResource) Create(ctx context.Context, req resource.CreateRequest, resp *resource.CreateResponse) {
-	var plan SchemaAccountJobResourceModel
-	resp.Diagnostics.Append(req.Plan.Get(ctx, &plan)...)
-	if resp.Diagnostics.HasError() {
-		return
-	}
+// SetClient sets the client for testing purposes
+func (r *SchemaAccountJobResource) SetClient(client client.SaviyntClientInterface) {
+	r.client = client
+}
 
-	var jobs []SchemaAccountJobModel
-	resp.Diagnostics.Append(plan.Jobs.ElementsAs(ctx, &jobs, false)...)
-	if resp.Diagnostics.HasError() {
-		return
+// SetToken sets the token for testing purposes
+func (r *SchemaAccountJobResource) SetToken(token string) {
+	r.token = token
+}
+
+// SetProvider sets the provider for testing purposes
+func (r *SchemaAccountJobResource) SetProvider(provider client.SaviyntProviderInterface) {
+	r.provider = provider
+}
+
+// SetJobControlFactory sets the job control factory for testing purposes
+func (r *SchemaAccountJobResource) SetJobControlFactory(factory client.JobControlFactoryInterface) {
+	r.jobControlFactory = factory
+}
+
+// CreateOrUpdateSchemaAccountJobs handles the business logic for creating or updating Schema Account jobs
+func (r *SchemaAccountJobResource) CreateOrUpdateSchemaAccountJobs(ctx context.Context, jobs []SchemaAccountJobModel, operation string) (*openapi.CreateTriggersResponse, error) {
+	if len(jobs) == 0 {
+		return nil, fmt.Errorf("at least one job must be specified")
 	}
 
 	tflog.Debug(ctx, "Starting Schema Account Job triggers creation", map[string]interface{}{
@@ -153,30 +166,22 @@ func (r *SchemaAccountJobResource) Create(ctx context.Context, req resource.Crea
 
 	for i, job := range jobs {
 		// Validate job name
-		if job.JobName.ValueString() != "SchemaAccountJob" {
-			resp.Diagnostics.AddError(
-				"Invalid Job Name",
-				fmt.Sprintf("Job %d: job_name must be 'SchemaAccountJob', got '%s'", i, job.JobName.ValueString()),
-			)
-			return
+		if job.JobName.IsNull() || job.JobName.ValueString() != "SchemaAccountJob" {
+			return nil, fmt.Errorf("job %d: job_name must be 'SchemaAccountJob', got '%s'", i+1, job.JobName.ValueString())
 		}
 
 		// Validate required fields
 		if job.Name.IsNull() || job.Name.ValueString() == "" {
-			resp.Diagnostics.AddError("Validation Error", fmt.Sprintf("Job %d: name is required", i))
-			return
+			return nil, fmt.Errorf("job %d: name is required", i+1)
 		}
 		if job.JobGroup.IsNull() || job.JobGroup.ValueString() == "" {
-			resp.Diagnostics.AddError("Validation Error", fmt.Sprintf("Job %d: job_group is required", i))
-			return
+			return nil, fmt.Errorf("job %d: job_group is required", i+1)
 		}
 		if job.Group.IsNull() || job.Group.ValueString() == "" {
-			resp.Diagnostics.AddError("Validation Error", fmt.Sprintf("Job %d: group is required", i))
-			return
+			return nil, fmt.Errorf("job %d: group is required", i+1)
 		}
 		if job.CronExp.IsNull() || job.CronExp.ValueString() == "" {
-			resp.Diagnostics.AddError("Validation Error", fmt.Sprintf("Job %d: cron_exp is required", i))
-			return
+			return nil, fmt.Errorf("job %d: cron_exp is required", i+1)
 		}
 
 		// Create the value map
@@ -210,7 +215,7 @@ func (r *SchemaAccountJobResource) Create(ctx context.Context, req resource.Crea
 	// Make the API call
 	var apiResp *openapi.CreateTriggersResponse
 	var finalHttpResp *http.Response
-	err := r.provider.AuthenticatedAPICallWithRetry(ctx, "create_schema_account_jobs", func(token string) error {
+	err := r.provider.AuthenticatedAPICallWithRetry(ctx, fmt.Sprintf("%s_schema_account_jobs", operation), func(token string) error {
 		jobOps := r.jobControlFactory.CreateJobControlOperations(r.client.APIBaseURL(), token)
 		apiResponse, httpResp, err := jobOps.CreateTrigger(ctx, createReq)
 		if httpResp != nil && httpResp.StatusCode == 401 {
@@ -225,11 +230,7 @@ func (r *SchemaAccountJobResource) Create(ctx context.Context, req resource.Crea
 		tflog.Error(ctx, "Error during API call", map[string]interface{}{
 			"error": err.Error(),
 		})
-		resp.Diagnostics.AddError(
-			"API Call Error",
-			fmt.Sprintf("Error during API call to create Schema Account Job triggers: %s", err.Error()),
-		)
-		return
+		return nil, fmt.Errorf("API call error: %s", err.Error())
 	}
 
 	// Handle API response errors - CreateTriggersResponse has different structure
@@ -239,8 +240,7 @@ func (r *SchemaAccountJobResource) Create(ctx context.Context, req resource.Crea
 			tflog.Error(ctx, "API error during trigger creation", map[string]interface{}{
 				"error": apiResp.CreateTriggersResponseOneOf.Error,
 			})
-			resp.Diagnostics.AddError("API Error", fmt.Sprintf("Error creating Schema Account Job triggers: %s", apiResp.CreateTriggersResponseOneOf.Error))
-			return
+			return nil, fmt.Errorf("API error: %s", apiResp.CreateTriggersResponseOneOf.Error)
 		}
 
 		// Check for success response
@@ -253,152 +253,29 @@ func (r *SchemaAccountJobResource) Create(ctx context.Context, req resource.Crea
 		"job_count": len(jobs),
 	})
 
-	// Save data into Terraform state
-	resp.Diagnostics.Append(resp.State.Set(ctx, &plan)...)
+	return apiResp, nil
 }
 
-func (r *SchemaAccountJobResource) Read(ctx context.Context, req resource.ReadRequest, resp *resource.ReadResponse) {
-	var state SchemaAccountJobResourceModel
-	resp.Diagnostics.Append(req.State.Get(ctx, &state)...)
-	if resp.Diagnostics.HasError() {
-		return
-	}
-
-	tflog.Debug(ctx, "Reading Schema Account Job triggers")
-
-	// For now, we'll keep the state as-is since the API doesn't provide a direct read method
-	resp.Diagnostics.Append(resp.State.Set(ctx, &state)...)
-}
-
-func (r *SchemaAccountJobResource) Update(ctx context.Context, req resource.UpdateRequest, resp *resource.UpdateResponse) {
-	var plan SchemaAccountJobResourceModel
-	resp.Diagnostics.Append(req.Plan.Get(ctx, &plan)...)
-	if resp.Diagnostics.HasError() {
-		return
-	}
-
-	var jobs []SchemaAccountJobModel
-	resp.Diagnostics.Append(plan.Jobs.ElementsAs(ctx, &jobs, false)...)
-	if resp.Diagnostics.HasError() {
-		return
-	}
-
-	tflog.Debug(ctx, "Starting Schema Account Job triggers update", map[string]interface{}{
-		"job_count": len(jobs),
-	})
-
-	var jobTriggerItems []openapi.JobTriggerItem
-
-	for i, job := range jobs {
-		// Validate job name
-		if job.JobName.ValueString() != "SchemaAccountJob" {
-			resp.Diagnostics.AddError(
-				"Invalid Job Name",
-				fmt.Sprintf("Job %d: job_name must be 'SchemaAccountJob', got '%s'", i, job.JobName.ValueString()),
-			)
-			return
-		}
-
-		// Create the value map
-		valueMap := openapi.NewSchemaAccountJobAllOfValueMap()
-		if !job.SchemaFileNames.IsNull() && job.SchemaFileNames.ValueString() != "" {
-			valueMap.SetSchemaFileNames(job.SchemaFileNames.ValueString())
-		}
-
-		// Create the job trigger
-		jobTrigger := openapi.NewSchemaAccountJob(
-			job.Name.ValueString(),
-			job.JobName.ValueString(),
-			job.JobGroup.ValueString(),
-			job.Group.ValueString(),
-			job.CronExp.ValueString(),
-		)
-		jobTrigger.SetValueMap(*valueMap)
-
-		// Create job trigger item
-		jobTriggerItem := openapi.SchemaAccountJobAsJobTriggerItem(jobTrigger)
-		jobTriggerItems = append(jobTriggerItems, jobTriggerItem)
-	}
-
-	// Create the request
-	updateReq := []openapi.JobTriggerRequest{
-		{
-			Triggers: jobTriggerItems,
-		},
-	}
-
-	// Make the API call
-	var apiResp *openapi.CreateTriggersResponse
-	var finalHttpResp *http.Response
-	err := r.provider.AuthenticatedAPICallWithRetry(ctx, "update_schema_account_jobs", func(token string) error {
-		jobOps := r.jobControlFactory.CreateJobControlOperations(r.client.APIBaseURL(), token)
-		apiResponse, httpResp, err := jobOps.CreateTrigger(ctx, updateReq)
-		if httpResp != nil && httpResp.StatusCode == 401 {
-			return fmt.Errorf("401 unauthorized")
-		}
-		apiResp = apiResponse
-		finalHttpResp = httpResp
-		return err
-	})
-
-	if err != nil && finalHttpResp != nil && finalHttpResp.StatusCode != http.StatusPreconditionFailed {
-		tflog.Error(ctx, "Error during API call", map[string]interface{}{
-			"error": err.Error(),
-		})
-		resp.Diagnostics.AddError(
-			"API Call Error",
-			fmt.Sprintf("Error during API call to update Schema Account Job triggers: %s", err.Error()),
-		)
-		return
-	}
-
-	// Handle API response errors - CreateTriggersResponse has different structure
-	if apiResp != nil {
-		// Check for error response
-		if apiResp.CreateTriggersResponseOneOf != nil && apiResp.CreateTriggersResponseOneOf.Error != "" {
-			tflog.Error(ctx, "API error during trigger update", map[string]interface{}{
-				"error": apiResp.CreateTriggersResponseOneOf.Error,
-			})
-			resp.Diagnostics.AddError("API Error", fmt.Sprintf("Error updating Schema Account Job triggers: %s", apiResp.CreateTriggersResponseOneOf.Error))
-			return
-		}
-
-		// Check for success response
-		if apiResp.MapmapOfStringarrayOfString != nil {
-			tflog.Debug(ctx, "Received success response from CreateTrigger API")
-		}
-	}
-
-	tflog.Info(ctx, "Schema Account Job triggers updated successfully", map[string]interface{}{
-		"job_count": len(jobs),
-	})
-
-	// Save data into Terraform state
-	resp.Diagnostics.Append(resp.State.Set(ctx, &plan)...)
-}
-
-func (r *SchemaAccountJobResource) Delete(ctx context.Context, req resource.DeleteRequest, resp *resource.DeleteResponse) {
-	var state SchemaAccountJobResourceModel
-	resp.Diagnostics.Append(req.State.Get(ctx, &state)...)
-	if resp.Diagnostics.HasError() {
-		return
-	}
-
-	var jobs []SchemaAccountJobModel
-	resp.Diagnostics.Append(state.Jobs.ElementsAs(ctx, &jobs, false)...)
-	if resp.Diagnostics.HasError() {
-		return
+// DeleteSchemaAccountJobs handles the business logic for deleting Schema Account jobs
+func (r *SchemaAccountJobResource) DeleteSchemaAccountJobs(ctx context.Context, jobs []SchemaAccountJobModel) error {
+	if len(jobs) == 0 {
+		return nil
 	}
 
 	tflog.Debug(ctx, "Starting Schema Account Job triggers deletion", map[string]interface{}{
 		"job_count": len(jobs),
 	})
 
-	// Delete each job individually since DeleteTrigger API doesn't support bulk operations
-	for _, job := range jobs {
+	// Delete each job individually
+	for i, job := range jobs {
 		name := job.Name.ValueString()
 		jobName := job.JobName.ValueString()
 		jobGroup := job.JobGroup.ValueString()
+
+		tflog.Debug(ctx, "Deleting job trigger", map[string]interface{}{
+			"job_index":    i + 1,
+			"trigger_name": name,
+		})
 
 		// Create delete request
 		deleteReq := openapi.DeleteTriggerRequest{
@@ -426,26 +303,19 @@ func (r *SchemaAccountJobResource) Delete(ctx context.Context, req resource.Dele
 				"error":        err.Error(),
 				"trigger_name": name,
 			})
-			resp.Diagnostics.AddError(
-				"API Call Error",
-				fmt.Sprintf("Error during API call to delete Schema Account Job trigger '%s': %s", name, err.Error()),
-			)
-			return
+			return fmt.Errorf("API call error for trigger '%s': %s", name, err.Error())
 		}
 
-		// Handle HTTP errors using job control error handler
+		// Handle HTTP errors
 		var diags diag.Diagnostics
 		if jobcontrolutil.JobControlHandleHTTPError(ctx, finalHttpResp, err, fmt.Sprintf("deleting Schema Account Job trigger '%s'", name), &diags) {
 			tflog.Error(ctx, "Failed to delete Schema Account Job trigger", map[string]interface{}{
 				"error":        fmt.Sprintf("%v", diags.Errors()),
 				"trigger_name": name,
 			})
-			for _, diagnostic := range diags {
-				if diagnostic.Severity() == diag.SeverityError {
-					resp.Diagnostics.AddError(diagnostic.Summary(), diagnostic.Detail())
-				}
+			if diags.HasError() {
+				return fmt.Errorf("HTTP error for trigger '%s': %s", name, diags.Errors()[0].Detail())
 			}
-			return
 		}
 
 		// Handle API response errors
@@ -456,12 +326,9 @@ func (r *SchemaAccountJobResource) Delete(ctx context.Context, req resource.Dele
 					"error":        fmt.Sprintf("%v", diags.Errors()),
 					"trigger_name": name,
 				})
-				for _, diagnostic := range diags {
-					if diagnostic.Severity() == diag.SeverityError {
-						resp.Diagnostics.AddError(diagnostic.Summary(), diagnostic.Detail())
-					}
+				if diags.HasError() {
+					return fmt.Errorf("API error for trigger '%s': %s", name, diags.Errors()[0].Detail())
 				}
-				return
 			}
 		}
 
@@ -471,6 +338,173 @@ func (r *SchemaAccountJobResource) Delete(ctx context.Context, req resource.Dele
 	}
 
 	tflog.Info(ctx, "All Schema Account Job triggers deleted successfully", map[string]interface{}{
+		"job_count": len(jobs),
+	})
+
+	return nil
+}
+
+func (r *SchemaAccountJobResource) Create(ctx context.Context, req resource.CreateRequest, resp *resource.CreateResponse) {
+	var plan SchemaAccountJobResourceModel
+
+	tflog.Debug(ctx, "Starting Schema Account Job resource creation")
+
+	// Extract plan from request
+	resp.Diagnostics.Append(req.Plan.Get(ctx, &plan)...)
+	if resp.Diagnostics.HasError() {
+		resp.Diagnostics.AddError(
+			"Plan Extraction Failed",
+			"Unable to extract Terraform plan from request",
+		)
+		return
+	}
+
+	// Extract jobs from the plan
+	var jobs []SchemaAccountJobModel
+	resp.Diagnostics.Append(plan.Jobs.ElementsAs(ctx, &jobs, false)...)
+	if resp.Diagnostics.HasError() {
+		resp.Diagnostics.AddError(
+			"Jobs Extraction Failed",
+			"Unable to extract jobs from Terraform plan",
+		)
+		return
+	}
+
+	// Call the business logic method
+	_, err := r.CreateOrUpdateSchemaAccountJobs(ctx, jobs, "create")
+	if err != nil {
+		tflog.Error(ctx, "Schema Account Job creation failed", map[string]interface{}{
+			"error": err.Error(),
+		})
+		resp.Diagnostics.AddError(
+			"Schema Account Job Creation Failed",
+			err.Error(),
+		)
+		return
+	}
+
+	// Save data into Terraform state
+	resp.Diagnostics.Append(resp.State.Set(ctx, &plan)...)
+	if resp.Diagnostics.HasError() {
+		resp.Diagnostics.AddError(
+			"State Update Failed",
+			"Unable to save Schema Account Job state",
+		)
+		return
+	}
+
+	tflog.Info(ctx, "Schema Account Job resource created successfully", map[string]interface{}{
+		"job_count": len(jobs),
+	})
+}
+
+func (r *SchemaAccountJobResource) Read(ctx context.Context, req resource.ReadRequest, resp *resource.ReadResponse) {
+	var state SchemaAccountJobResourceModel
+	resp.Diagnostics.Append(req.State.Get(ctx, &state)...)
+	if resp.Diagnostics.HasError() {
+		return
+	}
+
+	tflog.Debug(ctx, "Reading Schema Account Job triggers")
+
+	// For now, we'll keep the state as-is since the API doesn't provide a direct read method
+	resp.Diagnostics.Append(resp.State.Set(ctx, &state)...)
+}
+
+func (r *SchemaAccountJobResource) Update(ctx context.Context, req resource.UpdateRequest, resp *resource.UpdateResponse) {
+	var plan SchemaAccountJobResourceModel
+
+	tflog.Debug(ctx, "Starting Schema Account Job resource update")
+
+	// Extract plan from request
+	resp.Diagnostics.Append(req.Plan.Get(ctx, &plan)...)
+	if resp.Diagnostics.HasError() {
+		resp.Diagnostics.AddError(
+			"Plan Extraction Failed",
+			"Unable to extract Terraform plan from request",
+		)
+		return
+	}
+
+	// Extract jobs from the plan
+	var jobs []SchemaAccountJobModel
+	resp.Diagnostics.Append(plan.Jobs.ElementsAs(ctx, &jobs, false)...)
+	if resp.Diagnostics.HasError() {
+		resp.Diagnostics.AddError(
+			"Jobs Extraction Failed",
+			"Unable to extract jobs from Terraform plan",
+		)
+		return
+	}
+
+	// Call the business logic method
+	_, err := r.CreateOrUpdateSchemaAccountJobs(ctx, jobs, "update")
+	if err != nil {
+		tflog.Error(ctx, "Schema Account Job update failed", map[string]interface{}{
+			"error": err.Error(),
+		})
+		resp.Diagnostics.AddError(
+			"Schema Account Job Update Failed",
+			err.Error(),
+		)
+		return
+	}
+
+	// Save data into Terraform state
+	resp.Diagnostics.Append(resp.State.Set(ctx, &plan)...)
+	if resp.Diagnostics.HasError() {
+		resp.Diagnostics.AddError(
+			"State Update Failed",
+			"Unable to save Schema Account Job state",
+		)
+		return
+	}
+
+	tflog.Info(ctx, "Schema Account Job resource updated successfully", map[string]interface{}{
+		"job_count": len(jobs),
+	})
+}
+
+func (r *SchemaAccountJobResource) Delete(ctx context.Context, req resource.DeleteRequest, resp *resource.DeleteResponse) {
+	var state SchemaAccountJobResourceModel
+
+	tflog.Debug(ctx, "Starting Schema Account Job resource deletion")
+
+	// Extract state from request
+	resp.Diagnostics.Append(req.State.Get(ctx, &state)...)
+	if resp.Diagnostics.HasError() {
+		resp.Diagnostics.AddError(
+			"State Extraction Failed",
+			"Unable to extract Terraform state from request",
+		)
+		return
+	}
+
+	// Extract jobs from the state
+	var jobs []SchemaAccountJobModel
+	resp.Diagnostics.Append(state.Jobs.ElementsAs(ctx, &jobs, false)...)
+	if resp.Diagnostics.HasError() {
+		resp.Diagnostics.AddError(
+			"Jobs Extraction Failed",
+			"Unable to extract jobs from Terraform state",
+		)
+		return
+	}
+
+	// Call the business logic method
+	err := r.DeleteSchemaAccountJobs(ctx, jobs)
+	if err != nil {
+		tflog.Error(ctx, "Schema Account Job deletion failed", map[string]interface{}{
+			"error": err.Error(),
+		})
+		resp.Diagnostics.AddError(
+			"Schema Account Job Deletion Failed",
+			err.Error(),
+		)
+		return
+	}
+
+	tflog.Info(ctx, "Schema Account Job resource deleted successfully", map[string]interface{}{
 		"job_count": len(jobs),
 	})
 }
