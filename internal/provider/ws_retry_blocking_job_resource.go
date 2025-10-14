@@ -138,18 +138,30 @@ func (r *WSRetryBlockingJobResource) Configure(ctx context.Context, req resource
 	tflog.Info(ctx, "WSRetryBlockingJobResource configuration completed successfully")
 }
 
-func (r *WSRetryBlockingJobResource) Create(ctx context.Context, req resource.CreateRequest, resp *resource.CreateResponse) {
-	var plan WSRetryBlockingJobResourceModel
-	resp.Diagnostics.Append(req.Plan.Get(ctx, &plan)...)
-	if resp.Diagnostics.HasError() {
-		return
-	}
+// SetClient sets the client for testing purposes
+func (r *WSRetryBlockingJobResource) SetClient(client client.SaviyntClientInterface) {
+	r.client = client
+}
 
-	// Extract jobs from the plan
-	var jobs []WSRetryBlockingJobModel
-	resp.Diagnostics.Append(plan.Jobs.ElementsAs(ctx, &jobs, false)...)
-	if resp.Diagnostics.HasError() {
-		return
+// SetToken sets the token for testing purposes
+func (r *WSRetryBlockingJobResource) SetToken(token string) {
+	r.token = token
+}
+
+// SetProvider sets the provider for testing purposes
+func (r *WSRetryBlockingJobResource) SetProvider(provider client.SaviyntProviderInterface) {
+	r.provider = provider
+}
+
+// SetJobControlFactory sets the job control factory for testing purposes
+func (r *WSRetryBlockingJobResource) SetJobControlFactory(factory client.JobControlFactoryInterface) {
+	r.jobControlFactory = factory
+}
+
+// CreateOrUpdateWSRetryBlockingJobs handles the business logic for creating or updating WS Retry Blocking jobs
+func (r *WSRetryBlockingJobResource) CreateOrUpdateWSRetryBlockingJobs(ctx context.Context, jobs []WSRetryBlockingJobModel, operation string) (*openapi.CreateOrUpdateTriggersResponse, error) {
+	if len(jobs) == 0 {
+		return nil, fmt.Errorf("at least one job must be specified")
 	}
 
 	tflog.Debug(ctx, "Starting WS Blocking Retry Job triggers creation", map[string]interface{}{
@@ -161,26 +173,19 @@ func (r *WSRetryBlockingJobResource) Create(ctx context.Context, req resource.Cr
 	// Process each job
 	for i, job := range jobs {
 		// Validate job name is WSBlockingRetryJob
-		if job.JobName.ValueString() != "WSBlockingRetryJob" {
-			resp.Diagnostics.AddError(
-				"Invalid Job Name",
-				fmt.Sprintf("Job %d: job_name must be 'WSBlockingRetryJob', got '%s'", i, job.JobName.ValueString()),
-			)
-			return
+		if job.JobName.IsNull() || job.JobName.ValueString() != "WSBlockingRetryJob" {
+			return nil, fmt.Errorf("job %d: job_name must be 'WSBlockingRetryJob', got '%s'", i+1, job.JobName.ValueString())
 		}
 
 		// Validate required fields
 		if job.TriggerName.IsNull() || job.TriggerName.ValueString() == "" {
-			resp.Diagnostics.AddError("Validation Error", fmt.Sprintf("Job %d: trigger_name is required", i))
-			return
+			return nil, fmt.Errorf("job %d: trigger_name is required", i+1)
 		}
 		if job.JobGroup.IsNull() || job.JobGroup.ValueString() == "" {
-			resp.Diagnostics.AddError("Validation Error", fmt.Sprintf("Job %d: job_group is required", i))
-			return
+			return nil, fmt.Errorf("job %d: job_group is required", i+1)
 		}
 		if job.CronExpression.IsNull() || job.CronExpression.ValueString() == "" {
-			resp.Diagnostics.AddError("Validation Error", fmt.Sprintf("Job %d: cron_expression is required", i))
-			return
+			return nil, fmt.Errorf("job %d: cron_expression is required", i+1)
 		}
 
 		// Create the job trigger using WSRetryJob (since WSBlockingRetryJob API model doesn't exist)
@@ -194,9 +199,9 @@ func (r *WSRetryBlockingJobResource) Create(ctx context.Context, req resource.Cr
 		// Set optional security systems if provided
 		if !job.SecuritySystems.IsNull() && len(job.SecuritySystems.Elements()) > 0 {
 			var securitySystems []string
-			resp.Diagnostics.Append(job.SecuritySystems.ElementsAs(ctx, &securitySystems, false)...)
-			if resp.Diagnostics.HasError() {
-				return
+			diags := job.SecuritySystems.ElementsAs(ctx, &securitySystems, false)
+			if diags.HasError() {
+				return nil, fmt.Errorf("job %d: failed to extract security systems", i+1)
 			}
 			jobTrigger.SetSecuritysystems(securitySystems)
 		}
@@ -222,7 +227,7 @@ func (r *WSRetryBlockingJobResource) Create(ctx context.Context, req resource.Cr
 	// Make the API call
 	var apiResp *openapi.CreateOrUpdateTriggersResponse
 	var finalHttpResp *http.Response
-	err := r.provider.AuthenticatedAPICallWithRetry(ctx, "create_ws_blocking_retry_jobs", func(token string) error {
+	err := r.provider.AuthenticatedAPICallWithRetry(ctx, fmt.Sprintf("%s_ws_blocking_retry_jobs", operation), func(token string) error {
 		jobOps := r.jobControlFactory.CreateJobControlOperations(r.client.APIBaseURL(), token)
 		apiResponse, httpResp, err := jobOps.CreateOrUpdateTriggers(ctx, createReq)
 		if httpResp != nil && httpResp.StatusCode == 401 {
@@ -237,11 +242,7 @@ func (r *WSRetryBlockingJobResource) Create(ctx context.Context, req resource.Cr
 		tflog.Error(ctx, "Error during API call", map[string]interface{}{
 			"error": err.Error(),
 		})
-		resp.Diagnostics.AddError(
-			"API Call Error",
-			fmt.Sprintf("Error during API call to create WS Blocking Retry Job triggers: %s", err.Error()),
-		)
-		return
+		return nil, fmt.Errorf("API call error: %s", err.Error())
 	}
 
 	// Handle HTTP errors
@@ -250,12 +251,9 @@ func (r *WSRetryBlockingJobResource) Create(ctx context.Context, req resource.Cr
 		tflog.Error(ctx, "Failed to create WS Blocking Retry Job triggers", map[string]interface{}{
 			"error": fmt.Sprintf("%v", diags.Errors()),
 		})
-		for _, diagnostic := range diags {
-			if diagnostic.Severity() == diag.SeverityError {
-				resp.Diagnostics.AddError(diagnostic.Summary(), diagnostic.Detail())
-			}
+		if diags.HasError() {
+			return nil, fmt.Errorf("HTTP error: %s", diags.Errors()[0].Detail())
 		}
-		return
 	}
 
 	// Handle API response errors
@@ -263,185 +261,38 @@ func (r *WSRetryBlockingJobResource) Create(ctx context.Context, req resource.Cr
 		tflog.Error(ctx, "API error during trigger creation", map[string]interface{}{
 			"error": fmt.Sprintf("%v", diags.Errors()),
 		})
-		for _, diagnostic := range diags {
-			if diagnostic.Severity() == diag.SeverityError {
-				resp.Diagnostics.AddError(diagnostic.Summary(), diagnostic.Detail())
-			}
+		if diags.HasError() {
+			return nil, fmt.Errorf("API error: %s", diags.Errors()[0].Detail())
 		}
-		return
 	}
 
 	tflog.Info(ctx, "WS Blocking Retry Job triggers created successfully", map[string]interface{}{
 		"job_count": len(jobs),
 	})
 
-	// Save data into Terraform state
-	resp.Diagnostics.Append(resp.State.Set(ctx, &plan)...)
+	return apiResp, nil
 }
 
-func (r *WSRetryBlockingJobResource) Read(ctx context.Context, req resource.ReadRequest, resp *resource.ReadResponse) {
-	var state WSRetryBlockingJobResourceModel
-	resp.Diagnostics.Append(req.State.Get(ctx, &state)...)
-	if resp.Diagnostics.HasError() {
-		return
-	}
-
-	tflog.Debug(ctx, "Reading WS Blocking Retry Job triggers")
-
-	// For now, we'll keep the state as-is since the API doesn't provide a direct read method
-	resp.Diagnostics.Append(resp.State.Set(ctx, &state)...)
-}
-
-func (r *WSRetryBlockingJobResource) Update(ctx context.Context, req resource.UpdateRequest, resp *resource.UpdateResponse) {
-	var plan WSRetryBlockingJobResourceModel
-	resp.Diagnostics.Append(req.Plan.Get(ctx, &plan)...)
-	if resp.Diagnostics.HasError() {
-		return
-	}
-
-	// Extract jobs from the plan
-	var jobs []WSRetryBlockingJobModel
-	resp.Diagnostics.Append(plan.Jobs.ElementsAs(ctx, &jobs, false)...)
-	if resp.Diagnostics.HasError() {
-		return
-	}
-
-	tflog.Debug(ctx, "Starting WS Blocking Retry Job triggers update", map[string]interface{}{
-		"job_count": len(jobs),
-	})
-
-	var triggers []openapi.TriggerItem
-
-	// Process each job
-	for i, job := range jobs {
-		// Validate job name is WSBlockingRetryJob
-		if job.JobName.ValueString() != "WSBlockingRetryJob" {
-			resp.Diagnostics.AddError(
-				"Invalid Job Name",
-				fmt.Sprintf("Job %d: job_name must be 'WSBlockingRetryJob', got '%s'", i, job.JobName.ValueString()),
-			)
-			return
-		}
-
-		// Create the job trigger
-		jobTrigger := openapi.NewWSRetryJob(
-			job.TriggerName.ValueString(),
-			job.JobName.ValueString(),
-			job.JobGroup.ValueString(),
-			job.CronExpression.ValueString(),
-		)
-
-		// Set optional security systems if provided
-		if !job.SecuritySystems.IsNull() && len(job.SecuritySystems.Elements()) > 0 {
-			var securitySystems []string
-			resp.Diagnostics.Append(job.SecuritySystems.ElementsAs(ctx, &securitySystems, false)...)
-			if resp.Diagnostics.HasError() {
-				return
-			}
-			jobTrigger.SetSecuritysystems(securitySystems)
-		}
-
-		// Set optional task types if provided
-		if !job.TaskTypes.IsNull() && job.TaskTypes.ValueString() != "" {
-			jobTrigger.SetTasktypes(job.TaskTypes.ValueString())
-		}
-
-		// Set optional trigger group if provided
-		if !job.TriggerGroup.IsNull() && job.TriggerGroup.ValueString() != "" {
-			jobTrigger.SetTriggergroup(job.TriggerGroup.ValueString())
-		}
-
-		triggers = append(triggers, openapi.WSRetryJobAsTriggerItem(jobTrigger))
-	}
-
-	// Create the request
-	updateReq := openapi.CreateOrUpdateTriggersRequest{
-		Triggers: triggers,
-	}
-
-	// Make the API call
-	var apiResp *openapi.CreateOrUpdateTriggersResponse
-	var finalHttpResp *http.Response
-	err := r.provider.AuthenticatedAPICallWithRetry(ctx, "update_ws_blocking_retry_jobs", func(token string) error {
-		jobOps := r.jobControlFactory.CreateJobControlOperations(r.client.APIBaseURL(), token)
-		apiResponse, httpResp, err := jobOps.CreateOrUpdateTriggers(ctx, updateReq)
-		if httpResp != nil && httpResp.StatusCode == 401 {
-			return fmt.Errorf("401 unauthorized")
-		}
-		apiResp = apiResponse
-		finalHttpResp = httpResp
-		return err
-	})
-
-	if err != nil && finalHttpResp != nil && finalHttpResp.StatusCode != http.StatusPreconditionFailed {
-		tflog.Error(ctx, "Error during API call", map[string]interface{}{
-			"error": err.Error(),
-		})
-		resp.Diagnostics.AddError(
-			"API Call Error",
-			fmt.Sprintf("Error during API call to update WS Blocking Retry Job triggers: %s", err.Error()),
-		)
-		return
-	}
-
-	// Handle HTTP errors
-	var diags diag.Diagnostics
-	if jobcontrolutil.JobControlHandleHTTPError(ctx, finalHttpResp, err, "updating WS Blocking Retry Job triggers", &diags) {
-		tflog.Error(ctx, "Failed to update WS Blocking Retry Job triggers", map[string]interface{}{
-			"error": fmt.Sprintf("%v", diags.Errors()),
-		})
-		for _, diagnostic := range diags {
-			if diagnostic.Severity() == diag.SeverityError {
-				resp.Diagnostics.AddError(diagnostic.Summary(), diagnostic.Detail())
-			}
-		}
-		return
-	}
-
-	// Handle API response errors
-	if apiResp != nil && jobcontrolutil.JobControlHandleAPIError(ctx, &apiResp.ErrorCode, &apiResp.Msg, "updating WS Blocking Retry Job triggers", &diags) {
-		tflog.Error(ctx, "API error during trigger update", map[string]interface{}{
-			"error": fmt.Sprintf("%v", diags.Errors()),
-		})
-		for _, diagnostic := range diags {
-			if diagnostic.Severity() == diag.SeverityError {
-				resp.Diagnostics.AddError(diagnostic.Summary(), diagnostic.Detail())
-			}
-		}
-		return
-	}
-
-	tflog.Info(ctx, "WS Blocking Retry Job triggers updated successfully", map[string]interface{}{
-		"job_count": len(jobs),
-	})
-
-	// Save data into Terraform state
-	resp.Diagnostics.Append(resp.State.Set(ctx, &plan)...)
-}
-
-func (r *WSRetryBlockingJobResource) Delete(ctx context.Context, req resource.DeleteRequest, resp *resource.DeleteResponse) {
-	var state WSRetryBlockingJobResourceModel
-	resp.Diagnostics.Append(req.State.Get(ctx, &state)...)
-	if resp.Diagnostics.HasError() {
-		return
-	}
-
-	// Extract jobs from the state
-	var jobs []WSRetryBlockingJobModel
-	resp.Diagnostics.Append(state.Jobs.ElementsAs(ctx, &jobs, false)...)
-	if resp.Diagnostics.HasError() {
-		return
+// DeleteWSRetryBlockingJobs handles the business logic for deleting WS Retry Blocking jobs
+func (r *WSRetryBlockingJobResource) DeleteWSRetryBlockingJobs(ctx context.Context, jobs []WSRetryBlockingJobModel) error {
+	if len(jobs) == 0 {
+		return nil
 	}
 
 	tflog.Debug(ctx, "Starting WS Blocking Retry Job triggers deletion", map[string]interface{}{
 		"job_count": len(jobs),
 	})
 
-	// Delete each job individually since DeleteTrigger API doesn't support bulk operations
-	for _, job := range jobs {
+	// Delete each job individually
+	for i, job := range jobs {
 		triggerName := job.TriggerName.ValueString()
 		jobName := job.JobName.ValueString()
 		jobGroup := job.JobGroup.ValueString()
+
+		tflog.Debug(ctx, "Deleting job trigger", map[string]interface{}{
+			"job_index":    i + 1,
+			"trigger_name": triggerName,
+		})
 
 		// Create delete request
 		deleteReq := openapi.DeleteTriggerRequest{
@@ -469,11 +320,7 @@ func (r *WSRetryBlockingJobResource) Delete(ctx context.Context, req resource.De
 				"error":        err.Error(),
 				"trigger_name": triggerName,
 			})
-			resp.Diagnostics.AddError(
-				"API Call Error",
-				fmt.Sprintf("Error during API call to delete WS Blocking Retry Job trigger '%s': %s", triggerName, err.Error()),
-			)
-			return
+			return fmt.Errorf("API call error for trigger '%s': %s", triggerName, err.Error())
 		}
 
 		// Handle HTTP errors
@@ -483,12 +330,9 @@ func (r *WSRetryBlockingJobResource) Delete(ctx context.Context, req resource.De
 				"error":        fmt.Sprintf("%v", diags.Errors()),
 				"trigger_name": triggerName,
 			})
-			for _, diagnostic := range diags {
-				if diagnostic.Severity() == diag.SeverityError {
-					resp.Diagnostics.AddError(diagnostic.Summary(), diagnostic.Detail())
-				}
+			if diags.HasError() {
+				return fmt.Errorf("HTTP error for trigger '%s': %s", triggerName, diags.Errors()[0].Detail())
 			}
-			return
 		}
 
 		// Handle API response errors
@@ -499,12 +343,9 @@ func (r *WSRetryBlockingJobResource) Delete(ctx context.Context, req resource.De
 					"error":        fmt.Sprintf("%v", diags.Errors()),
 					"trigger_name": triggerName,
 				})
-				for _, diagnostic := range diags {
-					if diagnostic.Severity() == diag.SeverityError {
-						resp.Diagnostics.AddError(diagnostic.Summary(), diagnostic.Detail())
-					}
+				if diags.HasError() {
+					return fmt.Errorf("API error for trigger '%s': %s", triggerName, diags.Errors()[0].Detail())
 				}
-				return
 			}
 		}
 
@@ -514,6 +355,173 @@ func (r *WSRetryBlockingJobResource) Delete(ctx context.Context, req resource.De
 	}
 
 	tflog.Info(ctx, "All WS Blocking Retry Job triggers deleted successfully", map[string]interface{}{
+		"job_count": len(jobs),
+	})
+
+	return nil
+}
+
+func (r *WSRetryBlockingJobResource) Create(ctx context.Context, req resource.CreateRequest, resp *resource.CreateResponse) {
+	var plan WSRetryBlockingJobResourceModel
+
+	tflog.Debug(ctx, "Starting WS Blocking Retry Job resource creation")
+
+	// Extract plan from request
+	resp.Diagnostics.Append(req.Plan.Get(ctx, &plan)...)
+	if resp.Diagnostics.HasError() {
+		resp.Diagnostics.AddError(
+			"Plan Extraction Failed",
+			"Unable to extract Terraform plan from request",
+		)
+		return
+	}
+
+	// Extract jobs from the plan
+	var jobs []WSRetryBlockingJobModel
+	resp.Diagnostics.Append(plan.Jobs.ElementsAs(ctx, &jobs, false)...)
+	if resp.Diagnostics.HasError() {
+		resp.Diagnostics.AddError(
+			"Jobs Extraction Failed",
+			"Unable to extract jobs from Terraform plan",
+		)
+		return
+	}
+
+	// Call the business logic method
+	_, err := r.CreateOrUpdateWSRetryBlockingJobs(ctx, jobs, "create")
+	if err != nil {
+		tflog.Error(ctx, "WS Blocking Retry Job creation failed", map[string]interface{}{
+			"error": err.Error(),
+		})
+		resp.Diagnostics.AddError(
+			"WS Blocking Retry Job Creation Failed",
+			err.Error(),
+		)
+		return
+	}
+
+	// Save data into Terraform state
+	resp.Diagnostics.Append(resp.State.Set(ctx, &plan)...)
+	if resp.Diagnostics.HasError() {
+		resp.Diagnostics.AddError(
+			"State Update Failed",
+			"Unable to save WS Blocking Retry Job state",
+		)
+		return
+	}
+
+	tflog.Info(ctx, "WS Blocking Retry Job resource created successfully", map[string]interface{}{
+		"job_count": len(jobs),
+	})
+}
+
+func (r *WSRetryBlockingJobResource) Read(ctx context.Context, req resource.ReadRequest, resp *resource.ReadResponse) {
+	var state WSRetryBlockingJobResourceModel
+	resp.Diagnostics.Append(req.State.Get(ctx, &state)...)
+	if resp.Diagnostics.HasError() {
+		return
+	}
+
+	tflog.Debug(ctx, "Reading WS Blocking Retry Job triggers")
+
+	// For now, we'll keep the state as-is since the API doesn't provide a direct read method
+	resp.Diagnostics.Append(resp.State.Set(ctx, &state)...)
+}
+
+func (r *WSRetryBlockingJobResource) Update(ctx context.Context, req resource.UpdateRequest, resp *resource.UpdateResponse) {
+	var plan WSRetryBlockingJobResourceModel
+
+	tflog.Debug(ctx, "Starting WS Blocking Retry Job resource update")
+
+	// Extract plan from request
+	resp.Diagnostics.Append(req.Plan.Get(ctx, &plan)...)
+	if resp.Diagnostics.HasError() {
+		resp.Diagnostics.AddError(
+			"Plan Extraction Failed",
+			"Unable to extract Terraform plan from request",
+		)
+		return
+	}
+
+	// Extract jobs from the plan
+	var jobs []WSRetryBlockingJobModel
+	resp.Diagnostics.Append(plan.Jobs.ElementsAs(ctx, &jobs, false)...)
+	if resp.Diagnostics.HasError() {
+		resp.Diagnostics.AddError(
+			"Jobs Extraction Failed",
+			"Unable to extract jobs from Terraform plan",
+		)
+		return
+	}
+
+	// Call the business logic method
+	_, err := r.CreateOrUpdateWSRetryBlockingJobs(ctx, jobs, "update")
+	if err != nil {
+		tflog.Error(ctx, "WS Blocking Retry Job update failed", map[string]interface{}{
+			"error": err.Error(),
+		})
+		resp.Diagnostics.AddError(
+			"WS Blocking Retry Job Update Failed",
+			err.Error(),
+		)
+		return
+	}
+
+	// Save data into Terraform state
+	resp.Diagnostics.Append(resp.State.Set(ctx, &plan)...)
+	if resp.Diagnostics.HasError() {
+		resp.Diagnostics.AddError(
+			"State Update Failed",
+			"Unable to save WS Blocking Retry Job state",
+		)
+		return
+	}
+
+	tflog.Info(ctx, "WS Blocking Retry Job resource updated successfully", map[string]interface{}{
+		"job_count": len(jobs),
+	})
+}
+
+func (r *WSRetryBlockingJobResource) Delete(ctx context.Context, req resource.DeleteRequest, resp *resource.DeleteResponse) {
+	var state WSRetryBlockingJobResourceModel
+
+	tflog.Debug(ctx, "Starting WS Blocking Retry Job resource deletion")
+
+	// Extract state from request
+	resp.Diagnostics.Append(req.State.Get(ctx, &state)...)
+	if resp.Diagnostics.HasError() {
+		resp.Diagnostics.AddError(
+			"State Extraction Failed",
+			"Unable to extract Terraform state from request",
+		)
+		return
+	}
+
+	// Extract jobs from the state
+	var jobs []WSRetryBlockingJobModel
+	resp.Diagnostics.Append(state.Jobs.ElementsAs(ctx, &jobs, false)...)
+	if resp.Diagnostics.HasError() {
+		resp.Diagnostics.AddError(
+			"Jobs Extraction Failed",
+			"Unable to extract jobs from Terraform state",
+		)
+		return
+	}
+
+	// Call the business logic method
+	err := r.DeleteWSRetryBlockingJobs(ctx, jobs)
+	if err != nil {
+		tflog.Error(ctx, "WS Blocking Retry Job deletion failed", map[string]interface{}{
+			"error": err.Error(),
+		})
+		resp.Diagnostics.AddError(
+			"WS Blocking Retry Job Deletion Failed",
+			err.Error(),
+		)
+		return
+	}
+
+	tflog.Info(ctx, "WS Blocking Retry Job resource deleted successfully", map[string]interface{}{
 		"job_count": len(jobs),
 	})
 }
