@@ -162,23 +162,16 @@ func (r *ApplicationDataImportJobResource) SetToken(token string) {
 func (r *ApplicationDataImportJobResource) SetProvider(provider client.SaviyntProviderInterface) {
 	r.provider = provider
 }
-func (r *ApplicationDataImportJobResource) Create(ctx context.Context, req resource.CreateRequest, resp *resource.CreateResponse) {
-	var plan ApplicationDataImportJobResourceModel
-	resp.Diagnostics.Append(req.Plan.Get(ctx, &plan)...)
-	if resp.Diagnostics.HasError() {
-		return
-	}
 
-	// Extract jobs from the plan
-	var jobs []ApplicationDataImportJobModel
-	resp.Diagnostics.Append(plan.Jobs.ElementsAs(ctx, &jobs, false)...)
-	if resp.Diagnostics.HasError() {
-		return
-	}
+// SetJobControlFactory sets the job control factory for testing purposes
+func (r *ApplicationDataImportJobResource) SetJobControlFactory(factory client.JobControlFactoryInterface) {
+	r.jobControlFactory = factory
+}
 
+// CreateOrUpdateApplicationDataImportJobs handles the business logic for creating or updating application data import jobs
+func (r *ApplicationDataImportJobResource) CreateOrUpdateApplicationDataImportJobs(ctx context.Context, jobs []ApplicationDataImportJobModel, operation string) (*openapi.CreateOrUpdateTriggersResponse, error) {
 	if len(jobs) == 0 {
-		resp.Diagnostics.AddError("Validation Error", "At least one job must be specified")
-		return
+		return nil, fmt.Errorf("at least one job must be specified")
 	}
 
 	tflog.Debug(ctx, "Starting Application Data Import Job triggers creation", map[string]interface{}{
@@ -191,39 +184,34 @@ func (r *ApplicationDataImportJobResource) Create(ctx context.Context, req resou
 	for i, job := range jobs {
 		// Validate job name is ApplicationDataImportJob
 		if job.JobName.IsNull() || job.JobName.ValueString() != "ApplicationDataImportJob" {
-			resp.Diagnostics.AddError(
-				"Validation Error",
-				fmt.Sprintf("Job %d: job_name must be 'ApplicationDataImportJob', got '%s'", i+1, job.JobName.ValueString()),
-			)
-			return
+			return nil, fmt.Errorf("job %d: job_name must be 'ApplicationDataImportJob', got '%s'", i+1, job.JobName.ValueString())
 		}
 
 		// Validate required fields
 		if job.TriggerName.IsNull() || job.TriggerName.ValueString() == "" {
-			resp.Diagnostics.AddError("Validation Error", fmt.Sprintf("Job %d: trigger_name is required", i+1))
-			return
+			return nil, fmt.Errorf("job %d: trigger_name is required", i+1)
 		}
 
 		if job.JobGroup.IsNull() || job.JobGroup.ValueString() == "" {
-			resp.Diagnostics.AddError("Validation Error", fmt.Sprintf("Job %d: job_group is required", i+1))
-			return
+			return nil, fmt.Errorf("job %d: job_group is required", i+1)
 		}
 
 		if job.CronExpression.IsNull() || job.CronExpression.ValueString() == "" {
-			resp.Diagnostics.AddError("Validation Error", fmt.Sprintf("Job %d: cron_expression is required", i+1))
-			return
+			return nil, fmt.Errorf("job %d: cron_expression is required", i+1)
 		}
 
 		// Convert security systems list
 		var securitySystems []string
-		resp.Diagnostics.Append(job.SecuritySystems.ElementsAs(ctx, &securitySystems, false)...)
-		if resp.Diagnostics.HasError() {
-			return
+		if !job.SecuritySystems.IsNull() {
+			for _, elem := range job.SecuritySystems.Elements() {
+				if strVal, ok := elem.(types.String); ok && !strVal.IsNull() {
+					securitySystems = append(securitySystems, strVal.ValueString())
+				}
+			}
 		}
 
 		if len(securitySystems) == 0 {
-			resp.Diagnostics.AddError("Validation Error", fmt.Sprintf("Job %d: security_systems is required", i+1))
-			return
+			return nil, fmt.Errorf("job %d: security_systems is required", i+1)
 		}
 
 		// Build the value map
@@ -269,7 +257,7 @@ func (r *ApplicationDataImportJobResource) Create(ctx context.Context, req resou
 	// Make the API call
 	var apiResp *openapi.CreateOrUpdateTriggersResponse
 	var finalHttpResp *http.Response
-	err := r.provider.AuthenticatedAPICallWithRetry(ctx, "create_application_data_import_jobs", func(token string) error {
+	err := r.provider.AuthenticatedAPICallWithRetry(ctx, fmt.Sprintf("%s_application_data_import_jobs", operation), func(token string) error {
 		jobOps := r.jobControlFactory.CreateJobControlOperations(r.client.APIBaseURL(), token)
 		apiResponse, httpResp, err := jobOps.CreateOrUpdateTriggers(ctx, createReq)
 		if httpResp != nil && httpResp.StatusCode == 401 {
@@ -284,11 +272,7 @@ func (r *ApplicationDataImportJobResource) Create(ctx context.Context, req resou
 		tflog.Error(ctx, "Error during API call", map[string]interface{}{
 			"error": err.Error(),
 		})
-		resp.Diagnostics.AddError(
-			"API Call Error",
-			fmt.Sprintf("Error during API call to create Application Data Import Job triggers: %s", err.Error()),
-		)
-		return
+		return nil, fmt.Errorf("API call error: %s", err.Error())
 	}
 
 	// Handle HTTP errors
@@ -297,12 +281,9 @@ func (r *ApplicationDataImportJobResource) Create(ctx context.Context, req resou
 		tflog.Error(ctx, "Failed to create Application Data Import Job triggers", map[string]interface{}{
 			"error": fmt.Sprintf("%v", diags.Errors()),
 		})
-		for _, diagnostic := range diags {
-			if diagnostic.Severity() == diag.SeverityError {
-				resp.Diagnostics.AddError(diagnostic.Summary(), diagnostic.Detail())
-			}
+		if diags.HasError() {
+			return nil, fmt.Errorf("HTTP error: %s", diags.Errors()[0].Detail())
 		}
-		return
 	}
 
 	// Handle API response errors
@@ -310,20 +291,69 @@ func (r *ApplicationDataImportJobResource) Create(ctx context.Context, req resou
 		tflog.Error(ctx, "API error during trigger creation", map[string]interface{}{
 			"error": fmt.Sprintf("%v", diags.Errors()),
 		})
-		for _, diagnostic := range diags {
-			if diagnostic.Severity() == diag.SeverityError {
-				resp.Diagnostics.AddError(diagnostic.Summary(), diagnostic.Detail())
-			}
+		if diags.HasError() {
+			return nil, fmt.Errorf("API error: %s", diags.Errors()[0].Detail())
 		}
-		return
 	}
 
 	tflog.Info(ctx, "Application Data Import Job triggers created successfully", map[string]interface{}{
 		"job_count": len(jobs),
 	})
+	return apiResp, nil
+}
+
+func (r *ApplicationDataImportJobResource) Create(ctx context.Context, req resource.CreateRequest, resp *resource.CreateResponse) {
+	var plan ApplicationDataImportJobResourceModel
+
+	tflog.Debug(ctx, "Starting Application Data Import Job resource creation")
+
+	// Extract plan from request
+	resp.Diagnostics.Append(req.Plan.Get(ctx, &plan)...)
+	if resp.Diagnostics.HasError() {
+		resp.Diagnostics.AddError(
+			"Plan Extraction Failed",
+			"Unable to extract Terraform plan from request",
+		)
+		return
+	}
+
+	// Extract jobs from the plan
+	var jobs []ApplicationDataImportJobModel
+	resp.Diagnostics.Append(plan.Jobs.ElementsAs(ctx, &jobs, false)...)
+	if resp.Diagnostics.HasError() {
+		resp.Diagnostics.AddError(
+			"Jobs Extraction Failed",
+			"Unable to extract jobs from Terraform plan",
+		)
+		return
+	}
+
+	// Call the business logic method
+	_, err := r.CreateOrUpdateApplicationDataImportJobs(ctx, jobs, "create")
+	if err != nil {
+		tflog.Error(ctx, "Application Data Import Job creation failed", map[string]interface{}{
+			"error": err.Error(),
+		})
+		resp.Diagnostics.AddError(
+			"Application Data Import Job Creation Failed",
+			err.Error(),
+		)
+		return
+	}
 
 	// Save data into Terraform state
 	resp.Diagnostics.Append(resp.State.Set(ctx, &plan)...)
+	if resp.Diagnostics.HasError() {
+		resp.Diagnostics.AddError(
+			"State Update Failed",
+			"Unable to save Application Data Import Job state",
+		)
+		return
+	}
+
+	tflog.Info(ctx, "Application Data Import Job resource created successfully", map[string]interface{}{
+		"job_count": len(jobs),
+	})
 }
 
 func (r *ApplicationDataImportJobResource) Read(ctx context.Context, req resource.ReadRequest, resp *resource.ReadResponse) {
@@ -343,8 +373,16 @@ func (r *ApplicationDataImportJobResource) Read(ctx context.Context, req resourc
 
 func (r *ApplicationDataImportJobResource) Update(ctx context.Context, req resource.UpdateRequest, resp *resource.UpdateResponse) {
 	var plan ApplicationDataImportJobResourceModel
+
+	tflog.Debug(ctx, "Starting Application Data Import Job resource update")
+
+	// Extract plan from request
 	resp.Diagnostics.Append(req.Plan.Get(ctx, &plan)...)
 	if resp.Diagnostics.HasError() {
+		resp.Diagnostics.AddError(
+			"Plan Extraction Failed",
+			"Unable to extract Terraform plan from request",
+		)
 		return
 	}
 
@@ -352,149 +390,43 @@ func (r *ApplicationDataImportJobResource) Update(ctx context.Context, req resou
 	var jobs []ApplicationDataImportJobModel
 	resp.Diagnostics.Append(plan.Jobs.ElementsAs(ctx, &jobs, false)...)
 	if resp.Diagnostics.HasError() {
-		return
-	}
-
-	if len(jobs) == 0 {
-		resp.Diagnostics.AddError("Validation Error", "At least one job must be specified")
-		return
-	}
-
-	tflog.Debug(ctx, "Starting Application Data Import Job triggers update", map[string]interface{}{
-		"job_count": len(jobs),
-	})
-
-	var triggers []openapi.TriggerItem
-
-	// Process each job
-	for i, job := range jobs {
-		// Validate job name is ApplicationDataImportJob
-		if job.JobName.IsNull() || job.JobName.ValueString() != "ApplicationDataImportJob" {
-			resp.Diagnostics.AddError(
-				"Validation Error", 
-				fmt.Sprintf("Job %d: job_name must be 'ApplicationDataImportJob', got '%s'", i+1, job.JobName.ValueString()),
-			)
-			return
-		}
-
-		// Convert security systems list
-		var securitySystems []string
-		resp.Diagnostics.Append(job.SecuritySystems.ElementsAs(ctx, &securitySystems, false)...)
-		if resp.Diagnostics.HasError() {
-			return
-		}
-
-		// Build the value map
-		valueMap := openapi.NewApplicationDataImportJobAllOfValueMap(securitySystems)
-
-		if !job.AccountsOrAccess.IsNull() && job.AccountsOrAccess.ValueString() != "" {
-			accountsOrAccess := job.AccountsOrAccess.ValueString()
-			valueMap.Accountsoraccess = &accountsOrAccess
-		}
-
-		if !job.ExternalConn.IsNull() && job.ExternalConn.ValueString() != "" {
-			externalConn := job.ExternalConn.ValueString()
-			valueMap.Externalconn = &externalConn
-		}
-
-		if !job.FullOrIncremental.IsNull() && job.FullOrIncremental.ValueString() != "" {
-			fullOrIncremental := job.FullOrIncremental.ValueString()
-			valueMap.Fullorincremental = &fullOrIncremental
-		}
-
-		appDataImportJob := openapi.NewApplicationDataImportJob(
-			job.TriggerName.ValueString(),
-			job.JobName.ValueString(),
-			job.JobGroup.ValueString(),
-			job.CronExpression.ValueString(),
+		resp.Diagnostics.AddError(
+			"Jobs Extraction Failed",
+			"Unable to extract jobs from Terraform plan",
 		)
-		appDataImportJob.SetValueMap(*valueMap)
-
-		if !job.TriggerGroup.IsNull() {
-			triggerGroup := job.TriggerGroup.ValueString()
-			appDataImportJob.SetTriggergroup(triggerGroup)
-		}
-
-		triggers = append(triggers, openapi.ApplicationDataImportJobAsTriggerItem(appDataImportJob))
+		return
 	}
 
-	updateReq := openapi.CreateOrUpdateTriggersRequest{
-		Triggers: triggers,
-	}
-
-	var apiResp *openapi.CreateOrUpdateTriggersResponse
-	var finalHttpResp *http.Response
-	err := r.provider.AuthenticatedAPICallWithRetry(ctx, "update_application_data_import_jobs", func(token string) error {
-		jobOps := r.jobControlFactory.CreateJobControlOperations(r.client.APIBaseURL(), token)
-		apiResponse, httpResp, err := jobOps.CreateOrUpdateTriggers(ctx, updateReq)
-		if httpResp != nil && httpResp.StatusCode == 401 {
-			return fmt.Errorf("401 unauthorized")
-		}
-		apiResp = apiResponse
-		finalHttpResp = httpResp
-		return err
-	})
-
-	if err != nil && finalHttpResp != nil && finalHttpResp.StatusCode != http.StatusPreconditionFailed {
-		tflog.Error(ctx, "Error during API call", map[string]interface{}{
+	// Call the business logic method
+	_, err := r.CreateOrUpdateApplicationDataImportJobs(ctx, jobs, "update")
+	if err != nil {
+		tflog.Error(ctx, "Application Data Import Job update failed", map[string]interface{}{
 			"error": err.Error(),
 		})
 		resp.Diagnostics.AddError(
-			"API Call Error",
-			fmt.Sprintf("Error during API call to update Application Data Import Job triggers: %s", err.Error()),
+			"Application Data Import Job Update Failed",
+			err.Error(),
 		)
 		return
 	}
 
-	// Handle HTTP errors
-	var diags diag.Diagnostics
-	if jobcontrolutil.JobControlHandleHTTPError(ctx, finalHttpResp, err, "updating Application Data Import Job triggers", &diags) {
-		tflog.Error(ctx, "Failed to update Application Data Import Job triggers", map[string]interface{}{
-			"error": fmt.Sprintf("%v", diags.Errors()),
-		})
-		for _, diagnostic := range diags {
-			if diagnostic.Severity() == diag.SeverityError {
-				resp.Diagnostics.AddError(diagnostic.Summary(), diagnostic.Detail())
-			}
-		}
-		return
-	}
-
-	// Handle API response errors
-	if apiResp != nil && jobcontrolutil.JobControlHandleAPIError(ctx, &apiResp.ErrorCode, &apiResp.Msg, "updating Application Data Import Job triggers", &diags) {
-		tflog.Error(ctx, "API error during trigger update", map[string]interface{}{
-			"error": fmt.Sprintf("%v", diags.Errors()),
-		})
-		for _, diagnostic := range diags {
-			if diagnostic.Severity() == diag.SeverityError {
-				resp.Diagnostics.AddError(diagnostic.Summary(), diagnostic.Detail())
-			}
-		}
-		return
-	}
-
-	tflog.Info(ctx, "Application Data Import Job triggers updated successfully", map[string]interface{}{
-		"job_count": len(jobs),
-	})
-
 	// Save data into Terraform state
 	resp.Diagnostics.Append(resp.State.Set(ctx, &plan)...)
+	if resp.Diagnostics.HasError() {
+		resp.Diagnostics.AddError(
+			"State Update Failed",
+			"Unable to save Application Data Import Job state",
+		)
+		return
+	}
+
+	tflog.Info(ctx, "Application Data Import Job resource updated successfully", map[string]interface{}{
+		"job_count": len(jobs),
+	})
 }
 
-func (r *ApplicationDataImportJobResource) Delete(ctx context.Context, req resource.DeleteRequest, resp *resource.DeleteResponse) {
-	var state ApplicationDataImportJobResourceModel
-	resp.Diagnostics.Append(req.State.Get(ctx, &state)...)
-	if resp.Diagnostics.HasError() {
-		return
-	}
-
-	// Extract jobs from the state
-	var jobs []ApplicationDataImportJobModel
-	resp.Diagnostics.Append(state.Jobs.ElementsAs(ctx, &jobs, false)...)
-	if resp.Diagnostics.HasError() {
-		return
-	}
-
+// DeleteApplicationDataImportJobs handles the business logic for deleting application data import jobs
+func (r *ApplicationDataImportJobResource) DeleteApplicationDataImportJobs(ctx context.Context, jobs []ApplicationDataImportJobModel) error {
 	tflog.Debug(ctx, "Starting Application Data Import Job triggers deletion", map[string]interface{}{
 		"job_count": len(jobs),
 	})
@@ -534,11 +466,7 @@ func (r *ApplicationDataImportJobResource) Delete(ctx context.Context, req resou
 				"error":        err.Error(),
 				"trigger_name": triggerName,
 			})
-			resp.Diagnostics.AddError(
-				"API Call Error",
-				fmt.Sprintf("Error during API call to delete Application Data Import Job trigger '%s': %s", triggerName, err.Error()),
-			)
-			return
+			return fmt.Errorf("API call error for trigger '%s': %s", triggerName, err.Error())
 		}
 
 		// Handle HTTP errors
@@ -548,12 +476,9 @@ func (r *ApplicationDataImportJobResource) Delete(ctx context.Context, req resou
 				"error":        fmt.Sprintf("%v", diags.Errors()),
 				"trigger_name": triggerName,
 			})
-			for _, diagnostic := range diags {
-				if diagnostic.Severity() == diag.SeverityError {
-					resp.Diagnostics.AddError(diagnostic.Summary(), diagnostic.Detail())
-				}
+			if diags.HasError() {
+				return fmt.Errorf("HTTP error for trigger '%s': %s", triggerName, diags.Errors()[0].Detail())
 			}
-			return
 		}
 
 		// Handle API response errors
@@ -564,12 +489,9 @@ func (r *ApplicationDataImportJobResource) Delete(ctx context.Context, req resou
 					"error":        fmt.Sprintf("%v", diags.Errors()),
 					"trigger_name": triggerName,
 				})
-				for _, diagnostic := range diags {
-					if diagnostic.Severity() == diag.SeverityError {
-						resp.Diagnostics.AddError(diagnostic.Summary(), diagnostic.Detail())
-					}
+				if diags.HasError() {
+					return fmt.Errorf("API error for trigger '%s': %s", triggerName, diags.Errors()[0].Detail())
 				}
-				return
 			}
 		}
 
@@ -582,6 +504,49 @@ func (r *ApplicationDataImportJobResource) Delete(ctx context.Context, req resou
 		"job_count": len(jobs),
 	})
 
-	// Save data into Terraform state
-	resp.Diagnostics.Append(resp.State.Set(ctx, &state)...)
+	return nil
+}
+
+func (r *ApplicationDataImportJobResource) Delete(ctx context.Context, req resource.DeleteRequest, resp *resource.DeleteResponse) {
+	var state ApplicationDataImportJobResourceModel
+
+	tflog.Debug(ctx, "Starting Application Data Import Job resource deletion")
+
+	// Extract state from request
+	resp.Diagnostics.Append(req.State.Get(ctx, &state)...)
+	if resp.Diagnostics.HasError() {
+		resp.Diagnostics.AddError(
+			"State Extraction Failed",
+			"Unable to extract Terraform state from request",
+		)
+		return
+	}
+
+	// Extract jobs from the state
+	var jobs []ApplicationDataImportJobModel
+	resp.Diagnostics.Append(state.Jobs.ElementsAs(ctx, &jobs, false)...)
+	if resp.Diagnostics.HasError() {
+		resp.Diagnostics.AddError(
+			"Jobs Extraction Failed",
+			"Unable to extract jobs from Terraform state",
+		)
+		return
+	}
+
+	// Call the business logic method
+	err := r.DeleteApplicationDataImportJobs(ctx, jobs)
+	if err != nil {
+		tflog.Error(ctx, "Application Data Import Job deletion failed", map[string]interface{}{
+			"error": err.Error(),
+		})
+		resp.Diagnostics.AddError(
+			"Application Data Import Job Deletion Failed",
+			err.Error(),
+		)
+		return
+	}
+
+	tflog.Info(ctx, "Application Data Import Job resource deleted successfully", map[string]interface{}{
+		"job_count": len(jobs),
+	})
 }
