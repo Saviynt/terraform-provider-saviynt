@@ -123,17 +123,30 @@ func (r *SchemaRoleJobResource) Configure(ctx context.Context, req resource.Conf
 	tflog.Info(ctx, "SchemaRoleJobResource configuration completed successfully")
 }
 
-func (r *SchemaRoleJobResource) Create(ctx context.Context, req resource.CreateRequest, resp *resource.CreateResponse) {
-	var plan SchemaRoleJobResourceModel
-	resp.Diagnostics.Append(req.Plan.Get(ctx, &plan)...)
-	if resp.Diagnostics.HasError() {
-		return
-	}
+// SetClient sets the client for testing purposes
+func (r *SchemaRoleJobResource) SetClient(client client.SaviyntClientInterface) {
+	r.client = client
+}
 
-	var jobs []SchemaRoleJobModel
-	resp.Diagnostics.Append(plan.Jobs.ElementsAs(ctx, &jobs, false)...)
-	if resp.Diagnostics.HasError() {
-		return
+// SetToken sets the token for testing purposes
+func (r *SchemaRoleJobResource) SetToken(token string) {
+	r.token = token
+}
+
+// SetProvider sets the provider for testing purposes
+func (r *SchemaRoleJobResource) SetProvider(provider client.SaviyntProviderInterface) {
+	r.provider = provider
+}
+
+// SetJobControlFactory sets the job control factory for testing purposes
+func (r *SchemaRoleJobResource) SetJobControlFactory(factory client.JobControlFactoryInterface) {
+	r.jobControlFactory = factory
+}
+
+// CreateOrUpdateSchemaRoleJobs handles the business logic for creating or updating Schema Role jobs
+func (r *SchemaRoleJobResource) CreateOrUpdateSchemaRoleJobs(ctx context.Context, jobs []SchemaRoleJobModel, operation string) (*openapi.CreateTriggersResponse, error) {
+	if len(jobs) == 0 {
+		return nil, fmt.Errorf("at least one job must be specified")
 	}
 
 	tflog.Debug(ctx, "Starting Schema Role Job triggers creation", map[string]interface{}{
@@ -144,37 +157,31 @@ func (r *SchemaRoleJobResource) Create(ctx context.Context, req resource.CreateR
 
 	for i, job := range jobs {
 		// Validate job name
-		if job.JobName.ValueString() != "SchemaRoleJob" {
-			resp.Diagnostics.AddError(
-				"Invalid Job Name",
-				fmt.Sprintf("Job %d: job_name must be 'SchemaRoleJob', got '%s'", i, job.JobName.ValueString()),
-			)
-			return
+		if job.JobName.IsNull() || job.JobName.ValueString() != "SchemaRoleJob" {
+			return nil, fmt.Errorf("job %d: job_name must be 'SchemaRoleJob', got '%s'", i+1, job.JobName.ValueString())
 		}
 
 		// Validate required fields
 		if job.Name.IsNull() || job.Name.ValueString() == "" {
-			resp.Diagnostics.AddError("Validation Error", fmt.Sprintf("Job %d: name is required", i))
-			return
+			return nil, fmt.Errorf("job %d: name is required", i+1)
 		}
 		if job.JobGroup.IsNull() || job.JobGroup.ValueString() == "" {
-			resp.Diagnostics.AddError("Validation Error", fmt.Sprintf("Job %d: job_group is required", i))
-			return
+			return nil, fmt.Errorf("job %d: job_group is required", i+1)
 		}
 		if job.Group.IsNull() || job.Group.ValueString() == "" {
-			resp.Diagnostics.AddError("Validation Error", fmt.Sprintf("Job %d: group is required", i))
-			return
+			return nil, fmt.Errorf("job %d: group is required", i+1)
 		}
 		if job.CronExp.IsNull() || job.CronExp.ValueString() == "" {
-			resp.Diagnostics.AddError("Validation Error", fmt.Sprintf("Job %d: cron_exp is required", i))
-			return
+			return nil, fmt.Errorf("job %d: cron_exp is required", i+1)
 		}
 
+		// Create the value map
 		valueMap := openapi.NewSchemaRoleJobAllOfValueMap()
 		if !job.SchemaFileNames.IsNull() && job.SchemaFileNames.ValueString() != "" {
 			valueMap.SetSchemaFileNames(job.SchemaFileNames.ValueString())
 		}
 
+		// Create the job trigger
 		jobTrigger := openapi.NewSchemaRoleJob(
 			job.Name.ValueString(),
 			job.JobName.ValueString(),
@@ -184,15 +191,22 @@ func (r *SchemaRoleJobResource) Create(ctx context.Context, req resource.CreateR
 		)
 		jobTrigger.SetValueMap(*valueMap)
 
+		// Create job trigger item
 		jobTriggerItem := openapi.SchemaRoleJobAsJobTriggerItem(jobTrigger)
 		jobTriggerItems = append(jobTriggerItems, jobTriggerItem)
 	}
 
-	createReq := []openapi.JobTriggerRequest{{Triggers: jobTriggerItems}}
+	// Create the request
+	createReq := []openapi.JobTriggerRequest{
+		{
+			Triggers: jobTriggerItems,
+		},
+	}
 
+	// Make the API call
 	var apiResp *openapi.CreateTriggersResponse
 	var finalHttpResp *http.Response
-	err := r.provider.AuthenticatedAPICallWithRetry(ctx, "create_schema_role_jobs", func(token string) error {
+	err := r.provider.AuthenticatedAPICallWithRetry(ctx, fmt.Sprintf("%s_schema_role_jobs", operation), func(token string) error {
 		jobOps := r.jobControlFactory.CreateJobControlOperations(r.client.APIBaseURL(), token)
 		apiResponse, httpResp, err := jobOps.CreateTrigger(ctx, createReq)
 		if httpResp != nil && httpResp.StatusCode == 401 {
@@ -207,19 +221,20 @@ func (r *SchemaRoleJobResource) Create(ctx context.Context, req resource.CreateR
 		tflog.Error(ctx, "Error during API call", map[string]interface{}{
 			"error": err.Error(),
 		})
-		resp.Diagnostics.AddError("API Call Error", fmt.Sprintf("Error creating Schema Role Job triggers: %s", err.Error()))
-		return
+		return nil, fmt.Errorf("API call error: %s", err.Error())
 	}
 
+	// Handle API response errors - CreateTriggersResponse has different structure
 	if apiResp != nil {
+		// Check for error response
 		if apiResp.CreateTriggersResponseOneOf != nil && apiResp.CreateTriggersResponseOneOf.Error != "" {
 			tflog.Error(ctx, "API error during trigger creation", map[string]interface{}{
 				"error": apiResp.CreateTriggersResponseOneOf.Error,
 			})
-			resp.Diagnostics.AddError("API Error", fmt.Sprintf("Error creating Schema Role Job triggers: %s", apiResp.CreateTriggersResponseOneOf.Error))
-			return
+			return nil, fmt.Errorf("API error: %s", apiResp.CreateTriggersResponseOneOf.Error)
 		}
 
+		// Check for success response
 		if apiResp.MapmapOfStringarrayOfString != nil {
 			tflog.Debug(ctx, "Received success response from CreateTrigger API")
 		}
@@ -229,135 +244,29 @@ func (r *SchemaRoleJobResource) Create(ctx context.Context, req resource.CreateR
 		"job_count": len(jobs),
 	})
 
-	resp.Diagnostics.Append(resp.State.Set(ctx, &plan)...)
+	return apiResp, nil
 }
 
-func (r *SchemaRoleJobResource) Read(ctx context.Context, req resource.ReadRequest, resp *resource.ReadResponse) {
-	var state SchemaRoleJobResourceModel
-	resp.Diagnostics.Append(req.State.Get(ctx, &state)...)
-	if resp.Diagnostics.HasError() {
-		return
-	}
-
-	tflog.Debug(ctx, "Reading Schema Role Job triggers")
-
-	// For now, we'll keep the state as-is since the API doesn't provide a direct read method
-	resp.Diagnostics.Append(resp.State.Set(ctx, &state)...)
-}
-
-func (r *SchemaRoleJobResource) Update(ctx context.Context, req resource.UpdateRequest, resp *resource.UpdateResponse) {
-	var plan SchemaRoleJobResourceModel
-	resp.Diagnostics.Append(req.Plan.Get(ctx, &plan)...)
-	if resp.Diagnostics.HasError() {
-		return
-	}
-
-	var jobs []SchemaRoleJobModel
-	resp.Diagnostics.Append(plan.Jobs.ElementsAs(ctx, &jobs, false)...)
-	if resp.Diagnostics.HasError() {
-		return
-	}
-
-	tflog.Debug(ctx, "Starting Schema Role Job triggers update", map[string]interface{}{
-		"job_count": len(jobs),
-	})
-
-	var jobTriggerItems []openapi.JobTriggerItem
-
-	for i, job := range jobs {
-		// Validate job name
-		if job.JobName.ValueString() != "SchemaRoleJob" {
-			resp.Diagnostics.AddError(
-				"Invalid Job Name",
-				fmt.Sprintf("Job %d: job_name must be 'SchemaRoleJob', got '%s'", i, job.JobName.ValueString()),
-			)
-			return
-		}
-
-		valueMap := openapi.NewSchemaRoleJobAllOfValueMap()
-		if !job.SchemaFileNames.IsNull() && job.SchemaFileNames.ValueString() != "" {
-			valueMap.SetSchemaFileNames(job.SchemaFileNames.ValueString())
-		}
-
-		jobTrigger := openapi.NewSchemaRoleJob(
-			job.Name.ValueString(),
-			job.JobName.ValueString(),
-			job.JobGroup.ValueString(),
-			job.Group.ValueString(),
-			job.CronExp.ValueString(),
-		)
-		jobTrigger.SetValueMap(*valueMap)
-
-		jobTriggerItem := openapi.SchemaRoleJobAsJobTriggerItem(jobTrigger)
-		jobTriggerItems = append(jobTriggerItems, jobTriggerItem)
-	}
-
-	updateReq := []openapi.JobTriggerRequest{{Triggers: jobTriggerItems}}
-
-	var apiResp *openapi.CreateTriggersResponse
-	var finalHttpResp *http.Response
-	err := r.provider.AuthenticatedAPICallWithRetry(ctx, "update_schema_role_jobs", func(token string) error {
-		jobOps := r.jobControlFactory.CreateJobControlOperations(r.client.APIBaseURL(), token)
-		apiResponse, httpResp, err := jobOps.CreateTrigger(ctx, updateReq)
-		if httpResp != nil && httpResp.StatusCode == 401 {
-			return fmt.Errorf("401 unauthorized")
-		}
-		apiResp = apiResponse
-		finalHttpResp = httpResp
-		return err
-	})
-
-	if err != nil && finalHttpResp != nil && finalHttpResp.StatusCode != http.StatusPreconditionFailed {
-		tflog.Error(ctx, "Error during API call", map[string]interface{}{
-			"error": err.Error(),
-		})
-		resp.Diagnostics.AddError("API Call Error", fmt.Sprintf("Error updating Schema Role Job triggers: %s", err.Error()))
-		return
-	}
-
-	if apiResp != nil {
-		if apiResp.CreateTriggersResponseOneOf != nil && apiResp.CreateTriggersResponseOneOf.Error != "" {
-			tflog.Error(ctx, "API error during trigger update", map[string]interface{}{
-				"error": apiResp.CreateTriggersResponseOneOf.Error,
-			})
-			resp.Diagnostics.AddError("API Error", fmt.Sprintf("Error updating Schema Role Job triggers: %s", apiResp.CreateTriggersResponseOneOf.Error))
-			return
-		}
-
-		if apiResp.MapmapOfStringarrayOfString != nil {
-			tflog.Debug(ctx, "Received success response from CreateTrigger API")
-		}
-	}
-
-	tflog.Info(ctx, "Schema Role Job triggers updated successfully", map[string]interface{}{
-		"job_count": len(jobs),
-	})
-
-	resp.Diagnostics.Append(resp.State.Set(ctx, &plan)...)
-}
-
-func (r *SchemaRoleJobResource) Delete(ctx context.Context, req resource.DeleteRequest, resp *resource.DeleteResponse) {
-	var state SchemaRoleJobResourceModel
-	resp.Diagnostics.Append(req.State.Get(ctx, &state)...)
-	if resp.Diagnostics.HasError() {
-		return
-	}
-
-	var jobs []SchemaRoleJobModel
-	resp.Diagnostics.Append(state.Jobs.ElementsAs(ctx, &jobs, false)...)
-	if resp.Diagnostics.HasError() {
-		return
+// DeleteSchemaRoleJobs handles the business logic for deleting Schema Role jobs
+func (r *SchemaRoleJobResource) DeleteSchemaRoleJobs(ctx context.Context, jobs []SchemaRoleJobModel) error {
+	if len(jobs) == 0 {
+		return nil
 	}
 
 	tflog.Debug(ctx, "Starting Schema Role Job triggers deletion", map[string]interface{}{
 		"job_count": len(jobs),
 	})
 
-	// Delete each job individually since DeleteTrigger API doesn't support bulk operations
-	for _, job := range jobs {
+	// Delete each job individually
+	for i, job := range jobs {
 		name := job.Name.ValueString()
 		jobName := job.JobName.ValueString()
 		jobGroup := job.JobGroup.ValueString()
+
+		tflog.Debug(ctx, "Deleting job trigger", map[string]interface{}{
+			"job_index":    i + 1,
+			"trigger_name": name,
+		})
 
 		// Create delete request
 		deleteReq := openapi.DeleteTriggerRequest{
@@ -385,26 +294,19 @@ func (r *SchemaRoleJobResource) Delete(ctx context.Context, req resource.DeleteR
 				"error":        err.Error(),
 				"trigger_name": name,
 			})
-			resp.Diagnostics.AddError(
-				"API Call Error",
-				fmt.Sprintf("Error during API call to delete Schema Role Job trigger '%s': %s", name, err.Error()),
-			)
-			return
+			return fmt.Errorf("API call error for trigger '%s': %s", name, err.Error())
 		}
 
-		// Handle HTTP errors using job control error handler
+		// Handle HTTP errors
 		var diags diag.Diagnostics
 		if jobcontrolutil.JobControlHandleHTTPError(ctx, finalHttpResp, err, fmt.Sprintf("deleting Schema Role Job trigger '%s'", name), &diags) {
 			tflog.Error(ctx, "Failed to delete Schema Role Job trigger", map[string]interface{}{
 				"error":        fmt.Sprintf("%v", diags.Errors()),
 				"trigger_name": name,
 			})
-			for _, diagnostic := range diags {
-				if diagnostic.Severity() == diag.SeverityError {
-					resp.Diagnostics.AddError(diagnostic.Summary(), diagnostic.Detail())
-				}
+			if diags.HasError() {
+				return fmt.Errorf("HTTP error for trigger '%s': %s", name, diags.Errors()[0].Detail())
 			}
-			return
 		}
 
 		// Handle API response errors
@@ -415,12 +317,9 @@ func (r *SchemaRoleJobResource) Delete(ctx context.Context, req resource.DeleteR
 					"error":        fmt.Sprintf("%v", diags.Errors()),
 					"trigger_name": name,
 				})
-				for _, diagnostic := range diags {
-					if diagnostic.Severity() == diag.SeverityError {
-						resp.Diagnostics.AddError(diagnostic.Summary(), diagnostic.Detail())
-					}
+				if diags.HasError() {
+					return fmt.Errorf("API error for trigger '%s': %s", name, diags.Errors()[0].Detail())
 				}
-				return
 			}
 		}
 
@@ -430,6 +329,173 @@ func (r *SchemaRoleJobResource) Delete(ctx context.Context, req resource.DeleteR
 	}
 
 	tflog.Info(ctx, "All Schema Role Job triggers deleted successfully", map[string]interface{}{
+		"job_count": len(jobs),
+	})
+
+	return nil
+}
+
+func (r *SchemaRoleJobResource) Create(ctx context.Context, req resource.CreateRequest, resp *resource.CreateResponse) {
+	var plan SchemaRoleJobResourceModel
+
+	tflog.Debug(ctx, "Starting Schema Role Job resource creation")
+
+	// Extract plan from request
+	resp.Diagnostics.Append(req.Plan.Get(ctx, &plan)...)
+	if resp.Diagnostics.HasError() {
+		resp.Diagnostics.AddError(
+			"Plan Extraction Failed",
+			"Unable to extract Terraform plan from request",
+		)
+		return
+	}
+
+	// Extract jobs from the plan
+	var jobs []SchemaRoleJobModel
+	resp.Diagnostics.Append(plan.Jobs.ElementsAs(ctx, &jobs, false)...)
+	if resp.Diagnostics.HasError() {
+		resp.Diagnostics.AddError(
+			"Jobs Extraction Failed",
+			"Unable to extract jobs from Terraform plan",
+		)
+		return
+	}
+
+	// Call the business logic method
+	_, err := r.CreateOrUpdateSchemaRoleJobs(ctx, jobs, "create")
+	if err != nil {
+		tflog.Error(ctx, "Schema Role Job creation failed", map[string]interface{}{
+			"error": err.Error(),
+		})
+		resp.Diagnostics.AddError(
+			"Schema Role Job Creation Failed",
+			err.Error(),
+		)
+		return
+	}
+
+	// Save data into Terraform state
+	resp.Diagnostics.Append(resp.State.Set(ctx, &plan)...)
+	if resp.Diagnostics.HasError() {
+		resp.Diagnostics.AddError(
+			"State Update Failed",
+			"Unable to save Schema Role Job state",
+		)
+		return
+	}
+
+	tflog.Info(ctx, "Schema Role Job resource created successfully", map[string]interface{}{
+		"job_count": len(jobs),
+	})
+}
+
+func (r *SchemaRoleJobResource) Read(ctx context.Context, req resource.ReadRequest, resp *resource.ReadResponse) {
+	var state SchemaRoleJobResourceModel
+	resp.Diagnostics.Append(req.State.Get(ctx, &state)...)
+	if resp.Diagnostics.HasError() {
+		return
+	}
+
+	tflog.Debug(ctx, "Reading Schema Role Job triggers")
+
+	// For now, we'll keep the state as-is since the API doesn't provide a direct read method
+	resp.Diagnostics.Append(resp.State.Set(ctx, &state)...)
+}
+
+func (r *SchemaRoleJobResource) Update(ctx context.Context, req resource.UpdateRequest, resp *resource.UpdateResponse) {
+	var plan SchemaRoleJobResourceModel
+
+	tflog.Debug(ctx, "Starting Schema Role Job resource update")
+
+	// Extract plan from request
+	resp.Diagnostics.Append(req.Plan.Get(ctx, &plan)...)
+	if resp.Diagnostics.HasError() {
+		resp.Diagnostics.AddError(
+			"Plan Extraction Failed",
+			"Unable to extract Terraform plan from request",
+		)
+		return
+	}
+
+	// Extract jobs from the plan
+	var jobs []SchemaRoleJobModel
+	resp.Diagnostics.Append(plan.Jobs.ElementsAs(ctx, &jobs, false)...)
+	if resp.Diagnostics.HasError() {
+		resp.Diagnostics.AddError(
+			"Jobs Extraction Failed",
+			"Unable to extract jobs from Terraform plan",
+		)
+		return
+	}
+
+	// Call the business logic method
+	_, err := r.CreateOrUpdateSchemaRoleJobs(ctx, jobs, "update")
+	if err != nil {
+		tflog.Error(ctx, "Schema Role Job update failed", map[string]interface{}{
+			"error": err.Error(),
+		})
+		resp.Diagnostics.AddError(
+			"Schema Role Job Update Failed",
+			err.Error(),
+		)
+		return
+	}
+
+	// Save data into Terraform state
+	resp.Diagnostics.Append(resp.State.Set(ctx, &plan)...)
+	if resp.Diagnostics.HasError() {
+		resp.Diagnostics.AddError(
+			"State Update Failed",
+			"Unable to save Schema Role Job state",
+		)
+		return
+	}
+
+	tflog.Info(ctx, "Schema Role Job resource updated successfully", map[string]interface{}{
+		"job_count": len(jobs),
+	})
+}
+
+func (r *SchemaRoleJobResource) Delete(ctx context.Context, req resource.DeleteRequest, resp *resource.DeleteResponse) {
+	var state SchemaRoleJobResourceModel
+
+	tflog.Debug(ctx, "Starting Schema Role Job resource deletion")
+
+	// Extract state from request
+	resp.Diagnostics.Append(req.State.Get(ctx, &state)...)
+	if resp.Diagnostics.HasError() {
+		resp.Diagnostics.AddError(
+			"State Extraction Failed",
+			"Unable to extract Terraform state from request",
+		)
+		return
+	}
+
+	// Extract jobs from the state
+	var jobs []SchemaRoleJobModel
+	resp.Diagnostics.Append(state.Jobs.ElementsAs(ctx, &jobs, false)...)
+	if resp.Diagnostics.HasError() {
+		resp.Diagnostics.AddError(
+			"Jobs Extraction Failed",
+			"Unable to extract jobs from Terraform state",
+		)
+		return
+	}
+
+	// Call the business logic method
+	err := r.DeleteSchemaRoleJobs(ctx, jobs)
+	if err != nil {
+		tflog.Error(ctx, "Schema Role Job deletion failed", map[string]interface{}{
+			"error": err.Error(),
+		})
+		resp.Diagnostics.AddError(
+			"Schema Role Job Deletion Failed",
+			err.Error(),
+		)
+		return
+	}
+
+	tflog.Info(ctx, "Schema Role Job resource deleted successfully", map[string]interface{}{
 		"job_count": len(jobs),
 	})
 }
