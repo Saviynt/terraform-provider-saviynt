@@ -132,17 +132,30 @@ func (r *AccountsImportFullJobResource) Configure(ctx context.Context, req resou
 	tflog.Info(ctx, "AccountsImportFullJobResource configuration completed successfully")
 }
 
-func (r *AccountsImportFullJobResource) Create(ctx context.Context, req resource.CreateRequest, resp *resource.CreateResponse) {
-	var plan AccountsImportFullJobResourceModel
-	resp.Diagnostics.Append(req.Plan.Get(ctx, &plan)...)
-	if resp.Diagnostics.HasError() {
-		return
-	}
+// SetClient sets the client for testing purposes
+func (r *AccountsImportFullJobResource) SetClient(client client.SaviyntClientInterface) {
+	r.client = client
+}
 
-	var jobs []AccountsImportFullJobModel
-	resp.Diagnostics.Append(plan.Jobs.ElementsAs(ctx, &jobs, false)...)
-	if resp.Diagnostics.HasError() {
-		return
+// SetToken sets the token for testing purposes
+func (r *AccountsImportFullJobResource) SetToken(token string) {
+	r.token = token
+}
+
+// SetProvider sets the provider for testing purposes
+func (r *AccountsImportFullJobResource) SetProvider(provider client.SaviyntProviderInterface) {
+	r.provider = provider
+}
+
+// SetJobControlFactory sets the job control factory for testing purposes
+func (r *AccountsImportFullJobResource) SetJobControlFactory(factory client.JobControlFactoryInterface) {
+	r.jobControlFactory = factory
+}
+
+// CreateOrUpdateAccountsImportFullJobs handles the business logic for creating or updating accounts import full jobs
+func (r *AccountsImportFullJobResource) CreateOrUpdateAccountsImportFullJobs(ctx context.Context, jobs []AccountsImportFullJobModel, operation string) (*openapi.CreateOrUpdateTriggersResponse, error) {
+	if len(jobs) == 0 {
+		return nil, fmt.Errorf("at least one job must be specified")
 	}
 
 	tflog.Debug(ctx, "Starting Accounts Import Full Job triggers creation", map[string]interface{}{
@@ -153,30 +166,22 @@ func (r *AccountsImportFullJobResource) Create(ctx context.Context, req resource
 
 	for i, job := range jobs {
 		// Validate job name
-		if job.JobName.ValueString() != "AccountsImportFullJob" {
-			resp.Diagnostics.AddError(
-				"Invalid Job Name",
-				fmt.Sprintf("Job %d: job_name must be 'AccountsImportFullJob', got '%s'", i, job.JobName.ValueString()),
-			)
-			return
+		if job.JobName.IsNull() || job.JobName.ValueString() != "AccountsImportFullJob" {
+			return nil, fmt.Errorf("job %d: job_name must be 'AccountsImportFullJob', got '%s'", i+1, job.JobName.ValueString())
 		}
 
 		// Validate required fields
 		if job.TriggerName.IsNull() || job.TriggerName.ValueString() == "" {
-			resp.Diagnostics.AddError("Validation Error", fmt.Sprintf("Job %d: trigger_name is required", i))
-			return
+			return nil, fmt.Errorf("job %d: trigger_name is required", i+1)
 		}
 		if job.JobGroup.IsNull() || job.JobGroup.ValueString() == "" {
-			resp.Diagnostics.AddError("Validation Error", fmt.Sprintf("Job %d: job_group is required", i))
-			return
+			return nil, fmt.Errorf("job %d: job_group is required", i+1)
 		}
 		if job.CronExpression.IsNull() || job.CronExpression.ValueString() == "" {
-			resp.Diagnostics.AddError("Validation Error", fmt.Sprintf("Job %d: cron_expression is required", i))
-			return
+			return nil, fmt.Errorf("job %d: cron_expression is required", i+1)
 		}
 		if job.ConnectionName.IsNull() || job.ConnectionName.ValueString() == "" {
-			resp.Diagnostics.AddError("Validation Error", fmt.Sprintf("Job %d: connection_name is required", i))
-			return
+			return nil, fmt.Errorf("job %d: connection_name is required", i+1)
 		}
 
 		// Create the value map
@@ -209,7 +214,7 @@ func (r *AccountsImportFullJobResource) Create(ctx context.Context, req resource
 	// Make the API call
 	var apiResp *openapi.CreateOrUpdateTriggersResponse
 	var finalHttpResp *http.Response
-	err := r.provider.AuthenticatedAPICallWithRetry(ctx, "create_accounts_import_full_jobs", func(token string) error {
+	err := r.provider.AuthenticatedAPICallWithRetry(ctx, fmt.Sprintf("%s_accounts_import_full_jobs", operation), func(token string) error {
 		jobOps := r.jobControlFactory.CreateJobControlOperations(r.client.APIBaseURL(), token)
 		apiResponse, httpResp, err := jobOps.CreateOrUpdateTriggers(ctx, createReq)
 		if httpResp != nil && httpResp.StatusCode == 401 {
@@ -224,11 +229,7 @@ func (r *AccountsImportFullJobResource) Create(ctx context.Context, req resource
 		tflog.Error(ctx, "Error during API call", map[string]interface{}{
 			"error": err.Error(),
 		})
-		resp.Diagnostics.AddError(
-			"API Call Error",
-			fmt.Sprintf("Error during API call to create Accounts Import Full Job triggers: %s", err.Error()),
-		)
-		return
+		return nil, fmt.Errorf("API call error: %s", err.Error())
 	}
 
 	// Handle HTTP errors using job control error handler
@@ -237,12 +238,9 @@ func (r *AccountsImportFullJobResource) Create(ctx context.Context, req resource
 		tflog.Error(ctx, "Failed to create Accounts Import Full Job triggers", map[string]interface{}{
 			"error": fmt.Sprintf("%v", diags.Errors()),
 		})
-		for _, diagnostic := range diags {
-			if diagnostic.Severity() == diag.SeverityError {
-				resp.Diagnostics.AddError(diagnostic.Summary(), diagnostic.Detail())
-			}
+		if diags.HasError() {
+			return nil, fmt.Errorf("HTTP error: %s", diags.Errors()[0].Detail())
 		}
-		return
 	}
 
 	// Handle API response errors
@@ -250,20 +248,70 @@ func (r *AccountsImportFullJobResource) Create(ctx context.Context, req resource
 		tflog.Error(ctx, "API error during trigger creation", map[string]interface{}{
 			"error": fmt.Sprintf("%v", diags.Errors()),
 		})
-		for _, diagnostic := range diags {
-			if diagnostic.Severity() == diag.SeverityError {
-				resp.Diagnostics.AddError(diagnostic.Summary(), diagnostic.Detail())
-			}
+		if diags.HasError() {
+			return nil, fmt.Errorf("API error: %s", diags.Errors()[0].Detail())
 		}
-		return
 	}
 
 	tflog.Info(ctx, "Accounts Import Full Job triggers created successfully", map[string]interface{}{
 		"job_count": len(jobs),
 	})
 
+	return apiResp, nil
+}
+
+func (r *AccountsImportFullJobResource) Create(ctx context.Context, req resource.CreateRequest, resp *resource.CreateResponse) {
+	var plan AccountsImportFullJobResourceModel
+
+	tflog.Debug(ctx, "Starting Accounts Import Full Job resource creation")
+
+	// Extract plan from request
+	resp.Diagnostics.Append(req.Plan.Get(ctx, &plan)...)
+	if resp.Diagnostics.HasError() {
+		resp.Diagnostics.AddError(
+			"Plan Extraction Failed",
+			"Unable to extract Terraform plan from request",
+		)
+		return
+	}
+
+	// Extract jobs from the plan
+	var jobs []AccountsImportFullJobModel
+	resp.Diagnostics.Append(plan.Jobs.ElementsAs(ctx, &jobs, false)...)
+	if resp.Diagnostics.HasError() {
+		resp.Diagnostics.AddError(
+			"Jobs Extraction Failed",
+			"Unable to extract jobs from Terraform plan",
+		)
+		return
+	}
+
+	// Call the business logic method
+	_, err := r.CreateOrUpdateAccountsImportFullJobs(ctx, jobs, "create")
+	if err != nil {
+		tflog.Error(ctx, "Accounts Import Full Job creation failed", map[string]interface{}{
+			"error": err.Error(),
+		})
+		resp.Diagnostics.AddError(
+			"Accounts Import Full Job Creation Failed",
+			err.Error(),
+		)
+		return
+	}
+
 	// Save data into Terraform state
 	resp.Diagnostics.Append(resp.State.Set(ctx, &plan)...)
+	if resp.Diagnostics.HasError() {
+		resp.Diagnostics.AddError(
+			"State Update Failed",
+			"Unable to save Accounts Import Full Job state",
+		)
+		return
+	}
+
+	tflog.Info(ctx, "Accounts Import Full Job resource created successfully", map[string]interface{}{
+		"job_count": len(jobs),
+	})
 }
 
 func (r *AccountsImportFullJobResource) Read(ctx context.Context, req resource.ReadRequest, resp *resource.ReadResponse) {
@@ -281,142 +329,74 @@ func (r *AccountsImportFullJobResource) Read(ctx context.Context, req resource.R
 
 func (r *AccountsImportFullJobResource) Update(ctx context.Context, req resource.UpdateRequest, resp *resource.UpdateResponse) {
 	var plan AccountsImportFullJobResourceModel
+
+	tflog.Debug(ctx, "Starting Accounts Import Full Job resource update")
+
+	// Extract plan from request
 	resp.Diagnostics.Append(req.Plan.Get(ctx, &plan)...)
 	if resp.Diagnostics.HasError() {
+		resp.Diagnostics.AddError(
+			"Plan Extraction Failed",
+			"Unable to extract Terraform plan from request",
+		)
 		return
 	}
 
+	// Extract jobs from the plan
 	var jobs []AccountsImportFullJobModel
 	resp.Diagnostics.Append(plan.Jobs.ElementsAs(ctx, &jobs, false)...)
 	if resp.Diagnostics.HasError() {
+		resp.Diagnostics.AddError(
+			"Jobs Extraction Failed",
+			"Unable to extract jobs from Terraform plan",
+		)
 		return
 	}
 
-	tflog.Debug(ctx, "Starting Accounts Import Full Job triggers update", map[string]interface{}{
-		"job_count": len(jobs),
-	})
-
-	var triggers []openapi.TriggerItem
-
-	for i, job := range jobs {
-		// Validate job name
-		if job.JobName.ValueString() != "AccountsImportFullJob" {
-			resp.Diagnostics.AddError(
-				"Invalid Job Name",
-				fmt.Sprintf("Job %d: job_name must be 'AccountsImportFullJob', got '%s'", i, job.JobName.ValueString()),
-			)
-			return
-		}
-
-		// Create the value map
-		valueMap := openapi.NewAccountsImportFullJobAllOfValueMap(job.ConnectionName.ValueString())
-
-		// Create the job trigger
-		jobTrigger := openapi.NewAccountsImportFullJob(
-			job.TriggerName.ValueString(),
-			job.JobName.ValueString(),
-			job.JobGroup.ValueString(),
-			job.CronExpression.ValueString(),
-		)
-		jobTrigger.SetValueMap(*valueMap)
-
-		// Set optional trigger group if provided
-		if !job.TriggerGroup.IsNull() && job.TriggerGroup.ValueString() != "" {
-			jobTrigger.SetTriggergroup(job.TriggerGroup.ValueString())
-		}
-
-		// Create trigger item
-		triggerItem := openapi.AccountsImportFullJobAsTriggerItem(jobTrigger)
-		triggers = append(triggers, triggerItem)
-	}
-
-	// Create the request
-	updateReq := openapi.CreateOrUpdateTriggersRequest{
-		Triggers: triggers,
-	}
-
-	// Make the API call
-	var apiResp *openapi.CreateOrUpdateTriggersResponse
-	var finalHttpResp *http.Response
-	err := r.provider.AuthenticatedAPICallWithRetry(ctx, "update_accounts_import_full_jobs", func(token string) error {
-		jobOps := r.jobControlFactory.CreateJobControlOperations(r.client.APIBaseURL(), token)
-		apiResponse, httpResp, err := jobOps.CreateOrUpdateTriggers(ctx, updateReq)
-		if httpResp != nil && httpResp.StatusCode == 401 {
-			return fmt.Errorf("401 unauthorized")
-		}
-		apiResp = apiResponse
-		finalHttpResp = httpResp
-		return err
-	})
-
-	if err != nil && finalHttpResp != nil && finalHttpResp.StatusCode != http.StatusPreconditionFailed {
-		tflog.Error(ctx, "Error during API call", map[string]interface{}{
+	// Call the business logic method
+	_, err := r.CreateOrUpdateAccountsImportFullJobs(ctx, jobs, "update")
+	if err != nil {
+		tflog.Error(ctx, "Accounts Import Full Job update failed", map[string]interface{}{
 			"error": err.Error(),
 		})
 		resp.Diagnostics.AddError(
-			"API Call Error",
-			fmt.Sprintf("Error during API call to update Accounts Import Full Job triggers: %s", err.Error()),
+			"Accounts Import Full Job Update Failed",
+			err.Error(),
 		)
 		return
 	}
 
-	// Handle HTTP errors using job control error handler
-	var diags diag.Diagnostics
-	if jobcontrolutil.JobControlHandleHTTPError(ctx, finalHttpResp, err, "updating Accounts Import Full Job triggers", &diags) {
-		tflog.Error(ctx, "Failed to update Accounts Import Full Job triggers", map[string]interface{}{
-			"error": fmt.Sprintf("%v", diags.Errors()),
-		})
-		for _, diagnostic := range diags {
-			if diagnostic.Severity() == diag.SeverityError {
-				resp.Diagnostics.AddError(diagnostic.Summary(), diagnostic.Detail())
-			}
-		}
-		return
-	}
-
-	// Handle API response errors
-	if apiResp != nil && jobcontrolutil.JobControlHandleAPIError(ctx, &apiResp.ErrorCode, &apiResp.Msg, "updating Accounts Import Full Job triggers", &diags) {
-		tflog.Error(ctx, "API error during trigger update", map[string]interface{}{
-			"error": fmt.Sprintf("%v", diags.Errors()),
-		})
-		for _, diagnostic := range diags {
-			if diagnostic.Severity() == diag.SeverityError {
-				resp.Diagnostics.AddError(diagnostic.Summary(), diagnostic.Detail())
-			}
-		}
-		return
-	}
-
-	tflog.Info(ctx, "Accounts Import Full Job triggers updated successfully", map[string]interface{}{
-		"job_count": len(jobs),
-	})
-
 	// Save data into Terraform state
 	resp.Diagnostics.Append(resp.State.Set(ctx, &plan)...)
+	if resp.Diagnostics.HasError() {
+		resp.Diagnostics.AddError(
+			"State Update Failed",
+			"Unable to save Accounts Import Full Job state",
+		)
+		return
+	}
+
+	tflog.Info(ctx, "Accounts Import Full Job resource updated successfully", map[string]interface{}{
+		"job_count": len(jobs),
+	})
 }
 
-func (r *AccountsImportFullJobResource) Delete(ctx context.Context, req resource.DeleteRequest, resp *resource.DeleteResponse) {
-	var state AccountsImportFullJobResourceModel
-	resp.Diagnostics.Append(req.State.Get(ctx, &state)...)
-	if resp.Diagnostics.HasError() {
-		return
-	}
-
-	var jobs []AccountsImportFullJobModel
-	resp.Diagnostics.Append(state.Jobs.ElementsAs(ctx, &jobs, false)...)
-	if resp.Diagnostics.HasError() {
-		return
-	}
-
+// DeleteAccountsImportFullJobs handles the business logic for deleting accounts import full jobs
+func (r *AccountsImportFullJobResource) DeleteAccountsImportFullJobs(ctx context.Context, jobs []AccountsImportFullJobModel) error {
 	tflog.Debug(ctx, "Starting Accounts Import Full Job triggers deletion", map[string]interface{}{
 		"job_count": len(jobs),
 	})
 
 	// Delete each job individually since DeleteTrigger API doesn't support bulk operations
-	for _, job := range jobs {
+	for i, job := range jobs {
 		triggerName := job.TriggerName.ValueString()
 		jobName := job.JobName.ValueString()
 		jobGroup := job.JobGroup.ValueString()
+
+		tflog.Debug(ctx, "Deleting job trigger", map[string]interface{}{
+			"job_index":    i + 1,
+			"trigger_name": triggerName,
+		})
 
 		// Create delete request
 		deleteReq := openapi.DeleteTriggerRequest{
@@ -444,11 +424,7 @@ func (r *AccountsImportFullJobResource) Delete(ctx context.Context, req resource
 				"error":        err.Error(),
 				"trigger_name": triggerName,
 			})
-			resp.Diagnostics.AddError(
-				"API Call Error",
-				fmt.Sprintf("Error during API call to delete Accounts Import Full Job trigger '%s': %s", triggerName, err.Error()),
-			)
-			return
+			return fmt.Errorf("API call error for trigger '%s': %s", triggerName, err.Error())
 		}
 
 		// Handle HTTP errors using job control error handler
@@ -458,12 +434,9 @@ func (r *AccountsImportFullJobResource) Delete(ctx context.Context, req resource
 				"error":        fmt.Sprintf("%v", diags.Errors()),
 				"trigger_name": triggerName,
 			})
-			for _, diagnostic := range diags {
-				if diagnostic.Severity() == diag.SeverityError {
-					resp.Diagnostics.AddError(diagnostic.Summary(), diagnostic.Detail())
-				}
+			if diags.HasError() {
+				return fmt.Errorf("HTTP error for trigger '%s': %s", triggerName, diags.Errors()[0].Detail())
 			}
-			return
 		}
 
 		// Handle API response errors
@@ -474,12 +447,9 @@ func (r *AccountsImportFullJobResource) Delete(ctx context.Context, req resource
 					"error":        fmt.Sprintf("%v", diags.Errors()),
 					"trigger_name": triggerName,
 				})
-				for _, diagnostic := range diags {
-					if diagnostic.Severity() == diag.SeverityError {
-						resp.Diagnostics.AddError(diagnostic.Summary(), diagnostic.Detail())
-					}
+				if diags.HasError() {
+					return fmt.Errorf("API error for trigger '%s': %s", triggerName, diags.Errors()[0].Detail())
 				}
-				return
 			}
 		}
 
@@ -489,6 +459,52 @@ func (r *AccountsImportFullJobResource) Delete(ctx context.Context, req resource
 	}
 
 	tflog.Info(ctx, "All Accounts Import Full Job triggers deleted successfully", map[string]interface{}{
+		"job_count": len(jobs),
+	})
+
+	return nil
+}
+
+func (r *AccountsImportFullJobResource) Delete(ctx context.Context, req resource.DeleteRequest, resp *resource.DeleteResponse) {
+	var state AccountsImportFullJobResourceModel
+
+	tflog.Debug(ctx, "Starting Accounts Import Full Job resource deletion")
+
+	// Extract state from request
+	resp.Diagnostics.Append(req.State.Get(ctx, &state)...)
+	if resp.Diagnostics.HasError() {
+		resp.Diagnostics.AddError(
+			"State Extraction Failed",
+			"Unable to extract Terraform state from request",
+		)
+		return
+	}
+
+	// Extract jobs from the state
+	var jobs []AccountsImportFullJobModel
+	resp.Diagnostics.Append(state.Jobs.ElementsAs(ctx, &jobs, false)...)
+	if resp.Diagnostics.HasError() {
+		resp.Diagnostics.AddError(
+			"Jobs Extraction Failed",
+			"Unable to extract jobs from Terraform state",
+		)
+		return
+	}
+
+	// Call the business logic method
+	err := r.DeleteAccountsImportFullJobs(ctx, jobs)
+	if err != nil {
+		tflog.Error(ctx, "Accounts Import Full Job deletion failed", map[string]interface{}{
+			"error": err.Error(),
+		})
+		resp.Diagnostics.AddError(
+			"Accounts Import Full Job Deletion Failed",
+			err.Error(),
+		)
+		return
+	}
+
+	tflog.Info(ctx, "Accounts Import Full Job resource deleted successfully", map[string]interface{}{
 		"job_count": len(jobs),
 	})
 }
