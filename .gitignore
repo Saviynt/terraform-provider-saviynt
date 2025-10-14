@@ -30,6 +30,7 @@ website/node_modules
 website/vendor
 test_secrets.csv
 test_provider/
+*.out
 
 # Test exclusions
 !command/test-fixtures/**/*.tfstate
