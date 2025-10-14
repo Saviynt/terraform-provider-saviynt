@@ -613,6 +613,12 @@ The following limitations are present in the latest version of the provider. The
 - **Manual job modifications** made in Saviynt UI will not be detected by Terraform 
 - Users can only **create**, **update**, and **delete** job triggers through Terraform for the time being
 
+### 8. Job Control Resources
+- **State management is not supported** for job resources created or modified outside of Terraform (e.g., via Saviynt UI)
+- **Import functionality is not available** for existing job triggers - jobs must be created through Terraform
+- **Manual job modifications** made in Saviynt UI will not be detected by Terraform 
+- Users can only **create**, **update**, and **delete** job triggers through Terraform for the time being
+
 ---
 
 ## Troubleshooting Guide – Breaking Changes, API Errors & Configuration Tips
