@@ -20,13 +20,13 @@ import (
 	openapi "github.com/saviynt/saviynt-api-go-client/connections"
 )
 
-var _ datasource.DataSource = &adConnectionsDataSource{}
+var _ datasource.DataSource = &AdConnectionsDataSource{}
 
 // Initialize error codes for AD Connection datasource operations
 var adDatasourceErrorCodes = errorsutil.NewConnectorErrorCodes(errorsutil.ConnectorTypeAD)
 
 // ADConnectionsDataSource defines the data source
-type adConnectionsDataSource struct {
+type AdConnectionsDataSource struct {
 	client            client.SaviyntClientInterface
 	token             string
 	provider          client.SaviyntProviderInterface
@@ -105,7 +105,7 @@ type ADConnectionAttributes struct {
 
 // NewADConnectionsDataSource creates a new AD connections data source with default factory
 func NewADConnectionsDataSource() datasource.DataSource {
-	return &adConnectionsDataSource{
+	return &AdConnectionsDataSource{
 		connectionFactory: &client.DefaultConnectionFactory{},
 	}
 }
@@ -113,28 +113,28 @@ func NewADConnectionsDataSource() datasource.DataSource {
 // NewADConnectionsDataSourceWithFactory creates a new AD connections data source with custom factory
 // Used primarily for testing with mock factories
 func NewADConnectionsDataSourceWithFactory(factory client.ConnectionFactoryInterface) datasource.DataSource {
-	return &adConnectionsDataSource{
+	return &AdConnectionsDataSource{
 		connectionFactory: factory,
 	}
 }
 
 // SetClient sets the client for testing purposes
-func (d *adConnectionsDataSource) SetClient(client client.SaviyntClientInterface) {
+func (d *AdConnectionsDataSource) SetClient(client client.SaviyntClientInterface) {
 	d.client = client
 }
 
 // SetToken sets the token for testing purposes
-func (d *adConnectionsDataSource) SetToken(token string) {
+func (d *AdConnectionsDataSource) SetToken(token string) {
 	d.token = token
 }
 
 // SetProvider sets the provider for testing purposes
-func (d *adConnectionsDataSource) SetProvider(provider client.SaviyntProviderInterface) {
+func (d *AdConnectionsDataSource) SetProvider(provider client.SaviyntProviderInterface) {
 	d.provider = provider
 }
 
 // Metadata sets the data source type name for Terraform
-func (d *adConnectionsDataSource) Metadata(ctx context.Context, req datasource.MetadataRequest, resp *datasource.MetadataResponse) {
+func (d *AdConnectionsDataSource) Metadata(ctx context.Context, req datasource.MetadataRequest, resp *datasource.MetadataResponse) {
 	resp.TypeName = "saviynt_ad_connection_datasource"
 }
 
@@ -217,7 +217,7 @@ func ADConnectorsDataSourceSchema() map[string]schema.Attribute {
 }
 
 // Schema defines the structure and attributes available for the AD connection data source
-func (d *adConnectionsDataSource) Schema(ctx context.Context, req datasource.SchemaRequest, resp *datasource.SchemaResponse) {
+func (d *AdConnectionsDataSource) Schema(ctx context.Context, req datasource.SchemaRequest, resp *datasource.SchemaResponse) {
 	resp.Schema = schema.Schema{
 		Description: util.ADConnDataSourceDescription,
 		Attributes:  connectionsutil.MergeDataSourceAttributes(BaseConnectorDataSourceSchema(), ADConnectorsDataSourceSchema()),
@@ -226,7 +226,7 @@ func (d *adConnectionsDataSource) Schema(ctx context.Context, req datasource.Sch
 
 // Configure initializes the data source with provider configuration
 // Sets up client and authentication token for API operations
-func (d *adConnectionsDataSource) Configure(ctx context.Context, req datasource.ConfigureRequest, resp *datasource.ConfigureResponse) {
+func (d *AdConnectionsDataSource) Configure(ctx context.Context, req datasource.ConfigureRequest, resp *datasource.ConfigureResponse) {
 	opCtx := errorsutil.CreateOperationContext(errorsutil.ConnectorTypeAD, "configure", "")
 	ctx = opCtx.AddContextToLogger(ctx)
 
@@ -264,7 +264,7 @@ func (d *adConnectionsDataSource) Configure(ctx context.Context, req datasource.
 
 // Read retrieves AD connection details from Saviynt and populates the Terraform state
 // Supports lookup by connection name or connection key with comprehensive error handling
-func (d *adConnectionsDataSource) Read(ctx context.Context, req datasource.ReadRequest, resp *datasource.ReadResponse) {
+func (d *AdConnectionsDataSource) Read(ctx context.Context, req datasource.ReadRequest, resp *datasource.ReadResponse) {
 	var state ADConnectionDataSourceModel
 
 	opCtx := errorsutil.CreateOperationContext(errorsutil.ConnectorTypeAD, "datasource_read", "")
@@ -367,7 +367,7 @@ func (d *adConnectionsDataSource) Read(ctx context.Context, req datasource.ReadR
 // ReadADConnectionDetails retrieves AD connection details from Saviynt API
 // Handles both connection name and connection key based lookups using factory pattern
 // Returns standardized errors with proper correlation tracking and sensitive data sanitization
-func (d *adConnectionsDataSource) ReadADConnectionDetails(ctx context.Context, connectionName string, connectionKey *int64) (*openapi.GetConnectionDetailsResponse, error) {
+func (d *AdConnectionsDataSource) ReadADConnectionDetails(ctx context.Context, connectionName string, connectionKey *int64) (*openapi.GetConnectionDetailsResponse, error) {
 	opCtx := errorsutil.CreateOperationContext(errorsutil.ConnectorTypeAD, "api_read", connectionName)
 	logCtx := opCtx.AddContextToLogger(ctx)
 
@@ -412,7 +412,7 @@ func (d *adConnectionsDataSource) ReadADConnectionDetails(ctx context.Context, c
 
 // ValidateADConnectionResponse validates that the API response contains valid AD connection data
 // Returns standardized error if validation fails
-func (d *adConnectionsDataSource) ValidateADConnectionResponse(apiResp *openapi.GetConnectionDetailsResponse) error {
+func (d *AdConnectionsDataSource) ValidateADConnectionResponse(apiResp *openapi.GetConnectionDetailsResponse) error {
 	if apiResp != nil && apiResp.ADConnectionResponse == nil {
 		return fmt.Errorf("verify the connection type - AD connection response is nil")
 	}
@@ -421,7 +421,7 @@ func (d *adConnectionsDataSource) ValidateADConnectionResponse(apiResp *openapi.
 
 // UpdateModelFromADConnectionResponse maps API response data to the Terraform state model
 // It handles both base connection fields and detailed connection attributes
-func (d *adConnectionsDataSource) UpdateModelFromADConnectionResponse(state *ADConnectionDataSourceModel, apiResp *openapi.GetConnectionDetailsResponse) {
+func (d *AdConnectionsDataSource) UpdateModelFromADConnectionResponse(state *ADConnectionDataSourceModel, apiResp *openapi.GetConnectionDetailsResponse) {
 	// Map base connection fields
 	d.MapBaseADConnectionFields(state, apiResp)
 
@@ -431,7 +431,7 @@ func (d *adConnectionsDataSource) UpdateModelFromADConnectionResponse(state *ADC
 
 // MapBaseADConnectionFields maps basic connection fields from API response to state model
 // These are common fields available for all connection types
-func (d *adConnectionsDataSource) MapBaseADConnectionFields(state *ADConnectionDataSourceModel, apiResp *openapi.GetConnectionDetailsResponse) {
+func (d *AdConnectionsDataSource) MapBaseADConnectionFields(state *ADConnectionDataSourceModel, apiResp *openapi.GetConnectionDetailsResponse) {
 	state.Msg = util.SafeStringDatasource(apiResp.ADConnectionResponse.Msg)
 	state.ErrorCode = util.SafeInt64(apiResp.ADConnectionResponse.Errorcode)
 	connectionKey := util.SafeInt64(apiResp.ADConnectionResponse.Connectionkey)
@@ -449,7 +449,7 @@ func (d *adConnectionsDataSource) MapBaseADConnectionFields(state *ADConnectionD
 
 // MapADConnectionAttributes maps detailed AD connection attributes from API response to state model
 // Returns nil if no connection attributes are present in the response
-func (d *adConnectionsDataSource) MapADConnectionAttributes(state *ADConnectionDataSourceModel, apiResp *openapi.GetConnectionDetailsResponse) {
+func (d *AdConnectionsDataSource) MapADConnectionAttributes(state *ADConnectionDataSourceModel, apiResp *openapi.GetConnectionDetailsResponse) {
 	if apiResp.ADConnectionResponse.Connectionattributes == nil {
 		state.ConnectionAttributes = nil
 		return
@@ -525,7 +525,7 @@ func (d *adConnectionsDataSource) MapADConnectionAttributes(state *ADConnectionD
 
 // MapADTimeoutConfig maps connection timeout configuration from API response to state model
 // Only maps timeout config if it exists in the API response
-func (d *adConnectionsDataSource) MapADTimeoutConfig(attrs *openapi.ADConnectionAttributes, connectionAttrs *ADConnectionAttributes) {
+func (d *AdConnectionsDataSource) MapADTimeoutConfig(attrs *openapi.ADConnectionAttributes, connectionAttrs *ADConnectionAttributes) {
 	if attrs.ConnectionTimeoutConfig != nil {
 		connectionAttrs.ConnectionTimeoutConfig = &ConnectionTimeoutConfig{
 			RetryWait:               util.SafeInt64(attrs.ConnectionTimeoutConfig.RetryWait),
@@ -542,7 +542,7 @@ func (d *adConnectionsDataSource) MapADTimeoutConfig(attrs *openapi.ADConnection
 // HandleADAuthenticationLogic processes the authenticate flag to control sensitive data visibility
 // When authenticate=false, connection_attributes are removed from state to prevent sensitive data exposure
 // When authenticate=true, all connection_attributes are returned in state
-func (d *adConnectionsDataSource) HandleADAuthenticationLogic(state *ADConnectionDataSourceModel, resp *datasource.ReadResponse) {
+func (d *AdConnectionsDataSource) HandleADAuthenticationLogic(state *ADConnectionDataSourceModel, resp *datasource.ReadResponse) {
 	if !state.Authenticate.IsNull() && !state.Authenticate.IsUnknown() {
 		if state.Authenticate.ValueBool() {
 			tflog.Info(context.Background(), "Authentication enabled - returning all connection attributes")
