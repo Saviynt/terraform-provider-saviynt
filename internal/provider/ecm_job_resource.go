@@ -132,23 +132,30 @@ func (r *EcmJobResource) Configure(ctx context.Context, req resource.ConfigureRe
 	tflog.Info(ctx, "EcmJobResource configuration completed successfully")
 }
 
-func (r *EcmJobResource) Create(ctx context.Context, req resource.CreateRequest, resp *resource.CreateResponse) {
-	var plan EcmJobResourceModel
-	resp.Diagnostics.Append(req.Plan.Get(ctx, &plan)...)
-	if resp.Diagnostics.HasError() {
-		return
-	}
+// SetClient sets the client for testing purposes
+func (r *EcmJobResource) SetClient(client client.SaviyntClientInterface) {
+	r.client = client
+}
 
-	// Extract jobs from the plan
-	var jobs []EcmJobModel
-	resp.Diagnostics.Append(plan.Jobs.ElementsAs(ctx, &jobs, false)...)
-	if resp.Diagnostics.HasError() {
-		return
-	}
+// SetToken sets the token for testing purposes
+func (r *EcmJobResource) SetToken(token string) {
+	r.token = token
+}
 
+// SetProvider sets the provider for testing purposes
+func (r *EcmJobResource) SetProvider(provider client.SaviyntProviderInterface) {
+	r.provider = provider
+}
+
+// SetJobControlFactory sets the job control factory for testing purposes
+func (r *EcmJobResource) SetJobControlFactory(factory client.JobControlFactoryInterface) {
+	r.jobControlFactory = factory
+}
+
+// CreateOrUpdateEcmJobs handles the business logic for creating or updating ECM jobs
+func (r *EcmJobResource) CreateOrUpdateEcmJobs(ctx context.Context, jobs []EcmJobModel, operation string) (*openapi.CreateOrUpdateTriggersResponse, error) {
 	if len(jobs) == 0 {
-		resp.Diagnostics.AddError("Validation Error", "At least one job must be specified")
-		return
+		return nil, fmt.Errorf("at least one job must be specified")
 	}
 
 	tflog.Debug(ctx, "Starting ECM Job triggers creation", map[string]interface{}{
@@ -161,25 +168,18 @@ func (r *EcmJobResource) Create(ctx context.Context, req resource.CreateRequest,
 	for i, job := range jobs {
 		// Validate job name is EcmJob
 		if job.JobName.IsNull() || job.JobName.ValueString() != "EcmJob" {
-			resp.Diagnostics.AddError(
-				"Validation Error", 
-				fmt.Sprintf("Job %d: job_name must be 'EcmJob', got '%s'", i+1, job.JobName.ValueString()),
-			)
-			return
+			return nil, fmt.Errorf("job %d: job_name must be 'EcmJob', got '%s'", i+1, job.JobName.ValueString())
 		}
 
 		// Validate required fields
 		if job.TriggerName.IsNull() || job.TriggerName.ValueString() == "" {
-			resp.Diagnostics.AddError("Validation Error", fmt.Sprintf("Job %d: trigger_name is required", i+1))
-			return
+			return nil, fmt.Errorf("job %d: trigger_name is required", i+1)
 		}
 		if job.JobGroup.IsNull() || job.JobGroup.ValueString() == "" {
-			resp.Diagnostics.AddError("Validation Error", fmt.Sprintf("Job %d: job_group is required", i+1))
-			return
+			return nil, fmt.Errorf("job %d: job_group is required", i+1)
 		}
 		if job.CronExpression.IsNull() || job.CronExpression.ValueString() == "" {
-			resp.Diagnostics.AddError("Validation Error", fmt.Sprintf("Job %d: cron_expression is required", i+1))
-			return
+			return nil, fmt.Errorf("job %d: cron_expression is required", i+1)
 		}
 
 		// Create the value map
@@ -213,7 +213,7 @@ func (r *EcmJobResource) Create(ctx context.Context, req resource.CreateRequest,
 	// Make the API call
 	var apiResp *openapi.CreateOrUpdateTriggersResponse
 	var finalHttpResp *http.Response
-	err := r.provider.AuthenticatedAPICallWithRetry(ctx, "create_ecm_jobs", func(token string) error {
+	err := r.provider.AuthenticatedAPICallWithRetry(ctx, fmt.Sprintf("%s_ecm_jobs", operation), func(token string) error {
 		jobOps := r.jobControlFactory.CreateJobControlOperations(r.client.APIBaseURL(), token)
 		apiResponse, httpResp, err := jobOps.CreateOrUpdateTriggers(ctx, createReq)
 		if httpResp != nil && httpResp.StatusCode == 401 {
@@ -228,11 +228,7 @@ func (r *EcmJobResource) Create(ctx context.Context, req resource.CreateRequest,
 		tflog.Error(ctx, "Error during API call", map[string]interface{}{
 			"error": err.Error(),
 		})
-		resp.Diagnostics.AddError(
-			"API Call Error",
-			fmt.Sprintf("Error during API call to create ECM Job triggers: %s", err.Error()),
-		)
-		return
+		return nil, fmt.Errorf("API call error: %s", err.Error())
 	}
 
 	// Handle HTTP errors
@@ -241,12 +237,9 @@ func (r *EcmJobResource) Create(ctx context.Context, req resource.CreateRequest,
 		tflog.Error(ctx, "Failed to create ECM Job triggers", map[string]interface{}{
 			"error": fmt.Sprintf("%v", diags.Errors()),
 		})
-		for _, diagnostic := range diags {
-			if diagnostic.Severity() == diag.SeverityError {
-				resp.Diagnostics.AddError(diagnostic.Summary(), diagnostic.Detail())
-			}
+		if diags.HasError() {
+			return nil, fmt.Errorf("HTTP error: %s", diags.Errors()[0].Detail())
 		}
-		return
 	}
 
 	// Handle API response errors
@@ -254,20 +247,70 @@ func (r *EcmJobResource) Create(ctx context.Context, req resource.CreateRequest,
 		tflog.Error(ctx, "API error during trigger creation", map[string]interface{}{
 			"error": fmt.Sprintf("%v", diags.Errors()),
 		})
-		for _, diagnostic := range diags {
-			if diagnostic.Severity() == diag.SeverityError {
-				resp.Diagnostics.AddError(diagnostic.Summary(), diagnostic.Detail())
-			}
+		if diags.HasError() {
+			return nil, fmt.Errorf("API error: %s", diags.Errors()[0].Detail())
 		}
-		return
 	}
 
 	tflog.Info(ctx, "ECM Job triggers created successfully", map[string]interface{}{
 		"job_count": len(jobs),
 	})
 
+	return apiResp, nil
+}
+
+func (r *EcmJobResource) Create(ctx context.Context, req resource.CreateRequest, resp *resource.CreateResponse) {
+	var plan EcmJobResourceModel
+
+	tflog.Debug(ctx, "Starting ECM Job resource creation")
+
+	// Extract plan from request
+	resp.Diagnostics.Append(req.Plan.Get(ctx, &plan)...)
+	if resp.Diagnostics.HasError() {
+		resp.Diagnostics.AddError(
+			"Plan Extraction Failed",
+			"Unable to extract Terraform plan from request",
+		)
+		return
+	}
+
+	// Extract jobs from the plan
+	var jobs []EcmJobModel
+	resp.Diagnostics.Append(plan.Jobs.ElementsAs(ctx, &jobs, false)...)
+	if resp.Diagnostics.HasError() {
+		resp.Diagnostics.AddError(
+			"Jobs Extraction Failed",
+			"Unable to extract jobs from Terraform plan",
+		)
+		return
+	}
+
+	// Call the business logic method
+	_, err := r.CreateOrUpdateEcmJobs(ctx, jobs, "create")
+	if err != nil {
+		tflog.Error(ctx, "ECM Job creation failed", map[string]interface{}{
+			"error": err.Error(),
+		})
+		resp.Diagnostics.AddError(
+			"ECM Job Creation Failed",
+			err.Error(),
+		)
+		return
+	}
+
 	// Save data into Terraform state
 	resp.Diagnostics.Append(resp.State.Set(ctx, &plan)...)
+	if resp.Diagnostics.HasError() {
+		resp.Diagnostics.AddError(
+			"State Update Failed",
+			"Unable to save ECM Job state",
+		)
+		return
+	}
+
+	tflog.Info(ctx, "ECM Job resource created successfully", map[string]interface{}{
+		"job_count": len(jobs),
+	})
 }
 
 func (r *EcmJobResource) Read(ctx context.Context, req resource.ReadRequest, resp *resource.ReadResponse) {
@@ -287,8 +330,16 @@ func (r *EcmJobResource) Read(ctx context.Context, req resource.ReadRequest, res
 
 func (r *EcmJobResource) Update(ctx context.Context, req resource.UpdateRequest, resp *resource.UpdateResponse) {
 	var plan EcmJobResourceModel
+
+	tflog.Debug(ctx, "Starting ECM Job resource update")
+
+	// Extract plan from request
 	resp.Diagnostics.Append(req.Plan.Get(ctx, &plan)...)
 	if resp.Diagnostics.HasError() {
+		resp.Diagnostics.AddError(
+			"Plan Extraction Failed",
+			"Unable to extract Terraform plan from request",
+		)
 		return
 	}
 
@@ -296,131 +347,45 @@ func (r *EcmJobResource) Update(ctx context.Context, req resource.UpdateRequest,
 	var jobs []EcmJobModel
 	resp.Diagnostics.Append(plan.Jobs.ElementsAs(ctx, &jobs, false)...)
 	if resp.Diagnostics.HasError() {
-		return
-	}
-
-	if len(jobs) == 0 {
-		resp.Diagnostics.AddError("Validation Error", "At least one job must be specified")
-		return
-	}
-
-	tflog.Debug(ctx, "Starting ECM Job triggers update", map[string]interface{}{
-		"job_count": len(jobs),
-	})
-
-	var triggers []openapi.TriggerItem
-
-	// Process each job
-	for i, job := range jobs {
-		// Validate job name is EcmJob
-		if job.JobName.IsNull() || job.JobName.ValueString() != "EcmJob" {
-			resp.Diagnostics.AddError(
-				"Validation Error", 
-				fmt.Sprintf("Job %d: job_name must be 'EcmJob', got '%s'", i+1, job.JobName.ValueString()),
-			)
-			return
-		}
-
-		// Create the value map
-		valueMap := openapi.NewEcmJobAllOfValueMap()
-		if !job.OnFailure.IsNull() && job.OnFailure.ValueString() != "" {
-			valueMap.SetOnFailure(job.OnFailure.ValueString())
-		}
-
-		// Create the job trigger
-		jobTrigger := openapi.NewEcmJob(
-			job.TriggerName.ValueString(),
-			job.JobName.ValueString(),
-			job.JobGroup.ValueString(),
-			job.CronExpression.ValueString(),
+		resp.Diagnostics.AddError(
+			"Jobs Extraction Failed",
+			"Unable to extract jobs from Terraform plan",
 		)
-		jobTrigger.SetValueMap(*valueMap)
-
-		// Set optional trigger group if provided
-		if !job.TriggerGroup.IsNull() && job.TriggerGroup.ValueString() != "" {
-			jobTrigger.SetTriggergroup(job.TriggerGroup.ValueString())
-		}
-
-		triggers = append(triggers, openapi.EcmJobAsTriggerItem(jobTrigger))
+		return
 	}
 
-	// Create the request
-	updateReq := openapi.CreateOrUpdateTriggersRequest{
-		Triggers: triggers,
-	}
-
-	// Make the API call
-	var apiResp *openapi.CreateOrUpdateTriggersResponse
-	var finalHttpResp *http.Response
-	err := r.provider.AuthenticatedAPICallWithRetry(ctx, "update_ecm_jobs", func(token string) error {
-		jobOps := r.jobControlFactory.CreateJobControlOperations(r.client.APIBaseURL(), token)
-		apiResponse, httpResp, err := jobOps.CreateOrUpdateTriggers(ctx, updateReq)
-		if httpResp != nil && httpResp.StatusCode == 401 {
-			return fmt.Errorf("401 unauthorized")
-		}
-		apiResp = apiResponse
-		finalHttpResp = httpResp
-		return err
-	})
-
-	if err != nil && finalHttpResp != nil && finalHttpResp.StatusCode != http.StatusPreconditionFailed {
-		tflog.Error(ctx, "Error during API call", map[string]interface{}{
+	// Call the business logic method
+	_, err := r.CreateOrUpdateEcmJobs(ctx, jobs, "update")
+	if err != nil {
+		tflog.Error(ctx, "ECM Job update failed", map[string]interface{}{
 			"error": err.Error(),
 		})
 		resp.Diagnostics.AddError(
-			"API Call Error",
-			fmt.Sprintf("Error during API call to update ECM Job triggers: %s", err.Error()),
+			"ECM Job Update Failed",
+			err.Error(),
 		)
 		return
 	}
 
-	// Handle HTTP errors
-	var diags diag.Diagnostics
-	if jobcontrolutil.JobControlHandleHTTPError(ctx, finalHttpResp, err, "updating ECM Job triggers", &diags) {
-		tflog.Error(ctx, "Failed to update ECM Job triggers", map[string]interface{}{
-			"error": fmt.Sprintf("%v", diags.Errors()),
-		})
-		for _, diagnostic := range diags {
-			if diagnostic.Severity() == diag.SeverityError {
-				resp.Diagnostics.AddError(diagnostic.Summary(), diagnostic.Detail())
-			}
-		}
-		return
-	}
-
-	// Handle API response errors
-	if apiResp != nil && jobcontrolutil.JobControlHandleAPIError(ctx, &apiResp.ErrorCode, &apiResp.Msg, "updating ECM Job triggers", &diags) {
-		tflog.Error(ctx, "API error during trigger update", map[string]interface{}{
-			"error": fmt.Sprintf("%v", diags.Errors()),
-		})
-		for _, diagnostic := range diags {
-			if diagnostic.Severity() == diag.SeverityError {
-				resp.Diagnostics.AddError(diagnostic.Summary(), diagnostic.Detail())
-			}
-		}
-		return
-	}
-
-	tflog.Info(ctx, "ECM Job triggers updated successfully", map[string]interface{}{
-		"job_count": len(jobs),
-	})
-
 	// Save data into Terraform state
 	resp.Diagnostics.Append(resp.State.Set(ctx, &plan)...)
-}
-
-func (r *EcmJobResource) Delete(ctx context.Context, req resource.DeleteRequest, resp *resource.DeleteResponse) {
-	var state EcmJobResourceModel
-	resp.Diagnostics.Append(req.State.Get(ctx, &state)...)
 	if resp.Diagnostics.HasError() {
+		resp.Diagnostics.AddError(
+			"State Update Failed",
+			"Unable to save ECM Job state",
+		)
 		return
 	}
 
-	// Extract jobs from the state
-	var jobs []EcmJobModel
-	resp.Diagnostics.Append(state.Jobs.ElementsAs(ctx, &jobs, false)...)
-	if resp.Diagnostics.HasError() {
-		return
+	tflog.Info(ctx, "ECM Job resource updated successfully", map[string]interface{}{
+		"job_count": len(jobs),
+	})
+}
+
+// DeleteEcmJobs handles the business logic for deleting ECM jobs
+func (r *EcmJobResource) DeleteEcmJobs(ctx context.Context, jobs []EcmJobModel) error {
+	if len(jobs) == 0 {
+		return nil
 	}
 
 	tflog.Debug(ctx, "Starting ECM Job triggers deletion", map[string]interface{}{
@@ -464,11 +429,7 @@ func (r *EcmJobResource) Delete(ctx context.Context, req resource.DeleteRequest,
 				"error":        err.Error(),
 				"trigger_name": triggerName,
 			})
-			resp.Diagnostics.AddError(
-				"API Call Error",
-				fmt.Sprintf("Error during API call to delete ECM Job trigger '%s': %s", triggerName, err.Error()),
-			)
-			return
+			return fmt.Errorf("API call error for trigger '%s': %s", triggerName, err.Error())
 		}
 
 		// Handle HTTP errors
@@ -478,12 +439,9 @@ func (r *EcmJobResource) Delete(ctx context.Context, req resource.DeleteRequest,
 				"error":        fmt.Sprintf("%v", diags.Errors()),
 				"trigger_name": triggerName,
 			})
-			for _, diagnostic := range diags {
-				if diagnostic.Severity() == diag.SeverityError {
-					resp.Diagnostics.AddError(diagnostic.Summary(), diagnostic.Detail())
-				}
+			if diags.HasError() {
+				return fmt.Errorf("HTTP error for trigger '%s': %s", triggerName, diags.Errors()[0].Detail())
 			}
-			return
 		}
 
 		// Handle API response errors
@@ -494,12 +452,9 @@ func (r *EcmJobResource) Delete(ctx context.Context, req resource.DeleteRequest,
 					"error":        fmt.Sprintf("%v", diags.Errors()),
 					"trigger_name": triggerName,
 				})
-				for _, diagnostic := range diags {
-					if diagnostic.Severity() == diag.SeverityError {
-						resp.Diagnostics.AddError(diagnostic.Summary(), diagnostic.Detail())
-					}
+				if diags.HasError() {
+					return fmt.Errorf("API error for trigger '%s': %s", triggerName, diags.Errors()[0].Detail())
 				}
-				return
 			}
 		}
 
@@ -509,6 +464,52 @@ func (r *EcmJobResource) Delete(ctx context.Context, req resource.DeleteRequest,
 	}
 
 	tflog.Info(ctx, "All ECM Job triggers deleted successfully", map[string]interface{}{
+		"job_count": len(jobs),
+	})
+
+	return nil
+}
+
+func (r *EcmJobResource) Delete(ctx context.Context, req resource.DeleteRequest, resp *resource.DeleteResponse) {
+	var state EcmJobResourceModel
+
+	tflog.Debug(ctx, "Starting ECM Job resource deletion")
+
+	// Extract state from request
+	resp.Diagnostics.Append(req.State.Get(ctx, &state)...)
+	if resp.Diagnostics.HasError() {
+		resp.Diagnostics.AddError(
+			"State Extraction Failed",
+			"Unable to extract Terraform state from request",
+		)
+		return
+	}
+
+	// Extract jobs from the state
+	var jobs []EcmJobModel
+	resp.Diagnostics.Append(state.Jobs.ElementsAs(ctx, &jobs, false)...)
+	if resp.Diagnostics.HasError() {
+		resp.Diagnostics.AddError(
+			"Jobs Extraction Failed",
+			"Unable to extract jobs from Terraform state",
+		)
+		return
+	}
+
+	// Call the business logic method
+	err := r.DeleteEcmJobs(ctx, jobs)
+	if err != nil {
+		tflog.Error(ctx, "ECM Job deletion failed", map[string]interface{}{
+			"error": err.Error(),
+		})
+		resp.Diagnostics.AddError(
+			"ECM Job Deletion Failed",
+			err.Error(),
+		)
+		return
+	}
+
+	tflog.Info(ctx, "ECM Job resource deleted successfully", map[string]interface{}{
 		"job_count": len(jobs),
 	})
 }
