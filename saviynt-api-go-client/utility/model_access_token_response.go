@@ -19,12 +19,12 @@ var _ MappedNullable = &AccessTokenResponse{}
 
 // AccessTokenResponse struct for AccessTokenResponse
 type AccessTokenResponse struct {
-	Username *string `json:"username,omitempty"`
-	Roles []string `json:"roles,omitempty"`
-	TokenType *string `json:"token_type,omitempty"`
-	AccessToken *string `json:"access_token,omitempty"`
-	ExpiresIn *int32 `json:"expires_in,omitempty"`
-	RefreshToken *string `json:"refresh_token,omitempty"`
+	Username     *string  `json:"username,omitempty"`
+	Roles        []string `json:"roles,omitempty"`
+	TokenType    *string  `json:"token_type,omitempty"`
+	AccessToken  *string  `json:"access_token,omitempty"`
+	ExpiresIn    *int32   `json:"expires_in,omitempty"`
+	RefreshToken *string  `json:"refresh_token,omitempty"`
 }
 
 // NewAccessTokenResponse instantiates a new AccessTokenResponse object
@@ -237,7 +237,7 @@ func (o *AccessTokenResponse) SetRefreshToken(v string) {
 }
 
 func (o AccessTokenResponse) MarshalJSON() ([]byte, error) {
-	toSerialize,err := o.ToMap()
+	toSerialize, err := o.ToMap()
 	if err != nil {
 		return []byte{}, err
 	}
@@ -302,5 +302,3 @@ func (v *NullableAccessTokenResponse) UnmarshalJSON(src []byte) error {
 	v.isSet = true
 	return json.Unmarshal(src, &v.value)
 }
-
-

@@ -20,7 +20,6 @@ resource "saviynt_user_import_job_resource" "example" {
   jobs = [
     {
       trigger_name                           = "user_import_trigger_1" # required
-      job_name                               = "UserImportJob"         # required
       job_group                              = "DATA"                  # required
       cron_expression                        = "0 0 2 * * ?"           # required
       trigger_group                          = "GRAILS_JOBS"           # optional
@@ -46,8 +45,6 @@ resource "saviynt_user_import_job_resource" "example" {
     },
     {
       trigger_name                           = "user_import_trigger_2" # required
-      job_name                               = "UserImportJob"         # required
-      job_group                              = "DEFAULT"               # required
       cron_expression                        = "0 0 3 * * ?"           # required
       trigger_group                          = "DEFAULT"               # optional
       external_conn                          = "4750"                  # required
@@ -89,7 +86,6 @@ Required:
 - `cron_expression` (String) Cron expression defining the schedule for the trigger. Example: "0 0 2 * * ?"
 - `external_conn` (String) External connection for the user import
 - `job_group` (String) Name of the job group associated with the trigger. Example: "utility"
-- `job_name` (String) Name of the job associated with the trigger. Example: "WSRetryJob"
 - `trigger_name` (String) Unique name of the trigger. Example: "MyTrigger_001"
 
 Optional:

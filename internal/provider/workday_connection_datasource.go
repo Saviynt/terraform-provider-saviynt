@@ -313,6 +313,7 @@ func (d *WorkdayConnectionDataSource) Read(ctx context.Context, req datasource.R
 			"has_attributes":  state.ConnectionAttributes != nil,
 		})
 }
+
 // ReadWorkdayConnectionDetails retrieves Workday connection details from Saviynt API
 // Handles both connection name and connection key based lookups using factory pattern
 // Returns standardized errors with proper correlation tracking and sensitive data sanitization
