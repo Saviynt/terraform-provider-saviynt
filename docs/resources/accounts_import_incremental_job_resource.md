@@ -20,7 +20,6 @@ resource "saviynt_accounts_import_incremental_job_resource" "example" {
   jobs = [
     {
       name            = "accounts_incremental_trigger_1" # required
-      job_name        = "AccountsImportIncrementalJob"   # required
       job_group       = "DATABASE"                       # required
       group           = "GRAILS_JOBS"                    # required
       cron_exp        = "0 0 2 * * ?"                    # required
@@ -28,7 +27,6 @@ resource "saviynt_accounts_import_incremental_job_resource" "example" {
     },
     {
       name            = "accounts_incremental_trigger_2" # required
-      job_name        = "AccountsImportIncrementalJob"   # required
       job_group       = "DATABASE"                       # required
       group           = "GRAILS_JOBS"                    # required
       cron_exp        = "0 0 3 * * ?"                    # required
@@ -53,7 +51,6 @@ Required:
 - `cron_exp` (String) Cron expression defining the schedule for the trigger. Example: "0 0 2 * * ?"
 - `group` (String) Group classification for the trigger. Example: "GRAILS_JOBS"
 - `job_group` (String) Name of the job group associated with the trigger. Example: "utility"
-- `job_name` (String) Name of the job associated with the trigger. Example: "WSRetryJob"
 - `name` (String) Unique name of the trigger. Example: "MyTrigger_001"
 
 Optional:
