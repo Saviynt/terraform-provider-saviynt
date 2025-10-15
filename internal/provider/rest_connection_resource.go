@@ -257,8 +257,6 @@ func (r *RestConnectionResource) Schema(ctx context.Context, req resource.Schema
 	}
 }
 
-
-
 func (r *RestConnectionResource) Configure(ctx context.Context, req resource.ConfigureRequest, resp *resource.ConfigureResponse) {
 	opCtx := errorsutil.CreateOperationContext(errorsutil.ConnectorTypeREST, "configure", "")
 	ctx = opCtx.AddContextToLogger(ctx)
