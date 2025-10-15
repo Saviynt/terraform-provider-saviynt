@@ -1,0 +1,108 @@
+{
+  "call": [
+    {
+      "name": "SKU",
+      "connection": "userAuth",
+      "url": "https://graph.microsoft.com/v1.0/users/${account.accountID}/assignLicense",
+      "httpMethod": "POST",
+      "httpParams": "{\"addLicenses\": [{\"disabledPlans\": [],\"skuId\": \"${entitlementValue.entitlementID}\"}],\"removeLicenses\": []}",
+      "httpHeaders": {
+        "Authorization": "${access_token}"
+      },
+      "httpContentType": "application/json",
+      "successResponses": {
+        "statusCode": [
+          200,
+          201,
+          204,
+          205
+        ]
+      }
+    },
+    {
+      "name": "DirectoryRole",
+      "connection": "userAuth",
+      "url": "https://graph.microsoft.com/v1.0/directoryRoles/${entitlementValue.entitlementID}/members/\\$ref",
+      "httpMethod": "POST",
+      "httpParams": "{\"@odata.id\":\"https://graph.microsoft.com/v1.0/directoryObjects/${account.accountID}\"}",
+      "httpHeaders": {
+        "Authorization": "${access_token}"
+      },
+      "httpContentType": "application/json",
+      "successResponses": {
+        "statusCode": [
+          200,
+          201,
+          204,
+          205
+        ]
+      },
+      "unsuccessResponses": {
+        "odata~dot#error.code": [
+          "Request_BadRequest",
+          "Authentication_MissingOrMalformed",
+          "Request_ResourceNotFound",
+          "Authorization_RequestDenied",
+          "Authentication_Unauthorized"
+        ]
+      }
+    },
+    {
+      "name": "AADGroup",
+      "connection": "userAuth",
+      "url": "https://graph.microsoft.com/v1.0/groups/${entitlementValue.entitlementID}/members/\\$ref",
+      "httpMethod": "POST",
+      "httpParams": "{\"@odata.id\":\"https://graph.microsoft.com/v1.0/directoryObjects/${account.accountID}\"}",
+      "httpHeaders": {
+        "Authorization": "${access_token}"
+      },
+      "httpContentType": "application/json",
+      "successResponses": {
+        "statusCode": [
+          200,
+          201,
+          204,
+          205
+        ]
+      }
+    },
+    {
+      "name": "ApplicationInstance",
+      "connection": "entAuth",
+      "url": "https://graph.windows.net/myorganization/users/${account.accountID}/appRoleAssignedTo?api-version=1.6",
+      "httpMethod": "POST",
+      "httpParams": "{\"principalId\": \"${account.accountID}\", \"id\": \"${}\", \"resourceId\": \"${entitlementValue.entitlementID}\"}",
+      "httpHeaders": {
+        "Authorization": "${access_token}"
+      },
+      "httpContentType": "application/json",
+      "successResponses": {
+        "statusCode": [
+          200,
+          201,
+          204,
+          205
+        ]
+      }
+    },
+    {
+      "name": "Team",
+      "connection": "userAuth",
+      "url": "https://graph.microsoft.com/v1.0/groups/${entitlementValue.entitlementID}/members/\\$ref",
+      "httpMethod": "POST",
+      "httpParams": "{\"@odata.id\":\"https://graph.microsoft.com/v1.0/directoryObjects/${account.accountID}\"}",
+      "httpHeaders": {
+        "Authorization": "${access_token}"
+      },
+      "httpContentType": "application/json",
+      "successResponses": {
+        "statusCode": [
+          200,
+          201,
+          204,
+          205
+        ]
+      }
+    }
+  ]
+}

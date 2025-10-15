@@ -1,0 +1,10 @@
+{
+  "statusAndThresholdConfig": {
+    "accountThresholdValue": 1000,
+    "appAccountThresholdValue": 50,
+    "correlateInactiveAccounts": true,
+    "statusColumn": "customproperty10",
+    "activeStatus": ["true"],
+    "deleteLinks": true
+  }
+}
