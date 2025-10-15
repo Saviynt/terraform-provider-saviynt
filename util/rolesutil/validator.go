@@ -144,7 +144,7 @@ func (v ownerRankValidator) ValidateSet(ctx context.Context, req validator.SetRe
 	for _, owner := range owners {
 		ownerName := owner.OwnerName.ValueString()
 		rankStr := owner.Rank.ValueString()
-		
+
 		if rankStr != "" {
 			var rank int
 			if _, err := fmt.Sscanf(rankStr, "%d", &rank); err != nil {
@@ -155,7 +155,7 @@ func (v ownerRankValidator) ValidateSet(ctx context.Context, req validator.SetRe
 				)
 				continue
 			}
-			
+
 			if rank < 1 || rank > 27 {
 				resp.Diagnostics.AddAttributeError(
 					req.Path,
