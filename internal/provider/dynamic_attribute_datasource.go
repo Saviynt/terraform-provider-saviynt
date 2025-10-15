@@ -2,7 +2,7 @@
 // SPDX-License-Identifier: MPL-2.0
 
 // saviynt_dynamic_attribute_datasource retrieves dynamic attribute details from the Saviynt Security Manager.
-// The data source supports a single Read operation to look up existing dynamic attributes with various filters 
+// The data source supports a single Read operation to look up existing dynamic attributes with various filters
 // like attribute name, endpoint, security system, etc.
 package provider
 
@@ -274,6 +274,7 @@ func (d *DynamicAttributeDataSource) Read(ctx context.Context, req datasource.Re
 
 	log.Printf("[DEBUG] DynamicAttribute: Datasource read completed successfully with %d results", len(state.Dynamicattributes))
 }
+
 // ReadDynamicAttributeDetails retrieves dynamic attribute details from Saviynt API
 // Handles various filters and returns standardized errors with proper correlation tracking
 func (d *DynamicAttributeDataSource) ReadDynamicAttributeDetails(ctx context.Context, securitySystems, endpoints, dynamicAttributes, requestTypes []string, loggedInUser, offset, max *string) (*openapi.FetchDynamicAttributesResponse, error) {
@@ -285,7 +286,7 @@ func (d *DynamicAttributeDataSource) ReadDynamicAttributeDetails(ctx context.Con
 	// Execute API request with retry logic
 	err := d.provider.AuthenticatedAPICallWithRetry(ctx, "read_dynamic_attribute_datasource", func(token string) error {
 		dynAttrOps := d.dynamicAttributeFactory.CreateDynamicAttributeOperations(d.client.APIBaseURL(), token)
-		
+
 		resp, httpResp, err := dynAttrOps.FetchDynamicAttributesForDataSource(ctx, securitySystems, endpoints, dynamicAttributes, requestTypes, loggedInUser, offset, max)
 		if httpResp != nil && httpResp.StatusCode == 401 {
 			return fmt.Errorf("401 unauthorized")
@@ -312,7 +313,7 @@ func (d *DynamicAttributeDataSource) ReadDynamicAttributeDetails(ctx context.Con
 func (d *DynamicAttributeDataSource) UpdateModelFromDynamicAttributeResponse(state *DynamicAttributeDataSourceModel, apiResp *openapi.FetchDynamicAttributesResponse) {
 	state.Msg = util.SafeStringDatasource(apiResp.Msg)
 	state.ErrorCode = util.SafeStringDatasource(apiResp.Errorcode)
-	
+
 	// Default to 0 when API omits count fields (happens when no results found)
 	if apiResp.Displaycount != nil {
 		state.DisplayCount = types.Int32Value(*apiResp.Displaycount)
