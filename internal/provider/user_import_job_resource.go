@@ -318,11 +318,6 @@ func (r *UserImportJobResource) CreateOrUpdateUserImportJobs(ctx context.Context
 
 	// Process each job
 	for i, job := range jobs {
-		// Validate job name is UserImportJob
-		if job.JobName.IsNull() || job.JobName.ValueString() != "UserImportJob" {
-			return nil, fmt.Errorf("job %d: job_name must be 'UserImportJob', got '%s'", i+1, job.JobName.ValueString())
-		}
-
 		// Validate required fields
 		if job.TriggerName.IsNull() || job.TriggerName.ValueString() == "" {
 			return nil, fmt.Errorf("job %d: trigger_name is required", i+1)
@@ -343,7 +338,7 @@ func (r *UserImportJobResource) CreateOrUpdateUserImportJobs(ctx context.Context
 		// Create the job trigger
 		jobTrigger := openapi.NewUserImportJob(
 			job.TriggerName.ValueString(),
-			job.JobName.ValueString(),
+			"UserImportJob",
 			job.JobGroup.ValueString(),
 			job.CronExpression.ValueString(),
 		)
@@ -424,7 +419,6 @@ func (r *UserImportJobResource) DeleteUserImportJobs(ctx context.Context, jobs [
 	// Delete each job individually
 	for i, job := range jobs {
 		triggerName := job.TriggerName.ValueString()
-		jobName := job.JobName.ValueString()
 		jobGroup := job.JobGroup.ValueString()
 
 		tflog.Debug(ctx, "Deleting job trigger", map[string]interface{}{
@@ -435,7 +429,7 @@ func (r *UserImportJobResource) DeleteUserImportJobs(ctx context.Context, jobs [
 		// Create delete request
 		deleteReq := openapi.DeleteTriggerRequest{
 			Triggername: triggerName,
-			Jobname:     jobName,
+			Jobname:     "UserImportJob",
 			Jobgroup:    jobGroup,
 		}
 
