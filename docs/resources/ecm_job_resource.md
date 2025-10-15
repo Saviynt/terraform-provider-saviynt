@@ -20,7 +20,6 @@ resource "saviynt_ecm_job_resource" "example" {
   jobs = [
     {
       trigger_name    = "ecm_trigger_1" # required
-      job_name        = "EcmJob"        # required
       job_group       = "ecmGroup"      # required
       cron_expression = "0 0 2 * * ?"   # required
       trigger_group   = "GRAILS_JOBS"   # optional
@@ -28,7 +27,6 @@ resource "saviynt_ecm_job_resource" "example" {
     },
     {
       trigger_name    = "ecm_trigger_2" # required
-      job_name        = "EcmJob"        # required
       job_group       = "ecmGroup"      # required
       cron_expression = "0 0 3 * * ?"   # required
       trigger_group   = "GRAILS_JOBS"   # optional
@@ -52,7 +50,6 @@ Required:
 
 - `cron_expression` (String) Cron expression defining the schedule for the trigger. Example: "0 0 2 * * ?"
 - `job_group` (String) Name of the job group associated with the trigger. Example: "utility"
-- `job_name` (String) Name of the job associated with the trigger. Example: "WSRetryJob"
 - `trigger_name` (String) Unique name of the trigger. Example: "MyTrigger_001"
 
 Optional:

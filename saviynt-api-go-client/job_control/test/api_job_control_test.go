@@ -14,10 +14,10 @@ package job_control
 
 import (
 	"context"
+	openapiclient "github.com/saviynt/saviynt-api-go-client/job_control"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"testing"
-	openapiclient "github.com/saviynt/saviynt-api-go-client/job_control"
 )
 
 func Test_job_control_JobControlAPIService(t *testing.T) {
@@ -27,7 +27,7 @@ func Test_job_control_JobControlAPIService(t *testing.T) {
 
 	t.Run("Test JobControlAPIService CheckJobStatus", func(t *testing.T) {
 
-		t.Skip("skip test")  // remove to run test
+		t.Skip("skip test") // remove to run test
 
 		resp, httpRes, err := apiClient.JobControlAPI.CheckJobStatus(context.Background()).Execute()
 
@@ -39,7 +39,7 @@ func Test_job_control_JobControlAPIService(t *testing.T) {
 
 	t.Run("Test JobControlAPIService CreateOrUpdateTrigger", func(t *testing.T) {
 
-		t.Skip("skip test")  // remove to run test
+		t.Skip("skip test") // remove to run test
 
 		resp, httpRes, err := apiClient.JobControlAPI.CreateOrUpdateTrigger(context.Background()).Execute()
 
@@ -51,7 +51,7 @@ func Test_job_control_JobControlAPIService(t *testing.T) {
 
 	t.Run("Test JobControlAPIService CreateTrigger", func(t *testing.T) {
 
-		t.Skip("skip test")  // remove to run test
+		t.Skip("skip test") // remove to run test
 
 		resp, httpRes, err := apiClient.JobControlAPI.CreateTrigger(context.Background()).Execute()
 
@@ -63,7 +63,7 @@ func Test_job_control_JobControlAPIService(t *testing.T) {
 
 	t.Run("Test JobControlAPIService DeleteTrigger", func(t *testing.T) {
 
-		t.Skip("skip test")  // remove to run test
+		t.Skip("skip test") // remove to run test
 
 		resp, httpRes, err := apiClient.JobControlAPI.DeleteTrigger(context.Background()).Execute()
 
@@ -75,7 +75,7 @@ func Test_job_control_JobControlAPIService(t *testing.T) {
 
 	t.Run("Test JobControlAPIService FetchJobMetadata", func(t *testing.T) {
 
-		t.Skip("skip test")  // remove to run test
+		t.Skip("skip test") // remove to run test
 
 		resp, httpRes, err := apiClient.JobControlAPI.FetchJobMetadata(context.Background()).Execute()
 
@@ -87,7 +87,7 @@ func Test_job_control_JobControlAPIService(t *testing.T) {
 
 	t.Run("Test JobControlAPIService PauseAllJobs", func(t *testing.T) {
 
-		t.Skip("skip test")  // remove to run test
+		t.Skip("skip test") // remove to run test
 
 		resp, httpRes, err := apiClient.JobControlAPI.PauseAllJobs(context.Background()).Execute()
 
@@ -99,7 +99,7 @@ func Test_job_control_JobControlAPIService(t *testing.T) {
 
 	t.Run("Test JobControlAPIService PauseJob", func(t *testing.T) {
 
-		t.Skip("skip test")  // remove to run test
+		t.Skip("skip test") // remove to run test
 
 		resp, httpRes, err := apiClient.JobControlAPI.PauseJob(context.Background()).Execute()
 
@@ -111,7 +111,7 @@ func Test_job_control_JobControlAPIService(t *testing.T) {
 
 	t.Run("Test JobControlAPIService PauseResumeJobs", func(t *testing.T) {
 
-		t.Skip("skip test")  // remove to run test
+		t.Skip("skip test") // remove to run test
 
 		resp, httpRes, err := apiClient.JobControlAPI.PauseResumeJobs(context.Background()).Execute()
 
@@ -123,7 +123,7 @@ func Test_job_control_JobControlAPIService(t *testing.T) {
 
 	t.Run("Test JobControlAPIService ResumeAllJobs", func(t *testing.T) {
 
-		t.Skip("skip test")  // remove to run test
+		t.Skip("skip test") // remove to run test
 
 		resp, httpRes, err := apiClient.JobControlAPI.ResumeAllJobs(context.Background()).Execute()
 
@@ -135,7 +135,7 @@ func Test_job_control_JobControlAPIService(t *testing.T) {
 
 	t.Run("Test JobControlAPIService ResumeJob", func(t *testing.T) {
 
-		t.Skip("skip test")  // remove to run test
+		t.Skip("skip test") // remove to run test
 
 		resp, httpRes, err := apiClient.JobControlAPI.ResumeJob(context.Background()).Execute()
 
@@ -147,7 +147,7 @@ func Test_job_control_JobControlAPIService(t *testing.T) {
 
 	t.Run("Test JobControlAPIService RunJobTrigger", func(t *testing.T) {
 
-		t.Skip("skip test")  // remove to run test
+		t.Skip("skip test") // remove to run test
 
 		resp, httpRes, err := apiClient.JobControlAPI.RunJobTrigger(context.Background()).Execute()
 
