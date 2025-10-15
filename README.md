@@ -32,45 +32,40 @@ New to Terraform? Check out the [official Terraform introduction by HashiCorp](h
 ##  Features
 
 Following resources are available for management: 
-- Security System
-- Endpoint
+- [Security System](docs/resources/security_system_resource.md)
+- [Endpoint](docs/resources/endpoint_resource.md)
+- [Dynamic Attribute](docs/resources/dynamic_attribute_resource.md)
+- [Entitlement Type](docs/resources/entitlement_type_resource.md)
+- [Enterprise Role](docs/resources/enterprise_roles_resource.md)
+- [Entitlements](docs/resources/entitlement_resource.md)
+- [Privileges](docs/resources/privilege_resource.md)
 - Connections
-- Dynamic Attribute
-- Entitlement Type
-- Enterprise Role
-- Entitlements
-- Privileges
-- Job Control Resources
-
-Following connectors are available:
-- Active Directory(AD)
-- REST
-- ADSI
-- Database(DB)
-- EntraID(AzureAD)
-- SAP
-- Salesforce
-- Workday
-- Unix
-- Github REST
-- Okta
-
-Following job control resources are available:
-- Application Data Import Job
-- WS Retry Job
-- WS Retry Blocking Job
-- User Import Job
-- ECM Job
-- ECM SAP User Job
-- Accounts Import Full Job
-- Accounts Import Incremental Job
-- Schema Role Job
-- Schema Account Job
-- Schema User Job
-
-Ephemeral resources available:
-- [File ephemeral resource](#feature-ephemeral-file-credential-resource)
-- [Env ephemeral resource](#feature-ephemeral-env-credential-resource)
+  - [Active Directory(AD)](docs/resources/ad_connection_resource.md)
+  - [REST](docs/resources/rest_connection_resource.md)
+  - [ADSI](docs/resources/adsi_connection_resource.md)
+  - [Database(DB)](docs/resources/db_connection_resource.md)
+  - [EntraID(AzureAD)](docs/resources/entraid_connection_resource.md)
+  - [SAP](docs/resources/sap_connection_resource.md)
+  - [Salesforce](docs/resources/salesforce_connection_resource.md)
+  - [Workday](docs/resources/workday_connection_resource.md)
+  - [Unix](docs/resources/unix_connection_resource.md)
+  - [Github REST](docs/resources/github_rest_connection_resource.md)
+  - [Okta](docs/resources/okta_connection_resource.md)
+- Jobs
+  - [Application Data Import Job](docs/resources/application_data_import_job_resource.md)
+  - [WS Retry Job](docs/resources/ws_retry_job_resource.md)
+  - [WS Retry Blocking Job](docs/resources/ws_retry_blocking_job_resource.md)
+  - [User Import Job](docs/resources/user_import_job_resource.md)
+  - [ECM Job](docs/resources/ecm_job_resource.md)
+  - [ECM SAP User Job](docs/resources/ecm_sap_user_job_resource.md)
+  - [Accounts Import Full Job](docs/resources/accounts_import_full_job_resource.md)
+  - [Accounts Import Incremental Job](docs/resources/accounts_import_incremental_job_resource.md)
+  - [Schema Role Job](docs/resources/schema_role_job_resource.md)
+  - [Schema Account Job](docs/resources/schema_account_job_resource.md)
+  - [Schema User Job](docs/resources/schema_user_job_resource.md)
+- Ephemerals
+  - [File ephemeral resource](docs/ephemeral-resources/file_connector_ephemeral_resource.md)
+  - [Env ephemeral resource](docs/ephemeral-resources/env_ephemeral_resource.md)
 
 ---
 
@@ -81,13 +76,12 @@ Check out the [Latest Saviynt Provider Docs](https://registry.terraform.io/provi
 ---
 
 ### Supported Saviynt Versions by Provider
-| Terraform Provider Version | Supported Saviynt EIC Versions |
+
+| Supported Saviynt EIC Versions | Terraform Provider Version |
 | -------------------------- | ------------------------------ |
-| `v0.2.11`                   | `25.B`, `25.A`, `24.10`        |
-| `v0.2.10`                   | `25.B`, `25.A`, `24.10`        |
-| `v0.2.9`                   | `25.B`, `25.A`, `24.10`        |
-| `v0.2.8`                   | `25.B`, `25.A`, `24.10`        |
-| `v0.2.7`                   | `24.4`                         |
+| `25.B` | Latest Version: `v0.2.12`<br> Supported Version(s): `v0.2.8` - `v0.2.12`|
+| `25.A` | Latest Version: `v0.2.12`<br> Supported Version(s): `v0.2.8` - `v0.2.12`|
+| `24.10` | Latest Version: `v0.2.12`<br> Supported Version(s): `v0.2.8` - `v0.2.12`|
 
 --- 
 
@@ -102,9 +96,9 @@ Check the table to see which attributes are supported in your version before usi
 | **DB Connector**         | `CREATEENTITLEMENTJSON`, `DELETEENTITLEMENTJSON`, `ENTITLEMENTEXISTJSON`, `UPDATEENTITLEMENTJSON`             | Yes             | No              | No               |
 | **GithubREST Connector** | `status_threshold_config`                                                                           | Yes              | Yes              | No               |
 | **Security System** | `instant_provisioning`                                                                           | Yes              | No              | No               |
-| **Endpoints** | `mapped_endpoints`, `requestable_role_types.show_on`                                                                           | Yes              | Yes              | Yes               |
 | **Entitlement Type** | `enable_entitlement_to_role_sync`                                                                           | Yes              | Yes              | No               |
 | **Enterprise Role** | `child_roles`                                                                           | Yes              | No              | No               |
+
 ---
 
 ## Write-Only Attributes Management
@@ -1021,19 +1015,7 @@ The following limitations are present in the latest version of the provider. The
     - `Update`
     - `Delete`
 
-### 8. Job Control Resources
-- **State management is not supported** for job resources created or modified outside of Terraform (e.g., via Saviynt UI)
-- **Import functionality is not available** for existing job triggers - jobs must be created through Terraform
-- **Manual job modifications** made in Saviynt UI will not be detected by Terraform 
-- Users can only **create**, **update**, and **delete** job triggers through Terraform for the time being
-
-### 8. Job Control Resources
-- **State management is not supported** for job resources created or modified outside of Terraform (e.g., via Saviynt UI)
-- **Import functionality is not available** for existing job triggers - jobs must be created through Terraform
-- **Manual job modifications** made in Saviynt UI will not be detected by Terraform 
-- Users can only **create**, **update**, and **delete** job triggers through Terraform for the time being
-
-### 8. Job Control Resources
+### 8. Jobs
 - **State management is not supported** for job resources created or modified outside of Terraform (e.g., via Saviynt UI)
 - **Import functionality is not available** for existing job triggers - jobs must be created through Terraform
 - **Manual job modifications** made in Saviynt UI will not be detected by Terraform 
@@ -1160,6 +1142,43 @@ terraform apply
 
 **Note**: The provider handles user failures gracefully - roles are created successfully even if some users fail, allowing incremental fixes.
 
+### 5. Resource Dependency Issues
+
+**Issue**: When creating multiple resources where one depends on another, you may encounter errors if resources are created in the wrong order.
+
+**Example Error**:
+```
+╷
+│ Error: API Create Failed In Create Block
+│
+│   with saviynt_endpoint_resource.EP1,
+│   on provider.tf line 164, in resource "saviynt_endpoint_resource" "EP1":
+│  164: resource "saviynt_endpoint_resource" "EP1" {
+│
+│ API error In CreateEndpoint Block: systemname not found
+```
+
+**Resolution**:
+Use the `depends_on` meta-argument to explicitly define resource dependencies:
+
+```hcl
+resource "saviynt_security_system_resource" "system1" {
+  systemname   = "TF_Security_System"
+  display_name = "TF_Security_System"
+  # ... other attributes
+}
+
+resource "saviynt_endpoint_resource" "EP1" {
+  endpoint_name    = "TF_Endpoint"
+  security_system  = "TF_Security_System"
+  # ... other attributes
+  
+  depends_on = [saviynt_security_system_resource.system1]
+}
+```
+
+**Note**: For more information on meta-arguments available in Terraform, see the [official Terraform documentation on meta-arguments](https://developer.hashicorp.com/terraform/language/meta-arguments).
+
 ___
 
 ### Summary
@@ -1169,8 +1188,10 @@ ___
 | SAV Role Restriction     | May result in 412 errors if enabled                | Adjust SAV role or disable restriction               |
 | `readlabels` Settings    | Alters field naming in API response                | Keep values as `true`                                |
 | User Operation Failures  | Role creation succeeds but user assignment may fail | Validate users exist and are active before applying |
+| Resource Dependencies    | Errors when resources created in wrong order        | Use `depends_on` meta-argument for explicit dependencies |
 
 ---
+
 ##  Contributing
 
 > 👋 **Hey Developer!**
