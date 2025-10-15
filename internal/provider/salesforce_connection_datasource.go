@@ -274,6 +274,7 @@ func (d *SalesforceConnectionDataSource) Read(ctx context.Context, req datasourc
 			"has_attributes":  state.ConnectionAttributes != nil,
 		})
 }
+
 // ReadSalesforceConnectionDetails retrieves Salesforce connection details from Saviynt API
 // Handles both connection name and connection key based lookups using factory pattern
 // Returns standardized errors with proper correlation tracking and sensitive data sanitization

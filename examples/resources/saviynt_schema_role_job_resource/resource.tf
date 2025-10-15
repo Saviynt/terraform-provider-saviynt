@@ -5,7 +5,6 @@ resource "saviynt_schema_role_job_resource" "example" {
   jobs = [
     {
       name              = "schema_role_trigger_1" # required
-      job_name          = "SchemaRoleJob"         # required
       job_group         = "Schema"                # required
       group             = "GRAILS_JOBS"           # required
       cron_exp          = "0 0 2 * * ?"           # required
@@ -13,7 +12,6 @@ resource "saviynt_schema_role_job_resource" "example" {
     },
     {
       name              = "schema_role_trigger_2" # required
-      job_name          = "SchemaRoleJob"         # required
       job_group         = "Schema"                # required
       group             = "GRAILS_JOBS"           # required
       cron_exp          = "0 0 3 * * ?"           # required
