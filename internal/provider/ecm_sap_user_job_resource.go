@@ -166,11 +166,6 @@ func (r *EcmSapUserJobResource) CreateOrUpdateEcmSapUserJobs(ctx context.Context
 
 	// Process each job
 	for i, job := range jobs {
-		// Validate job name is EcmSapUserJob
-		if job.JobName.IsNull() || job.JobName.ValueString() != "EcmSapUserJob" {
-			return nil, fmt.Errorf("job %d: job_name must be 'EcmSapUserJob', got '%s'", i+1, job.JobName.ValueString())
-		}
-
 		// Validate required fields
 		if job.TriggerName.IsNull() || job.TriggerName.ValueString() == "" {
 			return nil, fmt.Errorf("job %d: trigger_name is required", i+1)
@@ -191,7 +186,7 @@ func (r *EcmSapUserJobResource) CreateOrUpdateEcmSapUserJobs(ctx context.Context
 		// Create the job trigger
 		jobTrigger := openapi.NewEcmSapUserJob(
 			job.TriggerName.ValueString(),
-			job.JobName.ValueString(),
+			"EcmSapUserJob",
 			job.JobGroup.ValueString(),
 			job.CronExpression.ValueString(),
 		)
@@ -272,7 +267,6 @@ func (r *EcmSapUserJobResource) DeleteEcmSapUserJobs(ctx context.Context, jobs [
 	// Delete each job individually
 	for i, job := range jobs {
 		triggerName := job.TriggerName.ValueString()
-		jobName := job.JobName.ValueString()
 		jobGroup := job.JobGroup.ValueString()
 
 		tflog.Debug(ctx, "Deleting job trigger", map[string]interface{}{
@@ -283,7 +277,7 @@ func (r *EcmSapUserJobResource) DeleteEcmSapUserJobs(ctx context.Context, jobs [
 		// Create delete request
 		deleteReq := openapi.DeleteTriggerRequest{
 			Triggername: triggerName,
-			Jobname:     jobName,
+			Jobname:     "EcmSapUserJob",
 			Jobgroup:    jobGroup,
 		}
 
