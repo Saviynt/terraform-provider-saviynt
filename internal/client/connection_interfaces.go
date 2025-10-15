@@ -17,6 +17,7 @@ type ConnectionOperationsInterface interface {
 	GetConnectionDetails(ctx context.Context, connectionName string) (*openapi.GetConnectionDetailsResponse, *http.Response, error)
 	CreateOrUpdateConnection(ctx context.Context, req openapi.CreateOrUpdateRequest) (*openapi.CreateOrUpdateResponse, *http.Response, error)
 	GetConnectionDetailsDataSource(ctx context.Context, connectionParam openapi.GetConnectionDetailsRequest) (*openapi.GetConnectionDetailsResponse, *http.Response, error)
+	GetConnectionsDataSource(ctx context.Context, req openapi.GetConnectionsRequest) (*openapi.GetConnectionsResponse, *http.Response, error)
 }
 
 // ConnectionOperationsWrapper wraps the actual connection operations to implement the interface
@@ -33,8 +34,13 @@ func (w *ConnectionOperationsWrapper) GetConnectionDetails(ctx context.Context, 
 func (w *ConnectionOperationsWrapper) CreateOrUpdateConnection(ctx context.Context, req openapi.CreateOrUpdateRequest) (*openapi.CreateOrUpdateResponse, *http.Response, error) {
 	return w.client.ConnectionsAPI.CreateOrUpdate(ctx).CreateOrUpdateRequest(req).Execute()
 }
+
 func (w *ConnectionOperationsWrapper) GetConnectionDetailsDataSource(ctx context.Context, connectionParam openapi.GetConnectionDetailsRequest) (*openapi.GetConnectionDetailsResponse, *http.Response, error) {
 	return w.client.ConnectionsAPI.GetConnectionDetails(ctx).GetConnectionDetailsRequest(connectionParam).Execute()
+}
+
+func (w *ConnectionOperationsWrapper) GetConnectionsDataSource(ctx context.Context, req openapi.GetConnectionsRequest) (*openapi.GetConnectionsResponse, *http.Response, error) {
+	return w.client.ConnectionsAPI.GetConnections(ctx).GetConnectionsRequest(req).Execute()
 }
 
 // ConnectionFactoryInterface defines the interface for creating connection operations

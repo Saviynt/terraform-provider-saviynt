@@ -17,6 +17,7 @@ import (
 type DynamicAttributeOperationsInterface interface {
 	CreateDynamicAttribute(ctx context.Context, req openapi.CreateDynamicAttributeRequest) (*openapi.CreateOrUpdateOrDeleteDynamicAttributeResponse, *http.Response, error)
 	FetchDynamicAttribute(ctx context.Context, endpointName string) (*openapi.FetchDynamicAttributesResponse, *http.Response, error)
+	FetchDynamicAttributesForDataSource(ctx context.Context, securitySystems, endpoints, dynamicAttributes, requestTypes []string, loggedInUser, offset, max *string) (*openapi.FetchDynamicAttributesResponse, *http.Response, error)
 	UpdateDynamicAttribute(ctx context.Context, req openapi.UpdateDynamicAttributeRequest) (*openapi.CreateOrUpdateOrDeleteDynamicAttributeResponse, *http.Response, error)
 	DeleteDynamicAttribute(ctx context.Context, req openapi.DeleteDynamicAttributeRequest) (*openapi.CreateOrUpdateOrDeleteDynamicAttributeResponse, *http.Response, error)
 }
@@ -35,6 +36,34 @@ func (w *DynamicAttributeOperationsWrapper) FetchDynamicAttribute(ctx context.Co
 	if endpointName != "" {
 		fetchReq = fetchReq.Endpoint([]string{endpointName})
 	}
+	return fetchReq.Execute()
+}
+
+func (w *DynamicAttributeOperationsWrapper) FetchDynamicAttributesForDataSource(ctx context.Context, securitySystems, endpoints, dynamicAttributes, requestTypes []string, loggedInUser, offset, max *string) (*openapi.FetchDynamicAttributesResponse, *http.Response, error) {
+	fetchReq := w.client.DynamicAttributesAPI.FetchDynamicAttribute(ctx)
+	
+	if securitySystems != nil {
+		fetchReq = fetchReq.Securitysystem(securitySystems)
+	}
+	if endpoints != nil {
+		fetchReq = fetchReq.Endpoint(endpoints)
+	}
+	if dynamicAttributes != nil {
+		fetchReq = fetchReq.Dynamicattributes(dynamicAttributes)
+	}
+	if requestTypes != nil {
+		fetchReq = fetchReq.Requesttype(requestTypes)
+	}
+	if offset != nil {
+		fetchReq = fetchReq.Offset(*offset)
+	}
+	if max != nil {
+		fetchReq = fetchReq.Max(*max)
+	}
+	if loggedInUser != nil {
+		fetchReq = fetchReq.Loggedinuser(*loggedInUser)
+	}
+	
 	return fetchReq.Execute()
 }
 
