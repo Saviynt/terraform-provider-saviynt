@@ -11,8 +11,8 @@ API version: 1.0.0
 package job_control
 
 import (
-	"encoding/json"
 	"bytes"
+	"encoding/json"
 	"fmt"
 )
 
@@ -21,10 +21,10 @@ var _ MappedNullable = &ApplicationDataImportJobAllOfValueMap{}
 
 // ApplicationDataImportJobAllOfValueMap struct for ApplicationDataImportJobAllOfValueMap
 type ApplicationDataImportJobAllOfValueMap struct {
-	Securitysystems []string `json:"securitysystems"`
-	Accountsoraccess *string `json:"accountsoraccess,omitempty"`
-	Externalconn *string `json:"externalconn,omitempty"`
-	Fullorincremental *string `json:"fullorincremental,omitempty"`
+	Securitysystems   []string `json:"securitysystems"`
+	Accountsoraccess  *string  `json:"accountsoraccess,omitempty"`
+	Externalconn      *string  `json:"externalconn,omitempty"`
+	Fullorincremental *string  `json:"fullorincremental,omitempty"`
 }
 
 type _ApplicationDataImportJobAllOfValueMap ApplicationDataImportJobAllOfValueMap
@@ -168,7 +168,7 @@ func (o *ApplicationDataImportJobAllOfValueMap) SetFullorincremental(v string) {
 }
 
 func (o ApplicationDataImportJobAllOfValueMap) MarshalJSON() ([]byte, error) {
-	toSerialize,err := o.ToMap()
+	toSerialize, err := o.ToMap()
 	if err != nil {
 		return []byte{}, err
 	}
@@ -203,10 +203,10 @@ func (o *ApplicationDataImportJobAllOfValueMap) UnmarshalJSON(data []byte) (err 
 	err = json.Unmarshal(data, &allProperties)
 
 	if err != nil {
-		return err;
+		return err
 	}
 
-	for _, requiredProperty := range(requiredProperties) {
+	for _, requiredProperty := range requiredProperties {
 		if _, exists := allProperties[requiredProperty]; !exists {
 			return fmt.Errorf("no value given for required property %v", requiredProperty)
 		}
@@ -262,5 +262,3 @@ func (v *NullableApplicationDataImportJobAllOfValueMap) UnmarshalJSON(src []byte
 	v.isSet = true
 	return json.Unmarshal(src, &v.value)
 }
-
-

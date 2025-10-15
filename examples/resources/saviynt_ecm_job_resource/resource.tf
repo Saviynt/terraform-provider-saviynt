@@ -5,7 +5,6 @@ resource "saviynt_ecm_job_resource" "example" {
   jobs = [
     {
       trigger_name    = "ecm_trigger_1" # required
-      job_name        = "EcmJob"        # required
       job_group       = "ecmGroup"      # required
       cron_expression = "0 0 2 * * ?"   # required
       trigger_group   = "GRAILS_JOBS"   # optional
@@ -13,7 +12,6 @@ resource "saviynt_ecm_job_resource" "example" {
     },
     {
       trigger_name    = "ecm_trigger_2" # required
-      job_name        = "EcmJob"        # required
       job_group       = "ecmGroup"      # required
       cron_expression = "0 0 3 * * ?"   # required
       trigger_group   = "GRAILS_JOBS"   # optional

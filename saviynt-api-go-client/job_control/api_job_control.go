@@ -18,13 +18,12 @@ import (
 	"net/url"
 )
 
-
 // JobControlAPIService JobControlAPI service
 type JobControlAPIService service
 
 type ApiCheckJobStatusRequest struct {
-	ctx context.Context
-	ApiService *JobControlAPIService
+	ctx                   context.Context
+	ApiService            *JobControlAPIService
 	checkJobStatusRequest *CheckJobStatusRequest
 }
 
@@ -40,24 +39,25 @@ func (r ApiCheckJobStatusRequest) Execute() (*CheckJobStatusResponse, *http.Resp
 /*
 CheckJobStatus This API is used to fetch the status of any job other that Data Import Job.
 
- @param ctx context.Context - for authentication, logging, cancellation, deadlines, tracing, etc. Passed from http.Request or context.Background().
- @return ApiCheckJobStatusRequest
+	@param ctx context.Context - for authentication, logging, cancellation, deadlines, tracing, etc. Passed from http.Request or context.Background().
+	@return ApiCheckJobStatusRequest
 */
 func (a *JobControlAPIService) CheckJobStatus(ctx context.Context) ApiCheckJobStatusRequest {
 	return ApiCheckJobStatusRequest{
 		ApiService: a,
-		ctx: ctx,
+		ctx:        ctx,
 	}
 }
 
 // Execute executes the request
-//  @return CheckJobStatusResponse
+//
+//	@return CheckJobStatusResponse
 func (a *JobControlAPIService) CheckJobStatusExecute(r ApiCheckJobStatusRequest) (*CheckJobStatusResponse, *http.Response, error) {
 	var (
-		localVarHTTPMethod   = http.MethodPost
-		localVarPostBody     interface{}
-		formFiles            []formFile
-		localVarReturnValue  *CheckJobStatusResponse
+		localVarHTTPMethod  = http.MethodPost
+		localVarPostBody    interface{}
+		formFiles           []formFile
+		localVarReturnValue *CheckJobStatusResponse
 	)
 
 	localBasePath, err := a.client.cfg.ServerURLWithContext(r.ctx, "JobControlAPIService.CheckJobStatus")
@@ -131,8 +131,8 @@ func (a *JobControlAPIService) CheckJobStatusExecute(r ApiCheckJobStatusRequest)
 }
 
 type ApiCreateOrUpdateTriggerRequest struct {
-	ctx context.Context
-	ApiService *JobControlAPIService
+	ctx                           context.Context
+	ApiService                    *JobControlAPIService
 	createOrUpdateTriggersRequest *CreateOrUpdateTriggersRequest
 }
 
@@ -148,24 +148,25 @@ func (r ApiCreateOrUpdateTriggerRequest) Execute() (*CreateOrUpdateTriggersRespo
 /*
 CreateOrUpdateTrigger This API call can be used for create and update a trigger for a particular jobgroup in EIC.
 
- @param ctx context.Context - for authentication, logging, cancellation, deadlines, tracing, etc. Passed from http.Request or context.Background().
- @return ApiCreateOrUpdateTriggerRequest
+	@param ctx context.Context - for authentication, logging, cancellation, deadlines, tracing, etc. Passed from http.Request or context.Background().
+	@return ApiCreateOrUpdateTriggerRequest
 */
 func (a *JobControlAPIService) CreateOrUpdateTrigger(ctx context.Context) ApiCreateOrUpdateTriggerRequest {
 	return ApiCreateOrUpdateTriggerRequest{
 		ApiService: a,
-		ctx: ctx,
+		ctx:        ctx,
 	}
 }
 
 // Execute executes the request
-//  @return CreateOrUpdateTriggersResponse
+//
+//	@return CreateOrUpdateTriggersResponse
 func (a *JobControlAPIService) CreateOrUpdateTriggerExecute(r ApiCreateOrUpdateTriggerRequest) (*CreateOrUpdateTriggersResponse, *http.Response, error) {
 	var (
-		localVarHTTPMethod   = http.MethodPost
-		localVarPostBody     interface{}
-		formFiles            []formFile
-		localVarReturnValue  *CreateOrUpdateTriggersResponse
+		localVarHTTPMethod  = http.MethodPost
+		localVarPostBody    interface{}
+		formFiles           []formFile
+		localVarReturnValue *CreateOrUpdateTriggersResponse
 	)
 
 	localBasePath, err := a.client.cfg.ServerURLWithContext(r.ctx, "JobControlAPIService.CreateOrUpdateTrigger")
@@ -239,8 +240,8 @@ func (a *JobControlAPIService) CreateOrUpdateTriggerExecute(r ApiCreateOrUpdateT
 }
 
 type ApiCreateTriggerRequest struct {
-	ctx context.Context
-	ApiService *JobControlAPIService
+	ctx               context.Context
+	ApiService        *JobControlAPIService
 	jobTriggerRequest *[]JobTriggerRequest
 }
 
@@ -256,24 +257,25 @@ func (r ApiCreateTriggerRequest) Execute() (*CreateTriggersResponse, *http.Respo
 /*
 CreateTrigger This API call can be used for create and update a trigger for a particular jobgroup in EIC.
 
- @param ctx context.Context - for authentication, logging, cancellation, deadlines, tracing, etc. Passed from http.Request or context.Background().
- @return ApiCreateTriggerRequest
+	@param ctx context.Context - for authentication, logging, cancellation, deadlines, tracing, etc. Passed from http.Request or context.Background().
+	@return ApiCreateTriggerRequest
 */
 func (a *JobControlAPIService) CreateTrigger(ctx context.Context) ApiCreateTriggerRequest {
 	return ApiCreateTriggerRequest{
 		ApiService: a,
-		ctx: ctx,
+		ctx:        ctx,
 	}
 }
 
 // Execute executes the request
-//  @return CreateTriggersResponse
+//
+//	@return CreateTriggersResponse
 func (a *JobControlAPIService) CreateTriggerExecute(r ApiCreateTriggerRequest) (*CreateTriggersResponse, *http.Response, error) {
 	var (
-		localVarHTTPMethod   = http.MethodPost
-		localVarPostBody     interface{}
-		formFiles            []formFile
-		localVarReturnValue  *CreateTriggersResponse
+		localVarHTTPMethod  = http.MethodPost
+		localVarPostBody    interface{}
+		formFiles           []formFile
+		localVarReturnValue *CreateTriggersResponse
 	)
 
 	localBasePath, err := a.client.cfg.ServerURLWithContext(r.ctx, "JobControlAPIService.CreateTrigger")
@@ -347,8 +349,8 @@ func (a *JobControlAPIService) CreateTriggerExecute(r ApiCreateTriggerRequest) (
 }
 
 type ApiDeleteTriggerRequest struct {
-	ctx context.Context
-	ApiService *JobControlAPIService
+	ctx                  context.Context
+	ApiService           *JobControlAPIService
 	deleteTriggerRequest *DeleteTriggerRequest
 }
 
@@ -364,24 +366,25 @@ func (r ApiDeleteTriggerRequest) Execute() (*DeleteTriggerResponse, *http.Respon
 /*
 DeleteTrigger This API call can be used to delete a trigger for a particular \"jobgroup\" in SSM.
 
- @param ctx context.Context - for authentication, logging, cancellation, deadlines, tracing, etc. Passed from http.Request or context.Background().
- @return ApiDeleteTriggerRequest
+	@param ctx context.Context - for authentication, logging, cancellation, deadlines, tracing, etc. Passed from http.Request or context.Background().
+	@return ApiDeleteTriggerRequest
 */
 func (a *JobControlAPIService) DeleteTrigger(ctx context.Context) ApiDeleteTriggerRequest {
 	return ApiDeleteTriggerRequest{
 		ApiService: a,
-		ctx: ctx,
+		ctx:        ctx,
 	}
 }
 
 // Execute executes the request
-//  @return DeleteTriggerResponse
+//
+//	@return DeleteTriggerResponse
 func (a *JobControlAPIService) DeleteTriggerExecute(r ApiDeleteTriggerRequest) (*DeleteTriggerResponse, *http.Response, error) {
 	var (
-		localVarHTTPMethod   = http.MethodPost
-		localVarPostBody     interface{}
-		formFiles            []formFile
-		localVarReturnValue  *DeleteTriggerResponse
+		localVarHTTPMethod  = http.MethodPost
+		localVarPostBody    interface{}
+		formFiles           []formFile
+		localVarReturnValue *DeleteTriggerResponse
 	)
 
 	localBasePath, err := a.client.cfg.ServerURLWithContext(r.ctx, "JobControlAPIService.DeleteTrigger")
@@ -455,8 +458,8 @@ func (a *JobControlAPIService) DeleteTriggerExecute(r ApiDeleteTriggerRequest) (
 }
 
 type ApiFetchJobMetadataRequest struct {
-	ctx context.Context
-	ApiService *JobControlAPIService
+	ctx                     context.Context
+	ApiService              *JobControlAPIService
 	fetchJobMetadataRequest *FetchJobMetadataRequest
 }
 
@@ -472,24 +475,25 @@ func (r ApiFetchJobMetadataRequest) Execute() (*FetchJobMetadataResponse, *http.
 /*
 FetchJobMetadata This API call return job metadata for the last run of a job in SSM.
 
- @param ctx context.Context - for authentication, logging, cancellation, deadlines, tracing, etc. Passed from http.Request or context.Background().
- @return ApiFetchJobMetadataRequest
+	@param ctx context.Context - for authentication, logging, cancellation, deadlines, tracing, etc. Passed from http.Request or context.Background().
+	@return ApiFetchJobMetadataRequest
 */
 func (a *JobControlAPIService) FetchJobMetadata(ctx context.Context) ApiFetchJobMetadataRequest {
 	return ApiFetchJobMetadataRequest{
 		ApiService: a,
-		ctx: ctx,
+		ctx:        ctx,
 	}
 }
 
 // Execute executes the request
-//  @return FetchJobMetadataResponse
+//
+//	@return FetchJobMetadataResponse
 func (a *JobControlAPIService) FetchJobMetadataExecute(r ApiFetchJobMetadataRequest) (*FetchJobMetadataResponse, *http.Response, error) {
 	var (
-		localVarHTTPMethod   = http.MethodPost
-		localVarPostBody     interface{}
-		formFiles            []formFile
-		localVarReturnValue  *FetchJobMetadataResponse
+		localVarHTTPMethod  = http.MethodPost
+		localVarPostBody    interface{}
+		formFiles           []formFile
+		localVarReturnValue *FetchJobMetadataResponse
 	)
 
 	localBasePath, err := a.client.cfg.ServerURLWithContext(r.ctx, "JobControlAPIService.FetchJobMetadata")
@@ -563,7 +567,7 @@ func (a *JobControlAPIService) FetchJobMetadataExecute(r ApiFetchJobMetadataRequ
 }
 
 type ApiPauseAllJobsRequest struct {
-	ctx context.Context
+	ctx        context.Context
 	ApiService *JobControlAPIService
 }
 
@@ -574,24 +578,25 @@ func (r ApiPauseAllJobsRequest) Execute() (*PauseResumeJobsResponse, *http.Respo
 /*
 PauseAllJobs Use this API to pause all running jobs.
 
- @param ctx context.Context - for authentication, logging, cancellation, deadlines, tracing, etc. Passed from http.Request or context.Background().
- @return ApiPauseAllJobsRequest
+	@param ctx context.Context - for authentication, logging, cancellation, deadlines, tracing, etc. Passed from http.Request or context.Background().
+	@return ApiPauseAllJobsRequest
 */
 func (a *JobControlAPIService) PauseAllJobs(ctx context.Context) ApiPauseAllJobsRequest {
 	return ApiPauseAllJobsRequest{
 		ApiService: a,
-		ctx: ctx,
+		ctx:        ctx,
 	}
 }
 
 // Execute executes the request
-//  @return PauseResumeJobsResponse
+//
+//	@return PauseResumeJobsResponse
 func (a *JobControlAPIService) PauseAllJobsExecute(r ApiPauseAllJobsRequest) (*PauseResumeJobsResponse, *http.Response, error) {
 	var (
-		localVarHTTPMethod   = http.MethodPut
-		localVarPostBody     interface{}
-		formFiles            []formFile
-		localVarReturnValue  *PauseResumeJobsResponse
+		localVarHTTPMethod  = http.MethodPut
+		localVarPostBody    interface{}
+		formFiles           []formFile
+		localVarReturnValue *PauseResumeJobsResponse
 	)
 
 	localBasePath, err := a.client.cfg.ServerURLWithContext(r.ctx, "JobControlAPIService.PauseAllJobs")
@@ -660,8 +665,8 @@ func (a *JobControlAPIService) PauseAllJobsExecute(r ApiPauseAllJobsRequest) (*P
 }
 
 type ApiPauseJobRequest struct {
-	ctx context.Context
-	ApiService *JobControlAPIService
+	ctx                   context.Context
+	ApiService            *JobControlAPIService
 	pauseResumeJobRequest *PauseResumeJobRequest
 }
 
@@ -677,24 +682,25 @@ func (r ApiPauseJobRequest) Execute() (*PauseResumeJobsResponse, *http.Response,
 /*
 PauseJob Use this API to pause a selected running job.
 
- @param ctx context.Context - for authentication, logging, cancellation, deadlines, tracing, etc. Passed from http.Request or context.Background().
- @return ApiPauseJobRequest
+	@param ctx context.Context - for authentication, logging, cancellation, deadlines, tracing, etc. Passed from http.Request or context.Background().
+	@return ApiPauseJobRequest
 */
 func (a *JobControlAPIService) PauseJob(ctx context.Context) ApiPauseJobRequest {
 	return ApiPauseJobRequest{
 		ApiService: a,
-		ctx: ctx,
+		ctx:        ctx,
 	}
 }
 
 // Execute executes the request
-//  @return PauseResumeJobsResponse
+//
+//	@return PauseResumeJobsResponse
 func (a *JobControlAPIService) PauseJobExecute(r ApiPauseJobRequest) (*PauseResumeJobsResponse, *http.Response, error) {
 	var (
-		localVarHTTPMethod   = http.MethodPut
-		localVarPostBody     interface{}
-		formFiles            []formFile
-		localVarReturnValue  *PauseResumeJobsResponse
+		localVarHTTPMethod  = http.MethodPut
+		localVarPostBody    interface{}
+		formFiles           []formFile
+		localVarReturnValue *PauseResumeJobsResponse
 	)
 
 	localBasePath, err := a.client.cfg.ServerURLWithContext(r.ctx, "JobControlAPIService.PauseJob")
@@ -768,8 +774,8 @@ func (a *JobControlAPIService) PauseJobExecute(r ApiPauseJobRequest) (*PauseResu
 }
 
 type ApiPauseResumeJobsRequest struct {
-	ctx context.Context
-	ApiService *JobControlAPIService
+	ctx                    context.Context
+	ApiService             *JobControlAPIService
 	pauseResumeJobsRequest *PauseResumeJobsRequest
 }
 
@@ -785,24 +791,25 @@ func (r ApiPauseResumeJobsRequest) Execute() (string, *http.Response, error) {
 /*
 PauseResumeJobs The resumePauseJobs API enables you to pause jobs based on their job type and job name.When a job is paused, its status is displayed as Paused on the Job Control Panel page.
 
- @param ctx context.Context - for authentication, logging, cancellation, deadlines, tracing, etc. Passed from http.Request or context.Background().
- @return ApiPauseResumeJobsRequest
+	@param ctx context.Context - for authentication, logging, cancellation, deadlines, tracing, etc. Passed from http.Request or context.Background().
+	@return ApiPauseResumeJobsRequest
 */
 func (a *JobControlAPIService) PauseResumeJobs(ctx context.Context) ApiPauseResumeJobsRequest {
 	return ApiPauseResumeJobsRequest{
 		ApiService: a,
-		ctx: ctx,
+		ctx:        ctx,
 	}
 }
 
 // Execute executes the request
-//  @return string
+//
+//	@return string
 func (a *JobControlAPIService) PauseResumeJobsExecute(r ApiPauseResumeJobsRequest) (string, *http.Response, error) {
 	var (
-		localVarHTTPMethod   = http.MethodPost
-		localVarPostBody     interface{}
-		formFiles            []formFile
-		localVarReturnValue  string
+		localVarHTTPMethod  = http.MethodPost
+		localVarPostBody    interface{}
+		formFiles           []formFile
+		localVarReturnValue string
 	)
 
 	localBasePath, err := a.client.cfg.ServerURLWithContext(r.ctx, "JobControlAPIService.PauseResumeJobs")
@@ -876,7 +883,7 @@ func (a *JobControlAPIService) PauseResumeJobsExecute(r ApiPauseResumeJobsReques
 }
 
 type ApiResumeAllJobsRequest struct {
-	ctx context.Context
+	ctx        context.Context
 	ApiService *JobControlAPIService
 }
 
@@ -887,24 +894,25 @@ func (r ApiResumeAllJobsRequest) Execute() (*PauseResumeJobsResponse, *http.Resp
 /*
 ResumeAllJobs Use this API to resume all paused jobs.
 
- @param ctx context.Context - for authentication, logging, cancellation, deadlines, tracing, etc. Passed from http.Request or context.Background().
- @return ApiResumeAllJobsRequest
+	@param ctx context.Context - for authentication, logging, cancellation, deadlines, tracing, etc. Passed from http.Request or context.Background().
+	@return ApiResumeAllJobsRequest
 */
 func (a *JobControlAPIService) ResumeAllJobs(ctx context.Context) ApiResumeAllJobsRequest {
 	return ApiResumeAllJobsRequest{
 		ApiService: a,
-		ctx: ctx,
+		ctx:        ctx,
 	}
 }
 
 // Execute executes the request
-//  @return PauseResumeJobsResponse
+//
+//	@return PauseResumeJobsResponse
 func (a *JobControlAPIService) ResumeAllJobsExecute(r ApiResumeAllJobsRequest) (*PauseResumeJobsResponse, *http.Response, error) {
 	var (
-		localVarHTTPMethod   = http.MethodPut
-		localVarPostBody     interface{}
-		formFiles            []formFile
-		localVarReturnValue  *PauseResumeJobsResponse
+		localVarHTTPMethod  = http.MethodPut
+		localVarPostBody    interface{}
+		formFiles           []formFile
+		localVarReturnValue *PauseResumeJobsResponse
 	)
 
 	localBasePath, err := a.client.cfg.ServerURLWithContext(r.ctx, "JobControlAPIService.ResumeAllJobs")
@@ -973,8 +981,8 @@ func (a *JobControlAPIService) ResumeAllJobsExecute(r ApiResumeAllJobsRequest) (
 }
 
 type ApiResumeJobRequest struct {
-	ctx context.Context
-	ApiService *JobControlAPIService
+	ctx                   context.Context
+	ApiService            *JobControlAPIService
 	pauseResumeJobRequest *PauseResumeJobRequest
 }
 
@@ -990,24 +998,25 @@ func (r ApiResumeJobRequest) Execute() (*PauseResumeJobsResponse, *http.Response
 /*
 ResumeJob Use this API to resume a selected pause job.
 
- @param ctx context.Context - for authentication, logging, cancellation, deadlines, tracing, etc. Passed from http.Request or context.Background().
- @return ApiResumeJobRequest
+	@param ctx context.Context - for authentication, logging, cancellation, deadlines, tracing, etc. Passed from http.Request or context.Background().
+	@return ApiResumeJobRequest
 */
 func (a *JobControlAPIService) ResumeJob(ctx context.Context) ApiResumeJobRequest {
 	return ApiResumeJobRequest{
 		ApiService: a,
-		ctx: ctx,
+		ctx:        ctx,
 	}
 }
 
 // Execute executes the request
-//  @return PauseResumeJobsResponse
+//
+//	@return PauseResumeJobsResponse
 func (a *JobControlAPIService) ResumeJobExecute(r ApiResumeJobRequest) (*PauseResumeJobsResponse, *http.Response, error) {
 	var (
-		localVarHTTPMethod   = http.MethodPut
-		localVarPostBody     interface{}
-		formFiles            []formFile
-		localVarReturnValue  *PauseResumeJobsResponse
+		localVarHTTPMethod  = http.MethodPut
+		localVarPostBody    interface{}
+		formFiles           []formFile
+		localVarReturnValue *PauseResumeJobsResponse
 	)
 
 	localBasePath, err := a.client.cfg.ServerURLWithContext(r.ctx, "JobControlAPIService.ResumeJob")
@@ -1081,8 +1090,8 @@ func (a *JobControlAPIService) ResumeJobExecute(r ApiResumeJobRequest) (*PauseRe
 }
 
 type ApiRunJobTriggerRequest struct {
-	ctx context.Context
-	ApiService *JobControlAPIService
+	ctx                  context.Context
+	ApiService           *JobControlAPIService
 	runJobTriggerRequest *RunJobTriggerRequest
 }
 
@@ -1098,24 +1107,25 @@ func (r ApiRunJobTriggerRequest) Execute() (*RunJobTriggerResponse, *http.Respon
 /*
 RunJobTrigger This API call can be used to run a job trigger in SSM.
 
- @param ctx context.Context - for authentication, logging, cancellation, deadlines, tracing, etc. Passed from http.Request or context.Background().
- @return ApiRunJobTriggerRequest
+	@param ctx context.Context - for authentication, logging, cancellation, deadlines, tracing, etc. Passed from http.Request or context.Background().
+	@return ApiRunJobTriggerRequest
 */
 func (a *JobControlAPIService) RunJobTrigger(ctx context.Context) ApiRunJobTriggerRequest {
 	return ApiRunJobTriggerRequest{
 		ApiService: a,
-		ctx: ctx,
+		ctx:        ctx,
 	}
 }
 
 // Execute executes the request
-//  @return RunJobTriggerResponse
+//
+//	@return RunJobTriggerResponse
 func (a *JobControlAPIService) RunJobTriggerExecute(r ApiRunJobTriggerRequest) (*RunJobTriggerResponse, *http.Response, error) {
 	var (
-		localVarHTTPMethod   = http.MethodPost
-		localVarPostBody     interface{}
-		formFiles            []formFile
-		localVarReturnValue  *RunJobTriggerResponse
+		localVarHTTPMethod  = http.MethodPost
+		localVarPostBody    interface{}
+		formFiles           []formFile
+		localVarReturnValue *RunJobTriggerResponse
 	)
 
 	localBasePath, err := a.client.cfg.ServerURLWithContext(r.ctx, "JobControlAPIService.RunJobTrigger")

@@ -365,6 +365,7 @@ func (d *SapConnectionDataSource) Read(ctx context.Context, req datasource.ReadR
 			"has_attributes":  state.ConnectionAttributes != nil,
 		})
 }
+
 // ReadSAPConnectionDetails retrieves SAP connection details from Saviynt API
 // Handles both connection name and connection key based lookups using factory pattern
 // Returns standardized errors with proper correlation tracking and sensitive data sanitization

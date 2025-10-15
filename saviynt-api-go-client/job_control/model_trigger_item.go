@@ -18,12 +18,12 @@ import (
 
 // TriggerItem - struct for TriggerItem
 type TriggerItem struct {
-	AccountsImportFullJob *AccountsImportFullJob
+	AccountsImportFullJob    *AccountsImportFullJob
 	ApplicationDataImportJob *ApplicationDataImportJob
-	EcmJob *EcmJob
-	EcmSapUserJob *EcmSapUserJob
-	UserImportJob *UserImportJob
-	WSRetryJob *WSRetryJob
+	EcmJob                   *EcmJob
+	EcmSapUserJob            *EcmSapUserJob
+	UserImportJob            *UserImportJob
+	WSRetryJob               *WSRetryJob
 }
 
 // AccountsImportFullJobAsTriggerItem is a convenience function that returns AccountsImportFullJob wrapped in TriggerItem
@@ -67,7 +67,6 @@ func WSRetryJobAsTriggerItem(v *WSRetryJob) TriggerItem {
 		WSRetryJob: v,
 	}
 }
-
 
 // Unmarshal JSON data into one of the pointers in the struct
 func (dst *TriggerItem) UnmarshalJSON(data []byte) error {
@@ -222,7 +221,7 @@ func (src TriggerItem) MarshalJSON() ([]byte, error) {
 }
 
 // Get the actual instance
-func (obj *TriggerItem) GetActualInstance() (interface{}) {
+func (obj *TriggerItem) GetActualInstance() interface{} {
 	if obj == nil {
 		return nil
 	}
@@ -255,7 +254,7 @@ func (obj *TriggerItem) GetActualInstance() (interface{}) {
 }
 
 // Get the actual instance value
-func (obj TriggerItem) GetActualInstanceValue() (interface{}) {
+func (obj TriggerItem) GetActualInstanceValue() interface{} {
 	if obj.AccountsImportFullJob != nil {
 		return *obj.AccountsImportFullJob
 	}
@@ -319,5 +318,3 @@ func (v *NullableTriggerItem) UnmarshalJSON(src []byte) error {
 	v.isSet = true
 	return json.Unmarshal(src, &v.value)
 }
-
-
