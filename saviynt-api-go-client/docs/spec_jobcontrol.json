@@ -1,0 +1,408 @@
+{
+  "openapi": "3.1.0",
+  "x-stoplight": {
+    "id": "wh6tzb3gstrbw"
+  },
+  "info": {
+    "title": "Saviynt Job Control API",
+    "version": "1.0",
+    "description": "Saviynt Job Control API Spec",
+    "contact": {
+      "name": "Saviynt Developers Team",
+      "email": "https://github.com/saviynt"
+    }
+  },
+  "servers": [
+    {
+      "url": "http://localhost:3000"
+    }
+  ],
+  "tags": [
+    {
+      "name": "Job Control"
+    }
+  ],
+  "paths": {
+    "/ECM/api/v5/createUpdateTrigger": {
+      "post": {
+        "summary": "Create and Update Trigger",
+        "operationId": "createUpdateTrigger",
+        "tags": [
+          "Job Control"
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        },
+        "description": "This API call can be used to create and update a trigger for a particular `jobgroup` in Saviynt.\n\nStarting with Release v24.7, a new `analysistypes` parameter has been introduced for the **Recommendations** job. To execute an analysis type using this API, you can use the `analysistypes` parameter and specify the following values in its request:\n\n* 0 – Run All Steps\n* 1 – Run Attribute Discovery\n* 2 – Generate Correlation Rules\n* 3 – Rule Consolidation for Access\n* 4 – Rule Consolidation for Apps\n* 5 – Compute Access Confidence\n* 6 – Compute Model Performance Statistics\n* 7 – Incremental Rule Creation"
+      }
+    },
+    "/ECM/api/v5/checkJobStatus": {
+      "post": {
+        "summary": "Check Job Status",
+        "operationId": "checkJobStatus",
+        "tags": [
+          "Job Control"
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CheckJobStatusResponse"
+                }
+              }
+            }
+          }
+        },
+        "description": "This API is used to fetch the status of any job other than Data Import Job.",
+        "requestBody": {
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "$ref": "#/components/schemas/CheckJobStatusRequest"
+              }
+            }
+          },
+          "description": ""
+        }
+      }
+    },
+    "/ECM/api/v5/deleteTrigger": {
+      "post": {
+        "summary": "Delete Trigger",
+        "operationId": "deleteTrigger",
+        "tags": [
+          "Job Control"
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        },
+        "description": "This API call can be used to delete a trigger for a particular \"jobgroup\" in Saviynt."
+      }
+    },
+    "/ECM/api/v5/runJobTrigger": {
+      "post": {
+        "summary": "Run Job Trigger",
+        "operationId": "runJobTrigger",
+        "tags": [
+          "Job Control"
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        },
+        "description": "This API call can be used to run a job trigger in Saviynt.\n\nThe following cases illustrate different scenarios on the usage of the `analyticsAdvanceQuery` parameter in the API:\n\n* Case 1: When you configure the `analyticsAdvanceQuery` within the payload, set the `defaultActionForAnalytics` as `\"true\"`, and then execute the control from the API, it overrides the default action and the advanced query configuration within the job trigger.\n* Case 2: When you configure the `analyticsAdvanceQuery` within the payload, set the `defaultActionForAnalytics` as `\"false\"`, and then execute the control from the API without performing the default actions configured in the control, it overrides the default action and the advanced query configuration within the job trigger.\n* Case 3: When you do not configure both the `analyticsAdvanceQuery` and the `defaultActionForAnalytics`x, the default action will depend on the configuration provided in the analytics job trigger.\n\nThe following cases illustrate different scenarios on the usage of the `analyticsCategories` parameter in the API:\n\n* Case 1: When you set the \"defaultActionForAnalytics\" as \"true\" to perform default actions for analytics controls by executing the control from job API, it will override the default action configuration within the job trigger.\n* Case 2: When you set the \"defaultActionForAnalytics\" as \"false\" to not perform default actions for analytics controls by executing the control from job API, it will override the default action configuration within the job trigger.\n* Case 3: When the defaultActionForAnalytics parameter is not set in the payload, the default action will depend on the configuration provided in the analytics job trigger."
+      }
+    },
+    "/ECM/api/v5/fetchJobMetadata": {
+      "post": {
+        "summary": "Fetch Job Metadata",
+        "operationId": "fetchJobMetadata",
+        "tags": [
+          "Job Control"
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/FetchJobMetadataResponse"
+                }
+              }
+            }
+          }
+        },
+        "description": "This API call return job metadata for the last run of a job in Saviynt.\n\nNote: The structure of the result param in response can change based upon the Job History saved in Saviynt",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/FetchJobMetadataRequest"
+              }
+            }
+          }
+        }
+      }
+    },
+    "/ECM/api/v5/createTriggers": {
+      "post": {
+        "summary": "Create Triggers",
+        "operationId": "createTriggers",
+        "description": "This API is used to create job triggers.",
+        "tags": [
+          "Job Control"
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/ECM/api/v5/resumePauseJobs": {
+      "post": {
+        "summary": "Resume Pause Jobs",
+        "operationId": "resumePauseJobs",
+        "tags": [
+          "Job Control"
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "type": "string"
+                },
+                "examples": {
+                  "Successful Pause": {
+                    "value": "Job(s) Paused successfully"
+                  },
+                  "Successful Resume": {
+                    "value": "Job(s) Resumed successfully"
+                  },
+                  "Error on No Triggers": {
+                    "value": "No triggers found"
+                  }
+                }
+              }
+            }
+          },
+          "201": {
+            "description": "Created",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          }
+        },
+        "description": "Starting with Release v23.10, the `resumePauseJobs` API enables you to pause jobs based on their job type and job name.\n\nWhen a job is paused, its status is displayed as Paused on the Job Control Panel page.",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ResumePauseJobsRequest"
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "CheckJobStatusRequest": {
+        "title": "CheckJobStatusRequest",
+        "x-stoplight": {
+          "id": "sgskilxuqx1ng"
+        },
+        "type": "object",
+        "properties": {
+          "jobgroup": {
+            "type": "string",
+            "x-stoplight": {
+              "id": "8ypc6y1fo4t4n"
+            }
+          },
+          "jobname": {
+            "type": "string",
+            "x-stoplight": {
+              "id": "afvzbom2l6dmo"
+            }
+          }
+        },
+        "required": [
+          "jobgroup",
+          "jobname"
+        ]
+      },
+      "CheckJobStatusResponse": {
+        "title": "CheckJobStatusResponse",
+        "x-stoplight": {
+          "id": "2gqodxah1rk0u"
+        },
+        "type": "object",
+        "properties": {
+          "msg": {
+            "type": "string",
+            "x-stoplight": {
+              "id": "8f07qxf5fpmnu"
+            }
+          },
+          "errorCode": {
+            "type": "string",
+            "x-stoplight": {
+              "id": "vywsiuk8okt0v"
+            }
+          }
+        }
+      },
+      "DeleteTriggerRequest": {
+        "title": "DeleteTriggerRequest",
+        "x-stoplight": {
+          "id": "c2oolhf2vbnmh"
+        },
+        "type": "object",
+        "properties": {
+          "jobname": {
+            "type": "string",
+            "x-stoplight": {
+              "id": "s5k92socxnck0"
+            }
+          },
+          "triggername": {
+            "type": "string",
+            "x-stoplight": {
+              "id": "f5egb9c3qcldo"
+            }
+          },
+          "jobgroup": {
+            "type": "string",
+            "x-stoplight": {
+              "id": "ze7cut4s3g2r0"
+            }
+          }
+        },
+        "required": [
+          "jobname"
+        ]
+      },
+      "FetchJobMetadataRequest": {
+        "title": "FetchJobMetadataRequest",
+        "x-stoplight": {
+          "id": "t7fzs0it0fdhv"
+        },
+        "type": "object",
+        "properties": {
+          "jobname": {
+            "type": "string",
+            "x-stoplight": {
+              "id": "debkp5wftr5l6"
+            }
+          },
+          "triggername": {
+            "type": "string",
+            "x-stoplight": {
+              "id": "qt5w1qws7s64s"
+            }
+          },
+          "jobgroup": {
+            "type": "string",
+            "x-stoplight": {
+              "id": "eg0od7k6qppj3"
+            }
+          }
+        },
+        "required": [
+          "jobname"
+        ],
+        "description": ""
+      },
+      "FetchJobMetadataResponse": {
+        "title": "FetchJobMetadataResponse",
+        "x-stoplight": {
+          "id": "r6jctqk6z8npb"
+        },
+        "type": "object",
+        "properties": {
+          "msg": {
+            "type": "string",
+            "x-stoplight": {
+              "id": "s5h1a3wf6stjx"
+            }
+          },
+          "errorCode": {
+            "type": "integer",
+            "x-stoplight": {
+              "id": "5cjzjtra4phal"
+            }
+          },
+          "result": {
+            "type": "object",
+            "additionalProperties": true,
+            "x-stoplight": {
+              "id": "t99p2zgl9t1al"
+            }
+          }
+        }
+      },
+      "DeleteTriggerResponse": {
+        "title": "DeleteTriggerResponse",
+        "x-stoplight": {
+          "id": "5hebwug4olh4h"
+        },
+        "type": "object",
+        "properties": {
+          "msg": {
+            "type": "string",
+            "x-stoplight": {
+              "id": "1kzo52rrekugx"
+            }
+          },
+          "errorCode": {
+            "type": "string",
+            "x-stoplight": {
+              "id": "f755k6c3mpnec"
+            }
+          }
+        }
+      },
+      "ResumePauseJobsRequest": {
+        "title": "ResumePauseJobsRequest",
+        "x-stoplight": {
+          "id": "ru7xvuen9hqhr"
+        },
+        "type": "object",
+        "properties": {
+          "action": {
+            "type": "string",
+            "enum": [
+              "PAUSE",
+              "RESUME"
+            ],
+            "x-stoplight": {
+              "id": "527d2rxyp6gw3"
+            }
+          },
+          "triggername": {
+            "type": "string",
+            "x-stoplight": {
+              "id": "cmbimxzyk4and"
+            }
+          },
+          "jobname": {
+            "type": "string",
+            "x-stoplight": {
+              "id": "979nwfj8yobyy"
+            }
+          }
+        },
+        "required": [
+          "action"
+        ]
+      },
+      "ResumePauseJobsResponse": {
+        "title": "ResumePauseJobsResponse",
+        "x-stoplight": {
+          "id": "jq15kv6uajh6e"
+        },
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          }
+        }
+      }
+    }
+  }
+}
