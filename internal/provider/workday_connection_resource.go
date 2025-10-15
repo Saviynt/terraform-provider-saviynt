@@ -348,8 +348,6 @@ func (r *WorkdayConnectionResource) Schema(ctx context.Context, req resource.Sch
 	}
 }
 
-
-
 func (r *WorkdayConnectionResource) Configure(ctx context.Context, req resource.ConfigureRequest, resp *resource.ConfigureResponse) {
 	opCtx := errorsutil.CreateOperationContext(errorsutil.ConnectorTypeWorkday, "configure", "")
 	ctx = opCtx.AddContextToLogger(ctx)

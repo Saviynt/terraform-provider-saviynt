@@ -165,11 +165,6 @@ func (r *AccountsImportIncrementalJobResource) CreateOrUpdateAccountsImportIncre
 	var jobTriggerItems []openapi.JobTriggerItem
 
 	for i, job := range jobs {
-		// Validate job name
-		if job.JobName.IsNull() || job.JobName.ValueString() != "AccountsImportIncrementalJob" {
-			return nil, fmt.Errorf("job %d: job_name must be 'AccountsImportIncrementalJob', got '%s'", i+1, job.JobName.ValueString())
-		}
-
 		// Validate required fields
 		if job.Name.IsNull() || job.Name.ValueString() == "" {
 			return nil, fmt.Errorf("job %d: name is required", i+1)
@@ -193,7 +188,7 @@ func (r *AccountsImportIncrementalJobResource) CreateOrUpdateAccountsImportIncre
 		// Create the job trigger
 		jobTrigger := openapi.NewAccountsImportIncrementalJob(
 			job.Name.ValueString(),
-			job.JobName.ValueString(),
+			"AccountsImportIncrementalJob",
 			job.JobGroup.ValueString(),
 			job.Group.ValueString(),
 			job.CronExp.ValueString(),
@@ -269,7 +264,6 @@ func (r *AccountsImportIncrementalJobResource) DeleteAccountsImportIncrementalJo
 	// Delete each job individually
 	for i, job := range jobs {
 		name := job.Name.ValueString()
-		jobName := job.JobName.ValueString()
 		jobGroup := job.JobGroup.ValueString()
 
 		tflog.Debug(ctx, "Deleting job trigger", map[string]interface{}{
@@ -280,7 +274,7 @@ func (r *AccountsImportIncrementalJobResource) DeleteAccountsImportIncrementalJo
 		// Create delete request
 		deleteReq := openapi.DeleteTriggerRequest{
 			Triggername: name,
-			Jobname:     jobName,
+			Jobname:     "AccountsImportIncrementalJob",
 			Jobgroup:    jobGroup,
 		}
 

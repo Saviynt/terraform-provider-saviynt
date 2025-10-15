@@ -166,11 +166,6 @@ func (r *EcmJobResource) CreateOrUpdateEcmJobs(ctx context.Context, jobs []EcmJo
 
 	// Process each job
 	for i, job := range jobs {
-		// Validate job name is EcmJob
-		if job.JobName.IsNull() || job.JobName.ValueString() != "EcmJob" {
-			return nil, fmt.Errorf("job %d: job_name must be 'EcmJob', got '%s'", i+1, job.JobName.ValueString())
-		}
-
 		// Validate required fields
 		if job.TriggerName.IsNull() || job.TriggerName.ValueString() == "" {
 			return nil, fmt.Errorf("job %d: trigger_name is required", i+1)
@@ -191,7 +186,7 @@ func (r *EcmJobResource) CreateOrUpdateEcmJobs(ctx context.Context, jobs []EcmJo
 		// Create the job trigger
 		jobTrigger := openapi.NewEcmJob(
 			job.TriggerName.ValueString(),
-			job.JobName.ValueString(),
+			"EcmJob",
 			job.JobGroup.ValueString(),
 			job.CronExpression.ValueString(),
 		)
@@ -395,7 +390,6 @@ func (r *EcmJobResource) DeleteEcmJobs(ctx context.Context, jobs []EcmJobModel) 
 	// Delete each job individually
 	for i, job := range jobs {
 		triggerName := job.TriggerName.ValueString()
-		jobName := job.JobName.ValueString()
 		jobGroup := job.JobGroup.ValueString()
 
 		tflog.Debug(ctx, "Deleting job trigger", map[string]interface{}{
@@ -406,7 +400,7 @@ func (r *EcmJobResource) DeleteEcmJobs(ctx context.Context, jobs []EcmJobModel) 
 		// Create delete request
 		deleteReq := openapi.DeleteTriggerRequest{
 			Triggername: triggerName,
-			Jobname:     jobName,
+			Jobname:     "EcmJob",
 			Jobgroup:    jobGroup,
 		}
 

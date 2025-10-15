@@ -303,6 +303,7 @@ func (d *restConnectionDatasource) Read(ctx context.Context, req datasource.Read
 			"has_attributes":  state.ConnectionAttributes != nil,
 		})
 }
+
 // ReadRESTConnectionDetails retrieves REST connection details from Saviynt API
 // Handles both connection name and connection key based lookups using factory pattern
 // Returns standardized errors with proper correlation tracking and sensitive data sanitization

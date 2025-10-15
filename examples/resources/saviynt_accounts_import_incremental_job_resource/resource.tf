@@ -5,7 +5,6 @@ resource "saviynt_accounts_import_incremental_job_resource" "example" {
   jobs = [
     {
       name            = "accounts_incremental_trigger_1" # required
-      job_name        = "AccountsImportIncrementalJob"   # required
       job_group       = "DATABASE"                       # required
       group           = "GRAILS_JOBS"                    # required
       cron_exp        = "0 0 2 * * ?"                    # required
@@ -13,7 +12,6 @@ resource "saviynt_accounts_import_incremental_job_resource" "example" {
     },
     {
       name            = "accounts_incremental_trigger_2" # required
-      job_name        = "AccountsImportIncrementalJob"   # required
       job_group       = "DATABASE"                       # required
       group           = "GRAILS_JOBS"                    # required
       cron_exp        = "0 0 3 * * ?"                    # required

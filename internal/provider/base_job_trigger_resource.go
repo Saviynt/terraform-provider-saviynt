@@ -12,7 +12,6 @@ import (
 // This is different from BaseJobControlResourceModel which is for CreateOrUpdateTriggers API.
 type BaseJobTriggerResourceModel struct {
 	Name     types.String `tfsdk:"name"`
-	JobName  types.String `tfsdk:"job_name"`
 	JobGroup types.String `tfsdk:"job_group"`
 	Group    types.String `tfsdk:"group"`
 	CronExp  types.String `tfsdk:"cron_exp"`
@@ -23,10 +22,6 @@ func BaseJobTriggerResourceSchema() map[string]schema.Attribute {
 		"name": schema.StringAttribute{
 			Required:    true,
 			Description: "Unique name of the trigger. Example: \"MyTrigger_001\"",
-		},
-		"job_name": schema.StringAttribute{
-			Required:    true,
-			Description: "Name of the job associated with the trigger. Example: \"WSRetryJob\"",
 		},
 		"job_group": schema.StringAttribute{
 			Required:    true,
