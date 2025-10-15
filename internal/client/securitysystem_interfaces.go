@@ -16,6 +16,7 @@ type SecuritySystemOperationsInterface interface {
 	CreateSecuritySystem(ctx context.Context, req openapi.CreateSecuritySystemRequest) (*openapi.CreateSecuritySystem200Response, *http.Response, error)
 	UpdateSecuritySystem(ctx context.Context, req openapi.UpdateSecuritySystemRequest) (*openapi.CreateSecuritySystem200Response, *http.Response, error)
 	GetSecuritySystems(ctx context.Context, systemname string) (*openapi.GetSecuritySystems200Response, *http.Response, error)
+	GetSecuritySystemsRequest(ctx context.Context) openapi.ApiGetSecuritySystemsRequest
 }
 
 // SecuritySystemOperationsWrapper wraps the actual security system operations to implement the interface
@@ -33,6 +34,10 @@ func (w *SecuritySystemOperationsWrapper) UpdateSecuritySystem(ctx context.Conte
 
 func (w *SecuritySystemOperationsWrapper) GetSecuritySystems(ctx context.Context, systemname string) (*openapi.GetSecuritySystems200Response, *http.Response, error) {
 	return w.client.SecuritySystemsAPI.GetSecuritySystems(ctx).Systemname(systemname).Execute()
+}
+
+func (w *SecuritySystemOperationsWrapper) GetSecuritySystemsRequest(ctx context.Context) openapi.ApiGetSecuritySystemsRequest {
+	return w.client.SecuritySystemsAPI.GetSecuritySystems(ctx)
 }
 
 // SecuritySystemFactoryInterface defines the interface for creating security system operations
