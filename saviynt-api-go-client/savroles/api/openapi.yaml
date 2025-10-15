@@ -1,0 +1,302 @@
+# Copyright (c) Saviynt Inc.
+# SPDX-License-Identifier: MPL-2.0
+
+
+openapi: 3.1.0
+info:
+  contact:
+    email: https://github.com/saviynt
+    name: Saviynt Developers Team
+  description: Saviynt SAV Roles API
+  title: Saviynt SAV Roles API
+  version: "1.0"
+servers:
+- url: http://localhost:3000
+tags:
+- name: SAV Roles
+paths:
+  /ECMv6/api/userms/savroles/{savRoleName}/users:
+    get:
+      description: |+
+        This API returns a list of users associated with a particular SAV role.
+
+      operationId: getSAVRoleUsers
+      parameters:
+      - description: Specifies the number of retrieved results
+        explode: true
+        in: query
+        name: limit
+        required: true
+        schema:
+          default: "0"
+          type: string
+        style: form
+      - description: "Specifies the number of rows of the result to skip before any\
+          \ rows are retrieved, and must be used with the `limit` parameter"
+        explode: true
+        in: query
+        name: offset
+        required: true
+        schema:
+          default: "1000"
+          type: string
+        style: form
+      - description: The `ROLENAME` field in geAllSAVRoles API
+        explode: false
+        in: path
+        name: savRoleName
+        required: true
+        schema:
+          type: string
+        style: simple
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GetSAVRoleUsersResponse'
+          description: OK
+      summary: Get Users Associated with a Particular SAV Role
+      tags:
+      - SAV Roles
+    parameters:
+    - description: The `ROLENAME` field in geAllSAVRoles API
+      explode: false
+      in: path
+      name: savRoleName
+      required: true
+      schema:
+        type: string
+      style: simple
+  /ECMv6/api/userms/savroles:
+    get:
+      description: This API returns all out-of-the-box (OOTB) and custom SAV roles
+        along with their properties.
+      operationId: getAllSAVRoles
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GetAllSAVRolesResponse'
+          description: OK
+      summary: Get All SAV Roles
+      tags:
+      - SAV Roles
+components:
+  schemas:
+    GetAllSAVRolesResponse:
+      description: ""
+      example:
+        savroles:
+        - UPDATEUSER: UPDATEUSER
+          CUSTOMPROPERTY20: CUSTOMPROPERTY20
+          ROLENAME: ROLENAME
+          HOMEPAGE: HOMEPAGE
+          CUSTOMPROPERTY10: CUSTOMPROPERTY10
+          CUSTOMPROPERTY12: CUSTOMPROPERTY12
+          CUSTOMPROPERTY11: CUSTOMPROPERTY11
+          CUSTOMPROPERTY14: CUSTOMPROPERTY14
+          CUSTOMPROPERTY4: CUSTOMPROPERTY4
+          CUSTOMPROPERTY13: CUSTOMPROPERTY13
+          CUSTOMPROPERTY5: CUSTOMPROPERTY5
+          CUSTOMPROPERTY16: CUSTOMPROPERTY16
+          CUSTOMPROPERTY2: CUSTOMPROPERTY2
+          CUSTOMPROPERTY15: CUSTOMPROPERTY15
+          CUSTOMPROPERTY3: CUSTOMPROPERTY3
+          CUSTOMPROPERTY18: CUSTOMPROPERTY18
+          CUSTOMPROPERTY1: CUSTOMPROPERTY1
+          CUSTOMPROPERTY17: CUSTOMPROPERTY17
+          ROLEDESCRIPTION: ROLEDESCRIPTION
+          CUSTOMPROPERTY19: CUSTOMPROPERTY19
+          ISOOTB: ISOOTB
+          CUSTOMPROPERTY8: CUSTOMPROPERTY8
+          CUSTOMPROPERTY9: CUSTOMPROPERTY9
+          CUSTOMPROPERTY6: CUSTOMPROPERTY6
+          CUSTOMPROPERTY7: CUSTOMPROPERTY7
+          UPDATEDATE: UPDATEDATE
+          READONLY: READONLY
+          STATUSKEY: STATUSKEY
+        - UPDATEUSER: UPDATEUSER
+          CUSTOMPROPERTY20: CUSTOMPROPERTY20
+          ROLENAME: ROLENAME
+          HOMEPAGE: HOMEPAGE
+          CUSTOMPROPERTY10: CUSTOMPROPERTY10
+          CUSTOMPROPERTY12: CUSTOMPROPERTY12
+          CUSTOMPROPERTY11: CUSTOMPROPERTY11
+          CUSTOMPROPERTY14: CUSTOMPROPERTY14
+          CUSTOMPROPERTY4: CUSTOMPROPERTY4
+          CUSTOMPROPERTY13: CUSTOMPROPERTY13
+          CUSTOMPROPERTY5: CUSTOMPROPERTY5
+          CUSTOMPROPERTY16: CUSTOMPROPERTY16
+          CUSTOMPROPERTY2: CUSTOMPROPERTY2
+          CUSTOMPROPERTY15: CUSTOMPROPERTY15
+          CUSTOMPROPERTY3: CUSTOMPROPERTY3
+          CUSTOMPROPERTY18: CUSTOMPROPERTY18
+          CUSTOMPROPERTY1: CUSTOMPROPERTY1
+          CUSTOMPROPERTY17: CUSTOMPROPERTY17
+          ROLEDESCRIPTION: ROLEDESCRIPTION
+          CUSTOMPROPERTY19: CUSTOMPROPERTY19
+          ISOOTB: ISOOTB
+          CUSTOMPROPERTY8: CUSTOMPROPERTY8
+          CUSTOMPROPERTY9: CUSTOMPROPERTY9
+          CUSTOMPROPERTY6: CUSTOMPROPERTY6
+          CUSTOMPROPERTY7: CUSTOMPROPERTY7
+          UPDATEDATE: UPDATEDATE
+          READONLY: READONLY
+          STATUSKEY: STATUSKEY
+      properties:
+        savroles:
+          items:
+            $ref: '#/components/schemas/SAVRole'
+          type: array
+          x-stoplight:
+            id: zgro4g0m3s9mh
+      title: GetAllSAVRolesResponse
+      x-stoplight:
+        id: qbji4q7oj3c61
+    GetSAVRoleUsersResponse:
+      example:
+        users:
+        - username: username
+        - username: username
+      properties:
+        users:
+          items:
+            $ref: '#/components/schemas/SAVRoleUser'
+          type: array
+          x-stoplight:
+            id: v8woquwbseecb
+      title: GetSAVRoleUsersResponse
+      x-stoplight:
+        id: lktoz32ra9zhz
+    SAVRole:
+      example:
+        UPDATEUSER: UPDATEUSER
+        CUSTOMPROPERTY20: CUSTOMPROPERTY20
+        ROLENAME: ROLENAME
+        HOMEPAGE: HOMEPAGE
+        CUSTOMPROPERTY10: CUSTOMPROPERTY10
+        CUSTOMPROPERTY12: CUSTOMPROPERTY12
+        CUSTOMPROPERTY11: CUSTOMPROPERTY11
+        CUSTOMPROPERTY14: CUSTOMPROPERTY14
+        CUSTOMPROPERTY4: CUSTOMPROPERTY4
+        CUSTOMPROPERTY13: CUSTOMPROPERTY13
+        CUSTOMPROPERTY5: CUSTOMPROPERTY5
+        CUSTOMPROPERTY16: CUSTOMPROPERTY16
+        CUSTOMPROPERTY2: CUSTOMPROPERTY2
+        CUSTOMPROPERTY15: CUSTOMPROPERTY15
+        CUSTOMPROPERTY3: CUSTOMPROPERTY3
+        CUSTOMPROPERTY18: CUSTOMPROPERTY18
+        CUSTOMPROPERTY1: CUSTOMPROPERTY1
+        CUSTOMPROPERTY17: CUSTOMPROPERTY17
+        ROLEDESCRIPTION: ROLEDESCRIPTION
+        CUSTOMPROPERTY19: CUSTOMPROPERTY19
+        ISOOTB: ISOOTB
+        CUSTOMPROPERTY8: CUSTOMPROPERTY8
+        CUSTOMPROPERTY9: CUSTOMPROPERTY9
+        CUSTOMPROPERTY6: CUSTOMPROPERTY6
+        CUSTOMPROPERTY7: CUSTOMPROPERTY7
+        UPDATEDATE: UPDATEDATE
+        READONLY: READONLY
+        STATUSKEY: STATUSKEY
+      properties:
+        UPDATEUSER:
+          type: string
+        CUSTOMPROPERTY20:
+          type: string
+        ROLENAME:
+          type: string
+        HOMEPAGE:
+          type: string
+        CUSTOMPROPERTY10:
+          type: string
+        CUSTOMPROPERTY12:
+          type: string
+        CUSTOMPROPERTY11:
+          type: string
+        CUSTOMPROPERTY14:
+          type: string
+        CUSTOMPROPERTY4:
+          type: string
+        CUSTOMPROPERTY13:
+          type: string
+        CUSTOMPROPERTY5:
+          type: string
+        CUSTOMPROPERTY16:
+          type: string
+        CUSTOMPROPERTY2:
+          type: string
+        CUSTOMPROPERTY15:
+          type: string
+        CUSTOMPROPERTY3:
+          type: string
+        CUSTOMPROPERTY18:
+          type: string
+        CUSTOMPROPERTY1:
+          type: string
+        CUSTOMPROPERTY17:
+          type: string
+        ROLEDESCRIPTION:
+          type: string
+        CUSTOMPROPERTY19:
+          type: string
+        ISOOTB:
+          type: string
+        CUSTOMPROPERTY8:
+          type: string
+        CUSTOMPROPERTY9:
+          type: string
+        CUSTOMPROPERTY6:
+          type: string
+        CUSTOMPROPERTY7:
+          type: string
+        UPDATEDATE:
+          type: string
+        READONLY:
+          type: string
+        STATUSKEY:
+          type: string
+      x-examples:
+        Example 1:
+          UPDATEUSER: admin
+          CUSTOMPROPERTY20: ""
+          ROLENAME: ROLE_ADMIN
+          HOMEPAGE: "null"
+          CUSTOMPROPERTY10: "null"
+          CUSTOMPROPERTY12: "null"
+          CUSTOMPROPERTY11: "null"
+          CUSTOMPROPERTY14: "null"
+          CUSTOMPROPERTY4: "null"
+          CUSTOMPROPERTY13: "null"
+          CUSTOMPROPERTY5: "null"
+          CUSTOMPROPERTY16: ""
+          CUSTOMPROPERTY2: "null"
+          CUSTOMPROPERTY15: "null"
+          CUSTOMPROPERTY3: "null"
+          CUSTOMPROPERTY18: ""
+          CUSTOMPROPERTY1: "null"
+          CUSTOMPROPERTY17: ""
+          ROLEDESCRIPTION: ADMIN USER
+          CUSTOMPROPERTY19: ""
+          ISOOTB: "true"
+          CUSTOMPROPERTY8: "null"
+          CUSTOMPROPERTY9: "null"
+          CUSTOMPROPERTY6: "null"
+          CUSTOMPROPERTY7: "null"
+          UPDATEDATE: 2022-12-06 07:30:18.0
+          READONLY: "false"
+          STATUSKEY: Active
+    SAVRoleUser:
+      example:
+        username: username
+      properties:
+        username:
+          type: string
+          x-stoplight:
+            id: 28gglgfsfnw9m
+      title: User
+      x-stoplight:
+        id: 2uw2ub7z4e8vp
+x-stoplight:
+  id: 6la78mjjgjrh6
