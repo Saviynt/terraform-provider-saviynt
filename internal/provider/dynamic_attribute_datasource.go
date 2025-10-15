@@ -2,8 +2,8 @@
 // SPDX-License-Identifier: MPL-2.0
 
 // saviynt_dynamic_attribute_datasource retrieves dynamic attribute details from the Saviynt Security Manager.
-// The data source supports a single Read operation to look up an existing dynamic attributes with various filters like attribute name, endpoint etc.
-
+// The data source supports a single Read operation to look up existing dynamic attributes with various filters 
+// like attribute name, endpoint, security system, etc.
 package provider
 
 import (
@@ -11,22 +11,22 @@ import (
 	"fmt"
 	"log"
 	"net/http"
-	"strings"
 	"terraform-provider-Saviynt/internal/client"
 	"terraform-provider-Saviynt/util"
 
 	"github.com/hashicorp/terraform-plugin-framework/datasource"
 	"github.com/hashicorp/terraform-plugin-framework/datasource/schema"
 	"github.com/hashicorp/terraform-plugin-framework/types"
-	s "github.com/saviynt/saviynt-api-go-client"
-
 	openapi "github.com/saviynt/saviynt-api-go-client/dynamicattributes"
 )
 
+var _ datasource.DataSource = &DynamicAttributeDataSource{}
+
 type DynamicAttributeDataSource struct {
-	client   *s.Client
-	token    string
-	provider client.SaviyntProviderInterface
+	client                  client.SaviyntClientInterface
+	token                   string
+	provider                client.SaviyntProviderInterface
+	dynamicAttributeFactory client.DynamicAttributeFactoryInterface
 }
 
 type DynamicAttributeDataSourceModel struct {
@@ -74,10 +74,34 @@ type DynamicAttributes struct {
 	// Regex                                     types.String `tfsdk:"regex"`
 }
 
-var _ datasource.DataSource = &DynamicAttributeDataSource{}
-
+// NewDynamicAttributeDataSource creates a new dynamic attribute data source with default factory
 func NewDynamicAttributeDataSource() datasource.DataSource {
-	return &DynamicAttributeDataSource{}
+	return &DynamicAttributeDataSource{
+		dynamicAttributeFactory: &client.DefaultDynamicAttributeFactory{},
+	}
+}
+
+// NewDynamicAttributeDataSourceWithFactory creates a new dynamic attribute data source with custom factory
+// Used primarily for testing with mock factories
+func NewDynamicAttributeDataSourceWithFactory(factory client.DynamicAttributeFactoryInterface) datasource.DataSource {
+	return &DynamicAttributeDataSource{
+		dynamicAttributeFactory: factory,
+	}
+}
+
+// SetClient sets the client for testing purposes
+func (d *DynamicAttributeDataSource) SetClient(client client.SaviyntClientInterface) {
+	d.client = client
+}
+
+// SetToken sets the token for testing purposes
+func (d *DynamicAttributeDataSource) SetToken(token string) {
+	d.token = token
+}
+
+// SetProvider sets the provider for testing purposes
+func (d *DynamicAttributeDataSource) SetProvider(provider client.SaviyntProviderInterface) {
+	d.provider = provider
 }
 
 func (d *DynamicAttributeDataSource) Metadata(ctx context.Context, req datasource.MetadataRequest, resp *datasource.MetadataResponse) {
@@ -175,32 +199,44 @@ func (d *DynamicAttributeDataSource) Schema(ctx context.Context, req datasource.
 	}
 }
 
+// Configure initializes the data source with provider configuration
+// Sets up client and authentication token for API operations
 func (d *DynamicAttributeDataSource) Configure(ctx context.Context, req datasource.ConfigureRequest, resp *datasource.ConfigureResponse) {
 	// Check if provider data is available.
 	if req.ProviderData == nil {
-		log.Println("ProviderData is nil, returning early.")
+		log.Println("[DEBUG] DynamicAttribute: ProviderData is nil, returning early.")
 		return
 	}
 
 	// Cast provider data to your provider type.
 	prov, ok := req.ProviderData.(*SaviyntProvider)
 	if !ok {
+		log.Printf("[ERROR] DynamicAttribute: Unexpected Provider Data")
 		resp.Diagnostics.AddError("Unexpected Provider Data", "Expected *SaviyntProvider")
 		return
 	}
 
-	// Set the client and token from the provider state.
-	d.client = prov.client
+	// Set the client and token from the provider state using interface wrapper.
+	d.client = &client.SaviyntClientWrapper{Client: prov.client}
 	d.token = prov.accessToken
 	d.provider = &client.SaviyntProviderWrapper{Provider: prov}
+
+	log.Printf("[DEBUG] DynamicAttribute: Datasource configured successfully.")
 }
 
+// Read retrieves dynamic attribute details from Saviynt and populates the Terraform state
+// Supports lookup with various filters and comprehensive error handling
 func (d *DynamicAttributeDataSource) Read(ctx context.Context, req datasource.ReadRequest, resp *datasource.ReadResponse) {
 	var state DynamicAttributeDataSourceModel
 
+	log.Printf("[DEBUG] DynamicAttribute: Starting datasource read")
+
+	// Extract configuration from request
 	configDiagnostics := req.Config.Get(ctx, &state)
 	resp.Diagnostics.Append(configDiagnostics...)
 	if resp.Diagnostics.HasError() {
+		log.Printf("[ERROR] DynamicAttribute: Failed to get config from request")
+		resp.Diagnostics.AddError("Configuration Error", "Unable to extract Terraform configuration from request")
 		return
 	}
 
@@ -213,61 +249,70 @@ func (d *DynamicAttributeDataSource) Read(ctx context.Context, req datasource.Re
 	offset := util.StringPointerOrEmpty(state.Offset)
 	max := util.StringPointerOrEmpty(state.Max)
 
-	// Execute API call with retry logic
+	// Execute API call to get dynamic attribute details
+	apiResp, err := d.ReadDynamicAttributeDetails(ctx, securitySystems, endpoints, dynamicAttributes, requestTypes, loggedInUser, offset, max)
+	if err != nil {
+		log.Printf("[ERROR] DynamicAttribute: Failed to read dynamic attribute details: %v", err)
+		resp.Diagnostics.AddError("API Read Failed", fmt.Sprintf("Error: %v", err))
+		return
+	}
+
+	// Map API response to state
+	d.UpdateModelFromDynamicAttributeResponse(&state, apiResp)
+
+	// Handle authentication logic
+	d.HandleDynamicAttributeAuthenticationLogic(&state, resp)
+
+	// Set final state
+	stateDiagnostics := resp.State.Set(ctx, &state)
+	resp.Diagnostics.Append(stateDiagnostics...)
+	if resp.Diagnostics.HasError() {
+		log.Printf("[ERROR] DynamicAttribute: Failed to set state")
+		resp.Diagnostics.AddError("State Update Error", "Unable to update Terraform state for dynamic attribute datasource")
+		return
+	}
+
+	log.Printf("[DEBUG] DynamicAttribute: Datasource read completed successfully with %d results", len(state.Dynamicattributes))
+}
+// ReadDynamicAttributeDetails retrieves dynamic attribute details from Saviynt API
+// Handles various filters and returns standardized errors with proper correlation tracking
+func (d *DynamicAttributeDataSource) ReadDynamicAttributeDetails(ctx context.Context, securitySystems, endpoints, dynamicAttributes, requestTypes []string, loggedInUser, offset, max *string) (*openapi.FetchDynamicAttributesResponse, error) {
+	log.Printf("[DEBUG] DynamicAttribute: Starting API call to fetch dynamic attributes")
+
 	var apiResp *openapi.FetchDynamicAttributesResponse
 	var finalHttpResp *http.Response
-	err := d.provider.AuthenticatedAPICallWithRetry(ctx, "fetch_dynamic_attributes", func(token string) error {
-		// Configure API client with current token
-		cfg := openapi.NewConfiguration()
-		apiBaseURL := strings.TrimPrefix(strings.TrimPrefix(d.client.APIBaseURL(), "https://"), "http://")
-		cfg.Host = apiBaseURL
-		cfg.Scheme = "https"
-		cfg.AddDefaultHeader("Authorization", "Bearer "+token)
-		cfg.HTTPClient = http.DefaultClient
 
-		apiClient := openapi.NewAPIClient(cfg)
-		apiReq := apiClient.DynamicAttributesAPI.FetchDynamicAttribute(ctx)
-
-		if securitySystems != nil {
-			apiReq = apiReq.Securitysystem(securitySystems)
-		}
-		if endpoints != nil {
-			apiReq = apiReq.Endpoint(endpoints)
-		}
-		if dynamicAttributes != nil {
-			apiReq = apiReq.Dynamicattributes(dynamicAttributes)
-		}
-		if requestTypes != nil {
-			apiReq = apiReq.Requesttype(requestTypes)
-		}
-		if offset != nil {
-			apiReq = apiReq.Offset(*offset)
-		}
-		if max != nil {
-			apiReq = apiReq.Max(*max)
-		}
-		if loggedInUser != nil {
-			apiReq = apiReq.Loggedinuser(*loggedInUser)
-		}
-
-		resp, hResp, err := apiReq.Execute()
-		if hResp != nil && hResp.StatusCode == 401 {
+	// Execute API request with retry logic
+	err := d.provider.AuthenticatedAPICallWithRetry(ctx, "read_dynamic_attribute_datasource", func(token string) error {
+		dynAttrOps := d.dynamicAttributeFactory.CreateDynamicAttributeOperations(d.client.APIBaseURL(), token)
+		
+		resp, httpResp, err := dynAttrOps.FetchDynamicAttributesForDataSource(ctx, securitySystems, endpoints, dynamicAttributes, requestTypes, loggedInUser, offset, max)
+		if httpResp != nil && httpResp.StatusCode == 401 {
 			return fmt.Errorf("401 unauthorized")
 		}
 		apiResp = resp
-		finalHttpResp = hResp // Update on every call including retries
+		finalHttpResp = httpResp // Update on every call including retries
 		return err
 	})
 
 	if err != nil {
-		log.Printf("[ERROR] API Call Failed: %v", err)
-		resp.Diagnostics.AddError("API Call Failed", fmt.Sprintf("Error: %v", err))
-		return
+		log.Printf("[ERROR] DynamicAttribute: API call failed: %v", err)
+		return nil, fmt.Errorf("API call failed: %w", err)
 	}
-	log.Printf("[DEBUG] HTTP Status Code: %d", finalHttpResp.StatusCode)
 
+	if finalHttpResp != nil {
+		log.Printf("[DEBUG] DynamicAttribute: HTTP Status Code: %d", finalHttpResp.StatusCode)
+	}
+
+	log.Printf("[INFO] DynamicAttribute: API call completed successfully")
+	return apiResp, nil
+}
+
+// UpdateModelFromDynamicAttributeResponse maps API response data to the Terraform state model
+func (d *DynamicAttributeDataSource) UpdateModelFromDynamicAttributeResponse(state *DynamicAttributeDataSourceModel, apiResp *openapi.FetchDynamicAttributesResponse) {
 	state.Msg = util.SafeStringDatasource(apiResp.Msg)
 	state.ErrorCode = util.SafeStringDatasource(apiResp.Errorcode)
+	
 	// Default to 0 when API omits count fields (happens when no results found)
 	if apiResp.Displaycount != nil {
 		state.DisplayCount = types.Int32Value(*apiResp.Displaycount)
@@ -280,7 +325,7 @@ func (d *DynamicAttributeDataSource) Read(ctx context.Context, req datasource.Re
 		state.TotalCount = types.Int32Value(0)
 	}
 
-	if apiResp.Dynamicattributes != nil {
+	if apiResp.Dynamicattributes != nil && apiResp.Dynamicattributes.ArrayOfFetchDynamicAttributeResponseInner != nil {
 		dynamicAttributesList := make([]DynamicAttributes, len(*apiResp.Dynamicattributes.ArrayOfFetchDynamicAttributeResponseInner))
 		for i, attr := range *apiResp.Dynamicattributes.ArrayOfFetchDynamicAttributeResponseInner {
 			dynamicAttributesList[i] = DynamicAttributes{
@@ -298,9 +343,8 @@ func (d *DynamicAttributeDataSource) Read(ctx context.Context, req datasource.Re
 				Editable:       util.SafeStringDatasource(attr.Editable),
 				Hideonupdate:   util.SafeStringDatasource(attr.Hideonupdate),
 				Action_to_perform_when_parent_attribute_changes: util.SafeStringDatasource(attr.Actiontoperformwhenparentattributechanges),
-				Defaultvalue: util.SafeStringDatasource(attr.Defaultvalue),
-				Required:     util.SafeStringDatasource(attr.Required),
-				// Regex:                                     util.SafeStringDatasource(attr.Regex),
+				Defaultvalue:     util.SafeStringDatasource(attr.Defaultvalue),
+				Required:         util.SafeStringDatasource(attr.Required),
 				Attributevalue:   util.SafeStringDatasource(attr.Attributevalue),
 				Showonchild:      util.SafeStringDatasource(attr.Showonchild),
 				Parentattribute:  util.SafeStringDatasource(attr.Parentattribute),
@@ -311,14 +355,21 @@ func (d *DynamicAttributeDataSource) Read(ctx context.Context, req datasource.Re
 	} else {
 		state.Dynamicattributes = nil
 	}
+}
 
+// HandleDynamicAttributeAuthenticationLogic processes the authenticate flag to control sensitive data visibility
+// When authenticate=false, dynamic_attributes are removed from state to prevent sensitive data exposure
+// When authenticate=true, all dynamic_attributes are returned in state
+func (d *DynamicAttributeDataSource) HandleDynamicAttributeAuthenticationLogic(state *DynamicAttributeDataSourceModel, resp *datasource.ReadResponse) {
 	if !state.Authenticate.IsNull() && !state.Authenticate.IsUnknown() {
 		if state.Authenticate.ValueBool() {
+			log.Printf("[INFO] DynamicAttribute: Authentication enabled - returning all dynamic attributes")
 			resp.Diagnostics.AddWarning(
 				"Authentication Enabled",
 				"`authenticate` is true; all dynamic_attributes will be returned in state.",
 			)
 		} else {
+			log.Printf("[INFO] DynamicAttribute: Authentication disabled - removing dynamic attributes from state")
 			resp.Diagnostics.AddWarning(
 				"Authentication Disabled",
 				"`authenticate` is false; dynamic_attributes will be removed from state.",
@@ -326,7 +377,4 @@ func (d *DynamicAttributeDataSource) Read(ctx context.Context, req datasource.Re
 			state.Dynamicattributes = nil
 		}
 	}
-
-	stateDiagnostics := resp.State.Set(ctx, &state)
-	resp.Diagnostics.Append(stateDiagnostics...)
 }
