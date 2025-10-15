@@ -24,10 +24,10 @@ import (
 var _ datasource.DataSource = &endpointsDataSource{}
 
 type endpointsDataSource struct {
-	client            client.SaviyntClientInterface
-	token             string
-	provider          client.SaviyntProviderInterface
-	endpointFactory   client.EndpointFactoryInterface
+	client          client.SaviyntClientInterface
+	token           string
+	provider        client.SaviyntProviderInterface
+	endpointFactory client.EndpointFactoryInterface
 }
 
 // NewEndpointsDataSource creates a new endpoints data source with default factory
@@ -482,7 +482,7 @@ func (d *endpointsDataSource) Read(ctx context.Context, req datasource.ReadReque
 		"total_count":   state.TotalCount.ValueInt64(),
 	})
 }
-				
+
 // ReadEndpointsDetails retrieves endpoints details from Saviynt API
 // Handles comprehensive filtering using factory pattern with standardized error handling
 func (d *endpointsDataSource) ReadEndpointsDetails(ctx context.Context, state *EndpointsDataSourceModel) (*openapi.GetEndpoints200Response, error) {
@@ -513,7 +513,7 @@ func (d *endpointsDataSource) ReadEndpointsDetails(ctx context.Context, state *E
 			tflog.Error(ctx, "HTTP 412 error while reading endpoints", map[string]interface{}{"status": finalHttpResp.Status})
 			return nil, d.HandleHTTP412Error(finalHttpResp)
 		}
-		
+
 		tflog.Error(ctx, "Failed to read endpoints details", map[string]interface{}{"error": err.Error()})
 		return nil, fmt.Errorf("failed to read endpoints: %w", err)
 	}
@@ -605,14 +605,14 @@ func (d *endpointsDataSource) UpdateModelFromEndpointsResponse(state *EndpointsD
 	// Map response metadata
 	state.Message = util.SafeStringDatasource(apiResp.Message)
 	state.ErrorCode = util.SafeStringDatasource(apiResp.ErrorCode)
-	
+
 	// Handle count fields with defaults
 	if apiResp.DisplayCount != nil {
 		state.DisplayCount = types.Int64Value(int64(*apiResp.DisplayCount))
 	} else {
 		state.DisplayCount = types.Int64Value(0)
 	}
-	
+
 	if apiResp.TotalCount != nil {
 		state.TotalCount = types.Int64Value(int64(*apiResp.TotalCount))
 	} else {

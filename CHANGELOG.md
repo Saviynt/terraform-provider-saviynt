@@ -1,3 +1,20 @@
+## 0.2.12 (Released)
+
+FEATURES:
+
+* **New Resource:** Added support for the following jobs:
+  - Application Data Import Job: `saviynt_application_data_import_job_resource`
+  - WS Retry Job: `saviynt_ws_retry_job_resource`
+  - WS Retry Blocking Job: `saviynt_ws_retry_blocking_job_resource`
+  - User Import Job: `saviynt_user_import_job_resource`
+  - ECM Job: `saviynt_ecm_job_resource`
+  - ECM SAP User Job: `saviynt_ecm_sap_user_job_resource`
+  - Accounts Import Full Job: `saviynt_accounts_import_full_job_resource`
+  - Accounts Import Incremental Job: `saviynt_accounts_import_incremental_job_resource`
+  - Schema Role Job: `saviynt_schema_role_job_resource`
+  - Schema Account Job: `saviynt_schema_account_job_resource`
+  - Schema User Job: `saviynt_schema_user_job_resource`
+
 ## 0.2.11 (Released)
 
 FEATURES:
