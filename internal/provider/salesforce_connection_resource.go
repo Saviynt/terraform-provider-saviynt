@@ -200,8 +200,6 @@ func (r *SalesforceConnectionResource) Schema(ctx context.Context, req resource.
 	}
 }
 
-
-
 func (r *SalesforceConnectionResource) Configure(ctx context.Context, req resource.ConfigureRequest, resp *resource.ConfigureResponse) {
 	opCtx := errorsutil.CreateOperationContext(errorsutil.ConnectorTypeSalesforce, "configure", "")
 	ctx = opCtx.AddContextToLogger(ctx)
