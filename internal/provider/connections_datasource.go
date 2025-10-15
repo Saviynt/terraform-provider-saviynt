@@ -2,36 +2,30 @@
 // SPDX-License-Identifier: MPL-2.0
 
 // saviynt_connections_datasource retrieves connections details from the Saviynt Security Manager.
-// The data source supports a single Read operation to look up an existing sap connections by name.
+// The data source supports a single Read operation to look up existing connections with filtering capabilities.
 package provider
 
 import (
 	"context"
 	"fmt"
-	"log"
-	"net/http"
-	"strings"
 	"terraform-provider-Saviynt/internal/client"
 	"terraform-provider-Saviynt/util"
-
-	openapi "github.com/saviynt/saviynt-api-go-client/connections"
 
 	"github.com/hashicorp/terraform-plugin-framework/datasource"
 	"github.com/hashicorp/terraform-plugin-framework/datasource/schema"
 	"github.com/hashicorp/terraform-plugin-framework/types"
+	"github.com/hashicorp/terraform-plugin-log/tflog"
+	openapi "github.com/saviynt/saviynt-api-go-client/connections"
 )
 
-type connectionsDataSource struct {
-	client   client.SaviyntClientInterface
-	token    string
-	provider client.SaviyntProviderInterface
-}
+var _ datasource.DataSource = &ConnectionsDataSource{}
 
-var _ datasource.DataSource = &connectionsDataSource{}
-var _ datasource.DataSourceWithConfigure = &connectionsDataSource{}
-
-func NewConnectionsDataSource() datasource.DataSource {
-	return &connectionsDataSource{}
+// ConnectionsDataSource defines the data source
+type ConnectionsDataSource struct {
+	client            client.SaviyntClientInterface
+	token             string
+	provider          client.SaviyntProviderInterface
+	connectionFactory client.ConnectionFactoryInterface
 }
 
 type ConnectionsDataSourceModel struct {
@@ -59,16 +53,49 @@ type Connection struct {
 	UpdatedOn             types.String `tfsdk:"updatedon"`
 }
 
-func (d *connectionsDataSource) Metadata(ctx context.Context, req datasource.MetadataRequest, resp *datasource.MetadataResponse) {
+// NewConnectionsDataSource creates a new connections data source with default factory
+func NewConnectionsDataSource() datasource.DataSource {
+	return &ConnectionsDataSource{
+		connectionFactory: &client.DefaultConnectionFactory{},
+	}
+}
+
+// NewConnectionsDataSourceWithFactory creates a new connections data source with custom factory
+// Used primarily for testing with mock factories
+func NewConnectionsDataSourceWithFactory(factory client.ConnectionFactoryInterface) datasource.DataSource {
+	return &ConnectionsDataSource{
+		connectionFactory: factory,
+	}
+}
+
+// SetClient sets the client for testing purposes
+func (d *ConnectionsDataSource) SetClient(client client.SaviyntClientInterface) {
+	d.client = client
+}
+
+// SetToken sets the token for testing purposes
+func (d *ConnectionsDataSource) SetToken(token string) {
+	d.token = token
+}
+
+// SetProvider sets the provider for testing purposes
+func (d *ConnectionsDataSource) SetProvider(provider client.SaviyntProviderInterface) {
+	d.provider = provider
+}
+
+// Metadata sets the data source type name for Terraform
+func (d *ConnectionsDataSource) Metadata(ctx context.Context, req datasource.MetadataRequest, resp *datasource.MetadataResponse) {
 	resp.TypeName = "saviynt_connections_datasource"
 }
 
-func (d *connectionsDataSource) Schema(ctx context.Context, req datasource.SchemaRequest, resp *datasource.SchemaResponse) {
+// Schema defines the structure and attributes available for the connections data source
+func (d *ConnectionsDataSource) Schema(ctx context.Context, req datasource.SchemaRequest, resp *datasource.SchemaResponse) {
 	resp.Schema = schema.Schema{
-		MarkdownDescription: util.ConnDataSourceDescription,
+		Description: util.ConnDataSourceDescription,
 		Attributes: map[string]schema.Attribute{
 			"id": schema.StringAttribute{
-				Computed: true,
+				Computed:    true,
+				Description: "Resource ID.",
 			},
 			"connection_name": schema.StringAttribute{
 				Optional:    true,
@@ -84,7 +111,7 @@ func (d *connectionsDataSource) Schema(ctx context.Context, req datasource.Schem
 			},
 			"offset": schema.StringAttribute{
 				Optional:    true,
-				Description: "Offset",
+				Description: "Offset for pagination",
 			},
 			"display_count": schema.Int64Attribute{
 				Computed:    true,
@@ -92,7 +119,7 @@ func (d *connectionsDataSource) Schema(ctx context.Context, req datasource.Schem
 			},
 			"authenticate": schema.BoolAttribute{
 				Required:    true,
-				Description: "If false, do not store connection_attributes in state",
+				Description: "If false, do not store connection results in state",
 			},
 			"error_code": schema.StringAttribute{
 				Computed:    true,
@@ -150,133 +177,188 @@ func (d *connectionsDataSource) Schema(ctx context.Context, req datasource.Schem
 	}
 }
 
-func (d *connectionsDataSource) Configure(ctx context.Context, req datasource.ConfigureRequest, resp *datasource.ConfigureResponse) {
+// Configure initializes the data source with provider configuration
+// Sets up client and authentication token for API operations
+func (d *ConnectionsDataSource) Configure(ctx context.Context, req datasource.ConfigureRequest, resp *datasource.ConfigureResponse) {
+	tflog.Debug(ctx, "Starting connections datasource configuration")
+
 	// Check if provider data is available.
 	if req.ProviderData == nil {
-		log.Println("ProviderData is nil, returning early.")
+		tflog.Debug(ctx, "ProviderData is nil, returning early")
 		return
 	}
 
 	// Cast provider data to your provider type.
 	prov, ok := req.ProviderData.(*SaviyntProvider)
 	if !ok {
-		resp.Diagnostics.AddError("Unexpected Provider Data", "Expected *SaviyntProvider")
+		tflog.Error(ctx, "Provider configuration failed - expected *SaviyntProvider, got different type")
+		resp.Diagnostics.AddError(
+			"Unexpected Provider Data",
+			"Expected *SaviyntProvider, got different type",
+		)
 		return
 	}
 
-	// Set the client, token, and provider from the provider state.
+	// Set the client and token from the provider state using interface wrapper.
 	d.client = &client.SaviyntClientWrapper{Client: prov.client}
 	d.token = prov.accessToken
-	d.provider = &client.SaviyntProviderWrapper{Provider: prov} // Store provider reference for retry logic
+	d.provider = &client.SaviyntProviderWrapper{Provider: prov}
+
+	tflog.Debug(ctx, "Connections datasource configured successfully")
 }
 
-func (d *connectionsDataSource) Read(ctx context.Context, req datasource.ReadRequest, resp *datasource.ReadResponse) {
+// Read retrieves connections details from Saviynt and populates the Terraform state
+// Supports filtering by connection name and type with comprehensive error handling
+func (d *ConnectionsDataSource) Read(ctx context.Context, req datasource.ReadRequest, resp *datasource.ReadResponse) {
 	var state ConnectionsDataSourceModel
 
+	tflog.Debug(ctx, "Starting connections datasource read")
+
+	// Extract configuration from request
 	configDiagnostics := req.Config.Get(ctx, &state)
 	resp.Diagnostics.Append(configDiagnostics...)
-
 	if resp.Diagnostics.HasError() {
+		tflog.Error(ctx, "Failed to get config from request")
 		return
 	}
 
-	var connectionsResponse *openapi.GetConnectionsResponse
+	// Execute API call to get connections
+	apiResp, err := d.ReadConnectionsDetails(ctx, &state)
+	if err != nil {
+		tflog.Error(ctx, "Failed to read connections details", map[string]interface{}{"error": err.Error()})
+		resp.Diagnostics.AddError(
+			"Connections Read Failed",
+			fmt.Sprintf("Failed to read connections: %s", err.Error()),
+		)
+		return
+	}
+
+	// Map API response to state
+	d.UpdateModelFromConnectionsResponse(&state, apiResp)
+
+	// Handle authentication logic
+	d.HandleConnectionsAuthenticationLogic(&state, resp)
+
+	// Set final state
+	stateDiagnostics := resp.State.Set(ctx, &state)
+	resp.Diagnostics.Append(stateDiagnostics...)
+	if resp.Diagnostics.HasError() {
+		tflog.Error(ctx, "Failed to set state")
+		return
+	}
+
+	tflog.Debug(ctx, "Connections datasource read completed successfully", map[string]interface{}{
+		"results_count": len(state.Results),
+	})
+}
+
+// ReadConnectionsDetails retrieves connections details from Saviynt API
+// Handles filtering parameters and returns standardized errors with proper correlation tracking
+func (d *ConnectionsDataSource) ReadConnectionsDetails(ctx context.Context, state *ConnectionsDataSourceModel) (*openapi.GetConnectionsResponse, error) {
+	tflog.Debug(ctx, "Starting connections API call")
+
+	var apiResp *openapi.GetConnectionsResponse
 
 	// Execute API request with retry logic
 	err := d.provider.AuthenticatedAPICallWithRetry(ctx, "read_connections_datasource", func(token string) error {
-		cfg := openapi.NewConfiguration()
-		apiBaseURL := strings.TrimPrefix(strings.TrimPrefix(d.client.APIBaseURL(), "https://"), "http://")
+		connectionOps := d.connectionFactory.CreateConnectionOperations(d.client.APIBaseURL(), token)
 
-		cfg.Host = apiBaseURL
-		cfg.Scheme = "https"
-		cfg.AddDefaultHeader("Authorization", "Bearer "+token)
-		cfg.HTTPClient = http.DefaultClient
-
-		apiClient := openapi.NewAPIClient(cfg)
-
-		areq := openapi.NewGetConnectionsRequest()
+		// Build request with filtering parameters
+		req := openapi.NewGetConnectionsRequest()
 
 		if !state.ConnectionName.IsNull() && state.ConnectionName.ValueString() != "" {
 			connectionName := state.ConnectionName.ValueString()
-			areq.Connectionname = &connectionName
+			req.Connectionname = &connectionName
 		}
 
 		if !state.ConnectionType.IsNull() && state.ConnectionType.ValueString() != "" {
 			connectionType := state.ConnectionType.ValueString()
-			areq.Connectiontype = &connectionType
+			req.Connectiontype = &connectionType
 		}
 
 		if !state.Offset.IsNull() && state.Offset.ValueString() != "" {
 			offset := state.Offset.ValueString()
-			areq.Offset = &offset
+			req.Offset = &offset
 		}
 
 		if !state.Max.IsNull() && state.Max.ValueString() != "" {
 			max := state.Max.ValueString()
-			areq.Max = &max
+			req.Max = &max
 		}
 
-		apiReq := apiClient.ConnectionsAPI.GetConnections(ctx).GetConnectionsRequest(*areq)
-
-		response, httpResp, apiErr := apiReq.Execute()
+		resp, httpResp, err := connectionOps.GetConnectionsDataSource(ctx, *req)
 		if httpResp != nil && httpResp.StatusCode == 401 {
 			return fmt.Errorf("401 unauthorized")
 		}
-		connectionsResponse = response
-		return apiErr
+		apiResp = resp
+		return err
 	})
 
 	if err != nil {
-		log.Printf("[ERROR] API Call Failed: %v", err)
-		resp.Diagnostics.AddError("API Call Failed", fmt.Sprintf("Error: %v", err))
+		tflog.Error(ctx, "Failed to read connections details", map[string]interface{}{"error": err.Error()})
+		return nil, fmt.Errorf("failed to read connections: %w", err)
+	}
+
+	tflog.Debug(ctx, "Connections API call completed successfully")
+	return apiResp, nil
+}
+
+// UpdateModelFromConnectionsResponse maps API response data to the Terraform state model
+func (d *ConnectionsDataSource) UpdateModelFromConnectionsResponse(state *ConnectionsDataSourceModel, apiResp *openapi.GetConnectionsResponse) {
+	// Set ID for the datasource
+	state.ID = types.StringValue("connections-datasource")
+
+	// Map response metadata
+	state.Msg = util.SafeStringDatasource(apiResp.Msg)
+	state.DisplayCount = util.SafeInt64(apiResp.DisplayCount)
+	state.ErrorCode = util.SafeStringDatasource(apiResp.ErrorCode)
+	state.TotalCount = util.SafeInt64(apiResp.TotalCount)
+
+	// Map connection results
+	d.MapConnectionResults(state, apiResp)
+}
+
+// MapConnectionResults maps connection list from API response to state model
+func (d *ConnectionsDataSource) MapConnectionResults(state *ConnectionsDataSourceModel, apiResp *openapi.GetConnectionsResponse) {
+	if apiResp.ConnectionList == nil {
+		state.Results = []Connection{}
 		return
 	}
 
-	if connectionsResponse == nil {
-		resp.Diagnostics.AddError("API Response Error", "Received nil response from connections API")
-		return
-	}
-	state.Msg = util.SafeStringDatasource(connectionsResponse.Msg)
-	state.DisplayCount = util.SafeInt64(connectionsResponse.DisplayCount)
-	state.ErrorCode = util.SafeStringDatasource(connectionsResponse.ErrorCode)
-	state.TotalCount = util.SafeInt64(connectionsResponse.TotalCount)
-
-	if connectionsResponse != nil && connectionsResponse.ConnectionList != nil {
-		for _, item := range connectionsResponse.ConnectionList {
-			resultState := Connection{
-				ConnectionName:        util.SafeString(item.CONNECTIONNAME),
-				ConnectionType:        util.SafeString(item.CONNECTIONTYPE),
-				ConnectionDescription: util.SafeString(item.CONNECTIONDESCRIPTION),
-				Status:                util.SafeInt32(item.STATUS),
-				CreatedBy:             util.SafeString(item.CREATEDBY),
-				CreatedOn:             util.SafeString(item.CREATEDON),
-				UpdatedBy:             util.SafeString(item.UPDATEDBY),
-				UpdatedOn:             util.SafeString(item.UPDATEDON),
-			}
-
-			state.Results = append(state.Results, resultState)
+	state.Results = make([]Connection, 0, len(apiResp.ConnectionList))
+	for _, item := range apiResp.ConnectionList {
+		connection := Connection{
+			ConnectionName:        util.SafeString(item.CONNECTIONNAME),
+			ConnectionType:        util.SafeString(item.CONNECTIONTYPE),
+			ConnectionDescription: util.SafeString(item.CONNECTIONDESCRIPTION),
+			Status:                util.SafeInt32(item.STATUS),
+			CreatedBy:             util.SafeString(item.CREATEDBY),
+			CreatedOn:             util.SafeString(item.CREATEDON),
+			UpdatedBy:             util.SafeString(item.UPDATEDBY),
+			UpdatedOn:             util.SafeString(item.UPDATEDON),
 		}
+		state.Results = append(state.Results, connection)
 	}
+}
 
+// HandleConnectionsAuthenticationLogic processes the authenticate flag to control sensitive data visibility
+// When authenticate=false, results are removed from state to prevent sensitive data exposure
+// When authenticate=true, all results are returned in state
+func (d *ConnectionsDataSource) HandleConnectionsAuthenticationLogic(state *ConnectionsDataSourceModel, resp *datasource.ReadResponse) {
 	if !state.Authenticate.IsNull() && !state.Authenticate.IsUnknown() {
 		if state.Authenticate.ValueBool() {
+			tflog.Info(context.Background(), "Authentication enabled - returning all connections")
 			resp.Diagnostics.AddWarning(
 				"Authentication Enabled",
 				"`authenticate` is true; all connections will be returned in state.",
 			)
 		} else {
+			tflog.Info(context.Background(), "Authentication disabled - removing connections from state")
 			resp.Diagnostics.AddWarning(
 				"Authentication Disabled",
 				"`authenticate` is false; connections will be removed from state.",
 			)
 			state.Results = nil
 		}
-	}
-
-	stateDiagnostics := resp.State.Set(ctx, &state)
-	resp.Diagnostics.Append(stateDiagnostics...)
-
-	if resp.Diagnostics.HasError() {
-		return
 	}
 }

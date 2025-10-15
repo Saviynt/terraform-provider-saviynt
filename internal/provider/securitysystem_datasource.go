@@ -2,35 +2,38 @@
 // SPDX-License-Identifier: MPL-2.0
 
 // saviynt_security_system_datasource retrieves security system details from the Saviynt Security Manager.
-// The data source supports a single Read operation to look up an existing security system by name.
+// The data source supports filtering and pagination with comprehensive error handling and authentication control.
 package provider
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
-	"log"
-	"net/http"
-	"strings"
-
 	"terraform-provider-Saviynt/internal/client"
 	"terraform-provider-Saviynt/util"
+	"terraform-provider-Saviynt/util/errorsutil"
 
 	"github.com/hashicorp/terraform-plugin-framework/datasource"
 	"github.com/hashicorp/terraform-plugin-framework/datasource/schema"
 	"github.com/hashicorp/terraform-plugin-framework/types"
-	s "github.com/saviynt/saviynt-api-go-client"
+	"github.com/hashicorp/terraform-plugin-log/tflog"
 	openapi "github.com/saviynt/saviynt-api-go-client/securitysystems"
 )
 
+var _ datasource.DataSource = &securitySystemsDataSource{}
+
+// Initialize error codes for Security System datasource operations
+var securitySystemDatasourceErrorCodes = errorsutil.NewSecuritySystemErrorCodeGenerator()
+
 // SecuritySystemsDataSource defines the data source
 type securitySystemsDataSource struct {
-	client   *s.Client
-	token    string
-	provider client.SaviyntProviderInterface
+	client                client.SaviyntClientInterface
+	token                 string
+	provider              client.SaviyntProviderInterface
+	securitySystemFactory client.SecuritySystemFactoryInterface
 }
 
 type SecuritySystemsDataSourceModel struct {
+	ID             types.String            `tfsdk:"id"`
 	Systemname     types.String            `tfsdk:"systemname"`
 	Authenticate   types.Bool              `tfsdk:"authenticate"`
 	Max            types.Int64             `tfsdk:"max"`
@@ -87,8 +90,34 @@ type SecuritySystemDetails struct {
 
 var _ datasource.DataSource = &securitySystemsDataSource{}
 
+// NewSecuritySystemsDataSource creates a new security systems data source with default factory
 func NewSecuritySystemsDataSource() datasource.DataSource {
-	return &securitySystemsDataSource{}
+	return &securitySystemsDataSource{
+		securitySystemFactory: &client.DefaultSecuritySystemFactory{},
+	}
+}
+
+// NewSecuritySystemsDataSourceWithFactory creates a new security systems data source with custom factory
+// Used primarily for testing with mock factories
+func NewSecuritySystemsDataSourceWithFactory(factory client.SecuritySystemFactoryInterface) datasource.DataSource {
+	return &securitySystemsDataSource{
+		securitySystemFactory: factory,
+	}
+}
+
+// SetClient sets the client for testing purposes
+func (d *securitySystemsDataSource) SetClient(client client.SaviyntClientInterface) {
+	d.client = client
+}
+
+// SetToken sets the token for testing purposes
+func (d *securitySystemsDataSource) SetToken(token string) {
+	d.token = token
+}
+
+// SetProvider sets the provider for testing purposes
+func (d *securitySystemsDataSource) SetProvider(provider client.SaviyntProviderInterface) {
+	d.provider = provider
 }
 
 func (d *securitySystemsDataSource) Metadata(ctx context.Context, req datasource.MetadataRequest, resp *datasource.MetadataResponse) {
@@ -99,6 +128,10 @@ func (d *securitySystemsDataSource) Schema(ctx context.Context, req datasource.S
 	resp.Schema = schema.Schema{
 		Description: util.SecuritySystemDataSourceDescription,
 		Attributes: map[string]schema.Attribute{
+			"id": schema.StringAttribute{
+				Computed:    true,
+				Description: "Resource ID.",
+			},
 			"systemname": schema.StringAttribute{
 				Optional:    true,
 				Description: "Name of the security systeme.",
@@ -192,55 +225,137 @@ func (d *securitySystemsDataSource) Schema(ctx context.Context, req datasource.S
 	}
 }
 
-// Retrieve user-defined filters from configuration.
+// Configure initializes the data source with provider configuration
+// Sets up client and authentication token for API operations
 func (d *securitySystemsDataSource) Configure(ctx context.Context, req datasource.ConfigureRequest, resp *datasource.ConfigureResponse) {
+	opCtx := errorsutil.CreateSecuritySystemOperationContext("configure", "")
+	ctx = opCtx.AddContextToLogger(ctx)
+
+	opCtx.LogOperationStart(ctx, "Starting security systems datasource configuration")
+
 	// Check if provider data is available.
 	if req.ProviderData == nil {
-		log.Println("ProviderData is nil, returning early.")
+		tflog.Debug(ctx, "ProviderData is nil, returning early")
+		opCtx.LogOperationEnd(ctx, "Security systems datasource configuration completed - no provider data")
 		return
 	}
 
 	// Cast provider data to your provider type.
 	prov, ok := req.ProviderData.(*SaviyntProvider)
 	if !ok {
-		resp.Diagnostics.AddError("Unexpected Provider Data", "Expected *SaviyntProvider")
+		errorCode := securitySystemDatasourceErrorCodes.GenerateErrorCode(errorsutil.SecuritySystemCategoryConfiguration, 1)
+		opCtx.LogOperationError(ctx, "Provider configuration failed", errorCode,
+			fmt.Errorf("expected *SaviyntProvider, got different type"),
+			map[string]interface{}{"expected_type": "*SaviyntProvider"})
+
+		resp.Diagnostics.AddError(
+			errorsutil.GetSecuritySystemErrorMessage(errorsutil.ErrSecuritySystemProviderConfig),
+			fmt.Sprintf("[%s] Expected *SaviyntProvider, got different type", errorCode),
+		)
 		return
 	}
 
-	// Set the client, token, and provider reference from the provider state
-	d.client = prov.client
+	// Set the client and token from the provider state using interface wrapper.
+	d.client = &client.SaviyntClientWrapper{Client: prov.client}
 	d.token = prov.accessToken
-	d.provider = &client.SaviyntProviderWrapper{Provider: prov} // Store provider reference for retry logic
+	d.provider = &client.SaviyntProviderWrapper{Provider: prov}
+
+	opCtx.LogOperationEnd(ctx, "Security systems datasource configured successfully")
 }
 
-// Read fetches data from the API and converts it to Terraform state.
+// Read retrieves security systems from Saviynt and populates the Terraform state
+// Supports filtering and pagination with comprehensive error handling
 func (d *securitySystemsDataSource) Read(ctx context.Context, req datasource.ReadRequest, resp *datasource.ReadResponse) {
 	var state SecuritySystemsDataSourceModel
 
+	opCtx := errorsutil.CreateSecuritySystemOperationContext("datasource_read", "")
+	ctx = opCtx.AddContextToLogger(ctx)
+
+	opCtx.LogOperationStart(ctx, "Starting security systems datasource read")
+
+	// Extract configuration from request
 	configDiagnostics := req.Config.Get(ctx, &state)
 	resp.Diagnostics.Append(configDiagnostics...)
-
 	if resp.Diagnostics.HasError() {
+		errorCode := securitySystemDatasourceErrorCodes.GenerateErrorCode(errorsutil.SecuritySystemCategoryConfiguration, 2)
+		opCtx.LogOperationError(ctx, "Failed to get config from request", errorCode,
+			fmt.Errorf("config extraction failed"))
+		resp.Diagnostics.AddError(
+			errorsutil.GetSecuritySystemErrorMessage(errorsutil.ErrSecuritySystemConfigExtraction),
+			fmt.Sprintf("[%s] Unable to extract Terraform configuration from request", errorCode),
+		)
 		return
 	}
 
+	// Execute API call to get security systems
+	apiResp, err := d.ReadSecuritySystems(ctx, &state)
+	if err != nil {
+		errorCode := securitySystemDatasourceErrorCodes.GenerateErrorCode(errorsutil.SecuritySystemCategoryAPIOperation, 1)
+		opCtx.LogOperationError(ctx, "Failed to read security systems", errorCode, err)
+		resp.Diagnostics.AddError(
+			errorsutil.GetSecuritySystemErrorMessage(errorsutil.ErrSecuritySystemReadFailed),
+			fmt.Sprintf("[%s] %s", errorCode, err.Error()),
+		)
+		return
+	}
+
+	// Validate API response
+	if err := d.ValidateSecuritySystemsResponse(apiResp); err != nil {
+		errorCode := securitySystemDatasourceErrorCodes.GenerateErrorCode(errorsutil.SecuritySystemCategoryAPIOperation, 2)
+		opCtx.LogOperationError(ctx, "Invalid API response", errorCode, err)
+		resp.Diagnostics.AddError(
+			errorsutil.GetSecuritySystemErrorMessage(errorsutil.ErrSecuritySystemAPIError),
+			fmt.Sprintf("[%s] %s", errorCode, err.Error()),
+		)
+		return
+	}
+
+	// Map API response to state
+	d.UpdateModelFromSecuritySystemsResponse(&state, apiResp)
+
+	// Handle authentication logic
+	d.HandleSecuritySystemsAuthenticationLogic(&state, resp)
+
+	// Set final state
+	stateDiagnostics := resp.State.Set(ctx, &state)
+	resp.Diagnostics.Append(stateDiagnostics...)
+	if resp.Diagnostics.HasError() {
+		errorCode := securitySystemDatasourceErrorCodes.GenerateErrorCode(errorsutil.SecuritySystemCategoryStateManagement, 1)
+		opCtx.LogOperationError(ctx, "Failed to set state", errorCode,
+			fmt.Errorf("state update failed"))
+		resp.Diagnostics.AddError(
+			errorsutil.GetSecuritySystemErrorMessage(errorsutil.ErrSecuritySystemStateUpdate),
+			fmt.Sprintf("[%s] Unable to update Terraform state for security systems datasource", errorCode),
+		)
+		return
+	}
+
+	opCtx.LogOperationEnd(ctx, "Security systems datasource read completed successfully",
+		map[string]interface{}{
+			"result_count": len(state.Results),
+		})
+}
+
+// ReadSecuritySystems retrieves security systems from Saviynt API
+// Handles filtering and pagination using factory pattern with proper error handling
+func (d *securitySystemsDataSource) ReadSecuritySystems(ctx context.Context, state *SecuritySystemsDataSourceModel) (*openapi.GetSecuritySystems200Response, error) {
+	opCtx := errorsutil.CreateSecuritySystemOperationContext("api_read", "")
+	logCtx := opCtx.AddContextToLogger(ctx)
+
+	opCtx.LogOperationStart(logCtx, "Starting security systems API call")
+
+	tflog.Debug(logCtx, "Executing API request to get security systems")
+
 	var apiResp *openapi.GetSecuritySystems200Response
-	var finalHttpResp *http.Response
 
-	// Execute the API request with retry logic
-	err := d.provider.AuthenticatedAPICallWithRetry(ctx, "get_security_systems_datasource", func(token string) error {
-		cfg := openapi.NewConfiguration()
-		apiBaseURL := strings.TrimPrefix(strings.TrimPrefix(d.client.APIBaseURL(), "https://"), "http://")
-		cfg.Host = apiBaseURL
-		cfg.Scheme = "https"
-		cfg.AddDefaultHeader("Authorization", "Bearer "+token)
-		cfg.HTTPClient = http.DefaultClient
+	// Execute API request with retry logic
+	err := d.provider.AuthenticatedAPICallWithRetry(ctx, "read_security_systems_datasource", func(token string) error {
+		securitySystemOps := d.securitySystemFactory.CreateSecuritySystemOperations(d.client.APIBaseURL(), token)
 
-		// Initialize API client with fresh token
-		apiClient := openapi.NewAPIClient(cfg)
-		apiReq := apiClient.SecuritySystemsAPI.GetSecuritySystems(ctx)
+		// Create API request with flexible parameter handling
+		apiReq := securitySystemOps.GetSecuritySystemsRequest(ctx)
 
-		// Apply filters
+		// Apply all user input filters
 		if !state.Systemname.IsNull() && state.Systemname.ValueString() != "" {
 			apiReq = apiReq.Systemname(state.Systemname.ValueString())
 		}
@@ -257,9 +372,8 @@ func (d *securitySystemsDataSource) Read(ctx context.Context, req datasource.Rea
 			apiReq = apiReq.ConnectionType(state.ConnectionType.ValueString())
 		}
 
-		resp, httpResponse, err := apiReq.Execute()
-		finalHttpResp = httpResponse // Update on every call including retries
-		if httpResponse != nil && httpResponse.StatusCode == 401 {
+		resp, httpResp, err := apiReq.Execute()
+		if httpResp != nil && httpResp.StatusCode == 401 {
 			return fmt.Errorf("401 unauthorized")
 		}
 		apiResp = resp
@@ -267,58 +381,50 @@ func (d *securitySystemsDataSource) Read(ctx context.Context, req datasource.Rea
 	})
 
 	if err != nil {
-		if finalHttpResp != nil && finalHttpResp.StatusCode == 412 {
-			log.Printf("[ERROR] HTTP error while reading Security System: %s", finalHttpResp.Status)
-			var fetchResp map[string]interface{}
-			if finalHttpResp.Body != nil {
-				if err := json.NewDecoder(finalHttpResp.Body).Decode(&fetchResp); err != nil {
-					resp.Diagnostics.AddError("Failed to decode error response", err.Error())
-					return
-				}
-				if msg, ok := fetchResp["msg"].(string); ok {
-					resp.Diagnostics.AddError(
-						"HTTP Error",
-						fmt.Sprintf("HTTP error while reading security system for the reasons: %s", msg),
-					)
-				} else {
-					resp.Diagnostics.AddError("HTTP Error", "412 Precondition Failed")
-				}
-			} else {
-				resp.Diagnostics.AddError("HTTP Error", "412 Precondition Failed - no response body")
-			}
-		} else {
-			log.Printf("[ERROR] API Call Failed: %v", err)
-			resp.Diagnostics.AddError("API Call Failed", fmt.Sprintf("Error: %v", err))
-		}
-		return
+		errorCode := securitySystemDatasourceErrorCodes.GenerateErrorCode(errorsutil.SecuritySystemCategoryAPIOperation, 3)
+		opCtx.LogOperationError(logCtx, "Failed to read security systems", errorCode, err)
+		return nil, errorsutil.CreateSecuritySystemStandardError(errorsutil.ErrSecuritySystemReadFailed, "api_read", "", err)
 	}
 
-	//if the response is null
-	if apiResp == nil || len(apiResp.SecuritySystemDetails) == 0 {
-		log.Println("[DEBUG] No data returned from API")
-		resp.Diagnostics.AddError("API Response is empty", "No data found for the given filters in the environment.")
-		return
-	}
+	opCtx.LogOperationEnd(logCtx, "Security systems API call completed successfully")
 
-	if finalHttpResp != nil {
-		log.Printf("[DEBUG] HTTP Status Code: %d", finalHttpResp.StatusCode)
-	}
+	return apiResp, nil
+}
 
-	// Transform API response to a slice of SecuritySystemDetails.
+// ValidateSecuritySystemsResponse validates that the API response contains valid data
+// Returns standardized error if validation fails
+func (d *securitySystemsDataSource) ValidateSecuritySystemsResponse(apiResp *openapi.GetSecuritySystems200Response) error {
+	if apiResp == nil {
+		return fmt.Errorf("API response is nil")
+	}
+	return nil
+}
+
+// UpdateModelFromSecuritySystemsResponse maps API response data to the Terraform state model
+// Handles both metadata and security system details mapping
+func (d *securitySystemsDataSource) UpdateModelFromSecuritySystemsResponse(state *SecuritySystemsDataSourceModel, apiResp *openapi.GetSecuritySystems200Response) {
+	// Set resource ID
+	state.ID = types.StringValue("ds-security-systems")
+
+	// Map response metadata
 	state.Msg = util.SafeStringDatasource(apiResp.Msg)
-	// Default to 0 when API omits count fields (happens when no results found)
+	state.ErrorCode = util.SafeStringDatasource(apiResp.ErrorCode)
+	
 	if apiResp.DisplayCount != nil {
 		state.DisplayCount = types.Int64Value(int64(*apiResp.DisplayCount))
 	} else {
 		state.DisplayCount = types.Int64Value(0)
 	}
-	state.ErrorCode = util.SafeStringDatasource(apiResp.ErrorCode)
+	
 	if apiResp.TotalCount != nil {
 		state.TotalCount = types.Int64Value(int64(*apiResp.TotalCount))
 	} else {
 		state.TotalCount = types.Int64Value(0)
 	}
+
+	// Map security systems details
 	if apiResp.SecuritySystemDetails != nil {
+		state.Results = make([]SecuritySystemDetails, 0, len(apiResp.SecuritySystemDetails))
 		for _, item := range apiResp.SecuritySystemDetails {
 			securitySystemState := SecuritySystemDetails{
 				ConnectionType:                     util.SafeString(item.ConnectionType),
@@ -360,25 +466,26 @@ func (d *securitySystemsDataSource) Read(ctx context.Context, req datasource.Rea
 			state.Results = append(state.Results, securitySystemState)
 		}
 	}
+}
+
+// HandleSecuritySystemsAuthenticationLogic processes the authenticate flag to control sensitive data visibility
+// When authenticate=false, results are removed from state to prevent sensitive data exposure
+// When authenticate=true, all results are returned in state
+func (d *securitySystemsDataSource) HandleSecuritySystemsAuthenticationLogic(state *SecuritySystemsDataSourceModel, resp *datasource.ReadResponse) {
 	if !state.Authenticate.IsNull() && !state.Authenticate.IsUnknown() {
 		if state.Authenticate.ValueBool() {
+			tflog.Info(context.Background(), "Authentication enabled - returning all security system details")
 			resp.Diagnostics.AddWarning(
 				"Authentication Enabled",
 				"`authenticate` is true; all security system details will be returned in state.",
 			)
 		} else {
+			tflog.Info(context.Background(), "Authentication disabled - removing security system details from state")
 			resp.Diagnostics.AddWarning(
 				"Authentication Disabled",
 				"`authenticate` is false; security system details will be removed from state.",
 			)
 			state.Results = nil
 		}
-	}
-
-	stateDiagnostics := resp.State.Set(ctx, &state)
-	resp.Diagnostics.Append(stateDiagnostics...)
-
-	if resp.Diagnostics.HasError() {
-		return
 	}
 }

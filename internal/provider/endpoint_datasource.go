@@ -2,39 +2,62 @@
 // SPDX-License-Identifier: MPL-2.0
 
 // saviynt_endpoints_datasource retrieves endpoint details from the Saviynt Security Manager.
-// The data source supports a single Read operation to look up an existing endpoint by name.
+// The data source supports a single Read operation to look up existing endpoints with comprehensive filtering.
 package provider
 
 import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"log"
 	"net/http"
-	"strings"
 	"terraform-provider-Saviynt/internal/client"
 	"terraform-provider-Saviynt/util"
 
 	openapi "github.com/saviynt/saviynt-api-go-client/endpoints"
 
-	s "github.com/saviynt/saviynt-api-go-client"
-
 	"github.com/hashicorp/terraform-plugin-framework/datasource"
 	"github.com/hashicorp/terraform-plugin-framework/datasource/schema"
 	"github.com/hashicorp/terraform-plugin-framework/types"
+	"github.com/hashicorp/terraform-plugin-log/tflog"
 )
 
+var _ datasource.DataSource = &endpointsDataSource{}
+
 type endpointsDataSource struct {
-	client   *s.Client
-	token    string
-	provider client.SaviyntProviderInterface
+	client            client.SaviyntClientInterface
+	token             string
+	provider          client.SaviyntProviderInterface
+	endpointFactory   client.EndpointFactoryInterface
 }
 
-var _ datasource.DataSource = &endpointsDataSource{}
-var _ datasource.DataSourceWithConfigure = &endpointsDataSource{}
-
+// NewEndpointsDataSource creates a new endpoints data source with default factory
 func NewEndpointsDataSource() datasource.DataSource {
-	return &endpointsDataSource{}
+	return &endpointsDataSource{
+		endpointFactory: &client.DefaultEndpointFactory{},
+	}
+}
+
+// NewEndpointsDataSourceWithFactory creates a new endpoints data source with custom factory
+// Used primarily for testing with mock factories
+func NewEndpointsDataSourceWithFactory(factory client.EndpointFactoryInterface) datasource.DataSource {
+	return &endpointsDataSource{
+		endpointFactory: factory,
+	}
+}
+
+// SetClient sets the client for testing purposes
+func (d *endpointsDataSource) SetClient(client client.SaviyntClientInterface) {
+	d.client = client
+}
+
+// SetToken sets the token for testing purposes
+func (d *endpointsDataSource) SetToken(token string) {
+	d.token = token
+}
+
+// SetProvider sets the provider for testing purposes
+func (d *endpointsDataSource) SetProvider(provider client.SaviyntProviderInterface) {
+	d.provider = provider
 }
 
 type EndpointsDataSourceModel struct {
@@ -384,335 +407,420 @@ func (d *endpointsDataSource) Schema(ctx context.Context, req datasource.SchemaR
 	}
 }
 
+// Configure initializes the data source with provider configuration
+// Sets up client and authentication token for API operations
 func (d *endpointsDataSource) Configure(ctx context.Context, req datasource.ConfigureRequest, resp *datasource.ConfigureResponse) {
+	tflog.Debug(ctx, "Starting endpoints datasource configuration")
+
 	// Check if provider data is available.
 	if req.ProviderData == nil {
-		log.Println("ProviderData is nil, returning early.")
+		tflog.Debug(ctx, "ProviderData is nil, returning early")
 		return
 	}
 
 	// Cast provider data to your provider type.
 	prov, ok := req.ProviderData.(*SaviyntProvider)
 	if !ok {
-		resp.Diagnostics.AddError("Unexpected Provider Data", "Expected *SaviyntProvider")
+		tflog.Error(ctx, "Provider configuration failed - expected *SaviyntProvider, got different type")
+		resp.Diagnostics.AddError(
+			"Unexpected Provider Data",
+			"Expected *SaviyntProvider, got different type",
+		)
 		return
 	}
 
-	// Set the client, token, and provider reference from the provider state
-	d.client = prov.client
+	// Set the client and token from the provider state using interface wrapper.
+	d.client = &client.SaviyntClientWrapper{Client: prov.client}
 	d.token = prov.accessToken
-	d.provider = &client.SaviyntProviderWrapper{Provider: prov} // Store provider reference for retry logic
+	d.provider = &client.SaviyntProviderWrapper{Provider: prov}
+
+	tflog.Debug(ctx, "Endpoints datasource configured successfully")
 }
 
+// Read retrieves endpoints details from Saviynt and populates the Terraform state
+// Supports comprehensive filtering with structured error handling and operation tracking
 func (d *endpointsDataSource) Read(ctx context.Context, req datasource.ReadRequest, resp *datasource.ReadResponse) {
 	var state EndpointsDataSourceModel
 
+	tflog.Debug(ctx, "Starting endpoints datasource read")
+
+	// Extract configuration from request
 	configDiagnostics := req.Config.Get(ctx, &state)
 	resp.Diagnostics.Append(configDiagnostics...)
-
 	if resp.Diagnostics.HasError() {
+		tflog.Error(ctx, "Failed to extract configuration from request")
 		return
 	}
 
-	var endpointsResponse *openapi.GetEndpoints200Response
+	// Execute API call to get endpoints details
+	apiResp, err := d.ReadEndpointsDetails(ctx, &state)
+	if err != nil {
+		tflog.Error(ctx, "Failed to read endpoints details", map[string]interface{}{"error": err.Error()})
+		resp.Diagnostics.AddError(
+			"Endpoints Read Failed",
+			fmt.Sprintf("Failed to read endpoints: %s", err.Error()),
+		)
+		return
+	}
+
+	// Map API response to state
+	d.UpdateModelFromEndpointsResponse(&state, apiResp)
+
+	// Handle authentication logic
+	d.HandleEndpointsAuthenticationLogic(&state, resp)
+
+	// Set final state
+	stateDiagnostics := resp.State.Set(ctx, &state)
+	resp.Diagnostics.Append(stateDiagnostics...)
+	if resp.Diagnostics.HasError() {
+		tflog.Error(ctx, "Failed to set state")
+		return
+	}
+
+	tflog.Debug(ctx, "Endpoints datasource read completed successfully", map[string]interface{}{
+		"results_count": len(state.Results),
+		"total_count":   state.TotalCount.ValueInt64(),
+	})
+}
+				
+// ReadEndpointsDetails retrieves endpoints details from Saviynt API
+// Handles comprehensive filtering using factory pattern with standardized error handling
+func (d *endpointsDataSource) ReadEndpointsDetails(ctx context.Context, state *EndpointsDataSourceModel) (*openapi.GetEndpoints200Response, error) {
+	tflog.Debug(ctx, "Starting endpoints API call")
+
+	var apiResp *openapi.GetEndpoints200Response
 	var finalHttpResp *http.Response
 
-	// Execute the API request with retry logic
-	err := d.provider.AuthenticatedAPICallWithRetry(ctx, "get_endpoints_datasource", func(token string) error {
-		cfg := openapi.NewConfiguration()
-		apiBaseURL := strings.TrimPrefix(strings.TrimPrefix(d.client.APIBaseURL(), "https://"), "http://")
-		cfg.Host = apiBaseURL
-		cfg.Scheme = "https"
-		cfg.AddDefaultHeader("Authorization", "Bearer "+token)
-		cfg.HTTPClient = http.DefaultClient
+	// Execute API request with retry logic
+	err := d.provider.AuthenticatedAPICallWithRetry(ctx, "read_endpoints_datasource", func(token string) error {
+		endpointOps := d.endpointFactory.CreateEndpointOperations(d.client.APIBaseURL(), token)
 
-		apiClient := openapi.NewAPIClient(cfg)
-		areq := openapi.GetEndpointsRequest{}
+		// Build request with filters
+		req := d.BuildEndpointsRequest(ctx, state)
 
-		// Apply filters
-		if !state.EndpointName.IsNull() && state.EndpointName.ValueString() != "" {
-			endpointName := state.EndpointName.ValueString()
-			areq.SetEndpointname(endpointName)
-		}
-
-		if !state.EndpointKey.IsNull() && len(state.EndpointKey.Elements()) > 0 {
-			endpointkeys := util.StringsFromList(state.EndpointKey)
-			areq.SetEndpointkey(endpointkeys)
-		}
-
-		if !state.ConnectionType.IsNull() && state.ConnectionType.ValueString() != "" {
-			connectionType := state.ConnectionType.ValueString()
-			areq.SetConnectionType(connectionType)
-		}
-
-		if !state.Displayname.IsNull() && state.Displayname.ValueString() != "" {
-			displayName := state.Displayname.ValueString()
-			areq.SetDisplayName(displayName)
-		}
-
-		if !state.Owner.IsNull() && state.Owner.ValueString() != "" {
-			owner := state.Owner.ValueString()
-			areq.SetOwner(owner)
-		}
-
-		if !state.Max.IsNull() && state.Max.ValueString() != "" {
-			max := state.Max.ValueString()
-			areq.SetMax(max)
-		}
-
-		if !state.FilterCriteria.IsNull() {
-			var filterMap map[string]string
-			diags := state.FilterCriteria.ElementsAs(ctx, &filterMap, true)
-
-			if diags.HasError() {
-				resp.Diagnostics.Append(diags...)
-				return fmt.Errorf("failed to parse filter criteria")
-			}
-
-			filterCriteria := make(map[string]interface{}, len(filterMap))
-			for k, v := range filterMap {
-				filterCriteria[k] = v
-			}
-
-			areq.SetFilterCriteria(filterCriteria)
-		}
-
-		apiReq := apiClient.EndpointsAPI.GetEndpoints(ctx).GetEndpointsRequest(areq)
-		resp, httpResponse, err := apiReq.Execute()
-		finalHttpResp = httpResponse // Update on every call including retries
-		if httpResponse != nil && httpResponse.StatusCode == 401 {
+		resp, httpResp, err := endpointOps.GetEndpoints(ctx, req)
+		finalHttpResp = httpResp
+		if httpResp != nil && httpResp.StatusCode == 401 {
 			return fmt.Errorf("401 unauthorized")
 		}
-		endpointsResponse = resp
+		apiResp = resp
 		return err
 	})
 
 	if err != nil {
+		// Handle specific HTTP errors
 		if finalHttpResp != nil && finalHttpResp.StatusCode == 412 {
-			log.Printf("[ERROR] HTTP error while reading endpoint: %s", finalHttpResp.Status)
-			var fetchResp map[string]interface{}
-			if finalHttpResp.Body != nil {
-				if err := json.NewDecoder(finalHttpResp.Body).Decode(&fetchResp); err != nil {
-					resp.Diagnostics.AddError("Failed to decode error response", err.Error())
-					return
-				}
-				resp.Diagnostics.AddError(
-					"HTTP Error",
-					fmt.Sprintf("HTTP error while reading endpoint for the reasons: %s", fetchResp),
-				)
-			} else {
-				resp.Diagnostics.AddError("HTTP Error", "412 Precondition Failed - no response body")
-			}
-		} else {
-			log.Printf("[ERROR] API Call Failed: %v", err)
-			resp.Diagnostics.AddError("API Call Failed", fmt.Sprintf("Error: %v", err))
+			tflog.Error(ctx, "HTTP 412 error while reading endpoints", map[string]interface{}{"status": finalHttpResp.Status})
+			return nil, d.HandleHTTP412Error(finalHttpResp)
 		}
-		return
-	}
-	if endpointsResponse != nil && endpointsResponse.ErrorCode != nil && *endpointsResponse.ErrorCode != "0" {
-		errorCode := util.SafeDeref(endpointsResponse.ErrorCode)
-		message := util.SafeDeref(endpointsResponse.Message)
-		log.Printf("[ERROR]: Error in reading endpoint. Errorcode: %v, Message: %v", errorCode, message)
-		resp.Diagnostics.AddError("Read endpoint failed", message)
+		
+		tflog.Error(ctx, "Failed to read endpoints details", map[string]interface{}{"error": err.Error()})
+		return nil, fmt.Errorf("failed to read endpoints: %w", err)
 	}
 
-	log.Printf("[DEBUG] HTTP Status Code: %d", finalHttpResp.StatusCode)
+	// Validate API response
+	if err := d.ValidateEndpointsResponse(apiResp); err != nil {
+		tflog.Error(ctx, "API returned error response", map[string]interface{}{"error": err.Error()})
+		return nil, fmt.Errorf("API error: %w", err)
+	}
 
-	state.Message = util.SafeStringDatasource(endpointsResponse.Message)
-	// Default to 0 when API omits count fields (happens when no results found)
-	if endpointsResponse.DisplayCount != nil {
-		state.DisplayCount = types.Int64Value(int64(*endpointsResponse.DisplayCount))
+	tflog.Debug(ctx, "Endpoints API call completed successfully")
+	return apiResp, nil
+}
+
+// BuildEndpointsRequest constructs the API request with all filters from state
+func (d *endpointsDataSource) BuildEndpointsRequest(ctx context.Context, state *EndpointsDataSourceModel) openapi.GetEndpointsRequest {
+	req := openapi.GetEndpointsRequest{}
+
+	// Apply filters
+	if !state.EndpointName.IsNull() && state.EndpointName.ValueString() != "" {
+		req.SetEndpointname(state.EndpointName.ValueString())
+	}
+
+	if !state.EndpointKey.IsNull() && len(state.EndpointKey.Elements()) > 0 {
+		endpointkeys := util.StringsFromList(state.EndpointKey)
+		req.SetEndpointkey(endpointkeys)
+	}
+
+	if !state.ConnectionType.IsNull() && state.ConnectionType.ValueString() != "" {
+		req.SetConnectionType(state.ConnectionType.ValueString())
+	}
+
+	if !state.Displayname.IsNull() && state.Displayname.ValueString() != "" {
+		req.SetDisplayName(state.Displayname.ValueString())
+	}
+
+	if !state.Owner.IsNull() && state.Owner.ValueString() != "" {
+		req.SetOwner(state.Owner.ValueString())
+	}
+
+	if !state.Max.IsNull() && state.Max.ValueString() != "" {
+		req.SetMax(state.Max.ValueString())
+	}
+
+	if !state.FilterCriteria.IsNull() {
+		var filterMap map[string]string
+		diags := state.FilterCriteria.ElementsAs(ctx, &filterMap, true)
+		if !diags.HasError() {
+			filterCriteria := make(map[string]interface{}, len(filterMap))
+			for k, v := range filterMap {
+				filterCriteria[k] = v
+			}
+			req.SetFilterCriteria(filterCriteria)
+		}
+	}
+
+	return req
+}
+
+// HandleHTTP412Error handles 412 Precondition Failed errors with response body parsing
+func (d *endpointsDataSource) HandleHTTP412Error(httpResp *http.Response) error {
+	if httpResp.Body != nil {
+		var fetchResp map[string]interface{}
+		if err := json.NewDecoder(httpResp.Body).Decode(&fetchResp); err != nil {
+			tflog.Error(context.Background(), "Failed to decode 412 error response", map[string]interface{}{"decode_error": err.Error()})
+			return fmt.Errorf("412 Precondition Failed - failed to decode error response: %w", err)
+		}
+		return fmt.Errorf("412 Precondition Failed: %v", fetchResp)
+	}
+	return fmt.Errorf("412 Precondition Failed - no response body")
+}
+
+// ValidateEndpointsResponse validates that the API response is successful
+func (d *endpointsDataSource) ValidateEndpointsResponse(apiResp *openapi.GetEndpoints200Response) error {
+	if apiResp != nil && apiResp.ErrorCode != nil && *apiResp.ErrorCode != "0" {
+		errorCode := util.SafeDeref(apiResp.ErrorCode)
+		message := util.SafeDeref(apiResp.Message)
+		tflog.Error(context.Background(), "API returned error response", map[string]interface{}{
+			"error_code": errorCode,
+			"message":    message,
+		})
+		return fmt.Errorf("API error - ErrorCode: %s, Message: %s", errorCode, message)
+	}
+	return nil
+}
+
+// UpdateModelFromEndpointsResponse maps API response data to the Terraform state model
+func (d *endpointsDataSource) UpdateModelFromEndpointsResponse(state *EndpointsDataSourceModel, apiResp *openapi.GetEndpoints200Response) {
+	// Map response metadata
+	state.Message = util.SafeStringDatasource(apiResp.Message)
+	state.ErrorCode = util.SafeStringDatasource(apiResp.ErrorCode)
+	
+	// Handle count fields with defaults
+	if apiResp.DisplayCount != nil {
+		state.DisplayCount = types.Int64Value(int64(*apiResp.DisplayCount))
 	} else {
 		state.DisplayCount = types.Int64Value(0)
 	}
-	state.ErrorCode = util.SafeStringDatasource(endpointsResponse.ErrorCode)
-	if endpointsResponse.TotalCount != nil {
-		state.TotalCount = types.Int64Value(int64(*endpointsResponse.TotalCount))
+	
+	if apiResp.TotalCount != nil {
+		state.TotalCount = types.Int64Value(int64(*apiResp.TotalCount))
 	} else {
 		state.TotalCount = types.Int64Value(0)
 	}
 
-	if endpointsResponse.Endpoints != nil {
-		for _, item := range endpointsResponse.Endpoints {
-			endpointState := Endpoint{
-				Id:                                  util.SafeString(item.Id),
-				Description:                         util.SafeString(item.Description),
-				StatusForUniqueAccount:              util.SafeString(item.StatusForUniqueAccount),
-				Requestowner:                        util.SafeString(item.Requestowner),
-				Requestable:                         util.SafeString(item.Requestable),
-				PrimaryAccountType:                  util.SafeString(item.PrimaryAccountType),
-				AccountTypeNoPasswordChange:         util.SafeString(item.AccountTypeNoPasswordChange),
-				ServiceAccountNameRule:              util.SafeString(item.ServiceAccountNameRule),
-				AccountNameValidatorRegex:           util.SafeString(item.AccountNameValidatorRegex),
-				AllowChangePasswordSqlquery:         util.SafeString(item.AllowChangePasswordSqlquery),
-				ParentAccountPattern:                util.SafeString(item.ParentAccountPattern),
-				OwnerType:                           util.SafeString(item.OwnerType),
-				Securitysystem:                      util.SafeString(item.Securitysystem),
-				Endpointname:                        util.SafeString(item.Endpointname),
-				UpdatedBy:                           util.SafeString(item.UpdatedBy),
-				Accessquery:                         util.SafeString(item.Accessquery),
-				Status:                              util.SafeString(item.Status),
-				DisplayName:                         util.SafeString(item.DisplayName),
-				UpdateDate:                          util.SafeString(item.UpdateDate),
-				AllowRemoveAllRoleOnRequest:         util.SafeString(item.AllowRemoveAllRoleOnRequest),
-				RoleTypeAsJson:                      util.SafeString(item.RoleTypeAsJson),
-				EntsWithNewAccount:                  util.SafeString(item.EntsWithNewAccount),
-				ConnectionconfigAsJson:              util.SafeString(item.ConnectionconfigAsJson),
-				Connectionconfig:                    util.SafeString(item.Connectionconfig),
-				AccountNameRule:                     util.SafeString(item.AccountNameRule),
-				ChangePasswordAccessQuery:           util.SafeString(item.ChangePasswordAccessQuery),
-				Disableaccountrequest:               util.SafeString(item.Disableaccountrequest),
-				PluginConfigs:                       util.SafeString(item.PluginConfigs),
-				DisableaccountrequestServiceAccount: util.SafeString(item.DisableaccountrequestServiceAccount),
-				Requestableapplication:              util.SafeString(item.Requestableapplication),
-				CreatedFrom:                         util.SafeString(item.CreatedFrom),
-				CreatedBy:                           util.SafeString(item.CreatedBy),
-				CreateDate:                          util.SafeString(item.CreateDate),
-				ParentEndpoint:                      util.SafeString(item.ParentEndpoint),
-				BaseLineConfig:                      util.SafeString(item.BaseLineConfig),
-				Requestownertype:                    util.SafeString(item.Requestownertype),
-				CreateEntTaskforRemoveAcc:           util.SafeString(item.CreateEntTaskforRemoveAcc),
-				EnableCopyAccess:                    util.SafeString(item.EnableCopyAccess),
-				AccountTypeNoDeprovision:            util.SafeString(item.AccountTypeNoDeprovision),
-				EndpointConfig:                      util.SafeString(item.EndpointConfig),
-				Taskemailtemplates:                  util.SafeString(item.Taskemailtemplates),
-				Ownerkey:                            util.SafeString(item.Ownerkey),
-				ServiceAccountAccessQuery:           util.SafeString(item.ServiceAccountAccessQuery),
-				UserAccountCorrelationRule:          util.SafeString(item.UserAccountCorrelationRule),
-				StatusConfig:                        util.SafeString(item.StatusConfig),
-				CustomPropertyModel: CustomPropertyModel{
-					CustomProperty1:  util.SafeString(item.CustomProperty1),
-					CustomProperty2:  util.SafeString(item.CustomProperty2),
-					CustomProperty3:  util.SafeString(item.CustomProperty3),
-					CustomProperty4:  util.SafeString(item.CustomProperty4),
-					CustomProperty5:  util.SafeString(item.CustomProperty5),
-					CustomProperty6:  util.SafeString(item.CustomProperty6),
-					CustomProperty7:  util.SafeString(item.CustomProperty7),
-					CustomProperty8:  util.SafeString(item.CustomProperty8),
-					CustomProperty9:  util.SafeString(item.CustomProperty9),
-					CustomProperty10: util.SafeString(item.CustomProperty10),
-					CustomProperty11: util.SafeString(item.CustomProperty11),
-					CustomProperty12: util.SafeString(item.CustomProperty12),
-					CustomProperty13: util.SafeString(item.CustomProperty13),
-					CustomProperty14: util.SafeString(item.CustomProperty14),
-					CustomProperty15: util.SafeString(item.CustomProperty15),
-					CustomProperty16: util.SafeString(item.CustomProperty16),
-					CustomProperty17: util.SafeString(item.CustomProperty17),
-					CustomProperty18: util.SafeString(item.CustomProperty18),
-					CustomProperty19: util.SafeString(item.CustomProperty19),
-					CustomProperty20: util.SafeString(item.CustomProperty20),
-					CustomProperty21: util.SafeString(item.CustomProperty21),
-					CustomProperty22: util.SafeString(item.CustomProperty22),
-					CustomProperty23: util.SafeString(item.CustomProperty23),
-					CustomProperty24: util.SafeString(item.CustomProperty24),
-					CustomProperty25: util.SafeString(item.CustomProperty25),
-					CustomProperty26: util.SafeString(item.CustomProperty26),
-					CustomProperty27: util.SafeString(item.CustomProperty27),
-					CustomProperty28: util.SafeString(item.CustomProperty28),
-					CustomProperty29: util.SafeString(item.CustomProperty29),
-					CustomProperty30: util.SafeString(item.CustomProperty30),
-					CustomProperty31: util.SafeString(item.Customproperty31),
-					CustomProperty32: util.SafeString(item.Customproperty32),
-					CustomProperty33: util.SafeString(item.Customproperty33),
-					CustomProperty34: util.SafeString(item.Customproperty34),
-					CustomProperty35: util.SafeString(item.Customproperty35),
-					CustomProperty36: util.SafeString(item.Customproperty36),
-					CustomProperty37: util.SafeString(item.Customproperty37),
-					CustomProperty38: util.SafeString(item.Customproperty38),
-					CustomProperty39: util.SafeString(item.Customproperty39),
-					CustomProperty40: util.SafeString(item.Customproperty40),
-					CustomProperty41: util.SafeString(item.Customproperty41),
-					CustomProperty42: util.SafeString(item.Customproperty42),
-					CustomProperty43: util.SafeString(item.Customproperty43),
-					CustomProperty44: util.SafeString(item.Customproperty44),
-					CustomProperty45: util.SafeString(item.Customproperty45),
-				},
-				AccountCustomPropertyLabelModel: AccountCustomPropertyLabelModel{
-					AccountCustomProperty1Label:  util.SafeString(item.AccountCustomProperty1Label),
-					AccountCustomProperty2Label:  util.SafeString(item.AccountCustomProperty2Label),
-					AccountCustomProperty3Label:  util.SafeString(item.AccountCustomProperty3Label),
-					AccountCustomProperty4Label:  util.SafeString(item.AccountCustomProperty4Label),
-					AccountCustomProperty5Label:  util.SafeString(item.AccountCustomProperty5Label),
-					AccountCustomProperty6Label:  util.SafeString(item.AccountCustomProperty6Label),
-					AccountCustomProperty7Label:  util.SafeString(item.AccountCustomProperty7Label),
-					AccountCustomProperty8Label:  util.SafeString(item.AccountCustomProperty8Label),
-					AccountCustomProperty9Label:  util.SafeString(item.AccountCustomProperty9Label),
-					AccountCustomProperty10Label: util.SafeString(item.AccountCustomProperty10Label),
-					AccountCustomProperty11Label: util.SafeString(item.AccountCustomProperty11Label),
-					AccountCustomProperty12Label: util.SafeString(item.AccountCustomProperty12Label),
-					AccountCustomProperty13Label: util.SafeString(item.AccountCustomProperty13Label),
-					AccountCustomProperty14Label: util.SafeString(item.AccountCustomProperty14Label),
-					AccountCustomProperty15Label: util.SafeString(item.AccountCustomProperty15Label),
-					AccountCustomProperty16Label: util.SafeString(item.AccountCustomProperty16Label),
-					AccountCustomProperty17Label: util.SafeString(item.AccountCustomProperty17Label),
-					AccountCustomProperty18Label: util.SafeString(item.AccountCustomProperty18Label),
-					AccountCustomProperty19Label: util.SafeString(item.AccountCustomProperty19Label),
-					AccountCustomProperty20Label: util.SafeString(item.AccountCustomProperty20Label),
-					AccountCustomProperty21Label: util.SafeString(item.AccountCustomProperty21Label),
-					AccountCustomProperty22Label: util.SafeString(item.AccountCustomProperty22Label),
-					AccountCustomProperty23Label: util.SafeString(item.AccountCustomProperty23Label),
-					AccountCustomProperty24Label: util.SafeString(item.AccountCustomProperty24Label),
-					AccountCustomProperty25Label: util.SafeString(item.AccountCustomProperty25Label),
-					AccountCustomProperty26Label: util.SafeString(item.AccountCustomProperty26Label),
-					AccountCustomProperty27Label: util.SafeString(item.AccountCustomProperty27Label),
-					AccountCustomProperty28Label: util.SafeString(item.AccountCustomProperty28Label),
-					AccountCustomProperty29Label: util.SafeString(item.AccountCustomProperty29Label),
-					AccountCustomProperty30Label: util.SafeString(item.AccountCustomProperty30Label),
-				},
-				CustomPropertyLabelModel: CustomPropertyLabelModel{
-					CustomProperty31Label: util.SafeString(item.Customproperty31Label),
-					CustomProperty32Label: util.SafeString(item.Customproperty32Label),
-					CustomProperty33Label: util.SafeString(item.Customproperty33Label),
-					CustomProperty34Label: util.SafeString(item.Customproperty34Label),
-					CustomProperty35Label: util.SafeString(item.Customproperty35Label),
-					CustomProperty36Label: util.SafeString(item.Customproperty36Label),
-					CustomProperty37Label: util.SafeString(item.Customproperty37Label),
-					CustomProperty38Label: util.SafeString(item.Customproperty38Label),
-					CustomProperty39Label: util.SafeString(item.Customproperty39Label),
-					CustomProperty40Label: util.SafeString(item.Customproperty40Label),
-					CustomProperty41Label: util.SafeString(item.Customproperty41Label),
-					CustomProperty42Label: util.SafeString(item.Customproperty42Label),
-					CustomProperty43Label: util.SafeString(item.Customproperty43Label),
-					CustomProperty44Label: util.SafeString(item.Customproperty44Label),
-					CustomProperty45Label: util.SafeString(item.Customproperty45Label),
-					CustomProperty46Label: util.SafeString(item.Customproperty46Label),
-					CustomProperty47Label: util.SafeString(item.Customproperty47Label),
-					CustomProperty48Label: util.SafeString(item.Customproperty48Label),
-					CustomProperty49Label: util.SafeString(item.Customproperty49Label),
-					CustomProperty50Label: util.SafeString(item.Customproperty50Label),
-					CustomProperty51Label: util.SafeString(item.Customproperty51Label),
-					CustomProperty52Label: util.SafeString(item.Customproperty52Label),
-					CustomProperty53Label: util.SafeString(item.Customproperty53Label),
-					CustomProperty54Label: util.SafeString(item.Customproperty54Label),
-					CustomProperty55Label: util.SafeString(item.Customproperty55Label),
-					CustomProperty56Label: util.SafeString(item.Customproperty56Label),
-					CustomProperty57Label: util.SafeString(item.Customproperty57Label),
-					CustomProperty58Label: util.SafeString(item.Customproperty58Label),
-					CustomProperty59Label: util.SafeString(item.Customproperty59Label),
-					CustomProperty60Label: util.SafeString(item.Customproperty60Label),
-				},
-			}
-			state.Results = append(state.Results, endpointState)
-		}
+	// Map endpoints data
+	d.MapEndpointsData(state, apiResp)
+}
+
+// MapEndpointsData maps individual endpoint records from API response to state
+func (d *endpointsDataSource) MapEndpointsData(state *EndpointsDataSourceModel, apiResp *openapi.GetEndpoints200Response) {
+	if apiResp.Endpoints == nil {
+		state.Results = nil
+		return
 	}
+
+	state.Results = make([]Endpoint, 0, len(apiResp.Endpoints))
+	for _, item := range apiResp.Endpoints {
+		endpointState := Endpoint{
+			Id:                                  util.SafeString(item.Id),
+			Description:                         util.SafeString(item.Description),
+			StatusForUniqueAccount:              util.SafeString(item.StatusForUniqueAccount),
+			Requestowner:                        util.SafeString(item.Requestowner),
+			Requestable:                         util.SafeString(item.Requestable),
+			PrimaryAccountType:                  util.SafeString(item.PrimaryAccountType),
+			AccountTypeNoPasswordChange:         util.SafeString(item.AccountTypeNoPasswordChange),
+			ServiceAccountNameRule:              util.SafeString(item.ServiceAccountNameRule),
+			AccountNameValidatorRegex:           util.SafeString(item.AccountNameValidatorRegex),
+			AllowChangePasswordSqlquery:         util.SafeString(item.AllowChangePasswordSqlquery),
+			ParentAccountPattern:                util.SafeString(item.ParentAccountPattern),
+			OwnerType:                           util.SafeString(item.OwnerType),
+			Securitysystem:                      util.SafeString(item.Securitysystem),
+			Endpointname:                        util.SafeString(item.Endpointname),
+			UpdatedBy:                           util.SafeString(item.UpdatedBy),
+			Accessquery:                         util.SafeString(item.Accessquery),
+			Status:                              util.SafeString(item.Status),
+			DisplayName:                         util.SafeString(item.DisplayName),
+			UpdateDate:                          util.SafeString(item.UpdateDate),
+			AllowRemoveAllRoleOnRequest:         util.SafeString(item.AllowRemoveAllRoleOnRequest),
+			RoleTypeAsJson:                      util.SafeString(item.RoleTypeAsJson),
+			EntsWithNewAccount:                  util.SafeString(item.EntsWithNewAccount),
+			ConnectionconfigAsJson:              util.SafeString(item.ConnectionconfigAsJson),
+			Connectionconfig:                    util.SafeString(item.Connectionconfig),
+			AccountNameRule:                     util.SafeString(item.AccountNameRule),
+			ChangePasswordAccessQuery:           util.SafeString(item.ChangePasswordAccessQuery),
+			Disableaccountrequest:               util.SafeString(item.Disableaccountrequest),
+			PluginConfigs:                       util.SafeString(item.PluginConfigs),
+			DisableaccountrequestServiceAccount: util.SafeString(item.DisableaccountrequestServiceAccount),
+			Requestableapplication:              util.SafeString(item.Requestableapplication),
+			CreatedFrom:                         util.SafeString(item.CreatedFrom),
+			CreatedBy:                           util.SafeString(item.CreatedBy),
+			CreateDate:                          util.SafeString(item.CreateDate),
+			ParentEndpoint:                      util.SafeString(item.ParentEndpoint),
+			BaseLineConfig:                      util.SafeString(item.BaseLineConfig),
+			Requestownertype:                    util.SafeString(item.Requestownertype),
+			CreateEntTaskforRemoveAcc:           util.SafeString(item.CreateEntTaskforRemoveAcc),
+			EnableCopyAccess:                    util.SafeString(item.EnableCopyAccess),
+			AccountTypeNoDeprovision:            util.SafeString(item.AccountTypeNoDeprovision),
+			EndpointConfig:                      util.SafeString(item.EndpointConfig),
+			Taskemailtemplates:                  util.SafeString(item.Taskemailtemplates),
+			Ownerkey:                            util.SafeString(item.Ownerkey),
+			ServiceAccountAccessQuery:           util.SafeString(item.ServiceAccountAccessQuery),
+			UserAccountCorrelationRule:          util.SafeString(item.UserAccountCorrelationRule),
+			StatusConfig:                        util.SafeString(item.StatusConfig),
+		}
+
+		// Map custom properties
+		d.MapCustomProperties(&endpointState, &item)
+		state.Results = append(state.Results, endpointState)
+	}
+}
+
+// MapCustomProperties maps custom properties and labels from API response to endpoint state
+func (d *endpointsDataSource) MapCustomProperties(endpointState *Endpoint, item *openapi.GetEndpoints200ResponseEndpointsInner) {
+	endpointState.CustomPropertyModel = CustomPropertyModel{
+		CustomProperty1:  util.SafeString(item.CustomProperty1),
+		CustomProperty2:  util.SafeString(item.CustomProperty2),
+		CustomProperty3:  util.SafeString(item.CustomProperty3),
+		CustomProperty4:  util.SafeString(item.CustomProperty4),
+		CustomProperty5:  util.SafeString(item.CustomProperty5),
+		CustomProperty6:  util.SafeString(item.CustomProperty6),
+		CustomProperty7:  util.SafeString(item.CustomProperty7),
+		CustomProperty8:  util.SafeString(item.CustomProperty8),
+		CustomProperty9:  util.SafeString(item.CustomProperty9),
+		CustomProperty10: util.SafeString(item.CustomProperty10),
+		CustomProperty11: util.SafeString(item.CustomProperty11),
+		CustomProperty12: util.SafeString(item.CustomProperty12),
+		CustomProperty13: util.SafeString(item.CustomProperty13),
+		CustomProperty14: util.SafeString(item.CustomProperty14),
+		CustomProperty15: util.SafeString(item.CustomProperty15),
+		CustomProperty16: util.SafeString(item.CustomProperty16),
+		CustomProperty17: util.SafeString(item.CustomProperty17),
+		CustomProperty18: util.SafeString(item.CustomProperty18),
+		CustomProperty19: util.SafeString(item.CustomProperty19),
+		CustomProperty20: util.SafeString(item.CustomProperty20),
+		CustomProperty21: util.SafeString(item.CustomProperty21),
+		CustomProperty22: util.SafeString(item.CustomProperty22),
+		CustomProperty23: util.SafeString(item.CustomProperty23),
+		CustomProperty24: util.SafeString(item.CustomProperty24),
+		CustomProperty25: util.SafeString(item.CustomProperty25),
+		CustomProperty26: util.SafeString(item.CustomProperty26),
+		CustomProperty27: util.SafeString(item.CustomProperty27),
+		CustomProperty28: util.SafeString(item.CustomProperty28),
+		CustomProperty29: util.SafeString(item.CustomProperty29),
+		CustomProperty30: util.SafeString(item.CustomProperty30),
+		CustomProperty31: util.SafeString(item.Customproperty31),
+		CustomProperty32: util.SafeString(item.Customproperty32),
+		CustomProperty33: util.SafeString(item.Customproperty33),
+		CustomProperty34: util.SafeString(item.Customproperty34),
+		CustomProperty35: util.SafeString(item.Customproperty35),
+		CustomProperty36: util.SafeString(item.Customproperty36),
+		CustomProperty37: util.SafeString(item.Customproperty37),
+		CustomProperty38: util.SafeString(item.Customproperty38),
+		CustomProperty39: util.SafeString(item.Customproperty39),
+		CustomProperty40: util.SafeString(item.Customproperty40),
+		CustomProperty41: util.SafeString(item.Customproperty41),
+		CustomProperty42: util.SafeString(item.Customproperty42),
+		CustomProperty43: util.SafeString(item.Customproperty43),
+		CustomProperty44: util.SafeString(item.Customproperty44),
+		CustomProperty45: util.SafeString(item.Customproperty45),
+	}
+
+	endpointState.AccountCustomPropertyLabelModel = AccountCustomPropertyLabelModel{
+		AccountCustomProperty1Label:  util.SafeString(item.AccountCustomProperty1Label),
+		AccountCustomProperty2Label:  util.SafeString(item.AccountCustomProperty2Label),
+		AccountCustomProperty3Label:  util.SafeString(item.AccountCustomProperty3Label),
+		AccountCustomProperty4Label:  util.SafeString(item.AccountCustomProperty4Label),
+		AccountCustomProperty5Label:  util.SafeString(item.AccountCustomProperty5Label),
+		AccountCustomProperty6Label:  util.SafeString(item.AccountCustomProperty6Label),
+		AccountCustomProperty7Label:  util.SafeString(item.AccountCustomProperty7Label),
+		AccountCustomProperty8Label:  util.SafeString(item.AccountCustomProperty8Label),
+		AccountCustomProperty9Label:  util.SafeString(item.AccountCustomProperty9Label),
+		AccountCustomProperty10Label: util.SafeString(item.AccountCustomProperty10Label),
+		AccountCustomProperty11Label: util.SafeString(item.AccountCustomProperty11Label),
+		AccountCustomProperty12Label: util.SafeString(item.AccountCustomProperty12Label),
+		AccountCustomProperty13Label: util.SafeString(item.AccountCustomProperty13Label),
+		AccountCustomProperty14Label: util.SafeString(item.AccountCustomProperty14Label),
+		AccountCustomProperty15Label: util.SafeString(item.AccountCustomProperty15Label),
+		AccountCustomProperty16Label: util.SafeString(item.AccountCustomProperty16Label),
+		AccountCustomProperty17Label: util.SafeString(item.AccountCustomProperty17Label),
+		AccountCustomProperty18Label: util.SafeString(item.AccountCustomProperty18Label),
+		AccountCustomProperty19Label: util.SafeString(item.AccountCustomProperty19Label),
+		AccountCustomProperty20Label: util.SafeString(item.AccountCustomProperty20Label),
+		AccountCustomProperty21Label: util.SafeString(item.AccountCustomProperty21Label),
+		AccountCustomProperty22Label: util.SafeString(item.AccountCustomProperty22Label),
+		AccountCustomProperty23Label: util.SafeString(item.AccountCustomProperty23Label),
+		AccountCustomProperty24Label: util.SafeString(item.AccountCustomProperty24Label),
+		AccountCustomProperty25Label: util.SafeString(item.AccountCustomProperty25Label),
+		AccountCustomProperty26Label: util.SafeString(item.AccountCustomProperty26Label),
+		AccountCustomProperty27Label: util.SafeString(item.AccountCustomProperty27Label),
+		AccountCustomProperty28Label: util.SafeString(item.AccountCustomProperty28Label),
+		AccountCustomProperty29Label: util.SafeString(item.AccountCustomProperty29Label),
+		AccountCustomProperty30Label: util.SafeString(item.AccountCustomProperty30Label),
+	}
+
+	endpointState.CustomPropertyLabelModel = CustomPropertyLabelModel{
+		CustomProperty31Label: util.SafeString(item.Customproperty31Label),
+		CustomProperty32Label: util.SafeString(item.Customproperty32Label),
+		CustomProperty33Label: util.SafeString(item.Customproperty33Label),
+		CustomProperty34Label: util.SafeString(item.Customproperty34Label),
+		CustomProperty35Label: util.SafeString(item.Customproperty35Label),
+		CustomProperty36Label: util.SafeString(item.Customproperty36Label),
+		CustomProperty37Label: util.SafeString(item.Customproperty37Label),
+		CustomProperty38Label: util.SafeString(item.Customproperty38Label),
+		CustomProperty39Label: util.SafeString(item.Customproperty39Label),
+		CustomProperty40Label: util.SafeString(item.Customproperty40Label),
+		CustomProperty41Label: util.SafeString(item.Customproperty41Label),
+		CustomProperty42Label: util.SafeString(item.Customproperty42Label),
+		CustomProperty43Label: util.SafeString(item.Customproperty43Label),
+		CustomProperty44Label: util.SafeString(item.Customproperty44Label),
+		CustomProperty45Label: util.SafeString(item.Customproperty45Label),
+		CustomProperty46Label: util.SafeString(item.Customproperty46Label),
+		CustomProperty47Label: util.SafeString(item.Customproperty47Label),
+		CustomProperty48Label: util.SafeString(item.Customproperty48Label),
+		CustomProperty49Label: util.SafeString(item.Customproperty49Label),
+		CustomProperty50Label: util.SafeString(item.Customproperty50Label),
+		CustomProperty51Label: util.SafeString(item.Customproperty51Label),
+		CustomProperty52Label: util.SafeString(item.Customproperty52Label),
+		CustomProperty53Label: util.SafeString(item.Customproperty53Label),
+		CustomProperty54Label: util.SafeString(item.Customproperty54Label),
+		CustomProperty55Label: util.SafeString(item.Customproperty55Label),
+		CustomProperty56Label: util.SafeString(item.Customproperty56Label),
+		CustomProperty57Label: util.SafeString(item.Customproperty57Label),
+		CustomProperty58Label: util.SafeString(item.Customproperty58Label),
+		CustomProperty59Label: util.SafeString(item.Customproperty59Label),
+		CustomProperty60Label: util.SafeString(item.Customproperty60Label),
+	}
+}
+
+// HandleEndpointsAuthenticationLogic processes the authenticate flag to control sensitive data visibility
+// When authenticate=false, results are removed from state to prevent sensitive data exposure
+// When authenticate=true, all endpoint details are returned in state
+func (d *endpointsDataSource) HandleEndpointsAuthenticationLogic(state *EndpointsDataSourceModel, resp *datasource.ReadResponse) {
 	if !state.Authenticate.IsNull() && !state.Authenticate.IsUnknown() {
 		if state.Authenticate.ValueBool() {
+			tflog.Info(context.Background(), "Authentication enabled - returning all endpoint details")
 			resp.Diagnostics.AddWarning(
 				"Authentication Enabled",
-				"`authenticate` is true; all endpoints details will be returned in state.",
+				"`authenticate` is true; all endpoint details will be returned in state.",
 			)
 		} else {
+			tflog.Info(context.Background(), "Authentication disabled - removing endpoint details from state")
 			resp.Diagnostics.AddWarning(
 				"Authentication Disabled",
-				"`authenticate` is false; endpoints will be removed from state.",
+				"`authenticate` is false; endpoint details will be removed from state.",
 			)
 			state.Results = nil
 		}
-	}
-	stateDiagnostics := resp.State.Set(ctx, &state)
-	resp.Diagnostics.Append(stateDiagnostics...)
-
-	if resp.Diagnostics.HasError() {
-		return
 	}
 }
