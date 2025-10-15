@@ -18,14 +18,13 @@ import (
 	"net/url"
 )
 
-
 // UtilityAPIService UtilityAPI service
 type UtilityAPIService service
 
 type ApiAccessTokenRequest struct {
-	ctx context.Context
-	ApiService *UtilityAPIService
-	grantType *string
+	ctx          context.Context
+	ApiService   *UtilityAPIService
+	grantType    *string
 	refreshToken *string
 }
 
@@ -46,24 +45,25 @@ func (r ApiAccessTokenRequest) Execute() (*AccessTokenResponse, *http.Response, 
 /*
 AccessToken This API call can be used for getting the new access token
 
- @param ctx context.Context - for authentication, logging, cancellation, deadlines, tracing, etc. Passed from http.Request or context.Background().
- @return ApiAccessTokenRequest
+	@param ctx context.Context - for authentication, logging, cancellation, deadlines, tracing, etc. Passed from http.Request or context.Background().
+	@return ApiAccessTokenRequest
 */
 func (a *UtilityAPIService) AccessToken(ctx context.Context) ApiAccessTokenRequest {
 	return ApiAccessTokenRequest{
 		ApiService: a,
-		ctx: ctx,
+		ctx:        ctx,
 	}
 }
 
 // Execute executes the request
-//  @return AccessTokenResponse
+//
+//	@return AccessTokenResponse
 func (a *UtilityAPIService) AccessTokenExecute(r ApiAccessTokenRequest) (*AccessTokenResponse, *http.Response, error) {
 	var (
-		localVarHTTPMethod   = http.MethodPost
-		localVarPostBody     interface{}
-		formFiles            []formFile
-		localVarReturnValue  *AccessTokenResponse
+		localVarHTTPMethod  = http.MethodPost
+		localVarPostBody    interface{}
+		formFiles           []formFile
+		localVarReturnValue *AccessTokenResponse
 	)
 
 	localBasePath, err := a.client.cfg.ServerURLWithContext(r.ctx, "UtilityAPIService.AccessToken")
@@ -140,7 +140,7 @@ func (a *UtilityAPIService) AccessTokenExecute(r ApiAccessTokenRequest) (*Access
 }
 
 type ApiGetEcmVersionRequest struct {
-	ctx context.Context
+	ctx        context.Context
 	ApiService *UtilityAPIService
 }
 
@@ -151,24 +151,25 @@ func (r ApiGetEcmVersionRequest) Execute() (*GetEcmVersionResponse, *http.Respon
 /*
 GetEcmVersion This API call can be used for getting the ecm version
 
- @param ctx context.Context - for authentication, logging, cancellation, deadlines, tracing, etc. Passed from http.Request or context.Background().
- @return ApiGetEcmVersionRequest
+	@param ctx context.Context - for authentication, logging, cancellation, deadlines, tracing, etc. Passed from http.Request or context.Background().
+	@return ApiGetEcmVersionRequest
 */
 func (a *UtilityAPIService) GetEcmVersion(ctx context.Context) ApiGetEcmVersionRequest {
 	return ApiGetEcmVersionRequest{
 		ApiService: a,
-		ctx: ctx,
+		ctx:        ctx,
 	}
 }
 
 // Execute executes the request
-//  @return GetEcmVersionResponse
+//
+//	@return GetEcmVersionResponse
 func (a *UtilityAPIService) GetEcmVersionExecute(r ApiGetEcmVersionRequest) (*GetEcmVersionResponse, *http.Response, error) {
 	var (
-		localVarHTTPMethod   = http.MethodGet
-		localVarPostBody     interface{}
-		formFiles            []formFile
-		localVarReturnValue  *GetEcmVersionResponse
+		localVarHTTPMethod  = http.MethodGet
+		localVarPostBody    interface{}
+		formFiles           []formFile
+		localVarReturnValue *GetEcmVersionResponse
 	)
 
 	localBasePath, err := a.client.cfg.ServerURLWithContext(r.ctx, "UtilityAPIService.GetEcmVersion")

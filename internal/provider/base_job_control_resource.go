@@ -11,7 +11,6 @@ import (
 // BaseJobControlResourceModel holds all fields common to every job control resource.
 type BaseJobControlResourceModel struct {
 	TriggerName    types.String `tfsdk:"trigger_name"`
-	JobName        types.String `tfsdk:"job_name"`
 	JobGroup       types.String `tfsdk:"job_group"`
 	TriggerGroup   types.String `tfsdk:"trigger_group"`
 	CronExpression types.String `tfsdk:"cron_expression"`
@@ -22,10 +21,6 @@ func BaseJobControlResourceSchema() map[string]schema.Attribute {
 		"trigger_name": schema.StringAttribute{
 			Required:    true,
 			Description: "Unique name of the trigger. Example: \"MyTrigger_001\"",
-		},
-		"job_name": schema.StringAttribute{
-			Required:    true,
-			Description: "Name of the job associated with the trigger. Example: \"WSRetryJob\"",
 		},
 		"job_group": schema.StringAttribute{
 			Required:    true,

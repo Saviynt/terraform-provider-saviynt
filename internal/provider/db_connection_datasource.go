@@ -440,10 +440,10 @@ func (d *DbConnectionsDataSource) MapDBConnectionAttributes(state *DBConnectionD
 		GrantAccessJSON:          util.SafeStringDatasource(attrs.GRANTACCESSJSON),
 		CliCommandJSON:           util.SafeStringDatasource(attrs.CLI_COMMAND_JSON),
 		// TER-176 entitlement management fields
-		CreateEntitlementJson:    util.SafeStringDatasource(attrs.CREATEENTITLEMENTJSON),
-		DeleteEntitlementJson:    util.SafeStringDatasource(attrs.DELETEENTITLEMENTJSON),
-		EntitlementExistJson:     util.SafeStringDatasource(attrs.ENTITLEMENTEXISTJSON),
-		UpdateEntitlementJson:    util.SafeStringDatasource(attrs.UPDATEENTITLEMENTJSON),
+		CreateEntitlementJson: util.SafeStringDatasource(attrs.CREATEENTITLEMENTJSON),
+		DeleteEntitlementJson: util.SafeStringDatasource(attrs.DELETEENTITLEMENTJSON),
+		EntitlementExistJson:  util.SafeStringDatasource(attrs.ENTITLEMENTEXISTJSON),
+		UpdateEntitlementJson: util.SafeStringDatasource(attrs.UPDATEENTITLEMENTJSON),
 	}
 
 	// Map connection timeout config if present

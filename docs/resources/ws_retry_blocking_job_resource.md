@@ -10,6 +10,10 @@ description: |-
 
 Create and manage WS Retry Job triggers in Saviynt
 
+## Important Note
+
+**Global Configuration Requirement:** To create WS Retry Blocking Jobs, ensure that 'Enable Blocking WSRetry Job' is **enabled** in Global Configurations. Go to Global Configurations > Search for 'Enable Blocking WSRetry Job' > Enable it.
+
 ## Example Usage
 
 ```terraform
@@ -20,7 +24,6 @@ resource "saviynt_ws_retry_blocking_job_resource" "example" {
   jobs = [
     {
       trigger_name     = "ws_blocking_retry_trigger_1" # required
-      job_name         = "WSBlockingRetryJob"          # required
       job_group        = "utility"                     # required
       cron_expression  = "0 0 2 * * ?"                 # required
       trigger_group    = "GRAILS_JOBS"                 # optional
@@ -29,7 +32,6 @@ resource "saviynt_ws_retry_blocking_job_resource" "example" {
     },
     {
       trigger_name     = "ws_blocking_retry_trigger_2" # required
-      job_name         = "WSBlockingRetryJob"          # required
       job_group        = "utility"                     # required
       cron_expression  = "0 0 3 * * ?"                 # required
       trigger_group    = "GRAILS_JOBS"                 # optional
@@ -41,9 +43,7 @@ resource "saviynt_ws_retry_blocking_job_resource" "example" {
 ```
 
 ## Task Types Reference
-
 The `task_types` parameter accepts a comma-separated string of numeric values. Each number corresponds to a specific task type:
-
 | Value | Task Type |
 |-------|-----------|
 | 1 | Add Access |
@@ -73,7 +73,6 @@ The `task_types` parameter accepts a comma-separated string of numeric values. E
 | 25 | Unlock Account |
 | 26 | Create Organization |
 | 27 | Update Organization |
-
 **Example Usage:**
 - `task_types = "1,2,3"` - Retry Add Access, Remove Access, and New Account tasks
 - `task_types = "1,6,12"` - Retry Add Access, Enable Account, and Disable Account tasks
@@ -93,11 +92,11 @@ Required:
 
 - `cron_expression` (String) Cron expression defining the schedule for the trigger. Example: "0 0 2 * * ?"
 - `job_group` (String) Name of the job group associated with the trigger. Example: "utility"
-- `job_name` (String) Name of the job associated with the trigger. Example: "WSRetryJob"
 - `trigger_name` (String) Unique name of the trigger. Example: "MyTrigger_001"
 
 Optional:
 
 - `security_systems` (List of String) List of security systems for the WS blocking retry job
-- `task_types` (String) Task types for the WS blocking retry job (comma-separated numeric values, see Task Types Reference above)
+- `task_types` (String) Task types for the WS blocking retry job (comma-separated numeric values, see Task Types
+Reference above)
 - `trigger_group` (String) Group classification for the trigger. Example: "GRAILS_JOBS"

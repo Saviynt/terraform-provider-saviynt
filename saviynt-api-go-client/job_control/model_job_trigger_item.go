@@ -19,9 +19,9 @@ import (
 // JobTriggerItem - struct for JobTriggerItem
 type JobTriggerItem struct {
 	AccountsImportIncrementalJob *AccountsImportIncrementalJob
-	SchemaAccountJob *SchemaAccountJob
-	SchemaRoleJob *SchemaRoleJob
-	SchemaUserJob *SchemaUserJob
+	SchemaAccountJob             *SchemaAccountJob
+	SchemaRoleJob                *SchemaRoleJob
+	SchemaUserJob                *SchemaUserJob
 }
 
 // AccountsImportIncrementalJobAsJobTriggerItem is a convenience function that returns AccountsImportIncrementalJob wrapped in JobTriggerItem
@@ -51,7 +51,6 @@ func SchemaUserJobAsJobTriggerItem(v *SchemaUserJob) JobTriggerItem {
 		SchemaUserJob: v,
 	}
 }
-
 
 // Unmarshal JSON data into one of the pointers in the struct
 func (dst *JobTriggerItem) UnmarshalJSON(data []byte) error {
@@ -162,7 +161,7 @@ func (src JobTriggerItem) MarshalJSON() ([]byte, error) {
 }
 
 // Get the actual instance
-func (obj *JobTriggerItem) GetActualInstance() (interface{}) {
+func (obj *JobTriggerItem) GetActualInstance() interface{} {
 	if obj == nil {
 		return nil
 	}
@@ -187,7 +186,7 @@ func (obj *JobTriggerItem) GetActualInstance() (interface{}) {
 }
 
 // Get the actual instance value
-func (obj JobTriggerItem) GetActualInstanceValue() (interface{}) {
+func (obj JobTriggerItem) GetActualInstanceValue() interface{} {
 	if obj.AccountsImportIncrementalJob != nil {
 		return *obj.AccountsImportIncrementalJob
 	}
@@ -243,5 +242,3 @@ func (v *NullableJobTriggerItem) UnmarshalJSON(src []byte) error {
 	v.isSet = true
 	return json.Unmarshal(src, &v.value)
 }
-
-

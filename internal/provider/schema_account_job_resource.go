@@ -165,11 +165,6 @@ func (r *SchemaAccountJobResource) CreateOrUpdateSchemaAccountJobs(ctx context.C
 	var jobTriggerItems []openapi.JobTriggerItem
 
 	for i, job := range jobs {
-		// Validate job name
-		if job.JobName.IsNull() || job.JobName.ValueString() != "SchemaAccountJob" {
-			return nil, fmt.Errorf("job %d: job_name must be 'SchemaAccountJob', got '%s'", i+1, job.JobName.ValueString())
-		}
-
 		// Validate required fields
 		if job.Name.IsNull() || job.Name.ValueString() == "" {
 			return nil, fmt.Errorf("job %d: name is required", i+1)
@@ -193,7 +188,7 @@ func (r *SchemaAccountJobResource) CreateOrUpdateSchemaAccountJobs(ctx context.C
 		// Create the job trigger
 		jobTrigger := openapi.NewSchemaAccountJob(
 			job.Name.ValueString(),
-			job.JobName.ValueString(),
+			"SchemaAccountJob",
 			job.JobGroup.ValueString(),
 			job.Group.ValueString(),
 			job.CronExp.ValueString(),
@@ -269,7 +264,6 @@ func (r *SchemaAccountJobResource) DeleteSchemaAccountJobs(ctx context.Context, 
 	// Delete each job individually
 	for i, job := range jobs {
 		name := job.Name.ValueString()
-		jobName := job.JobName.ValueString()
 		jobGroup := job.JobGroup.ValueString()
 
 		tflog.Debug(ctx, "Deleting job trigger", map[string]interface{}{
@@ -280,7 +274,7 @@ func (r *SchemaAccountJobResource) DeleteSchemaAccountJobs(ctx context.Context, 
 		// Create delete request
 		deleteReq := openapi.DeleteTriggerRequest{
 			Triggername: name,
-			Jobname:     jobName,
+			Jobname:     "SchemaAccountJob",
 			Jobgroup:    jobGroup,
 		}
 

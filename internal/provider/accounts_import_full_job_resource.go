@@ -165,11 +165,6 @@ func (r *AccountsImportFullJobResource) CreateOrUpdateAccountsImportFullJobs(ctx
 	var triggers []openapi.TriggerItem
 
 	for i, job := range jobs {
-		// Validate job name
-		if job.JobName.IsNull() || job.JobName.ValueString() != "AccountsImportFullJob" {
-			return nil, fmt.Errorf("job %d: job_name must be 'AccountsImportFullJob', got '%s'", i+1, job.JobName.ValueString())
-		}
-
 		// Validate required fields
 		if job.TriggerName.IsNull() || job.TriggerName.ValueString() == "" {
 			return nil, fmt.Errorf("job %d: trigger_name is required", i+1)
@@ -190,7 +185,7 @@ func (r *AccountsImportFullJobResource) CreateOrUpdateAccountsImportFullJobs(ctx
 		// Create the job trigger
 		jobTrigger := openapi.NewAccountsImportFullJob(
 			job.TriggerName.ValueString(),
-			job.JobName.ValueString(),
+			"AccountsImportFullJob",
 			job.JobGroup.ValueString(),
 			job.CronExpression.ValueString(),
 		)
@@ -390,7 +385,6 @@ func (r *AccountsImportFullJobResource) DeleteAccountsImportFullJobs(ctx context
 	// Delete each job individually since DeleteTrigger API doesn't support bulk operations
 	for i, job := range jobs {
 		triggerName := job.TriggerName.ValueString()
-		jobName := job.JobName.ValueString()
 		jobGroup := job.JobGroup.ValueString()
 
 		tflog.Debug(ctx, "Deleting job trigger", map[string]interface{}{
@@ -401,7 +395,7 @@ func (r *AccountsImportFullJobResource) DeleteAccountsImportFullJobs(ctx context
 		// Create delete request
 		deleteReq := openapi.DeleteTriggerRequest{
 			Triggername: triggerName,
-			Jobname:     jobName,
+			Jobname:     "AccountsImportFullJob",
 			Jobgroup:    jobGroup,
 		}
 

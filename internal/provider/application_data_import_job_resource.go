@@ -47,7 +47,7 @@ type ApplicationDataImportJobResourceModel struct {
 // ApplicationDataImportJobModel describes individual job data model.
 type ApplicationDataImportJobModel struct {
 	BaseJobControlResourceModel
-	SecuritySystems   types.List   `tfsdk:"security_systems"`
+	SecuritySystem    types.String `tfsdk:"security_system"`
 	AccountsOrAccess  types.String `tfsdk:"accounts_or_access"`
 	ExternalConn      types.String `tfsdk:"external_conn"`
 	FullOrIncremental types.String `tfsdk:"full_or_incremental"`
@@ -59,10 +59,9 @@ func (r *ApplicationDataImportJobResource) Metadata(ctx context.Context, req res
 
 func ApplicationDataImportJobResourceSchema() map[string]schema.Attribute {
 	return map[string]schema.Attribute{
-		"security_systems": schema.ListAttribute{
+		"security_system": schema.StringAttribute{
 			Required:    true,
-			ElementType: types.StringType,
-			Description: "List of security systems for the application data import",
+			Description: "Security system for the application data import",
 		},
 		"accounts_or_access": schema.StringAttribute{
 			Optional:    true,
@@ -182,10 +181,6 @@ func (r *ApplicationDataImportJobResource) CreateOrUpdateApplicationDataImportJo
 
 	// Process each job
 	for i, job := range jobs {
-		// Validate job name is ApplicationDataImportJob
-		if job.JobName.IsNull() || job.JobName.ValueString() != "ApplicationDataImportJob" {
-			return nil, fmt.Errorf("job %d: job_name must be 'ApplicationDataImportJob', got '%s'", i+1, job.JobName.ValueString())
-		}
 
 		// Validate required fields
 		if job.TriggerName.IsNull() || job.TriggerName.ValueString() == "" {
@@ -201,17 +196,14 @@ func (r *ApplicationDataImportJobResource) CreateOrUpdateApplicationDataImportJo
 		}
 
 		// Convert security systems list
+		// Convert single security system to list for API
 		var securitySystems []string
-		if !job.SecuritySystems.IsNull() {
-			for _, elem := range job.SecuritySystems.Elements() {
-				if strVal, ok := elem.(types.String); ok && !strVal.IsNull() {
-					securitySystems = append(securitySystems, strVal.ValueString())
-				}
-			}
+		if !job.SecuritySystem.IsNull() && job.SecuritySystem.ValueString() != "" {
+			securitySystems = append(securitySystems, job.SecuritySystem.ValueString())
 		}
 
 		if len(securitySystems) == 0 {
-			return nil, fmt.Errorf("job %d: security_systems is required", i+1)
+			return nil, fmt.Errorf("job %d: security_system is required", i+1)
 		}
 
 		// Build the value map
@@ -235,7 +227,7 @@ func (r *ApplicationDataImportJobResource) CreateOrUpdateApplicationDataImportJo
 		// Create the job
 		appDataImportJob := openapi.NewApplicationDataImportJob(
 			job.TriggerName.ValueString(),
-			job.JobName.ValueString(),
+			"ApplicationDataImportJob",
 			job.JobGroup.ValueString(),
 			job.CronExpression.ValueString(),
 		)
@@ -434,7 +426,6 @@ func (r *ApplicationDataImportJobResource) DeleteApplicationDataImportJobs(ctx c
 	// Delete each job individually since DeleteTrigger API doesn't support bulk operations
 	for i, job := range jobs {
 		triggerName := job.TriggerName.ValueString()
-		jobName := job.JobName.ValueString()
 		jobGroup := job.JobGroup.ValueString()
 
 		tflog.Debug(ctx, "Deleting job trigger", map[string]interface{}{
@@ -444,7 +435,7 @@ func (r *ApplicationDataImportJobResource) DeleteApplicationDataImportJobs(ctx c
 
 		deleteReq := openapi.DeleteTriggerRequest{
 			Triggername: triggerName,
-			Jobname:     jobName,
+			Jobname:     "ApplicationDataImportJob",
 			Jobgroup:    jobGroup,
 		}
 
