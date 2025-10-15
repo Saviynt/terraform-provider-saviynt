@@ -41,7 +41,7 @@ func (w *DynamicAttributeOperationsWrapper) FetchDynamicAttribute(ctx context.Co
 
 func (w *DynamicAttributeOperationsWrapper) FetchDynamicAttributesForDataSource(ctx context.Context, securitySystems, endpoints, dynamicAttributes, requestTypes []string, loggedInUser, offset, max *string) (*openapi.FetchDynamicAttributesResponse, *http.Response, error) {
 	fetchReq := w.client.DynamicAttributesAPI.FetchDynamicAttribute(ctx)
-	
+
 	if securitySystems != nil {
 		fetchReq = fetchReq.Securitysystem(securitySystems)
 	}
@@ -63,7 +63,7 @@ func (w *DynamicAttributeOperationsWrapper) FetchDynamicAttributesForDataSource(
 	if loggedInUser != nil {
 		fetchReq = fetchReq.Loggedinuser(*loggedInUser)
 	}
-	
+
 	return fetchReq.Execute()
 }
 
