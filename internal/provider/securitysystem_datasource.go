@@ -409,13 +409,13 @@ func (d *securitySystemsDataSource) UpdateModelFromSecuritySystemsResponse(state
 	// Map response metadata
 	state.Msg = util.SafeStringDatasource(apiResp.Msg)
 	state.ErrorCode = util.SafeStringDatasource(apiResp.ErrorCode)
-	
+
 	if apiResp.DisplayCount != nil {
 		state.DisplayCount = types.Int64Value(int64(*apiResp.DisplayCount))
 	} else {
 		state.DisplayCount = types.Int64Value(0)
 	}
-	
+
 	if apiResp.TotalCount != nil {
 		state.TotalCount = types.Int64Value(int64(*apiResp.TotalCount))
 	} else {
