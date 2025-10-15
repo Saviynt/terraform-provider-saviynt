@@ -172,10 +172,6 @@ func (r *WSRetryJobResource) CreateOrUpdateWSRetryJobs(ctx context.Context, jobs
 
 	// Process each job
 	for i, job := range jobs {
-		// Validate job name is WSRetryJob
-		if job.JobName.IsNull() || job.JobName.ValueString() != "WSRetryJob" {
-			return nil, fmt.Errorf("job %d: job_name must be 'WSRetryJob', got '%s'", i+1, job.JobName.ValueString())
-		}
 
 		// Validate required fields
 		if job.TriggerName.IsNull() || job.TriggerName.ValueString() == "" {
@@ -191,7 +187,7 @@ func (r *WSRetryJobResource) CreateOrUpdateWSRetryJobs(ctx context.Context, jobs
 		// Create the job trigger
 		jobTrigger := openapi.NewWSRetryJob(
 			job.TriggerName.ValueString(),
-			job.JobName.ValueString(),
+			"WSRetryJob",
 			job.JobGroup.ValueString(),
 			job.CronExpression.ValueString(),
 		)
@@ -286,7 +282,6 @@ func (r *WSRetryJobResource) DeleteWSRetryJobs(ctx context.Context, jobs []WSRet
 	// Delete each job individually
 	for i, job := range jobs {
 		triggerName := job.TriggerName.ValueString()
-		jobName := job.JobName.ValueString()
 		jobGroup := job.JobGroup.ValueString()
 
 		tflog.Debug(ctx, "Deleting job trigger", map[string]interface{}{
@@ -297,7 +292,7 @@ func (r *WSRetryJobResource) DeleteWSRetryJobs(ctx context.Context, jobs []WSRet
 		// Create delete request
 		deleteReq := openapi.DeleteTriggerRequest{
 			Triggername: triggerName,
-			Jobname:     jobName,
+			Jobname:     "WSRetryJob",
 			Jobgroup:    jobGroup,
 		}
 
@@ -365,6 +360,13 @@ func (r *WSRetryJobResource) Create(ctx context.Context, req resource.CreateRequ
 	var plan WSRetryJobResourceModel
 
 	tflog.Debug(ctx, "Starting WS Retry Job resource creation")
+
+	// Add warning about global configuration requirement
+	resp.Diagnostics.AddWarning(
+		"Global Configuration Required",
+		"To create WS Retry Jobs, ensure that 'Enable Blocking WSRetry Job' is disabled in Global Configurations. "+
+			"Go to Global Configurations > Search for 'Enable Blocking WSRetry Job' > disable it.",
+	)
 
 	// Extract plan from request
 	resp.Diagnostics.Append(req.Plan.Get(ctx, &plan)...)
