@@ -1,0 +1,82 @@
+# Copyright (c) Saviynt Inc.
+# SPDX-License-Identifier: MPL-2.0
+
+
+openapi: 3.1.0
+info:
+  contact:
+    email: https://github.com/saviynt
+    name: Saviynt Developers Team
+  description: File Directory APIs
+  title: Saviynt File Directory API
+  version: "1.0"
+servers:
+- url: http://localhost:3000
+tags:
+- name: File Directory
+paths:
+  /ECM/api/v5/uploadSchemaFile:
+    post:
+      description: This API call can be used to upload the file in a specific location
+        based on the property `job.ecm.imp.file.path` or  `job.ecm.savfile.path` in
+        `InternalConfig.groovy`.
+      operationId: uploadNewFile
+      requestBody:
+        content:
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/UploadSchemaFileRequest'
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UploadSchemaFileResponse'
+          description: OK
+      summary: Upload File
+      tags:
+      - File Directory
+components:
+  schemas:
+    UploadSchemaFileRequest:
+      properties:
+        file:
+          description: the file to upload
+          format: binary
+          type: string
+          x-stoplight:
+            id: mjy4e4r2rzhrm
+        pathLocation:
+          description: "Should be set to `Datafiles` to upload to `job.ecm.imp.file.path`\
+            \ in `InternalConfig.groovy`, or `SAV` to upload to `job.ecm.savfile.path`\
+            \ in `InternalConfig.groovy`. "
+          type: string
+          x-stoplight:
+            id: pqex6epn1nyb3
+      required:
+      - file
+      - pathLocation
+      title: UploadSchemaFileRequest
+      x-stoplight:
+        id: e4sccz84nbpq4
+    UploadSchemaFileResponse:
+      example:
+        msg: msg
+        errorCode: errorCode
+      properties:
+        msg:
+          type: string
+          x-stoplight:
+            id: 831ozp44vzt0c
+        errorCode:
+          type: string
+          x-stoplight:
+            id: 05nyb4pfsu45i
+      required:
+      - errorCode
+      - msg
+      title: UploadSchemaFileResponse
+      x-stoplight:
+        id: jvrbda21bzmt8
+x-stoplight:
+  id: zo5hu0xpg2e6f
