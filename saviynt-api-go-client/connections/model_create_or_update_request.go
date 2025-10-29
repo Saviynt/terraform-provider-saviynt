@@ -18,18 +18,19 @@ import (
 
 // CreateOrUpdateRequest - struct for CreateOrUpdateRequest
 type CreateOrUpdateRequest struct {
-	ADConnector         *ADConnector
-	ADSIConnector       *ADSIConnector
-	D365Connector       *D365Connector
-	DBConnector         *DBConnector
-	EntraIDConnector    *EntraIDConnector
-	GithubRESTConnector *GithubRESTConnector
-	OktaConnector       *OktaConnector
-	RESTConnector       *RESTConnector
-	SAPConnector        *SAPConnector
-	SalesforceConnector *SalesforceConnector
-	UNIXConnector       *UNIXConnector
-	WorkdayConnector    *WorkdayConnector
+	ADConnector          *ADConnector
+	ADSIConnector        *ADSIConnector
+	D365Connector        *D365Connector
+	DBConnector          *DBConnector
+	EntraIDConnector     *EntraIDConnector
+	GithubRESTConnector  *GithubRESTConnector
+	OktaConnector        *OktaConnector
+	RESTConnector        *RESTConnector
+	SAPConnector         *SAPConnector
+	SalesforceConnector  *SalesforceConnector
+	UNIXConnector        *UNIXConnector
+	WorkdayConnector     *WorkdayConnector
+	WorkdaySOAPConnector *WorkdaySOAPConnector
 }
 
 // ADConnectorAsCreateOrUpdateRequest is a convenience function that returns ADConnector wrapped in CreateOrUpdateRequest
@@ -113,6 +114,13 @@ func UNIXConnectorAsCreateOrUpdateRequest(v *UNIXConnector) CreateOrUpdateReques
 func WorkdayConnectorAsCreateOrUpdateRequest(v *WorkdayConnector) CreateOrUpdateRequest {
 	return CreateOrUpdateRequest{
 		WorkdayConnector: v,
+	}
+}
+
+// WorkdaySOAPConnectorAsCreateOrUpdateRequest is a convenience function that returns WorkdaySOAPConnector wrapped in CreateOrUpdateRequest
+func WorkdaySOAPConnectorAsCreateOrUpdateRequest(v *WorkdaySOAPConnector) CreateOrUpdateRequest {
+	return CreateOrUpdateRequest{
+		WorkdaySOAPConnector: v,
 	}
 }
 
@@ -324,6 +332,23 @@ func (dst *CreateOrUpdateRequest) UnmarshalJSON(data []byte) error {
 		dst.WorkdayConnector = nil
 	}
 
+	// try to unmarshal data into WorkdaySOAPConnector
+	err = newStrictDecoder(data).Decode(&dst.WorkdaySOAPConnector)
+	if err == nil {
+		jsonWorkdaySOAPConnector, _ := json.Marshal(dst.WorkdaySOAPConnector)
+		if string(jsonWorkdaySOAPConnector) == "{}" { // empty struct
+			dst.WorkdaySOAPConnector = nil
+		} else {
+			if err = validator.Validate(dst.WorkdaySOAPConnector); err != nil {
+				dst.WorkdaySOAPConnector = nil
+			} else {
+				match++
+			}
+		}
+	} else {
+		dst.WorkdaySOAPConnector = nil
+	}
+
 	if match > 1 { // more than 1 match
 		// reset to nil
 		dst.ADConnector = nil
@@ -338,6 +363,7 @@ func (dst *CreateOrUpdateRequest) UnmarshalJSON(data []byte) error {
 		dst.SalesforceConnector = nil
 		dst.UNIXConnector = nil
 		dst.WorkdayConnector = nil
+		dst.WorkdaySOAPConnector = nil
 
 		return fmt.Errorf("data matches more than one schema in oneOf(CreateOrUpdateRequest)")
 	} else if match == 1 {
@@ -397,6 +423,10 @@ func (src CreateOrUpdateRequest) MarshalJSON() ([]byte, error) {
 		return json.Marshal(&src.WorkdayConnector)
 	}
 
+	if src.WorkdaySOAPConnector != nil {
+		return json.Marshal(&src.WorkdaySOAPConnector)
+	}
+
 	return nil, nil // no data in oneOf schemas
 }
 
@@ -453,6 +483,10 @@ func (obj *CreateOrUpdateRequest) GetActualInstance() interface{} {
 		return obj.WorkdayConnector
 	}
 
+	if obj.WorkdaySOAPConnector != nil {
+		return obj.WorkdaySOAPConnector
+	}
+
 	// all schemas are nil
 	return nil
 }
@@ -505,6 +539,10 @@ func (obj CreateOrUpdateRequest) GetActualInstanceValue() interface{} {
 
 	if obj.WorkdayConnector != nil {
 		return *obj.WorkdayConnector
+	}
+
+	if obj.WorkdaySOAPConnector != nil {
+		return *obj.WorkdaySOAPConnector
 	}
 
 	// all schemas are nil
