@@ -51,6 +51,7 @@ type GithubRestConnectorResourceModel struct {
 type GithubRestConnectionResource struct {
 	client            client.SaviyntClientInterface
 	token             string
+	saviyntVersion    string
 	provider          client.SaviyntProviderInterface
 	connectionFactory client.ConnectionFactoryInterface
 }
@@ -157,6 +158,7 @@ func (r *GithubRestConnectionResource) Configure(ctx context.Context, req resour
 
 	r.client = &client.SaviyntClientWrapper{Client: prov.client}
 	r.token = prov.accessToken
+	r.saviyntVersion = prov.saviyntVersion
 	r.provider = &client.SaviyntProviderWrapper{Provider: prov} // Store provider reference for retry logic
 
 	opCtx.LogOperationEnd(ctx, "GitHub REST connection resource configured successfully")
@@ -213,6 +215,13 @@ func (r *GithubRestConnectionResource) Create(ctx context.Context, req resource.
 			errorsutil.GetErrorMessage(errorsutil.ErrConfigExtraction),
 			fmt.Sprintf("[%s] Unable to extract Terraform configuration from request for connection '%s'", errorCode, connectionName),
 		)
+		return
+	}
+
+	// Validate version-specific attributes for GitHub REST connector
+	util.ValidateAttributeCompatibility(r.saviyntVersion, "GitHubREST", "status_threshold_config", plan.Status_Threshold_Config.ValueStringPointer(), &resp.Diagnostics)
+
+	if resp.Diagnostics.HasError() {
 		return
 	}
 
@@ -583,6 +592,12 @@ func (r *GithubRestConnectionResource) Update(ctx context.Context, req resource.
 		return
 	}
 
+	// Validate version-specific attributes for GitHub REST connector
+	util.ValidateAttributeCompatibility(r.saviyntVersion, "GitHubREST", "status_threshold_config", plan.Status_Threshold_Config.ValueStringPointer(), &resp.Diagnostics)
+
+	if resp.Diagnostics.HasError() {
+		return
+	}
 	connectionName := plan.ConnectionName.ValueString()
 	// Update operation context with connection name
 	opCtx.ConnectionName = connectionName

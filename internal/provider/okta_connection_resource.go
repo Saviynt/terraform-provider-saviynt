@@ -94,7 +94,7 @@ func OktaConnectorSchema() map[string]schema.Attribute {
 		"auth_token": schema.StringAttribute{
 			Optional:    true,
 			Sensitive:   true,
-			Description: "API token for Okta authentication. It is a compulsory field. Either this or auth_token_wo need to be set",
+			Description: "API token for Okta authentication.",
 			Validators: []validator.String{
 				stringvalidator.ConflictsWith(path.MatchRoot("auth_token_wo")),
 			},
@@ -102,7 +102,7 @@ func OktaConnectorSchema() map[string]schema.Attribute {
 		"auth_token_wo": schema.StringAttribute{
 			Optional:    true,
 			WriteOnly:   true,
-			Description: "API token for Okta authentication (write-only). It is a compulsory field. Either this or auth_token need to be set",
+			Description: "API token for Okta authentication (write-only).",
 			Validators: []validator.String{
 				stringvalidator.ConflictsWith(path.MatchRoot("auth_token")),
 			},
@@ -347,9 +347,9 @@ func (r *OktaConnectionResource) CreateOktaConnection(ctx context.Context, plan 
 	// Build Okta connection create request
 	tflog.Debug(ctx, "Building Okta connection create request")
 
-	if (config.AuthToken.IsNull() || config.AuthToken.IsUnknown()) && (config.AuthTokenWO.IsNull() || config.AuthTokenWO.IsUnknown()) {
-		return nil, fmt.Errorf("either auth_token or auth_token_wo must be set")
-	}
+	// if (config.AuthToken.IsNull() || config.AuthToken.IsUnknown()) && (config.AuthTokenWO.IsNull() || config.AuthTokenWO.IsUnknown()) {
+	// 	return nil, fmt.Errorf("either auth_token or auth_token_wo must be set")
+	// }
 
 	oktaConn := r.BuildOktaConnector(plan, config)
 	createReq := openapi.CreateOrUpdateRequest{
@@ -474,9 +474,9 @@ func (r *OktaConnectionResource) UpdateOktaConnection(ctx context.Context, plan 
 	// Build Okta connection update request
 	tflog.Debug(logCtx, "Building Okta connection update request")
 
-	if (config.AuthToken.IsNull() || config.AuthToken.IsUnknown()) && (config.AuthTokenWO.IsNull() || config.AuthTokenWO.IsUnknown()) {
-		return nil, fmt.Errorf("either auth_token or auth_token_wo must be set")
-	}
+	// if (config.AuthToken.IsNull() || config.AuthToken.IsUnknown()) && (config.AuthTokenWO.IsNull() || config.AuthTokenWO.IsUnknown()) {
+	// 	return nil, fmt.Errorf("either auth_token or auth_token_wo must be set")
+	// }
 
 	oktaConn := r.BuildOktaConnector(plan, config)
 
