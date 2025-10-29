@@ -267,13 +267,13 @@ EOF
 - `grant_access_json` (String) JSON to specify the queries/stored procedures used to provide access
 - `max_pagination_size` (String) Defines the maximum number of records to be processed per page
 - `modify_user_data_json` (String) Property for MODIFYUSERDATAJSON
-- `password` (String, Sensitive) Set the Password. Set the password.It is a compulsory field. Either this or password_wo need to be set
+- `password` (String, Sensitive) Set the password.
 - `password_max_length` (String) Specify the maximum length for the random password
 - `password_min_length` (String) Specify the minimum length for the random password
 - `password_no_of_caps_alpha` (String) Specify the number of uppercase alphabets required for the random password
 - `password_no_of_digits` (String) Specify the number of digits required for the random password
 - `password_no_of_spl_chars` (String) Specify the number of special characters required for the random password
-- `password_wo` (String) Set the Password. Set the password_wo.It is a compulsory field. Either this or password need to be set
+- `password_wo` (String) Set the password_wo (write-only).
 - `revoke_access_json` (String) JSON to specify the queries/stored procedures used to revoke access
 - `role_owner_import` (String) Role Owner Import XML file content
 - `roles_import` (String) Roles Import XML file content

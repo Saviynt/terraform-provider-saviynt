@@ -18,17 +18,18 @@ import (
 
 // GetConnectionDetailsResponse - struct for GetConnectionDetailsResponse
 type GetConnectionDetailsResponse struct {
-	ADConnectionResponse         *ADConnectionResponse
-	ADSIConnectionResponse       *ADSIConnectionResponse
-	DBConnectionResponse         *DBConnectionResponse
-	EntraIDConnectionResponse    *EntraIDConnectionResponse
-	GithubRESTConnectionResponse *GithubRESTConnectionResponse
-	OktaConnectionResponse       *OktaConnectionResponse
-	RESTConnectionResponse       *RESTConnectionResponse
-	SAPConnectionResponse        *SAPConnectionResponse
-	SalesforceConnectionResponse *SalesforceConnectionResponse
-	UNIXConnectionResponse       *UNIXConnectionResponse
-	WorkdayConnectionResponse    *WorkdayConnectionResponse
+	ADConnectionResponse          *ADConnectionResponse
+	ADSIConnectionResponse        *ADSIConnectionResponse
+	DBConnectionResponse          *DBConnectionResponse
+	EntraIDConnectionResponse     *EntraIDConnectionResponse
+	GithubRESTConnectionResponse  *GithubRESTConnectionResponse
+	OktaConnectionResponse        *OktaConnectionResponse
+	RESTConnectionResponse        *RESTConnectionResponse
+	SAPConnectionResponse         *SAPConnectionResponse
+	SalesforceConnectionResponse  *SalesforceConnectionResponse
+	UNIXConnectionResponse        *UNIXConnectionResponse
+	WorkdayConnectionResponse     *WorkdayConnectionResponse
+	WorkdaySOAPConnectionResponse *WorkdaySOAPConnectionResponse
 }
 
 // ADConnectionResponseAsGetConnectionDetailsResponse is a convenience function that returns ADConnectionResponse wrapped in GetConnectionDetailsResponse
@@ -105,6 +106,13 @@ func UNIXConnectionResponseAsGetConnectionDetailsResponse(v *UNIXConnectionRespo
 func WorkdayConnectionResponseAsGetConnectionDetailsResponse(v *WorkdayConnectionResponse) GetConnectionDetailsResponse {
 	return GetConnectionDetailsResponse{
 		WorkdayConnectionResponse: v,
+	}
+}
+
+// WorkdaySOAPConnectionResponseAsGetConnectionDetailsResponse is a convenience function that returns WorkdaySOAPConnectionResponse wrapped in GetConnectionDetailsResponse
+func WorkdaySOAPConnectionResponseAsGetConnectionDetailsResponse(v *WorkdaySOAPConnectionResponse) GetConnectionDetailsResponse {
+	return GetConnectionDetailsResponse{
+		WorkdaySOAPConnectionResponse: v,
 	}
 }
 
@@ -299,6 +307,23 @@ func (dst *GetConnectionDetailsResponse) UnmarshalJSON(data []byte) error {
 		dst.WorkdayConnectionResponse = nil
 	}
 
+	// try to unmarshal data into WorkdaySOAPConnectionResponse
+	err = newStrictDecoder(data).Decode(&dst.WorkdaySOAPConnectionResponse)
+	if err == nil {
+		jsonWorkdaySOAPConnectionResponse, _ := json.Marshal(dst.WorkdaySOAPConnectionResponse)
+		if string(jsonWorkdaySOAPConnectionResponse) == "{}" { // empty struct
+			dst.WorkdaySOAPConnectionResponse = nil
+		} else {
+			if err = validator.Validate(dst.WorkdaySOAPConnectionResponse); err != nil {
+				dst.WorkdaySOAPConnectionResponse = nil
+			} else {
+				match++
+			}
+		}
+	} else {
+		dst.WorkdaySOAPConnectionResponse = nil
+	}
+
 	if match > 1 { // more than 1 match
 		// reset to nil
 		dst.ADConnectionResponse = nil
@@ -312,6 +337,7 @@ func (dst *GetConnectionDetailsResponse) UnmarshalJSON(data []byte) error {
 		dst.SalesforceConnectionResponse = nil
 		dst.UNIXConnectionResponse = nil
 		dst.WorkdayConnectionResponse = nil
+		dst.WorkdaySOAPConnectionResponse = nil
 
 		return fmt.Errorf("data matches more than one schema in oneOf(GetConnectionDetailsResponse)")
 	} else if match == 1 {
@@ -367,6 +393,10 @@ func (src GetConnectionDetailsResponse) MarshalJSON() ([]byte, error) {
 		return json.Marshal(&src.WorkdayConnectionResponse)
 	}
 
+	if src.WorkdaySOAPConnectionResponse != nil {
+		return json.Marshal(&src.WorkdaySOAPConnectionResponse)
+	}
+
 	return nil, nil // no data in oneOf schemas
 }
 
@@ -419,6 +449,10 @@ func (obj *GetConnectionDetailsResponse) GetActualInstance() interface{} {
 		return obj.WorkdayConnectionResponse
 	}
 
+	if obj.WorkdaySOAPConnectionResponse != nil {
+		return obj.WorkdaySOAPConnectionResponse
+	}
+
 	// all schemas are nil
 	return nil
 }
@@ -467,6 +501,10 @@ func (obj GetConnectionDetailsResponse) GetActualInstanceValue() interface{} {
 
 	if obj.WorkdayConnectionResponse != nil {
 		return *obj.WorkdayConnectionResponse
+	}
+
+	if obj.WorkdaySOAPConnectionResponse != nil {
+		return *obj.WorkdaySOAPConnectionResponse
 	}
 
 	// all schemas are nil
