@@ -46,6 +46,7 @@ data "saviynt_security_system_datasource" "by_name" {
 
 - `display_count` (Number) The number of items currently displayed (e.g., on the current page or view).
 - `error_code` (String) An error code where '0' signifies success and '1' signifies an unsuccessful operation.
+- `id` (String) Resource ID.
 - `msg` (String) A message indicating the outcome of the operation.
 - `results` (Attributes List) List of security systems retrieved (see [below for nested schema](#nestedatt--results))
 - `total_count` (Number) The total number of items available in the dataset, irrespective of the current display settings.
