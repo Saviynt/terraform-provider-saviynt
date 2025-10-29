@@ -20,17 +20,18 @@ import (
 type ConnectorType string
 
 const (
-	ConnectorTypeAD         ConnectorType = "AD"
-	ConnectorTypeREST       ConnectorType = "REST"
-	ConnectorTypeADSI       ConnectorType = "ADSI"
-	ConnectorTypeDB         ConnectorType = "DB"
-	ConnectorTypeEntraID    ConnectorType = "ENTRAID"
-	ConnectorTypeSAP        ConnectorType = "SAP"
-	ConnectorTypeSalesforce ConnectorType = "SALESFORCE"
-	ConnectorTypeWorkday    ConnectorType = "WORKDAY"
-	ConnectorTypeUnix       ConnectorType = "UNIX"
-	ConnectorTypeGithubREST ConnectorType = "GITHUBREST"
-	ConnectorTypeOkta       ConnectorType = "OKTA"
+	ConnectorTypeAD          ConnectorType = "AD"
+	ConnectorTypeREST        ConnectorType = "REST"
+	ConnectorTypeADSI        ConnectorType = "ADSI"
+	ConnectorTypeDB          ConnectorType = "DB"
+	ConnectorTypeEntraID     ConnectorType = "ENTRAID"
+	ConnectorTypeSAP         ConnectorType = "SAP"
+	ConnectorTypeSalesforce  ConnectorType = "SALESFORCE"
+	ConnectorTypeWorkday     ConnectorType = "WORKDAY"
+	ConnectorTypeWorkdaySOAP ConnectorType = "WORKDAYSOAP"
+	ConnectorTypeUnix        ConnectorType = "UNIX"
+	ConnectorTypeGithubREST  ConnectorType = "GITHUBREST"
+	ConnectorTypeOkta        ConnectorType = "OKTA"
 )
 
 // ErrorCategory represents different categories of errors
@@ -170,6 +171,8 @@ func GetErrorMessage(errorCode string) string {
 		connectorType = "Salesforce"
 	} else if strings.HasPrefix(errorCode, "WORKDAY_CONN_") {
 		connectorType = "Workday"
+	} else if strings.HasPrefix(errorCode, "WORKDAYSOAP_CONN_") {
+		connectorType = "WorkdaySOAP"
 	} else if strings.HasPrefix(errorCode, "UNIX_CONN_") {
 		connectorType = "Unix"
 	} else if strings.HasPrefix(errorCode, "GITHUBREST_CONN_") {
