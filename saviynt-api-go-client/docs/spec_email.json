@@ -1,0 +1,139 @@
+{
+  "openapi": "3.1.0",
+  "x-stoplight": {
+    "id": "66iq5vm0oqtw8"
+  },
+  "info": {
+    "title": "Saviynt Email API",
+    "version": "1.0",
+    "description": "Saviynt Email API",
+    "contact": {
+      "name": "Saviynt Developers Team",
+      "email": "https://github.com/saviynt"
+    }
+  },
+  "servers": [
+    {
+      "url": "http://localhost:3000"
+    }
+  ],
+  "tags": [
+    {
+      "name": "Email"
+    }
+  ],
+  "paths": {
+    "/ECM/api/v5/sendEmail": {
+      "post": {
+        "summary": "Send Email",
+        "operationId": "sendEmail",
+        "tags": [
+          "Email"
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SendEmailResponse"
+                }
+              }
+            }
+          }
+        },
+        "description": "This API can be used send an email from Saviynt.",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SendEmailRequest"
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "SendEmailRequest": {
+        "title": "SendEmailRequest",
+        "x-stoplight": {
+          "id": "ysie9dbqi2zyc"
+        },
+        "type": "object",
+        "properties": {
+          "to": {
+            "type": "string",
+            "x-stoplight": {
+              "id": "bpfswohcpy5y5"
+            }
+          },
+          "from": {
+            "type": "string",
+            "x-stoplight": {
+              "id": "v5t04vikuj35u"
+            }
+          },
+          "subject": {
+            "type": "string",
+            "x-stoplight": {
+              "id": "787cc70jiguqe"
+            }
+          },
+          "body": {
+            "type": "string",
+            "x-stoplight": {
+              "id": "d30ilrzzdr47h"
+            }
+          },
+          "cc": {
+            "type": "string",
+            "x-stoplight": {
+              "id": "m8zzf304e7nph"
+            }
+          },
+          "bcc": {
+            "type": "string",
+            "x-stoplight": {
+              "id": "uh121n5jqhago"
+            }
+          }
+        },
+        "required": [
+          "to",
+          "from",
+          "subject",
+          "body"
+        ]
+      },
+      "SendEmailResponse": {
+        "title": "SendEmailResponse",
+        "x-stoplight": {
+          "id": "d2jjbl7o7xsee"
+        },
+        "type": "object",
+        "properties": {
+          "errorCode": {
+            "type": "string",
+            "x-stoplight": {
+              "id": "idq45zs5wufpr"
+            },
+            "description": "`\"0\"` indicates success. Other values indicate failure."
+          },
+          "msg": {
+            "type": "string",
+            "x-stoplight": {
+              "id": "zs4bz2zwjczsh"
+            }
+          }
+        },
+        "required": [
+          "errorCode",
+          "msg"
+        ]
+      }
+    }
+  }
+}

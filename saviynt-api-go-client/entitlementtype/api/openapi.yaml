@@ -1,0 +1,1234 @@
+# Copyright (c) Saviynt Inc.
+# SPDX-License-Identifier: MPL-2.0
+
+openapi: 3.1.0
+info:
+  description: |
+    API for managing entitlement types in Saviynt/SSM.
+    - **Create Entitlement Type**: Creates a new entitlement type.
+    - **Update Entitlement Type**: Updates an existing entitlement type.
+    - **Get Entitlement Type List**: Returns a list of entitlement types based on search criteria.
+  title: Entitlement Type Management API
+  version: 1.0.0
+servers:
+- url: http://localhost:3000
+paths:
+  /ECM/api/v5/createEntitlementType:
+    post:
+      operationId: createEntitlementType
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateEntitlementTypeRequest"
+        description: Request payload for creating an entitlement type
+        required: true
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CreateOrUpdateEntitlementTypeResponse"
+          description: Create entitlement type success
+          headers:
+            Access-Control-Allow-Credentials:
+              explode: false
+              schema:
+                example: "true"
+                type: string
+              style: simple
+            Access-Control-Allow-Origin:
+              explode: false
+              schema:
+                example: http://localhost
+                type: string
+              style: simple
+            Cache-Control:
+              explode: false
+              schema:
+                example: "no-store, no-cache, must-revalidate"
+                type: string
+              style: simple
+            Date:
+              explode: false
+              schema:
+                example: "Wed, 08 Aug 2018 00:33:37 GMT"
+                type: string
+              style: simple
+      summary: Create an entitlement type
+      tags:
+      - entitlement-type
+  /ECM/api/v5/updateEntitlementType:
+    put:
+      operationId: updateEntitlementType
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateEntitlementTypeRequest"
+        description: Request payload for updating an entitlement type
+        required: true
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CreateOrUpdateEntitlementTypeResponse"
+          description: Update entitlement type success
+          headers:
+            Access-Control-Allow-Credentials:
+              explode: false
+              schema:
+                example: "true"
+                type: string
+              style: simple
+            Access-Control-Allow-Origin:
+              explode: false
+              schema:
+                example: http://localhost
+                type: string
+              style: simple
+            Cache-Control:
+              explode: false
+              schema:
+                example: "no-store, no-cache, must-revalidate"
+                type: string
+              style: simple
+            Date:
+              explode: false
+              schema:
+                example: "Wed, 08 Aug 2018 00:33:37 GMT"
+                type: string
+              style: simple
+      summary: Update an entitlement type
+      tags:
+      - entitlement-type
+  /ECM/api/v5/getEntitlementTypes:
+    get:
+      operationId: getEntitlementType
+      parameters:
+      - description: Name of entitlement type
+        explode: true
+        in: query
+        name: entitlementname
+        required: false
+        schema:
+          type: string
+        style: form
+      - description: Maximum number of results to return
+        explode: true
+        in: query
+        name: max
+        required: false
+        schema:
+          type: string
+        style: form
+      - description: Offset for pagination
+        explode: true
+        in: query
+        name: offset
+        required: false
+        schema:
+          type: string
+        style: form
+      - description: Name of the endpoint to get entitlement types for
+        explode: true
+        in: query
+        name: endpointname
+        required: false
+        schema:
+          type: string
+        style: form
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/GetEntitlementTypeResponse"
+          description: Get entitlement types success
+          headers:
+            Access-Control-Allow-Credentials:
+              explode: false
+              schema:
+                example: "true"
+                type: string
+              style: simple
+            Access-Control-Allow-Origin:
+              explode: false
+              schema:
+                example: http://localhost
+                type: string
+              style: simple
+            Cache-Control:
+              explode: false
+              schema:
+                example: "no-store, no-cache, must-revalidate"
+                type: string
+              style: simple
+            Date:
+              explode: false
+              schema:
+                example: "Wed, 08 Aug 2018 00:33:37 GMT"
+                type: string
+              style: simple
+      summary: Get a list of entitlement types
+      tags:
+      - entitlement-type
+components:
+  schemas:
+    CreateEntitlementTypeRequest:
+      example:
+        customproperty10: Custom value 10
+        customproperty12: Custom value 12
+        customproperty11: Custom value 11
+        customproperty18: Custom value 18
+        showEntTypeOn: showEntTypeOn
+        customproperty17: Custom value 17
+        availableQueryServiceAccount: availableQueryServiceAccount
+        customproperty19: Custom value 19
+        customproperty14: Custom value 14
+        customproperty13: Custom value 13
+        entitlementname: Ent-type-1
+        customproperty16: Custom value 16
+        customproperty15: Custom value 15
+        showonchild: true
+        recon: true
+        requestDatesConfJson: requestDatesConfJson
+        workflow: SampleManagerApproval
+        customproperty40: Custom value 40
+        requiredinservicerequest: true
+        enableEntitlementToRoleSync: true
+        customproperty4: Custom value 4
+        customproperty32: Custom value 32
+        customproperty5: Custom value 5
+        customproperty31: Custom value 31
+        customproperty2: Custom value 2
+        customproperty34: Custom value 34
+        customproperty3: Custom value 3
+        customproperty33: Custom value 33
+        requiredinrequest: true
+        customproperty1: Custom value 1
+        displayName: displayName
+        customproperty30: Custom value 30
+        customproperty39: Custom value 39
+        enableProvisioningPriority: true
+        customproperty36: Custom value 36
+        hiearchyrequired: 6
+        customproperty35: Custom value 35
+        customproperty38: Custom value 38
+        customproperty37: Custom value 37
+        customproperty8: Custom value 8
+        entitlementdescription: This is a sample entitlement type
+        customproperty9: Custom value 9
+        customproperty6: Custom value 6
+        selectedQueryServiceAccount: selectedQueryServiceAccount
+        customproperty7: Custom value 7
+        customproperty21: Custom value 21
+        customproperty20: Custom value 20
+        customproperty23: Custom value 23
+        customproperty22: Custom value 22
+        orderindex: 0
+        customproperty29: Custom value 29
+        customproperty28: Custom value 28
+        customproperty25: Custom value 25
+        customproperty24: Custom value 24
+        customproperty27: Custom value 27
+        customproperty26: Custom value 26
+        endpointname: Endpoint-1
+        excludeRuleAssgnEntsInRequest: true
+        certifiable: true
+      properties:
+        entitlementname:
+          description: Name of the entitlement type
+          example: Ent-type-1
+          type: string
+        displayName:
+          description: Display name for the entitlement.
+          type: string
+        endpointname:
+          description: Name of the endpoint with which the entitlement type is associated
+          example: Endpoint-1
+          type: string
+        entitlementdescription:
+          description: Description for the entitlement type
+          example: This is a sample entitlement type
+          type: string
+        workflow:
+          description: Workflow associated with the entitlement type
+          example: SampleManagerApproval
+          type: string
+        orderindex:
+          description: Index to determine the order of processing or display.
+          type: integer
+        enableEntitlementToRoleSync:
+          description: Enable entitlement to role sync
+          example: true
+          type: boolean
+        certifiable:
+          description: Indicates if the entitlement is certifiable.
+          type: boolean
+        showEntTypeOn:
+          description: Show entitlement type on
+          type: string
+        availableQueryServiceAccount:
+          description: Available query service account
+          type: string
+        selectedQueryServiceAccount:
+          description: Selected query service account
+          type: string
+        requestDatesConfJson:
+          description: Configuration in JSON for handling request dates.
+          type: string
+        requiredinrequest:
+          description: Required in request
+          type: boolean
+        requiredinservicerequest:
+          description: Required in service request
+          type: boolean
+        recon:
+          description: Recon
+          type: boolean
+        showonchild:
+          description: Show on child
+          type: boolean
+        hiearchyrequired:
+          description: Flag indicating if a hierarchy is required.
+          type: integer
+        enableProvisioningPriority:
+          description: Enable provisioning priority
+          type: boolean
+        excludeRuleAssgnEntsInRequest:
+          description: Exclude Entitlements Assigned via Rule while Request
+          type: boolean
+        customproperty1:
+          description: Custom property 1
+          example: Custom value 1
+          type: string
+        customproperty2:
+          description: Custom property 2
+          example: Custom value 2
+          type: string
+        customproperty3:
+          description: Custom property 3
+          example: Custom value 3
+          type: string
+        customproperty4:
+          description: Custom property 4
+          example: Custom value 4
+          type: string
+        customproperty5:
+          description: Custom property 5
+          example: Custom value 5
+          type: string
+        customproperty6:
+          description: Custom property 6
+          example: Custom value 6
+          type: string
+        customproperty7:
+          description: Custom property 7
+          example: Custom value 7
+          type: string
+        customproperty8:
+          description: Custom property 8
+          example: Custom value 8
+          type: string
+        customproperty9:
+          description: Custom property 9
+          example: Custom value 9
+          type: string
+        customproperty10:
+          description: Custom property 10
+          example: Custom value 10
+          type: string
+        customproperty11:
+          description: Custom property 11
+          example: Custom value 11
+          type: string
+        customproperty12:
+          description: Custom property 12
+          example: Custom value 12
+          type: string
+        customproperty13:
+          description: Custom property 13
+          example: Custom value 13
+          type: string
+        customproperty14:
+          description: Custom property 14
+          example: Custom value 14
+          type: string
+        customproperty15:
+          description: Custom property 15
+          example: Custom value 15
+          type: string
+        customproperty16:
+          description: Custom property 16
+          example: Custom value 16
+          type: string
+        customproperty17:
+          description: Custom property 17
+          example: Custom value 17
+          type: string
+        customproperty18:
+          description: Custom property 18
+          example: Custom value 18
+          type: string
+        customproperty19:
+          description: Custom property 19
+          example: Custom value 19
+          type: string
+        customproperty20:
+          description: Custom property 20
+          example: Custom value 20
+          type: string
+        customproperty21:
+          description: Custom property 21
+          example: Custom value 21
+          type: string
+        customproperty22:
+          description: Custom property 22
+          example: Custom value 22
+          type: string
+        customproperty23:
+          description: Custom property 23
+          example: Custom value 23
+          type: string
+        customproperty24:
+          description: Custom property 24
+          example: Custom value 24
+          type: string
+        customproperty25:
+          description: Custom property 25
+          example: Custom value 25
+          type: string
+        customproperty26:
+          description: Custom property 26
+          example: Custom value 26
+          type: string
+        customproperty27:
+          description: Custom property 27
+          example: Custom value 27
+          type: string
+        customproperty28:
+          description: Custom property 28
+          example: Custom value 28
+          type: string
+        customproperty29:
+          description: Custom property 29
+          example: Custom value 29
+          type: string
+        customproperty30:
+          description: Custom property 30
+          example: Custom value 30
+          type: string
+        customproperty31:
+          description: Custom property 31
+          example: Custom value 31
+          type: string
+        customproperty32:
+          description: Custom property 32
+          example: Custom value 32
+          type: string
+        customproperty33:
+          description: Custom property 33
+          example: Custom value 33
+          type: string
+        customproperty34:
+          description: Custom property 34
+          example: Custom value 34
+          type: string
+        customproperty35:
+          description: Custom property 35
+          example: Custom value 35
+          type: string
+        customproperty36:
+          description: Custom property 36
+          example: Custom value 36
+          type: string
+        customproperty37:
+          description: Custom property 37
+          example: Custom value 37
+          type: string
+        customproperty38:
+          description: Custom property 38
+          example: Custom value 38
+          type: string
+        customproperty39:
+          description: Custom property 39
+          example: Custom value 39
+          type: string
+        customproperty40:
+          description: Custom property 40
+          example: Custom value 40
+          type: string
+      required:
+      - endpointname
+      - entitlementname
+    UpdateEntitlementTypeRequest:
+      example:
+        allowRemoveAllEntitlementInRequest: allowRemoveAllEntitlementInRequest
+        customproperty10: Custom value 10
+        customproperty12: Custom value 12
+        customproperty11: Custom value 11
+        customproperty18: Custom value 18
+        showEntTypeOn: showEntTypeOn
+        customproperty17: Custom value 17
+        availableQueryServiceAccount: availableQueryServiceAccount
+        customproperty19: Custom value 19
+        customproperty14: Custom value 14
+        customproperty13: Custom value 13
+        entitlementname: Ent-type-1
+        customproperty16: Custom value 16
+        customproperty15: Custom value 15
+        showonchild: true
+        recon: true
+        requestDatesConfJson: requestDatesConfJson
+        workflow: workflow
+        customproperty40: Custom value 40
+        requiredinservicerequest: true
+        enableEntitlementToRoleSync: true
+        customproperty4: Custom value 4
+        customproperty32: Custom value 32
+        customproperty5: Custom value 5
+        customproperty31: Custom value 31
+        customproperty2: Custom value 2
+        customproperty34: Custom value 34
+        customproperty3: Custom value 3
+        customproperty33: Custom value 33
+        requiredinrequest: requiredinrequest
+        customproperty1: Custom value 1
+        displayName: displayName
+        customproperty30: Custom value 30
+        customproperty39: Custom value 39
+        startEndDateInRequest: startEndDateInRequest
+        enableProvisioningPriority: true
+        startDateInRevokeRequest: startDateInRevokeRequest
+        createTaskAction:
+        - noAction
+        - noAction
+        customproperty36: Custom value 36
+        hiearchyrequired: hiearchyrequired
+        customproperty35: Custom value 35
+        customproperty38: Custom value 38
+        customproperty37: Custom value 37
+        arsSelectedEntitlementQuery: arsSelectedEntitlementQuery
+        customproperty8: Custom value 8
+        entitlementdescription: entitlementdescription
+        customproperty9: Custom value 9
+        customproperty6: Custom value 6
+        selectedQueryServiceAccount: selectedQueryServiceAccount
+        customproperty7: Custom value 7
+        arsRequestableEntitlementQuery: arsRequestableEntitlementQuery
+        customproperty21: Custom value 21
+        customproperty20: Custom value 20
+        customproperty23: Custom value 23
+        customproperty22: Custom value 22
+        orderindex: 0
+        customproperty29: Custom value 29
+        customproperty28: Custom value 28
+        customproperty25: Custom value 25
+        customproperty24: Custom value 24
+        customproperty27: Custom value 27
+        customproperty26: Custom value 26
+        requestoption: SHOW_BUT_NOTREUESTABLESINGLE
+        endpointname: Endpoint-1
+        excludeRuleAssgnEntsInRequest: true
+        certifiable: true
+      properties:
+        entitlementname:
+          description: Name of the entitlement type
+          example: Ent-type-1
+          type: string
+        displayName:
+          description: Display name for the entitlement.
+          type: string
+        endpointname:
+          description: Name of the endpoint with which the entitlement type is associated
+          example: Endpoint-1
+          type: string
+        entitlementdescription:
+          description: Description for the entitlement type
+          type: string
+        workflow:
+          description: Workflow associated with the entitlement type
+          type: string
+        enableEntitlementToRoleSync:
+          description: Enable entitlement to role sync
+          example: true
+          type: boolean
+        availableQueryServiceAccount:
+          description: Query to fetch available service accounts.
+          type: string
+        selectedQueryServiceAccount:
+          description: Query to fetch selected service accounts.
+          type: string
+        arsRequestableEntitlementQuery:
+          description: Query used to determine requestable entitlements.
+          type: string
+        arsSelectedEntitlementQuery:
+          description: Query used to determine selected entitlements.
+          type: string
+        certifiable:
+          description: Indicates if the entitlement is certifiable.
+          type: boolean
+        createTaskAction:
+          description: Action to be performed when a task is created.
+          items:
+            enum:
+            - noAction
+            - removeTaskForExistingEntitlements
+            - enableRollback
+            type: string
+          type: array
+        requestDatesConfJson:
+          description: Configuration in JSON for handling request dates.
+          type: string
+        startDateInRevokeRequest:
+          description: Ask For Start Date While Revoke Request
+          type: string
+        startEndDateInRequest:
+          description: Ask For Start Date End Date While Request
+          type: string
+        allowRemoveAllEntitlementInRequest:
+          description: Allow user to remove all entitlements in one request.
+          type: string
+        orderindex:
+          description: Index to determine the order of processing or display.
+          type: integer
+        requiredinrequest:
+          description: Flag indicating if this field is required in the request.
+          type: string
+        requiredinservicerequest:
+          description: Flag indicating if this field is required in service request.
+          type: boolean
+        hiearchyrequired:
+          description: Flag indicating if a hierarchy is required.
+          type: string
+        showEntTypeOn:
+          description: Show entitlement type on
+          type: string
+        enableProvisioningPriority:
+          description: Enable provisioning priority
+          type: boolean
+        excludeRuleAssgnEntsInRequest:
+          description: Exclude Entitlements Assigned via Rule while Request
+          type: boolean
+        recon:
+          description: Recon
+          type: boolean
+        showonchild:
+          description: Show on child
+          type: boolean
+        requestoption:
+          description: Defines how the entitlement should be presented or requested.
+          enum:
+          - SHOW_BUT_NOTREUESTABLESINGLE
+          - SHOW_BUT_NOTREUESTABLEMULTIPLE
+          - NONE
+          - SINGLE
+          - MULTIPLE
+          - TABLE
+          - FREEFORMTEXT
+          - TABLENOREMOVE
+          - RADIOBUTN
+          - CHECKBOXN
+          - READONLYTABLE
+          - NONE_BUT_CREATETASK
+          type: string
+        customproperty1:
+          description: Custom property 1
+          example: Custom value 1
+          type: string
+        customproperty2:
+          description: Custom property 2
+          example: Custom value 2
+          type: string
+        customproperty3:
+          description: Custom property 3
+          example: Custom value 3
+          type: string
+        customproperty4:
+          description: Custom property 4
+          example: Custom value 4
+          type: string
+        customproperty5:
+          description: Custom property 5
+          example: Custom value 5
+          type: string
+        customproperty6:
+          description: Custom property 6
+          example: Custom value 6
+          type: string
+        customproperty7:
+          description: Custom property 7
+          example: Custom value 7
+          type: string
+        customproperty8:
+          description: Custom property 8
+          example: Custom value 8
+          type: string
+        customproperty9:
+          description: Custom property 9
+          example: Custom value 9
+          type: string
+        customproperty10:
+          description: Custom property 10
+          example: Custom value 10
+          type: string
+        customproperty11:
+          description: Custom property 11
+          example: Custom value 11
+          type: string
+        customproperty12:
+          description: Custom property 12
+          example: Custom value 12
+          type: string
+        customproperty13:
+          description: Custom property 13
+          example: Custom value 13
+          type: string
+        customproperty14:
+          description: Custom property 14
+          example: Custom value 14
+          type: string
+        customproperty15:
+          description: Custom property 15
+          example: Custom value 15
+          type: string
+        customproperty16:
+          description: Custom property 16
+          example: Custom value 16
+          type: string
+        customproperty17:
+          description: Custom property 17
+          example: Custom value 17
+          type: string
+        customproperty18:
+          description: Custom property 18
+          example: Custom value 18
+          type: string
+        customproperty19:
+          description: Custom property 19
+          example: Custom value 19
+          type: string
+        customproperty20:
+          description: Custom property 20
+          example: Custom value 20
+          type: string
+        customproperty21:
+          description: Custom property 21
+          example: Custom value 21
+          type: string
+        customproperty22:
+          description: Custom property 22
+          example: Custom value 22
+          type: string
+        customproperty23:
+          description: Custom property 23
+          example: Custom value 23
+          type: string
+        customproperty24:
+          description: Custom property 24
+          example: Custom value 24
+          type: string
+        customproperty25:
+          description: Custom property 25
+          example: Custom value 25
+          type: string
+        customproperty26:
+          description: Custom property 26
+          example: Custom value 26
+          type: string
+        customproperty27:
+          description: Custom property 27
+          example: Custom value 27
+          type: string
+        customproperty28:
+          description: Custom property 28
+          example: Custom value 28
+          type: string
+        customproperty29:
+          description: Custom property 29
+          example: Custom value 29
+          type: string
+        customproperty30:
+          description: Custom property 30
+          example: Custom value 30
+          type: string
+        customproperty31:
+          description: Custom property 31
+          example: Custom value 31
+          type: string
+        customproperty32:
+          description: Custom property 32
+          example: Custom value 32
+          type: string
+        customproperty33:
+          description: Custom property 33
+          example: Custom value 33
+          type: string
+        customproperty34:
+          description: Custom property 34
+          example: Custom value 34
+          type: string
+        customproperty35:
+          description: Custom property 35
+          example: Custom value 35
+          type: string
+        customproperty36:
+          description: Custom property 36
+          example: Custom value 36
+          type: string
+        customproperty37:
+          description: Custom property 37
+          example: Custom value 37
+          type: string
+        customproperty38:
+          description: Custom property 38
+          example: Custom value 38
+          type: string
+        customproperty39:
+          description: Custom property 39
+          example: Custom value 39
+          type: string
+        customproperty40:
+          description: Custom property 40
+          example: Custom value 40
+          type: string
+      required:
+      - endpointname
+      - entitlementname
+    CreateOrUpdateEntitlementTypeResponse:
+      example:
+        msg: success
+        errorCode: "0"
+      properties:
+        msg:
+          description: A message indicating the outcome of the operation.
+          example: success
+          type: string
+        errorCode:
+          description: An error code where '0' signifies success and '1' signifies
+            an unsuccessful operation.
+          example: "0"
+          type: string
+    GetEntitlementTypeResponse:
+      example:
+        msg: success
+        displayCount: 0
+        errorCode: "0"
+        totalCount: 6
+        entitlementTypeDetails:
+        - customproperty7_label: customproperty7_label
+          showEntTypeOn: showEntTypeOn
+          availableQueryServiceAccount: availableQueryServiceAccount
+          customproperty36_label: customproperty36_label
+          customproperty26_label: customproperty26_label
+          customproperty4_label: customproperty4_label
+          entitlementname: entitlementname
+          showonchild: showonchild
+          customproperty17_label: customproperty17_label
+          recon: recon
+          customproperty27_label: customproperty27_label
+          customproperty1_label: customproperty1_label
+          requestDatesConfJson: requestDatesConfJson
+          customproperty22_label: customproperty22_label
+          workflow: workflow
+          customproperty37_label: customproperty37_label
+          customproperty19_label: customproperty19_label
+          customproperty39_label: customproperty39_label
+          securitysystem: securitysystem
+          customproperty3_label: customproperty3_label
+          requiredinservicerequest: requiredinservicerequest
+          customproperty16_label: customproperty16_label
+          customproperty25_label: customproperty25_label
+          customproperty10_label: customproperty10_label
+          customproperty30_label: customproperty30_label
+          customproperty33_label: customproperty33_label
+          ars_select_ent_sqlquerey: ars_select_ent_sqlquerey
+          customproperty13_label: customproperty13_label
+          customproperty28_label: customproperty28_label
+          customproperty38_label: customproperty38_label
+          customproperty2_label: customproperty2_label
+          requiredinrequest: requiredinrequest
+          customproperty9_label: customproperty9_label
+          displayName: displayName
+          endpointKey: 5
+          customproperty11_label: customproperty11_label
+          enableProvisioningPriority: enableProvisioningPriority
+          createTaskAction: createTaskAction
+          customproperty31_label: customproperty31_label
+          hiearchyrequired: hiearchyrequired
+          customproperty21_label: customproperty21_label
+          endpoint: endpoint
+          customproperty34_label: customproperty34_label
+          customproperty14_label: customproperty14_label
+          customproperty24_label: customproperty24_label
+          entitlementdescription: entitlementdescription
+          customproperty6_label: customproperty6_label
+          selectedQueryServiceAccount: selectedQueryServiceAccount
+          customproperty8_label: customproperty8_label
+          orderindex: orderindex
+          customproperty29_label: customproperty29_label
+          customproperty12_label: customproperty12_label
+          customproperty32_label: customproperty32_label
+          customproperty40_label: customproperty40_label
+          ars_req_ent_sqlquerey: ars_req_ent_sqlquerey
+          entitlementTypeKey: 1
+          customproperty5_label: customproperty5_label
+          requestoption: requestoption
+          customproperty15_label: customproperty15_label
+          customproperty35_label: customproperty35_label
+          customproperty20_label: customproperty20_label
+          excludeRuleAssgnEntsInRequest: excludeRuleAssgnEntsInRequest
+          certifiable: certifiable
+          customproperty18_label: customproperty18_label
+          customproperty23_label: customproperty23_label
+        - customproperty7_label: customproperty7_label
+          showEntTypeOn: showEntTypeOn
+          availableQueryServiceAccount: availableQueryServiceAccount
+          customproperty36_label: customproperty36_label
+          customproperty26_label: customproperty26_label
+          customproperty4_label: customproperty4_label
+          entitlementname: entitlementname
+          showonchild: showonchild
+          customproperty17_label: customproperty17_label
+          recon: recon
+          customproperty27_label: customproperty27_label
+          customproperty1_label: customproperty1_label
+          requestDatesConfJson: requestDatesConfJson
+          customproperty22_label: customproperty22_label
+          workflow: workflow
+          customproperty37_label: customproperty37_label
+          customproperty19_label: customproperty19_label
+          customproperty39_label: customproperty39_label
+          securitysystem: securitysystem
+          customproperty3_label: customproperty3_label
+          requiredinservicerequest: requiredinservicerequest
+          customproperty16_label: customproperty16_label
+          customproperty25_label: customproperty25_label
+          customproperty10_label: customproperty10_label
+          customproperty30_label: customproperty30_label
+          customproperty33_label: customproperty33_label
+          ars_select_ent_sqlquerey: ars_select_ent_sqlquerey
+          customproperty13_label: customproperty13_label
+          customproperty28_label: customproperty28_label
+          customproperty38_label: customproperty38_label
+          customproperty2_label: customproperty2_label
+          requiredinrequest: requiredinrequest
+          customproperty9_label: customproperty9_label
+          displayName: displayName
+          endpointKey: 5
+          customproperty11_label: customproperty11_label
+          enableProvisioningPriority: enableProvisioningPriority
+          createTaskAction: createTaskAction
+          customproperty31_label: customproperty31_label
+          hiearchyrequired: hiearchyrequired
+          customproperty21_label: customproperty21_label
+          endpoint: endpoint
+          customproperty34_label: customproperty34_label
+          customproperty14_label: customproperty14_label
+          customproperty24_label: customproperty24_label
+          entitlementdescription: entitlementdescription
+          customproperty6_label: customproperty6_label
+          selectedQueryServiceAccount: selectedQueryServiceAccount
+          customproperty8_label: customproperty8_label
+          orderindex: orderindex
+          customproperty29_label: customproperty29_label
+          customproperty12_label: customproperty12_label
+          customproperty32_label: customproperty32_label
+          customproperty40_label: customproperty40_label
+          ars_req_ent_sqlquerey: ars_req_ent_sqlquerey
+          entitlementTypeKey: 1
+          customproperty5_label: customproperty5_label
+          requestoption: requestoption
+          customproperty15_label: customproperty15_label
+          customproperty35_label: customproperty35_label
+          customproperty20_label: customproperty20_label
+          excludeRuleAssgnEntsInRequest: excludeRuleAssgnEntsInRequest
+          certifiable: certifiable
+          customproperty18_label: customproperty18_label
+          customproperty23_label: customproperty23_label
+      properties:
+        msg:
+          description: A message indicating the outcome of the operation.
+          example: success
+          type: string
+        errorCode:
+          description: An error code where '0' signifies success and '1' signifies
+            an unsuccessful operation.
+          example: "0"
+          type: string
+        displayCount:
+          description: Total number of records displayed.
+          type: integer
+        totalCount:
+          description: Total number of records available.
+          type: integer
+        entitlementTypeDetails:
+          items:
+            $ref: "#/components/schemas/GetEntitlementTypeResponse_entitlementTypeDetails_inner"
+          type: array
+    GetEntitlementTypeResponse_entitlementTypeDetails_inner:
+      example:
+        customproperty7_label: customproperty7_label
+        showEntTypeOn: showEntTypeOn
+        availableQueryServiceAccount: availableQueryServiceAccount
+        customproperty36_label: customproperty36_label
+        customproperty26_label: customproperty26_label
+        customproperty4_label: customproperty4_label
+        entitlementname: entitlementname
+        showonchild: showonchild
+        customproperty17_label: customproperty17_label
+        recon: recon
+        customproperty27_label: customproperty27_label
+        customproperty1_label: customproperty1_label
+        requestDatesConfJson: requestDatesConfJson
+        customproperty22_label: customproperty22_label
+        workflow: workflow
+        customproperty37_label: customproperty37_label
+        customproperty19_label: customproperty19_label
+        customproperty39_label: customproperty39_label
+        securitysystem: securitysystem
+        customproperty3_label: customproperty3_label
+        requiredinservicerequest: requiredinservicerequest
+        customproperty16_label: customproperty16_label
+        customproperty25_label: customproperty25_label
+        customproperty10_label: customproperty10_label
+        customproperty30_label: customproperty30_label
+        customproperty33_label: customproperty33_label
+        ars_select_ent_sqlquerey: ars_select_ent_sqlquerey
+        customproperty13_label: customproperty13_label
+        customproperty28_label: customproperty28_label
+        customproperty38_label: customproperty38_label
+        customproperty2_label: customproperty2_label
+        requiredinrequest: requiredinrequest
+        customproperty9_label: customproperty9_label
+        displayName: displayName
+        endpointKey: 5
+        customproperty11_label: customproperty11_label
+        enableProvisioningPriority: enableProvisioningPriority
+        createTaskAction: createTaskAction
+        customproperty31_label: customproperty31_label
+        hiearchyrequired: hiearchyrequired
+        customproperty21_label: customproperty21_label
+        endpoint: endpoint
+        customproperty34_label: customproperty34_label
+        customproperty14_label: customproperty14_label
+        customproperty24_label: customproperty24_label
+        entitlementdescription: entitlementdescription
+        customproperty6_label: customproperty6_label
+        selectedQueryServiceAccount: selectedQueryServiceAccount
+        customproperty8_label: customproperty8_label
+        orderindex: orderindex
+        customproperty29_label: customproperty29_label
+        customproperty12_label: customproperty12_label
+        customproperty32_label: customproperty32_label
+        customproperty40_label: customproperty40_label
+        ars_req_ent_sqlquerey: ars_req_ent_sqlquerey
+        entitlementTypeKey: 1
+        customproperty5_label: customproperty5_label
+        requestoption: requestoption
+        customproperty15_label: customproperty15_label
+        customproperty35_label: customproperty35_label
+        customproperty20_label: customproperty20_label
+        excludeRuleAssgnEntsInRequest: excludeRuleAssgnEntsInRequest
+        certifiable: certifiable
+        customproperty18_label: customproperty18_label
+        customproperty23_label: customproperty23_label
+      properties:
+        orderindex:
+          description: The order index for the entitlement.
+          type: string
+        workflow:
+          description: The workflow associated with the entitlement.
+          type: string
+        requiredinrequest:
+          description: Indicates if the entitlement is required in the request.
+          type: string
+        requiredinservicerequest:
+          description: Indicates if the entitlement is required in service account
+            request.
+          type: string
+        displayName:
+          description: Display name for the entitlement.
+          type: string
+        securitysystem:
+          description: Associated security system.
+          type: string
+        availableQueryServiceAccount:
+          description: Query to retrieve available service accounts.
+          type: string
+        createTaskAction:
+          description: JSON string representing the list of task actions.
+          type: string
+        ars_req_ent_sqlquerey:
+          description: SQL query for requestable entitlements.
+          type: string
+        hiearchyrequired:
+          description: Indicates if hierarchy is required (0 or 1).
+          type: string
+        entitlementname:
+          description: Internal name for the entitlement.
+          type: string
+        entitlementTypeKey:
+          description: Unique key of the entitlement type
+          type: integer
+        endpoint:
+          description: Endpoint name associated with the entitlement.
+          type: string
+        endpointKey:
+          description: Unique key of the associated endpoint
+          type: integer
+        requestoption:
+          description: Request option UI behavior.
+          type: string
+        enableProvisioningPriority:
+          description: Enable provisioning priority
+          type: string
+        excludeRuleAssgnEntsInRequest:
+          description: Exclude Entitlements Assigned via Rule while Request
+          type: string
+        showonchild:
+          description: Indicates if entitlement should show on child accounts.
+          type: string
+        showEntTypeOn:
+          description: Show entitlement type on
+          type: string
+        recon:
+          description: Indicates if entitlement is part of reconciliation.
+          type: string
+        ars_select_ent_sqlquerey:
+          description: SQL query for selected entitlements.
+          type: string
+        certifiable:
+          description: Indicates if the entitlement is certifiable.
+          type: string
+        entitlementdescription:
+          description: Description of the entitlement.
+          type: string
+        requestDatesConfJson:
+          description: JSON configuration for request dates.
+          type: string
+        selectedQueryServiceAccount:
+          description: Query to retrieve selected service accounts.
+          type: string
+        customproperty1_label:
+          description: Label for custom property 1.
+          type: string
+        customproperty2_label:
+          description: Label for custom property 2.
+          type: string
+        customproperty3_label:
+          description: Label for custom property 3.
+          type: string
+        customproperty4_label:
+          description: Label for custom property 4.
+          type: string
+        customproperty5_label:
+          description: Label for custom property 5.
+          type: string
+        customproperty6_label:
+          description: Label for custom property 6.
+          type: string
+        customproperty7_label:
+          description: Label for custom property 7.
+          type: string
+        customproperty8_label:
+          description: Label for custom property 8.
+          type: string
+        customproperty9_label:
+          description: Label for custom property 9.
+          type: string
+        customproperty10_label:
+          description: Label for custom property 10.
+          type: string
+        customproperty11_label:
+          description: Label for custom property 11.
+          type: string
+        customproperty12_label:
+          description: Label for custom property 12.
+          type: string
+        customproperty13_label:
+          description: Label for custom property 13.
+          type: string
+        customproperty14_label:
+          description: Label for custom property 14.
+          type: string
+        customproperty15_label:
+          description: Label for custom property 15.
+          type: string
+        customproperty16_label:
+          description: Label for custom property 16.
+          type: string
+        customproperty17_label:
+          description: Label for custom property 17.
+          type: string
+        customproperty18_label:
+          description: Label for custom property 18.
+          type: string
+        customproperty19_label:
+          description: Label for custom property 19.
+          type: string
+        customproperty20_label:
+          description: Label for custom property 20.
+          type: string
+        customproperty21_label:
+          description: Label for custom property 21.
+          type: string
+        customproperty22_label:
+          description: Label for custom property 22.
+          type: string
+        customproperty23_label:
+          description: Label for custom property 23.
+          type: string
+        customproperty24_label:
+          description: Label for custom property 24.
+          type: string
+        customproperty25_label:
+          description: Label for custom property 25.
+          type: string
+        customproperty26_label:
+          description: Label for custom property 26.
+          type: string
+        customproperty27_label:
+          description: Label for custom property 27.
+          type: string
+        customproperty28_label:
+          description: Label for custom property 28.
+          type: string
+        customproperty29_label:
+          description: Label for custom property 29.
+          type: string
+        customproperty30_label:
+          description: Label for custom property 30.
+          type: string
+        customproperty31_label:
+          description: Label for custom property 31.
+          type: string
+        customproperty32_label:
+          description: Label for custom property 32.
+          type: string
+        customproperty33_label:
+          description: Label for custom property 33.
+          type: string
+        customproperty34_label:
+          description: Label for custom property 34.
+          type: string
+        customproperty35_label:
+          description: Label for custom property 35.
+          type: string
+        customproperty36_label:
+          description: Label for custom property 36.
+          type: string
+        customproperty37_label:
+          description: Label for custom property 37.
+          type: string
+        customproperty38_label:
+          description: Label for custom property 38.
+          type: string
+        customproperty39_label:
+          description: Label for custom property 39.
+          type: string
+        customproperty40_label:
+          description: Label for custom property 40.
+          type: string
