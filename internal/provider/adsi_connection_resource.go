@@ -125,7 +125,7 @@ func ADSIConnectorResourceSchema() map[string]schema.Attribute {
 		"password": schema.StringAttribute{
 			Optional:    true,
 			Sensitive:   true,
-			Description: "Service account password. Set the password. It is a compulsory field. Either this or password_wo need to be set",
+			Description: "Service account password.",
 			Validators: []validator.String{
 				stringvalidator.ConflictsWith(path.MatchRoot("password_wo")),
 			},
@@ -133,7 +133,7 @@ func ADSIConnectorResourceSchema() map[string]schema.Attribute {
 		"password_wo": schema.StringAttribute{
 			Optional:    true,
 			WriteOnly:   true,
-			Description: "Service account password. Set the password_wo. It is a compulsory field. Either this or password need to be set",
+			Description: "Service account password_wo (write-only).",
 			Validators: []validator.String{
 				stringvalidator.ConflictsWith(path.MatchRoot("password")),
 			},
@@ -431,9 +431,9 @@ func (r *AdsiConnectionResource) CreateADSIConnection(ctx context.Context, plan 
 	// Build ADSI connection create request
 	tflog.Debug(ctx, "Building ADSI connection create request")
 
-	if (config.Password.IsNull() || config.Password.IsUnknown()) && (config.PasswordWo.IsNull() || config.PasswordWo.IsUnknown()) {
-		return nil, fmt.Errorf("either password or password_wo must be set")
-	}
+	// if (config.Password.IsNull() || config.Password.IsUnknown()) && (config.PasswordWo.IsNull() || config.PasswordWo.IsUnknown()) {
+	// 	return nil, fmt.Errorf("either password or password_wo must be set")
+	// }
 
 	adsiConn := r.BuildADSIConnector(plan, config)
 	createReq := openapi.CreateOrUpdateRequest{
@@ -721,9 +721,9 @@ func (r *AdsiConnectionResource) UpdateADSIConnection(ctx context.Context, plan 
 	// Build ADSI connection update request
 	tflog.Debug(logCtx, "Building ADSI connection update request")
 
-	if (config.Password.IsNull() || config.Password.IsUnknown()) && (config.PasswordWo.IsNull() || config.PasswordWo.IsUnknown()) {
-		return nil, fmt.Errorf("either password or password_wo must be set")
-	}
+	// if (config.Password.IsNull() || config.Password.IsUnknown()) && (config.PasswordWo.IsNull() || config.PasswordWo.IsUnknown()) {
+	// 	return nil, fmt.Errorf("either password or password_wo must be set")
+	// }
 
 	adsiConn := r.BuildADSIConnector(plan, config)
 

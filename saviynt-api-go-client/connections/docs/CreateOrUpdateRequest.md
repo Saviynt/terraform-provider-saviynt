@@ -14,18 +14,18 @@ Name | Type | Description | Notes
 **VaultConfiguration** | Pointer to **string** | JSON string specifying vault configuration | [optional] 
 **Saveinvault** | Pointer to **string** | Flag indicating whether the encrypted attribute should be saved in the configured vault. | [optional] 
 **URL** | **string** | Host Name for connection | 
-**USERNAME** | **string** | Property for USERNAME | 
+**USERNAME** | **string** | Username for SOAP authentication | 
 **ENABLEGROUPMANAGEMENT** | Pointer to **string** | True implies group management capability limited to AD only. | [optional] 
 **IMPORTDATACOOKIES** | Pointer to **string** |  | [optional] 
 **MOVEACCOUNTJSON** | Pointer to **string** | JSON to specify movement action logic explicitely. If you have defined &#39;moveObjectToOU&#39; parameter in your update/enable/disable actions implicitely, then no need to define this explicitely here | [optional] 
 **PasswdPolicyJSON** | Pointer to **string** |  | [optional] 
 **CreateUpdateMappings** | Pointer to **string** | Mapping used during group creation to specify which attribute of a group maps to which attribute on Saviynt. | [optional] 
-**PASSWORD** | **string** | Property for PASSWORD | 
+**PASSWORD** | **string** | Password for SOAP authentication | 
 **CONNECTION_URL** | **string** | ADSI remote agent Connection URL | 
 **PROVISIONING_URL** | Pointer to **string** | ADSI remote agent Provisioning URL | [optional] 
 **FORESTLIST** | **string** | Forest List (Comma Separated) which we need to manage | 
 **DEFAULT_USER_ROLE** | Pointer to **string** | Default SAV Role to be assigned to all the new users that gets imported via User Import | [optional] 
-**UPDATEUSERJSON** | Pointer to **string** | JSON to specify the Queries/stored procedures which will be used to Update an existing Account,Objects Exposed-(randomPassword,task,user,accountName,role,updatetaskuser,endpoint and all the objects defined in Dynamic Attributes ). | [optional] 
+**UPDATEUSERJSON** | Pointer to **string** | JSON for user updates | [optional] 
 **ENDPOINTS_FILTER** | Pointer to **string** | Property for ENDPOINTS_FILTER | [optional] 
 **SEARCHFILTER** | Pointer to **string** | Account Search Filter to specify the starting point of the directory from where the accounts needs to be imported. You can have multiple BaseDNs here separated by ###. | [optional] 
 **OBJECTFILTER** | Pointer to **string** | Object Filter is used to filter the objects that will be returned.This filter will be same for all domains. | [optional] 
@@ -38,12 +38,12 @@ Name | Type | Description | Notes
 **STATUSKEYJSON** | Pointer to **string** | JSON configuration to specify Users status | [optional] 
 **GroupImportMapping** | Pointer to **string** | Map AD group attribute to EIC entitlement attribute for import | [optional] 
 **ImportNestedMembership** | Pointer to **string** | Specify if you want the connector to import all indirect or nested membership of an account or a group during access import | [optional] 
-**PAGE_SIZE** | Pointer to **string** | Specify the number of objects to return in a page for each import request from Workday | [optional] 
+**PAGE_SIZE** | Pointer to **string** | Number of records per page | [optional] 
 **ACCOUNTNAMERULE** | Pointer to **string** | Rule to generate account name. | [optional] 
-**CREATEACCOUNTJSON** | Pointer to **string** | JSON to specify the Queries/stored procedures which will be used to Create the New Account,Objects Exposed-(randomPassword,task,user,accountName,role,endpoint and all the objects defined in Dynamic Attributes ) | [optional] 
-**UPDATEACCOUNTJSON** | Pointer to **string** | JSON to specify the Queries/stored procedures which will be used to Update an existing Account,Objects Exposed-(randomPassword,task,user,accountName,role,endpoint and all the objects defined in Dynamic Attributes ). | [optional] 
-**ENABLEACCOUNTJSON** | Pointer to **string** | JSON to specify the Queries/stored procedures which will be used to Enable,Objects Exposed-(task,user,accountName,role,endpoint and all the objects defined in Dynamic Attributes ). | [optional] 
-**DISABLEACCOUNTJSON** | Pointer to **string** | JSON to specify the Queries/stored procedures which will be used to Disable Account,Objects Exposed-(task,user,accountName,role,endpoint and all the objects defined in Dynamic Attributes ). | [optional] 
+**CREATEACCOUNTJSON** | Pointer to **string** | JSON for account creation | [optional] 
+**UPDATEACCOUNTJSON** | Pointer to **string** | JSON for account updates | [optional] 
+**ENABLEACCOUNTJSON** | Pointer to **string** | JSON for account enabling | [optional] 
+**DISABLEACCOUNTJSON** | Pointer to **string** | JSON for account disabling | [optional] 
 **REMOVEACCOUNTJSON** | Pointer to **string** | Specify the actions to be performed for deleting an account. | [optional] 
 **ADDACCESSJSON** | Pointer to **string** | Configuration to ADD Access (cross domain/forest group membership) to an account. | [optional] 
 **REMOVEACCESSJSON** | Pointer to **string** | Configuration to REMOVE Access (cross domain/forest group membership) to an account. | [optional] 
@@ -57,8 +57,8 @@ Name | Type | Description | Notes
 **CREATESERVICEACCOUNTJSON** | Pointer to **string** | Specify the Field Value which will be used to Create the New Service Account. | [optional] 
 **UPDATESERVICEACCOUNTJSON** | Pointer to **string** | Specify the Field Value which will be used to update the existing Service Account. | [optional] 
 **REMOVESERVICEACCOUNTJSON** | Pointer to **string** | Specify the actions to be performed while deleting a service account. | [optional] 
-**PAM_CONFIG** | Pointer to **string** |  | [optional] 
-**MODIFYUSERDATAJSON** | Pointer to **string** |  | [optional] 
+**PAM_CONFIG** | Pointer to **string** | PAM configuration JSON | [optional] 
+**MODIFYUSERDATAJSON** | Pointer to **string** | JSON for modifying user data | [optional] 
 **MESSAGESERVER** | Pointer to **string** | set it to TRUE if the Message Server is going to be used for connecting to SAP | [optional] 
 **JCO_ASHOST** | Pointer to **string** | HostName for connection for Import | [optional] 
 **JCO_SYSNR** | Pointer to **string** | System Number for the SAP Instance for Import | [optional] 
@@ -93,11 +93,11 @@ Name | Type | Description | Notes
 **PROV_CUA_SNC** | Pointer to **string** | Property for PROV_CUA_SNC | [optional] 
 **RESET_PWD_FOR_NEWACCOUNT** | Pointer to **string** | For CUA enabled if the user already exists should the Password be reset for accounts for other systems | [optional] 
 **ENFORCEPASSWORDCHANGE** | Pointer to **string** | Set it to FALSE if while changing the password the productive password should be set | [optional] 
-**PASSWORD_MIN_LENGTH** | Pointer to **string** | Specify the Min length for the random password | [optional] 
-**PASSWORD_MAX_LENGTH** | Pointer to **string** | Specify the Max length for the random password | [optional] 
-**PASSWORD_NOOFCAPSALPHA** | Pointer to **string** | Specify the Number of Upper case alphabets required for the random password | [optional] 
-**PASSWORD_NOOFDIGITS** | Pointer to **string** | Specify the Number of digits required for the random password | [optional] 
-**PASSWORD_NOOFSPLCHARS** | Pointer to **string** | Specify the Number of special chars required for the random password | [optional] 
+**PASSWORD_MIN_LENGTH** | Pointer to **string** | Minimum password length | [optional] 
+**PASSWORD_MAX_LENGTH** | Pointer to **string** | Maximum password length | [optional] 
+**PASSWORD_NOOFCAPSALPHA** | Pointer to **string** | Number of capital letters required | [optional] 
+**PASSWORD_NOOFDIGITS** | Pointer to **string** | Number of digits required | [optional] 
+**PASSWORD_NOOFSPLCHARS** | Pointer to **string** | Number of special characters required | [optional] 
 **HANAREFTABLEJSON** | Pointer to **string** | JSON to specify the mapping for Reference table | [optional] 
 **USERIMPORTJSON** | Pointer to **string** | Property for USERIMPORTJSON | [optional] 
 **SETCUASYSTEM** | Pointer to **string** | set it to FALSE if using an older CUA System to not support setting sub-systems | [optional] 
@@ -180,13 +180,13 @@ Name | Type | Description | Notes
 **REMOVE_ORGROLE_PAYLOAD** | Pointer to **string** | Define the request payload for assigning an organizational role to an account in Workday | [optional] 
 **STATUS_KEY_JSON** | Pointer to **string** | Specify the mapping of user status | [optional] 
 **USERATTRIBUTEJSON** | Pointer to **string** | JSON that specifies which job related attributes are to be stored as User Attributes | [optional] 
-**CUSTOM_CONFIG** | Pointer to **string** |  | [optional] 
+**CUSTOM_CONFIG** | Pointer to **string** | Custom configuration JSON | [optional] 
 **DRIVERNAME** | **string** | Driver name for the connection | 
 **CONNECTIONPROPERTIES** | Pointer to **string** | Properties that needs to be added when connecting to the database | [optional] 
-**GRANTACCESSJSON** | Pointer to **string** | JSON to specify the Queries/stored procedures which will be used to provide acccess,Objects Exposed-(task,user,accountName,role,endpoint and all the objects defined in Dynamic Attributes ).  | [optional] 
-**REVOKEACCESSJSON** | Pointer to **string** | JSON to specify the Queries/stored procedures which will be used to revoke access,Objects Exposed-(task,user,accountName,role,endpoint and all the objects defined in Dynamic Attributes ). | [optional] 
-**CHANGEPASSJSON** | Pointer to **string** | JSON to specify the Queries/stored procedures which will be used to change password,Objects Exposed-(randomPassword,task,user,accountName,role,endpoint and all the objects defined in Dynamic Attributes ).  | [optional] 
-**DELETEACCOUNTJSON** | Pointer to **string** | JSON to specify the Queries/stored procedures which will be used to delete an account,Objects Exposed-(task,user,accountName,role,endpoint and all the objects defined in Dynamic Attributes ). | [optional] 
+**GRANTACCESSJSON** | Pointer to **string** | JSON for granting access | [optional] 
+**REVOKEACCESSJSON** | Pointer to **string** | JSON for revoking access | [optional] 
+**CHANGEPASSJSON** | Pointer to **string** | JSON for password changes | [optional] 
+**DELETEACCOUNTJSON** | Pointer to **string** | JSON for account deletion | [optional] 
 **ACCOUNTEXISTSJSON** | Pointer to **string** | JSON to specify the Query which will be used to check whether an account exists,Objects Exposed-(task,user,accountName,role,endpoint and all the objects defined in Dynamic Attributes ). | [optional] 
 **ACCOUNTSIMPORT** | Pointer to **string** | Accounts Import XML file content | [optional] 
 **ENTITLEMENTVALUEIMPORT** | Pointer to **string** | Entitlement Value Import XML file content | [optional] 
@@ -272,6 +272,17 @@ Name | Type | Description | Notes
 **APPACCOUNTFIELDMAPPINGS** | Pointer to **string** |  | [optional] 
 **AUDIT_FILTER** | Pointer to **string** |  | [optional] 
 **ACTIVATE_ENDPOINT** | Pointer to **string** |  | [optional] 
+**ACCOUNTS_IMPORT_JSON** | Pointer to **string** | JSON configuration for accounts import | [optional] 
+**COMBINEDCREATEREQUEST** | Pointer to **string** | Combined create request configuration | [optional] 
+**CONNECTIONJSON** | Pointer to **string** |  | [optional] 
+**DATA_TO_IMPORT** | Pointer to **string** | Specification of data types to import | [optional] 
+**DATEFORMAT** | Pointer to **string** | Date format for data processing | [optional] 
+**HR_IMPORT_JSON** | Pointer to **string** | JSON configuration for HR data import | [optional] 
+**PASSWORD_TYPE** | Pointer to **string** | Type of password authentication | [optional] 
+**RESPONSEPATH_PAGERESULTS** | Pointer to **string** | Response path for page results | [optional] 
+**RESPONSEPATH_TOTALRESULTS** | Pointer to **string** | Response path for total results count | [optional] 
+**RESPONSEPATH_USERLIST** | Pointer to **string** | Response path for user list | [optional] 
+**SOAP_ENDPOINT** | Pointer to **string** | SOAP endpoint URL for Workday | [optional] 
 
 ## Methods
 
@@ -6891,6 +6902,281 @@ SetACTIVATE_ENDPOINT sets ACTIVATE_ENDPOINT field to given value.
 `func (o *CreateOrUpdateRequest) HasACTIVATE_ENDPOINT() bool`
 
 HasACTIVATE_ENDPOINT returns a boolean if a field has been set.
+
+### GetACCOUNTS_IMPORT_JSON
+
+`func (o *CreateOrUpdateRequest) GetACCOUNTS_IMPORT_JSON() string`
+
+GetACCOUNTS_IMPORT_JSON returns the ACCOUNTS_IMPORT_JSON field if non-nil, zero value otherwise.
+
+### GetACCOUNTS_IMPORT_JSONOk
+
+`func (o *CreateOrUpdateRequest) GetACCOUNTS_IMPORT_JSONOk() (*string, bool)`
+
+GetACCOUNTS_IMPORT_JSONOk returns a tuple with the ACCOUNTS_IMPORT_JSON field if it's non-nil, zero value otherwise
+and a boolean to check if the value has been set.
+
+### SetACCOUNTS_IMPORT_JSON
+
+`func (o *CreateOrUpdateRequest) SetACCOUNTS_IMPORT_JSON(v string)`
+
+SetACCOUNTS_IMPORT_JSON sets ACCOUNTS_IMPORT_JSON field to given value.
+
+### HasACCOUNTS_IMPORT_JSON
+
+`func (o *CreateOrUpdateRequest) HasACCOUNTS_IMPORT_JSON() bool`
+
+HasACCOUNTS_IMPORT_JSON returns a boolean if a field has been set.
+
+### GetCOMBINEDCREATEREQUEST
+
+`func (o *CreateOrUpdateRequest) GetCOMBINEDCREATEREQUEST() string`
+
+GetCOMBINEDCREATEREQUEST returns the COMBINEDCREATEREQUEST field if non-nil, zero value otherwise.
+
+### GetCOMBINEDCREATEREQUESTOk
+
+`func (o *CreateOrUpdateRequest) GetCOMBINEDCREATEREQUESTOk() (*string, bool)`
+
+GetCOMBINEDCREATEREQUESTOk returns a tuple with the COMBINEDCREATEREQUEST field if it's non-nil, zero value otherwise
+and a boolean to check if the value has been set.
+
+### SetCOMBINEDCREATEREQUEST
+
+`func (o *CreateOrUpdateRequest) SetCOMBINEDCREATEREQUEST(v string)`
+
+SetCOMBINEDCREATEREQUEST sets COMBINEDCREATEREQUEST field to given value.
+
+### HasCOMBINEDCREATEREQUEST
+
+`func (o *CreateOrUpdateRequest) HasCOMBINEDCREATEREQUEST() bool`
+
+HasCOMBINEDCREATEREQUEST returns a boolean if a field has been set.
+
+### GetCONNECTIONJSON
+
+`func (o *CreateOrUpdateRequest) GetCONNECTIONJSON() string`
+
+GetCONNECTIONJSON returns the CONNECTIONJSON field if non-nil, zero value otherwise.
+
+### GetCONNECTIONJSONOk
+
+`func (o *CreateOrUpdateRequest) GetCONNECTIONJSONOk() (*string, bool)`
+
+GetCONNECTIONJSONOk returns a tuple with the CONNECTIONJSON field if it's non-nil, zero value otherwise
+and a boolean to check if the value has been set.
+
+### SetCONNECTIONJSON
+
+`func (o *CreateOrUpdateRequest) SetCONNECTIONJSON(v string)`
+
+SetCONNECTIONJSON sets CONNECTIONJSON field to given value.
+
+### HasCONNECTIONJSON
+
+`func (o *CreateOrUpdateRequest) HasCONNECTIONJSON() bool`
+
+HasCONNECTIONJSON returns a boolean if a field has been set.
+
+### GetDATA_TO_IMPORT
+
+`func (o *CreateOrUpdateRequest) GetDATA_TO_IMPORT() string`
+
+GetDATA_TO_IMPORT returns the DATA_TO_IMPORT field if non-nil, zero value otherwise.
+
+### GetDATA_TO_IMPORTOk
+
+`func (o *CreateOrUpdateRequest) GetDATA_TO_IMPORTOk() (*string, bool)`
+
+GetDATA_TO_IMPORTOk returns a tuple with the DATA_TO_IMPORT field if it's non-nil, zero value otherwise
+and a boolean to check if the value has been set.
+
+### SetDATA_TO_IMPORT
+
+`func (o *CreateOrUpdateRequest) SetDATA_TO_IMPORT(v string)`
+
+SetDATA_TO_IMPORT sets DATA_TO_IMPORT field to given value.
+
+### HasDATA_TO_IMPORT
+
+`func (o *CreateOrUpdateRequest) HasDATA_TO_IMPORT() bool`
+
+HasDATA_TO_IMPORT returns a boolean if a field has been set.
+
+### GetDATEFORMAT
+
+`func (o *CreateOrUpdateRequest) GetDATEFORMAT() string`
+
+GetDATEFORMAT returns the DATEFORMAT field if non-nil, zero value otherwise.
+
+### GetDATEFORMATOk
+
+`func (o *CreateOrUpdateRequest) GetDATEFORMATOk() (*string, bool)`
+
+GetDATEFORMATOk returns a tuple with the DATEFORMAT field if it's non-nil, zero value otherwise
+and a boolean to check if the value has been set.
+
+### SetDATEFORMAT
+
+`func (o *CreateOrUpdateRequest) SetDATEFORMAT(v string)`
+
+SetDATEFORMAT sets DATEFORMAT field to given value.
+
+### HasDATEFORMAT
+
+`func (o *CreateOrUpdateRequest) HasDATEFORMAT() bool`
+
+HasDATEFORMAT returns a boolean if a field has been set.
+
+### GetHR_IMPORT_JSON
+
+`func (o *CreateOrUpdateRequest) GetHR_IMPORT_JSON() string`
+
+GetHR_IMPORT_JSON returns the HR_IMPORT_JSON field if non-nil, zero value otherwise.
+
+### GetHR_IMPORT_JSONOk
+
+`func (o *CreateOrUpdateRequest) GetHR_IMPORT_JSONOk() (*string, bool)`
+
+GetHR_IMPORT_JSONOk returns a tuple with the HR_IMPORT_JSON field if it's non-nil, zero value otherwise
+and a boolean to check if the value has been set.
+
+### SetHR_IMPORT_JSON
+
+`func (o *CreateOrUpdateRequest) SetHR_IMPORT_JSON(v string)`
+
+SetHR_IMPORT_JSON sets HR_IMPORT_JSON field to given value.
+
+### HasHR_IMPORT_JSON
+
+`func (o *CreateOrUpdateRequest) HasHR_IMPORT_JSON() bool`
+
+HasHR_IMPORT_JSON returns a boolean if a field has been set.
+
+### GetPASSWORD_TYPE
+
+`func (o *CreateOrUpdateRequest) GetPASSWORD_TYPE() string`
+
+GetPASSWORD_TYPE returns the PASSWORD_TYPE field if non-nil, zero value otherwise.
+
+### GetPASSWORD_TYPEOk
+
+`func (o *CreateOrUpdateRequest) GetPASSWORD_TYPEOk() (*string, bool)`
+
+GetPASSWORD_TYPEOk returns a tuple with the PASSWORD_TYPE field if it's non-nil, zero value otherwise
+and a boolean to check if the value has been set.
+
+### SetPASSWORD_TYPE
+
+`func (o *CreateOrUpdateRequest) SetPASSWORD_TYPE(v string)`
+
+SetPASSWORD_TYPE sets PASSWORD_TYPE field to given value.
+
+### HasPASSWORD_TYPE
+
+`func (o *CreateOrUpdateRequest) HasPASSWORD_TYPE() bool`
+
+HasPASSWORD_TYPE returns a boolean if a field has been set.
+
+### GetRESPONSEPATH_PAGERESULTS
+
+`func (o *CreateOrUpdateRequest) GetRESPONSEPATH_PAGERESULTS() string`
+
+GetRESPONSEPATH_PAGERESULTS returns the RESPONSEPATH_PAGERESULTS field if non-nil, zero value otherwise.
+
+### GetRESPONSEPATH_PAGERESULTSOk
+
+`func (o *CreateOrUpdateRequest) GetRESPONSEPATH_PAGERESULTSOk() (*string, bool)`
+
+GetRESPONSEPATH_PAGERESULTSOk returns a tuple with the RESPONSEPATH_PAGERESULTS field if it's non-nil, zero value otherwise
+and a boolean to check if the value has been set.
+
+### SetRESPONSEPATH_PAGERESULTS
+
+`func (o *CreateOrUpdateRequest) SetRESPONSEPATH_PAGERESULTS(v string)`
+
+SetRESPONSEPATH_PAGERESULTS sets RESPONSEPATH_PAGERESULTS field to given value.
+
+### HasRESPONSEPATH_PAGERESULTS
+
+`func (o *CreateOrUpdateRequest) HasRESPONSEPATH_PAGERESULTS() bool`
+
+HasRESPONSEPATH_PAGERESULTS returns a boolean if a field has been set.
+
+### GetRESPONSEPATH_TOTALRESULTS
+
+`func (o *CreateOrUpdateRequest) GetRESPONSEPATH_TOTALRESULTS() string`
+
+GetRESPONSEPATH_TOTALRESULTS returns the RESPONSEPATH_TOTALRESULTS field if non-nil, zero value otherwise.
+
+### GetRESPONSEPATH_TOTALRESULTSOk
+
+`func (o *CreateOrUpdateRequest) GetRESPONSEPATH_TOTALRESULTSOk() (*string, bool)`
+
+GetRESPONSEPATH_TOTALRESULTSOk returns a tuple with the RESPONSEPATH_TOTALRESULTS field if it's non-nil, zero value otherwise
+and a boolean to check if the value has been set.
+
+### SetRESPONSEPATH_TOTALRESULTS
+
+`func (o *CreateOrUpdateRequest) SetRESPONSEPATH_TOTALRESULTS(v string)`
+
+SetRESPONSEPATH_TOTALRESULTS sets RESPONSEPATH_TOTALRESULTS field to given value.
+
+### HasRESPONSEPATH_TOTALRESULTS
+
+`func (o *CreateOrUpdateRequest) HasRESPONSEPATH_TOTALRESULTS() bool`
+
+HasRESPONSEPATH_TOTALRESULTS returns a boolean if a field has been set.
+
+### GetRESPONSEPATH_USERLIST
+
+`func (o *CreateOrUpdateRequest) GetRESPONSEPATH_USERLIST() string`
+
+GetRESPONSEPATH_USERLIST returns the RESPONSEPATH_USERLIST field if non-nil, zero value otherwise.
+
+### GetRESPONSEPATH_USERLISTOk
+
+`func (o *CreateOrUpdateRequest) GetRESPONSEPATH_USERLISTOk() (*string, bool)`
+
+GetRESPONSEPATH_USERLISTOk returns a tuple with the RESPONSEPATH_USERLIST field if it's non-nil, zero value otherwise
+and a boolean to check if the value has been set.
+
+### SetRESPONSEPATH_USERLIST
+
+`func (o *CreateOrUpdateRequest) SetRESPONSEPATH_USERLIST(v string)`
+
+SetRESPONSEPATH_USERLIST sets RESPONSEPATH_USERLIST field to given value.
+
+### HasRESPONSEPATH_USERLIST
+
+`func (o *CreateOrUpdateRequest) HasRESPONSEPATH_USERLIST() bool`
+
+HasRESPONSEPATH_USERLIST returns a boolean if a field has been set.
+
+### GetSOAP_ENDPOINT
+
+`func (o *CreateOrUpdateRequest) GetSOAP_ENDPOINT() string`
+
+GetSOAP_ENDPOINT returns the SOAP_ENDPOINT field if non-nil, zero value otherwise.
+
+### GetSOAP_ENDPOINTOk
+
+`func (o *CreateOrUpdateRequest) GetSOAP_ENDPOINTOk() (*string, bool)`
+
+GetSOAP_ENDPOINTOk returns a tuple with the SOAP_ENDPOINT field if it's non-nil, zero value otherwise
+and a boolean to check if the value has been set.
+
+### SetSOAP_ENDPOINT
+
+`func (o *CreateOrUpdateRequest) SetSOAP_ENDPOINT(v string)`
+
+SetSOAP_ENDPOINT sets SOAP_ENDPOINT field to given value.
+
+### HasSOAP_ENDPOINT
+
+`func (o *CreateOrUpdateRequest) HasSOAP_ENDPOINT() bool`
+
+HasSOAP_ENDPOINT returns a boolean if a field has been set.
 
 
 [[Back to Model list]](../README.md#documentation-for-models) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to README]](../README.md)

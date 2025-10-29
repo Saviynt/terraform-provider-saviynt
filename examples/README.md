@@ -19,6 +19,7 @@ Below are example configurations to help guide you through your Terraform journe
 - [saviynt_sap_connection_resource](./resources/saviynt_sap_connection_resource) For managing SAP connections.
 - [saviynt_unix_connection_resource](./resources/saviynt_unix_connection_resource) For managing Unix connections.
 - [saviynt_workday_connection_resource](./resources/saviynt_workday_connection_resource) For managing Workday connections.
+- [saviynt_workday_soap_connection_resource](./resources/saviynt_workday_soap_connection_resource) For managing Workday SOAP connections.
 - [saviynt_dynamic_attribute_resource](./resources/saviynt_dynamic_attribute_resource) Manages lifecycle (create, update, read, delete) of dynamic attribute
 - [saviynt_okta_connection_resource](./resources/saviynt_okta_connection_resource) For managing Okta connections.
 - [saviynt_entitlement_type_resource](./resources/saviynt_entitlement_type_resource) For managing entitlement types.

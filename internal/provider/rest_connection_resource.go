@@ -69,6 +69,7 @@ type RestConnectorResourceModel struct {
 type RestConnectionResource struct {
 	client            client.SaviyntClientInterface
 	token             string
+	saviyntVersion    string
 	provider          client.SaviyntProviderInterface
 	connectionFactory client.ConnectionFactoryInterface
 }
@@ -288,6 +289,7 @@ func (r *RestConnectionResource) Configure(ctx context.Context, req resource.Con
 	// Set the client and token from the provider state using interface wrapper.
 	r.client = &client.SaviyntClientWrapper{Client: prov.client}
 	r.token = prov.accessToken
+	r.saviyntVersion = prov.saviyntVersion
 	r.provider = &client.SaviyntProviderWrapper{Provider: prov} // Store provider reference for retry logic
 
 	opCtx.LogOperationEnd(ctx, "REST connection resource configured successfully")
@@ -683,6 +685,16 @@ func (r *RestConnectionResource) Create(ctx context.Context, req resource.Create
 		return
 	}
 
+	// Validate version-specific attributes for REST connector
+	util.ValidateAttributeCompatibility(r.saviyntVersion, "REST", "ApplicationDiscoveryJSON", plan.ApplicationDiscoveryJson.ValueStringPointer(), &resp.Diagnostics)
+	util.ValidateAttributeCompatibility(r.saviyntVersion, "REST", "CreateEntitlementJSON", plan.CreateEntitlementJson.ValueStringPointer(), &resp.Diagnostics)
+	util.ValidateAttributeCompatibility(r.saviyntVersion, "REST", "DeleteEntitlementJSON", plan.DeleteEntitlementJson.ValueStringPointer(), &resp.Diagnostics)
+	util.ValidateAttributeCompatibility(r.saviyntVersion, "REST", "UpdateEntitlementJSON", plan.UpdateEntitlementJson.ValueStringPointer(), &resp.Diagnostics)
+
+	if resp.Diagnostics.HasError() {
+		return
+	}
+
 	connectionName := plan.ConnectionName.ValueString()
 	// Update operation context with connection name
 	opCtx.ConnectionName = connectionName
@@ -843,6 +855,16 @@ func (r *RestConnectionResource) Update(ctx context.Context, req resource.Update
 			errorsutil.GetErrorMessage(errorCode),
 			fmt.Sprintf("[%s] Cannot change connection name from '%s' to '%s'", errorCode, state.ConnectionName.ValueString(), plan.ConnectionName.ValueString()),
 		)
+		return
+	}
+
+	// Validate version-specific attributes for REST connector
+	util.ValidateAttributeCompatibility(r.saviyntVersion, "REST", "ApplicationDiscoveryJSON", plan.ApplicationDiscoveryJson.ValueStringPointer(), &resp.Diagnostics)
+	util.ValidateAttributeCompatibility(r.saviyntVersion, "REST", "CreateEntitlementJSON", plan.CreateEntitlementJson.ValueStringPointer(), &resp.Diagnostics)
+	util.ValidateAttributeCompatibility(r.saviyntVersion, "REST", "DeleteEntitlementJSON", plan.DeleteEntitlementJson.ValueStringPointer(), &resp.Diagnostics)
+	util.ValidateAttributeCompatibility(r.saviyntVersion, "REST", "UpdateEntitlementJSON", plan.UpdateEntitlementJson.ValueStringPointer(), &resp.Diagnostics)
+
+	if resp.Diagnostics.HasError() {
 		return
 	}
 
