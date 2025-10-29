@@ -82,6 +82,7 @@ type DBConnectorResourceModel struct {
 type DBConnectionResource struct {
 	client            client.SaviyntClientInterface
 	token             string
+	saviyntVersion    string
 	provider          client.SaviyntProviderInterface
 	connectionFactory client.ConnectionFactoryInterface
 }
@@ -119,7 +120,7 @@ func DBConnectorResourceSchema() map[string]schema.Attribute {
 		"password": schema.StringAttribute{
 			Optional:    true,
 			Sensitive:   true,
-			Description: "Set the Password. Set the password.It is a compulsory field. Either this or password_wo need to be set",
+			Description: "Set the password.",
 			Validators: []validator.String{
 				stringvalidator.ConflictsWith(path.MatchRoot("password_wo")),
 			},
@@ -127,7 +128,7 @@ func DBConnectorResourceSchema() map[string]schema.Attribute {
 		"password_wo": schema.StringAttribute{
 			Optional:    true,
 			WriteOnly:   true,
-			Description: "Set the Password. Set the password_wo.It is a compulsory field. Either this or password need to be set",
+			Description: "Set the password_wo (write-only).",
 			Validators: []validator.String{
 				stringvalidator.ConflictsWith(path.MatchRoot("password")),
 			},
@@ -339,6 +340,7 @@ func (r *DBConnectionResource) Configure(ctx context.Context, req resource.Confi
 	// Set the client and token from the provider state.
 	r.client = &client.SaviyntClientWrapper{Client: prov.client}
 	r.token = prov.accessToken
+	r.saviyntVersion = prov.saviyntVersion
 	r.provider = &client.SaviyntProviderWrapper{Provider: prov} // Store provider reference for retry logic
 
 	opCtx.LogOperationEnd(ctx, "DB connection resource configuration completed successfully")
@@ -392,6 +394,16 @@ func (r *DBConnectionResource) Create(ctx context.Context, req resource.CreateRe
 			errorsutil.GetErrorMessage(errorsutil.ErrConfigExtraction),
 			fmt.Sprintf("[%s] Unable to extract Terraform configuration from request for connection '%s'", errorCode, connectionName),
 		)
+		return
+	}
+
+	// Validate version-specific attributes for DB connector
+	util.ValidateAttributeCompatibility(r.saviyntVersion, "DB", "CREATEENTITLEMENTJSON", plan.CreateEntitlementJson.ValueStringPointer(), &resp.Diagnostics)
+	util.ValidateAttributeCompatibility(r.saviyntVersion, "DB", "DELETEENTITLEMENTJSON", plan.DeleteEntitlementJson.ValueStringPointer(), &resp.Diagnostics)
+	util.ValidateAttributeCompatibility(r.saviyntVersion, "DB", "ENTITLEMENTEXISTJSON", plan.EntitlementExistJson.ValueStringPointer(), &resp.Diagnostics)
+	util.ValidateAttributeCompatibility(r.saviyntVersion, "DB", "UPDATEENTITLEMENTJSON", plan.UpdateEntitlementJson.ValueStringPointer(), &resp.Diagnostics)
+
+	if resp.Diagnostics.HasError() {
 		return
 	}
 
@@ -465,9 +477,9 @@ func (r *DBConnectionResource) CreateDBConnection(ctx context.Context, plan *DBC
 	}
 
 	// Build DB connector request
-	if (config.Password.IsNull() || config.Password.IsUnknown()) && (config.PasswordWo.IsNull() || config.PasswordWo.IsUnknown()) {
-		return nil, fmt.Errorf("either password or password_wo must be set")
-	}
+	// if (config.Password.IsNull() || config.Password.IsUnknown()) && (config.PasswordWo.IsNull() || config.PasswordWo.IsUnknown()) {
+	// 	return nil, fmt.Errorf("either password or password_wo must be set")
+	// }
 
 	dbConn := r.BuildDBConnector(plan, config)
 	dbConnRequest := openapi.CreateOrUpdateRequest{
@@ -892,6 +904,16 @@ func (r *DBConnectionResource) Update(ctx context.Context, req resource.UpdateRe
 	opCtx.LogOperationStart(ctx, "Executing DB connection update",
 		map[string]interface{}{"connection_name": connectionName})
 
+	// Validate version-specific attributes for DB connector
+	util.ValidateAttributeCompatibility(r.saviyntVersion, "DB", "CREATEENTITLEMENTJSON", plan.CreateEntitlementJson.ValueStringPointer(), &resp.Diagnostics)
+	util.ValidateAttributeCompatibility(r.saviyntVersion, "DB", "DELETEENTITLEMENTJSON", plan.DeleteEntitlementJson.ValueStringPointer(), &resp.Diagnostics)
+	util.ValidateAttributeCompatibility(r.saviyntVersion, "DB", "ENTITLEMENTEXISTJSON", plan.EntitlementExistJson.ValueStringPointer(), &resp.Diagnostics)
+	util.ValidateAttributeCompatibility(r.saviyntVersion, "DB", "UPDATEENTITLEMENTJSON", plan.UpdateEntitlementJson.ValueStringPointer(), &resp.Diagnostics)
+
+	if resp.Diagnostics.HasError() {
+		return
+	}
+
 	// Use interface pattern instead of direct API client creation
 	updateResp, err := r.UpdateDBConnection(ctx, &plan, &config)
 	if err != nil {
@@ -949,9 +971,9 @@ func (r *DBConnectionResource) UpdateDBConnection(ctx context.Context, plan *DBC
 		map[string]interface{}{"connection_name": connectionName})
 
 	// Build DB connector request
-	if (config.Password.IsNull() || config.Password.IsUnknown()) && (config.PasswordWo.IsNull() || config.PasswordWo.IsUnknown()) {
-		return nil, fmt.Errorf("either password or password_wo must be set")
-	}
+	// if (config.Password.IsNull() || config.Password.IsUnknown()) && (config.PasswordWo.IsNull() || config.PasswordWo.IsUnknown()) {
+	// 	return nil, fmt.Errorf("either password or password_wo must be set")
+	// }
 
 	dbConn := r.BuildDBConnector(plan, config)
 

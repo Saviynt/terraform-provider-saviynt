@@ -48,6 +48,7 @@ Following resources are available for management:
   - [SAP](docs/resources/sap_connection_resource.md)
   - [Salesforce](docs/resources/salesforce_connection_resource.md)
   - [Workday](docs/resources/workday_connection_resource.md)
+  - [Workday SOAP](docs/resources/workday_soap_connection_resource.md)
   - [Unix](docs/resources/unix_connection_resource.md)
   - [Github REST](docs/resources/github_rest_connection_resource.md)
   - [Okta](docs/resources/okta_connection_resource.md)
@@ -79,9 +80,9 @@ Check out the [Latest Saviynt Provider Docs](https://registry.terraform.io/provi
 
 | Supported Saviynt EIC Versions | Terraform Provider Version |
 | -------------------------- | ------------------------------ |
-| `25.B` | Latest Version: `v0.2.12`<br> Supported Version(s): `v0.2.8` - `v0.2.12`|
-| `25.A` | Latest Version: `v0.2.12`<br> Supported Version(s): `v0.2.8` - `v0.2.12`|
-| `24.10` | Latest Version: `v0.2.12`<br> Supported Version(s): `v0.2.8` - `v0.2.12`|
+| `25.B` | Latest Version: `v0.2.13`<br> Supported Version(s): `v0.2.8` - `v0.2.13`|
+| `25.A` | Latest Version: `v0.2.13`<br> Supported Version(s): `v0.2.8` - `v0.2.13`|
+| `24.10` | Latest Version: `v0.2.13`<br> Supported Version(s): `v0.2.8` - `v0.2.13`|
 
 --- 
 
@@ -152,6 +153,7 @@ resource "saviynt_ad_connection_resource" "example" {
 | **SAP** | `password`, `prov_password` | `password_wo`, `prov_password_wo` |
 | **Unix** | `password`, `passphrase`, `ssh_key` | `password_wo`, `passphrase_wo`, `ssh_key_wo` |
 | **Workday** | `password`, `client_secret`, `refresh_token` | `password_wo`, `client_secret_wo`, `refresh_token_wo` |
+| **Workday SOAP** | `password`, `change_pass_json`, `connection_json` | `password_wo`, `change_pass_json_wo`, `connection_json_wo` |
 | **Okta** | `auth_token` | `auth_token_wo` |
 
 ### The `wo_version` Mechanism
@@ -780,6 +782,7 @@ The following connectors are supported and can consume credentials provided by t
 - **SAP**: `password`, `prov_password`
 - **Unix**: `password`, `passphrase`, `ssh_key`, `ssh_pass_through_password`, `ssh_pass_through_sshkey`, `ssh_pass_through_passphrase`
 - **Workday**: `password`, `client_secret`, `refresh_token`
+- **Workday SOAP**: `password`, `change_pass_json`, `connection_json`
 - **Okta**: `auth_token`
 
 ### Usage
@@ -811,6 +814,7 @@ The following connectors are supported and can consume credentials provided by t
 - **SAP**: `password`, `prov_password`
 - **Unix**: `password`, `passphrase`, `ssh_key`, `ssh_pass_through_password`, `ssh_pass_through_sshkey`, `ssh_pass_through_passphrase`
 - **Workday**: `password`, `client_secret`, `refresh_token`
+- **Workday SOAP**: `password`, `change_pass_json`, `connection_json`
 - **Okta**: `auth_token`
 
 ### Usage
@@ -911,6 +915,7 @@ The following limitations are present in the latest version of the provider. The
   - **SAP**: `password`, `prov_password`
   - **Unix**: `password`, `passphrase`, `ssh_key`, `ssh_pass_through_password`, `ssh_pass_through_sshkey`, `ssh_pass_through_passphrase`
   - **Workday**: `password`, `client_secret`, `refresh_token`
+  - **Workday SOAP**: `password`, `change_pass_json`, `connection_json`
   - **Okta**: `auth_token`
 
 ### 4. Dynamic Attributes

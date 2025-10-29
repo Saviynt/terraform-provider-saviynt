@@ -71,6 +71,7 @@ Following resources are available for management:
   - [SAP](resources/sap_connection_resource.md)
   - [Salesforce](resources/salesforce_connection_resource.md)
   - [Workday](resources/workday_connection_resource.md)
+  - [Workday SOAP](resources/workday_soap_connection_resource.md)
   - [Unix](resources/unix_connection_resource.md)
   - [Github REST](resources/github_rest_connection_resource.md)
   - [Okta](resources/okta_connection_resource.md)
@@ -102,9 +103,9 @@ Check out the [Latest Saviynt Provider Docs](https://registry.terraform.io/provi
 
 | Supported Saviynt EIC Versions | Terraform Provider Version |
 | -------------------------- | ------------------------------ |
-| `25.B` | Latest Version: `v0.2.12`<br> Supported Version(s): `v0.2.8` - `v0.2.12`|
-| `25.A` | Latest Version: `v0.2.12`<br> Supported Version(s): `v0.2.8` - `v0.2.12`|
-| `24.10` | Latest Version: `v0.2.12`<br> Supported Version(s): `v0.2.8` - `v0.2.12`|
+| `25.B` | Latest Version: `v0.2.13`<br> Supported Version(s): `v0.2.8` - `v0.2.13`|
+| `25.A` | Latest Version: `v0.2.13`<br> Supported Version(s): `v0.2.8` - `v0.2.13`|
+| `24.10` | Latest Version: `v0.2.13`<br> Supported Version(s): `v0.2.8` - `v0.2.13`|
 
 --- 
 
@@ -175,6 +176,7 @@ resource "saviynt_ad_connection_resource" "example" {
 | **SAP** | `password`, `prov_password` | `password_wo`, `prov_password_wo` |
 | **Unix** | `password`, `passphrase`, `ssh_key` | `password_wo`, `passphrase_wo`, `ssh_key_wo` |
 | **Workday** | `password`, `client_secret`, `refresh_token` | `password_wo`, `client_secret_wo`, `refresh_token_wo` |
+| **Workday SOAP** | `password`, `change_pass_json`, `connection_json` | `password_wo`, `change_pass_json_wo`, `connection_json_wo` |
 | **Okta** | `auth_token` | `auth_token_wo` |
 
 ### The `wo_version` Mechanism
@@ -301,7 +303,6 @@ Each resource type requires a specific import ID format:
 | Dynamic Attributes   | `endpoint`        | `terraform import saviynt_dynamic_attribute_resource.example ENDPOINT1` |
 | Entitlement Type     | `endpoint_name:entitlement_name` | `terraform import saviynt_entitlement_type_resource.example ENDPOINT1:ENTTYPE1` |
 | Enterprise Role     | `role_name` | `terraform import saviynt_enterprise_roles_resource.example role_name` |
-| Enterprise Role     | `role_name` | `terraform import saviynt_enterprise_roles_resource.example role_name` |
 | Entitlement     | `endpoint:entitlement_type:entitlement_value` | `terraform import saviynt_entitlement_resource.example ENDPOINT1:ENTTYPE1:ENT1` |
 | Privilege     | `endpoint:entitlement_type` | `terraform import saviynt_privilege_resource.example ENDPOINT1:ENTTYPE1` |
 
@@ -330,7 +331,7 @@ terraform plan -var-file=prod.tfvars -generate-config-out=generated.tf
 > 4. Use `terraform import` to sync the current state:  
 >    ```
 >    terraform import saviynt_enterprise_roles_resource.resource_name "role-name"
->   
+>    ```
 
 **3. Review and move configuration:**
 ```bash
@@ -400,6 +401,7 @@ The following connectors are supported and can consume credentials provided by t
 - **SAP**: `password`, `prov_password`
 - **Unix**: `password`, `passphrase`, `ssh_key`, `ssh_pass_through_password`, `ssh_pass_through_sshkey`, `ssh_pass_through_passphrase`
 - **Workday**: `password`, `client_secret`, `refresh_token`
+- **Workday SOAP**: `password`, `change_pass_json`, `connection_json`
 - **Okta**: `auth_token`
 
 ### Usage
@@ -431,6 +433,7 @@ The following connectors are supported and can consume credentials provided by t
 - **SAP**: `password`, `prov_password`
 - **Unix**: `password`, `passphrase`, `ssh_key`, `ssh_pass_through_password`, `ssh_pass_through_sshkey`, `ssh_pass_through_passphrase`
 - **Workday**: `password`, `client_secret`, `refresh_token`
+- **Workday SOAP**: `password`, `change_pass_json`, `connection_json`
 - **Okta**: `auth_token`
 
 ### Usage
@@ -503,6 +506,7 @@ The following limitations are present in the latest version of the provider. The
   - **Salesforce**: `client_secret`, `refresh_token`
   - **Unix**: `password`, `passphrase`, `ssh_key`, `ssh_pass_through_password`, `ssh_pass_through_sshkey`, `ssh_pass_through_passphrase`
   - **Workday**: `password`, `client_secret`, `refresh_token`
+  - **Workday SOAP**: `password`, `change_pass_json`, `connection_json`
   - **Okta**: `auth_token`
 - The following fields are **not currently configurable via Terraform**:
   - **Github REST**: `Status_Threshold_Config`, `Pam_Config`
