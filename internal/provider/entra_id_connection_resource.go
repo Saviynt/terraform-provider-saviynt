@@ -130,7 +130,7 @@ func EntraIdConnectorResourceSchema() map[string]schema.Attribute {
 		"client_secret": schema.StringAttribute{
 			Optional:    true,
 			Sensitive:   true,
-			Description: "Client Secret for authentication. Set the client_secret. It is a compulsory field. Either this or client_secret_wo need to be set",
+			Description: "Client Secret for authentication.",
 			Validators: []validator.String{
 				stringvalidator.ConflictsWith(path.MatchRoot("client_secret_wo")),
 			},
@@ -138,7 +138,7 @@ func EntraIdConnectorResourceSchema() map[string]schema.Attribute {
 		"client_secret_wo": schema.StringAttribute{
 			Optional:    true,
 			WriteOnly:   true,
-			Description: "Client Secret for authentication (write-only). Set the client_secret_wo. It is a compulsory field. Either this or client_secret need to be set",
+			Description: "Client Secret for authentication (write-only).",
 			Validators: []validator.String{
 				stringvalidator.ConflictsWith(path.MatchRoot("client_secret")),
 			},
@@ -620,9 +620,9 @@ func (r *EntraIdConnectionResource) CreateEntraIdConnection(ctx context.Context,
 	// Build EntraID connection create request
 	tflog.Debug(logCtx, "Building EntraID connection create request")
 
-	if (config.ClientSecret.IsNull() || config.ClientSecret.IsUnknown()) && (config.ClientSecretWO.IsNull() || config.ClientSecretWO.IsUnknown()) {
-		return nil, fmt.Errorf("either client_secret or client_secret_wo must be set")
-	}
+	// if (config.ClientSecret.IsNull() || config.ClientSecret.IsUnknown()) && (config.ClientSecretWO.IsNull() || config.ClientSecretWO.IsUnknown()) {
+	// 	return nil, fmt.Errorf("either client_secret or client_secret_wo must be set")
+	// }
 
 	entraIdConn := r.BuildEntraIdConnector(plan, config)
 	createReq := openapi.CreateOrUpdateRequest{
@@ -726,9 +726,9 @@ func (r *EntraIdConnectionResource) UpdateEntraIdConnection(ctx context.Context,
 	// Build EntraID connection update request
 	tflog.Debug(logCtx, "Building EntraID connection update request")
 
-	if (config.ClientSecret.IsNull() || config.ClientSecret.IsUnknown()) && (config.ClientSecretWO.IsNull() || config.ClientSecretWO.IsUnknown()) {
-		return nil, fmt.Errorf("either client_secret or client_secret_wo must be set")
-	}
+	// if (config.ClientSecret.IsNull() || config.ClientSecret.IsUnknown()) && (config.ClientSecretWO.IsNull() || config.ClientSecretWO.IsUnknown()) {
+	// 	return nil, fmt.Errorf("either client_secret or client_secret_wo must be set")
+	// }
 
 	entraIdConn := r.BuildEntraIdConnector(plan, config) // Reuse the same request builder
 
