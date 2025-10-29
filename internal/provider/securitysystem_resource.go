@@ -64,6 +64,7 @@ type SecuritySystemResourceModel struct {
 type SecuritySystemResource struct {
 	client                client.SaviyntClientInterface
 	token                 string
+	saviyntVersion        string
 	provider              client.SaviyntProviderInterface
 	securitySystemFactory client.SecuritySystemFactoryInterface
 }
@@ -246,6 +247,7 @@ func (r *SecuritySystemResource) Configure(ctx context.Context, req resource.Con
 	// Set the client, token, and provider reference from the provider state
 	r.client = &client.SaviyntClientWrapper{Client: prov.client}
 	r.token = prov.accessToken
+	r.saviyntVersion = prov.saviyntVersion
 	r.provider = &client.SaviyntProviderWrapper{Provider: prov} // Store provider reference for retry logic
 }
 
@@ -267,6 +269,13 @@ func (r *SecuritySystemResource) SetProvider(provider client.SaviyntProviderInte
 func (r *SecuritySystemResource) Create(ctx context.Context, req resource.CreateRequest, resp *resource.CreateResponse) {
 	var plan SecuritySystemResourceModel
 	resp.Diagnostics.Append(req.Plan.Get(ctx, &plan)...)
+	if resp.Diagnostics.HasError() {
+		return
+	}
+
+	// Validate version-specific attributes for Security System
+	util.ValidateAttributeCompatibility(r.saviyntVersion, "SecuritySystem", "instant_provisioning", plan.InstantProvision.ValueStringPointer(), &resp.Diagnostics)
+
 	if resp.Diagnostics.HasError() {
 		return
 	}
@@ -491,6 +500,13 @@ func (r *SecuritySystemResource) Update(ctx context.Context, req resource.Update
 	var plan, state SecuritySystemResourceModel
 	resp.Diagnostics.Append(req.State.Get(ctx, &state)...)
 	resp.Diagnostics.Append(req.Plan.Get(ctx, &plan)...)
+	if resp.Diagnostics.HasError() {
+		return
+	}
+
+	// Validate version-specific attributes for Security System
+	util.ValidateAttributeCompatibility(r.saviyntVersion, "SecuritySystem", "instant_provisioning", plan.InstantProvision.ValueStringPointer(), &resp.Diagnostics)
+
 	if resp.Diagnostics.HasError() {
 		return
 	}
