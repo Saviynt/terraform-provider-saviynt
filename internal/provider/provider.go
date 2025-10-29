@@ -39,11 +39,12 @@ func New(version string) func() provider.Provider {
 
 // SaviyntProvider defines the provider implementation.
 type SaviyntProvider struct {
-	version      string
-	client       *s.Client // your Go client SDK instance
-	accessToken  string
-	refreshToken string
-	tokenMutex   sync.RWMutex // Protects token refresh operations
+	version        string
+	client         *s.Client // your Go client SDK instance
+	accessToken    string
+	refreshToken   string
+	saviyntVersion string
+	tokenMutex     sync.RWMutex // Protects token refresh operations
 }
 
 // SaviyntProviderModel describes the provider data model.
@@ -127,10 +128,24 @@ func (p *SaviyntProvider) Configure(ctx context.Context, req provider.ConfigureR
 		return
 	}
 
+	saviyntVersion, _, saviyntVersionerr := client.Utility.GetEcmVersion(ctx).Execute()
+	if saviyntVersionerr != nil {
+		log.Printf("Version error: Failed to fetch Saviynt version: %v", saviyntVersionerr)
+		resp.Diagnostics.AddWarning("Version Warning", "Failed to fetch Saviynt version, continuing without version info.")
+	}
+
 	// Store the token details in the provider struct.
 	p.client = client
 	p.accessToken = token.AccessToken
 	p.refreshToken = token.RefreshToken
+
+	// Store Saviynt version if available
+	if saviyntVersion != nil && saviyntVersion.Version != nil {
+		if versionStr, ok := saviyntVersion.Version.(string); ok {
+			p.saviyntVersion = versionStr
+		}
+	}
+
 	//Storing in Resource and Datasource
 	resp.ResourceData = p
 	resp.DataSourceData = p
@@ -159,6 +174,7 @@ func (p *SaviyntProvider) DataSources(ctx context.Context) []func() datasource.D
 		NewEntitlementTypeDataSource,
 		NewEntitlementDataSource,
 		NewPrivilegeDataSource,
+		NewWorkdaySOAPConnectionsDataSource,
 	}
 }
 
@@ -171,6 +187,7 @@ func (p *SaviyntProvider) Resources(ctx context.Context) []func() resource.Resou
 		NewDBConnectionResource,
 		NewADSIConnectionResource,
 		NewWorkdayConnectionResource,
+		NewWorkdaySOAPConnectionResource,
 		NewEntraIdConnectionResource,
 		NewSalesforceConnectionResource,
 		NewSapConnectionResource,

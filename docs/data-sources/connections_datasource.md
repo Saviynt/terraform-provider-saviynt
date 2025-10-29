@@ -28,20 +28,20 @@ data "saviynt_connections_datasource" "example" {
 
 ### Required
 
-- `authenticate` (Boolean) If false, do not store connection_attributes in state
+- `authenticate` (Boolean) If false, do not store connection results in state
 
 ### Optional
 
 - `connection_name` (String) Filter by connection name
 - `connection_type` (String) Filter by connection type
 - `max` (String) Maximum number of connections to retrieve
-- `offset` (String) Offset
+- `offset` (String) Offset for pagination
 
 ### Read-Only
 
 - `display_count` (Number) Number of records returned in the response
 - `error_code` (String) Error code from the API
-- `id` (String) The ID of this resource.
+- `id` (String) Resource ID.
 - `msg` (String) API response message
 - `results` (Attributes List) List of connections retrieved (see [below for nested schema](#nestedatt--results))
 - `total_count` (Number) Total count of available connections

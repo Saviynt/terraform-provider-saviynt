@@ -227,11 +227,12 @@ type Users struct {
 
 // rolesResource implements the resource.Resource interface for managing Saviynt roles.
 type RolesResource struct {
-	client      client.SaviyntClientInterface
-	token       string
-	requestor   string
-	provider    client.SaviyntProviderInterface
-	roleFactory client.RoleFactoryInterface
+	client         client.SaviyntClientInterface
+	token          string
+	saviyntVersion string
+	requestor      string
+	provider       client.SaviyntProviderInterface
+	roleFactory    client.RoleFactoryInterface
 }
 
 // NewRolesResource creates a new instance of the roles resource.
@@ -426,6 +427,7 @@ func (r *RolesResource) Configure(ctx context.Context, req resource.ConfigureReq
 	// Set the client and token from the provider state using interface wrapper.
 	r.client = &client.SaviyntClientWrapper{Client: prov.client}
 	r.token = prov.accessToken
+	r.saviyntVersion = prov.saviyntVersion
 	if prov.client.Username != nil {
 		r.requestor = *prov.client.Username
 	}
@@ -1939,6 +1941,15 @@ func (r *RolesResource) Create(ctx context.Context, req resource.CreateRequest, 
 		return
 	}
 
+	// Validate version-specific attributes for Enterprise Role
+	if !plan.ChildRoles.IsNull() && !plan.ChildRoles.IsUnknown() && len(plan.ChildRoles.Elements()) > 0 {
+		util.ValidateAttributeCompatibility(r.saviyntVersion, "EnterpriseRole", "child_roles", plan.ChildRoles, &resp.Diagnostics)
+	}
+
+	if resp.Diagnostics.HasError() {
+		return
+	}
+
 	roleName := plan.RoleName.ValueString()
 	tflog.Debug(ctx, "Creating role", map[string]interface{}{"role_name": roleName})
 
@@ -2099,6 +2110,15 @@ func (r *RolesResource) Update(ctx context.Context, req resource.UpdateRequest, 
 
 	// Extract plan from request
 	resp.Diagnostics.Append(req.Plan.Get(ctx, &plan)...)
+	if resp.Diagnostics.HasError() {
+		return
+	}
+
+	// Validate version-specific attributes for Enterprise Role
+	if !plan.ChildRoles.IsNull() && !plan.ChildRoles.IsUnknown() && len(plan.ChildRoles.Elements()) > 0 {
+		util.ValidateAttributeCompatibility(r.saviyntVersion, "EnterpriseRole", "child_roles", plan.ChildRoles, &resp.Diagnostics)
+	}
+
 	if resp.Diagnostics.HasError() {
 		return
 	}
