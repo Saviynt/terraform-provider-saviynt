@@ -1,6 +1,3 @@
-# Copyright (c) 2025 Saviynt Inc.
-# SPDX-License-Identifier: MPL-2.0
-
 openapi: 3.1.0
 info:
   description: |-
@@ -31,14 +28,14 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/createOrUpdate_request'
+              $ref: "#/components/schemas/createOrUpdate_request"
         required: true
       responses:
         "200":
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/CreateOrUpdateResponse'
+                $ref: "#/components/schemas/CreateOrUpdateResponse"
           description: Connection Successful
           headers:
             Access-Control-Allow-Credentials:
@@ -64,14 +61,14 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/getConnections_request'
+              $ref: "#/components/schemas/getConnections_request"
         required: true
       responses:
         "200":
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/getConnectionsResponse'
+                $ref: "#/components/schemas/getConnectionsResponse"
           description: Connection retreival successful
           headers:
             Access-Control-Allow-Credentials:
@@ -96,14 +93,14 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/getConnectionDetails_request'
+              $ref: "#/components/schemas/getConnectionDetails_request"
         required: true
       responses:
         "200":
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/getConnectionDetailsResponse'
+                $ref: "#/components/schemas/getConnectionDetailsResponse"
           description: Connection details retrieved successfully.
       summary: Get connection details
       tags:
@@ -113,8 +110,8 @@ components:
     BaseConnector:
       discriminator:
         mapping:
-          AD: '#/components/schemas/ADConnector'
-          ADSI: '#/components/schemas/ADSIConnector'
+          AD: "#/components/schemas/ADConnector"
+          ADSI: "#/components/schemas/ADSIConnector"
         propertyName: connectiontype
       properties:
         connectionName:
@@ -161,7 +158,7 @@ components:
       - connectiontype
     ADConnector:
       allOf:
-      - $ref: '#/components/schemas/BaseConnector'
+      - $ref: "#/components/schemas/BaseConnector"
       - properties:
           URL:
             description: LDAP or target system URL.
@@ -476,7 +473,7 @@ components:
         - PASSWORD
     ADSIConnector:
       allOf:
-      - $ref: '#/components/schemas/BaseConnector'
+      - $ref: "#/components/schemas/BaseConnector"
       - properties:
           URL:
             description: Primary/root domain URL list (comma Separated)
@@ -797,7 +794,7 @@ components:
         - USERNAME
     WorkdayConnector:
       allOf:
-      - $ref: '#/components/schemas/BaseConnector'
+      - $ref: "#/components/schemas/BaseConnector"
       - properties:
           USERS_LAST_IMPORT_TIME:
             description: Property for USERS_LAST_IMPORT_TIME
@@ -956,7 +953,7 @@ components:
         - USE_OAUTH
     SAPConnector:
       allOf:
-      - $ref: '#/components/schemas/BaseConnector'
+      - $ref: "#/components/schemas/BaseConnector"
       - properties:
           MESSAGESERVER:
             description: set it to TRUE if the Message Server is going to be used
@@ -981,7 +978,7 @@ components:
             type: string
           PASSWORD:
             description: Password for connection for Import
-            example: '@TMP_PASSWORD@'
+            example: 'password'
             type: string
           JCO_LANG:
             description: LANGUAGE for the SAP Instance for Import
@@ -1065,7 +1062,7 @@ components:
             type: string
           PROV_PASSWORD:
             description: Password for connection for Provisioning
-            example: '@TMP_PASSWORD@'
+            example: 'password'
             type: string
           PROV_JCO_LANG:
             description: LANGUAGE for the SAP Instance for Provisioning
@@ -1205,7 +1202,7 @@ components:
             type: string
     D365Connector:
       allOf:
-      - $ref: '#/components/schemas/BaseConnector'
+      - $ref: "#/components/schemas/BaseConnector"
       - properties:
           BASEURL:
             example: https://@INSTANCE_NAME@.cloudax.dynamics.com
@@ -1291,7 +1288,7 @@ components:
         - TENANT_ID
     RESTConnector:
       allOf:
-      - $ref: '#/components/schemas/BaseConnector'
+      - $ref: "#/components/schemas/BaseConnector"
       - properties:
           ConnectionJSON:
             type: string
@@ -1373,7 +1370,7 @@ components:
             type: string
     SalesforceConnector:
       allOf:
-      - $ref: '#/components/schemas/BaseConnector'
+      - $ref: "#/components/schemas/BaseConnector"
       - properties:
           CLIENT_ID:
             type: string
@@ -1432,7 +1429,7 @@ components:
             type: string
     DBConnector:
       allOf:
-      - $ref: '#/components/schemas/BaseConnector'
+      - $ref: "#/components/schemas/BaseConnector"
       - properties:
           URL:
             description: Host Name for connection
@@ -1619,11 +1616,7 @@ components:
         - USERNAME
     EntraIDConnector:
       allOf:
-      - $ref: '#/components/schemas/BaseConnector'
-      - required:
-        - AAD_TENANT_ID
-        - CLIENT_ID
-        - CLIENT_SECRET
+      - $ref: "#/components/schemas/BaseConnector"
       - properties:
           CLIENT_ID:
             type: string
@@ -1765,9 +1758,13 @@ components:
           ENHANCEDDIRECTORYROLES:
             description: Property for ENHANCEDDIRECTORYROLES
             type: string
+        required:
+        - AAD_TENANT_ID
+        - CLIENT_ID
+        - CLIENT_SECRET
     UNIXConnector:
       allOf:
-      - $ref: '#/components/schemas/BaseConnector'
+      - $ref: "#/components/schemas/BaseConnector"
       - properties:
           HOST_NAME:
             description: Property for HOST_NAME
@@ -1877,7 +1874,7 @@ components:
         - USERNAME
     GithubRESTConnector:
       allOf:
-      - $ref: '#/components/schemas/BaseConnector'
+      - $ref: "#/components/schemas/BaseConnector"
       - properties:
           ConnectionJSON:
             description: Property for ConnectionJSON
@@ -1899,7 +1896,7 @@ components:
             type: string
     OktaConnector:
       allOf:
-      - $ref: '#/components/schemas/BaseConnector'
+      - $ref: "#/components/schemas/BaseConnector"
       - properties:
           IMPORTURL:
             description: ""
@@ -1965,6 +1962,102 @@ components:
         - AUTHTOKEN
         - IMPORTURL
         - OKTA_APPLICATION_SECURITYSYSTEM
+    WorkdaySOAPConnector:
+      allOf:
+      - $ref: "#/components/schemas/BaseConnector"
+      - properties:
+          ACCOUNTS_IMPORT_JSON:
+            description: JSON configuration for accounts import
+            type: string
+          CHANGEPASSJSON:
+            description: JSON for password changes
+            type: string
+          COMBINEDCREATEREQUEST:
+            description: Combined create request configuration
+            type: string
+          CONNECTIONJSON:
+            type: string
+          CREATEACCOUNTJSON:
+            description: JSON for account creation
+            type: string
+          CUSTOM_CONFIG:
+            description: Custom configuration JSON
+            type: string
+          DATA_TO_IMPORT:
+            description: Specification of data types to import
+            type: string
+          DATEFORMAT:
+            description: Date format for data processing
+            type: string
+          DELETEACCOUNTJSON:
+            description: JSON for account deletion
+            type: string
+          DISABLEACCOUNTJSON:
+            description: JSON for account disabling
+            type: string
+          ENABLEACCOUNTJSON:
+            description: JSON for account enabling
+            type: string
+          GRANTACCESSJSON:
+            description: JSON for granting access
+            type: string
+          HR_IMPORT_JSON:
+            description: JSON configuration for HR data import
+            type: string
+          MODIFYUSERDATAJSON:
+            description: JSON for modifying user data
+            type: string
+          PAGE_SIZE:
+            description: Number of records per page
+            type: string
+          PAM_CONFIG:
+            description: PAM configuration JSON
+            type: string
+          PASSWORD:
+            description: Password for SOAP authentication
+            type: string
+          PASSWORD_MAX_LENGTH:
+            description: Maximum password length
+            type: string
+          PASSWORD_MIN_LENGTH:
+            description: Minimum password length
+            type: string
+          PASSWORD_NOOFCAPSALPHA:
+            description: Number of capital letters required
+            type: string
+          PASSWORD_NOOFDIGITS:
+            description: Number of digits required
+            type: string
+          PASSWORD_NOOFSPLCHARS:
+            description: Number of special characters required
+            type: string
+          PASSWORD_TYPE:
+            description: Type of password authentication
+            type: string
+          RESPONSEPATH_PAGERESULTS:
+            description: Response path for page results
+            type: string
+          RESPONSEPATH_TOTALRESULTS:
+            description: Response path for total results count
+            type: string
+          RESPONSEPATH_USERLIST:
+            description: Response path for user list
+            type: string
+          REVOKEACCESSJSON:
+            description: JSON for revoking access
+            type: string
+          SOAP_ENDPOINT:
+            description: SOAP endpoint URL for Workday
+            type: string
+          UPDATEACCOUNTJSON:
+            description: JSON for account updates
+            type: string
+          UPDATEUSERJSON:
+            description: JSON for user updates
+            type: string
+          USERNAME:
+            description: Username for SOAP authentication
+            type: string
     CreateOrUpdateResponse:
       example:
         msg: Connection Successful
@@ -2019,35 +2112,37 @@ components:
         ConnectionList:
           description: A list of connections.
           items:
-            $ref: '#/components/schemas/getConnectionsResponse_ConnectionList_inner'
+            $ref: "#/components/schemas/getConnectionsResponse_ConnectionList_inner"
           type: array
     getConnectionDetailsResponse:
       discriminator:
         mapping:
-          AD: '#/components/schemas/ADConnectionResponse'
-          REST: '#/components/schemas/RESTConnectionResponse'
-          DB: '#/components/schemas/DBConnectionResponse'
-          ADSI: '#/components/schemas/ADSIConnectionResponse'
-          Workday: '#/components/schemas/WorkdayConnectionResponse'
-          EntraID: '#/components/schemas/EntraIDConnectionResponse'
-          SAP: '#/components/schemas/SAPConnectionResponse'
-          Salesforce: '#/components/schemas/SalesforceConnectionResponse'
-          UNIX: '#/components/schemas/UNIXConnectionResponse'
-          GithubREST: '#/components/schemas/GithubRESTResponse'
-          Okta: '#/components/schemas/OktaConnectionResponse'
+          AD: "#/components/schemas/ADConnectionResponse"
+          REST: "#/components/schemas/RESTConnectionResponse"
+          DB: "#/components/schemas/DBConnectionResponse"
+          ADSI: "#/components/schemas/ADSIConnectionResponse"
+          Workday: "#/components/schemas/WorkdayConnectionResponse"
+          EntraID: "#/components/schemas/EntraIDConnectionResponse"
+          SAP: "#/components/schemas/SAPConnectionResponse"
+          Salesforce: "#/components/schemas/SalesforceConnectionResponse"
+          UNIX: "#/components/schemas/UNIXConnectionResponse"
+          GithubREST: "#/components/schemas/GithubRESTResponse"
+          Okta: "#/components/schemas/OktaConnectionResponse"
+          WorkdaySOAP: "#/components/schemas/WorkdaySOAPConnectionResponse"
         propertyName: connectiontype
       oneOf:
-      - $ref: '#/components/schemas/ADConnectionResponse'
-      - $ref: '#/components/schemas/RESTConnectionResponse'
-      - $ref: '#/components/schemas/DBConnectionResponse'
-      - $ref: '#/components/schemas/ADSIConnectionResponse'
-      - $ref: '#/components/schemas/WorkdayConnectionResponse'
-      - $ref: '#/components/schemas/EntraIDConnectionResponse'
-      - $ref: '#/components/schemas/SAPConnectionResponse'
-      - $ref: '#/components/schemas/SalesforceConnectionResponse'
-      - $ref: '#/components/schemas/UNIXConnectionResponse'
-      - $ref: '#/components/schemas/GithubRESTConnectionResponse'
-      - $ref: '#/components/schemas/OktaConnectionResponse'
+      - $ref: "#/components/schemas/ADConnectionResponse"
+      - $ref: "#/components/schemas/RESTConnectionResponse"
+      - $ref: "#/components/schemas/DBConnectionResponse"
+      - $ref: "#/components/schemas/ADSIConnectionResponse"
+      - $ref: "#/components/schemas/WorkdayConnectionResponse"
+      - $ref: "#/components/schemas/EntraIDConnectionResponse"
+      - $ref: "#/components/schemas/SAPConnectionResponse"
+      - $ref: "#/components/schemas/SalesforceConnectionResponse"
+      - $ref: "#/components/schemas/UNIXConnectionResponse"
+      - $ref: "#/components/schemas/GithubRESTConnectionResponse"
+      - $ref: "#/components/schemas/OktaConnectionResponse"
+      - $ref: "#/components/schemas/WorkdaySOAPConnectionResponse"
     getConnectionDetails:
       properties:
         msg:
@@ -2098,10 +2193,10 @@ components:
           type: string
     ADConnectionResponse:
       allOf:
-      - $ref: '#/components/schemas/getConnectionDetails'
+      - $ref: "#/components/schemas/getConnectionDetails"
       - properties:
           connectionattributes:
-            $ref: '#/components/schemas/ADConnectionAttributes'
+            $ref: "#/components/schemas/ADConnectionAttributes"
       example:
         msg: success
         emailtemplate: ""
@@ -2240,64 +2335,70 @@ components:
         status: 1
     RESTConnectionResponse:
       allOf:
-      - $ref: '#/components/schemas/getConnectionDetails'
+      - $ref: "#/components/schemas/getConnectionDetails"
       - properties:
           connectionattributes:
-            $ref: '#/components/schemas/RESTConnectionAttributes'
+            $ref: "#/components/schemas/RESTConnectionAttributes"
     DBConnectionResponse:
       allOf:
-      - $ref: '#/components/schemas/getConnectionDetails'
+      - $ref: "#/components/schemas/getConnectionDetails"
       - properties:
           connectionattributes:
-            $ref: '#/components/schemas/DBConnectionAttributes'
+            $ref: "#/components/schemas/DBConnectionAttributes"
     ADSIConnectionResponse:
       allOf:
-      - $ref: '#/components/schemas/getConnectionDetails'
+      - $ref: "#/components/schemas/getConnectionDetails"
       - properties:
           connectionattributes:
-            $ref: '#/components/schemas/ADSIConnectionAttributes'
+            $ref: "#/components/schemas/ADSIConnectionAttributes"
     SAPConnectionResponse:
       allOf:
-      - $ref: '#/components/schemas/getConnectionDetails'
+      - $ref: "#/components/schemas/getConnectionDetails"
       - properties:
           connectionattributes:
-            $ref: '#/components/schemas/SAPConnectionAttributes'
+            $ref: "#/components/schemas/SAPConnectionAttributes"
     SalesforceConnectionResponse:
       allOf:
-      - $ref: '#/components/schemas/getConnectionDetails'
+      - $ref: "#/components/schemas/getConnectionDetails"
       - properties:
           connectionattributes:
-            $ref: '#/components/schemas/SalesforceConnectionAttributes'
+            $ref: "#/components/schemas/SalesforceConnectionAttributes"
     WorkdayConnectionResponse:
       allOf:
-      - $ref: '#/components/schemas/getConnectionDetails'
+      - $ref: "#/components/schemas/getConnectionDetails"
       - properties:
           connectionattributes:
-            $ref: '#/components/schemas/WorkdayConnectionAttributes'
+            $ref: "#/components/schemas/WorkdayConnectionAttributes"
     EntraIDConnectionResponse:
       allOf:
-      - $ref: '#/components/schemas/getConnectionDetails'
+      - $ref: "#/components/schemas/getConnectionDetails"
       - properties:
           connectionattributes:
-            $ref: '#/components/schemas/EntraIDConnectionAttributes'
+            $ref: "#/components/schemas/EntraIDConnectionAttributes"
     UNIXConnectionResponse:
       allOf:
-      - $ref: '#/components/schemas/getConnectionDetails'
+      - $ref: "#/components/schemas/getConnectionDetails"
       - properties:
           connectionattributes:
-            $ref: '#/components/schemas/UNIXConnectionAttributes'
+            $ref: "#/components/schemas/UNIXConnectionAttributes"
     GithubRESTConnectionResponse:
       allOf:
-      - $ref: '#/components/schemas/getConnectionDetails'
+      - $ref: "#/components/schemas/getConnectionDetails"
       - properties:
           connectionattributes:
-            $ref: '#/components/schemas/GithubRESTConnectionAttributes'
+            $ref: "#/components/schemas/GithubRESTConnectionAttributes"
     OktaConnectionResponse:
       allOf:
-      - $ref: '#/components/schemas/getConnectionDetails'
+      - $ref: "#/components/schemas/getConnectionDetails"
       - properties:
           connectionattributes:
-            $ref: '#/components/schemas/OktaConnectionAttributes'
+            $ref: "#/components/schemas/OktaConnectionAttributes"
+    WorkdaySOAPConnectionResponse:
+      allOf:
+      - $ref: "#/components/schemas/getConnectionDetails"
+      - properties:
+          connectionattributes:
+            $ref: "#/components/schemas/WorkdaySOAPConnectionAttributes"
     ConnectionTimeoutConfig:
       example:
         retryWait: 0
@@ -2736,7 +2837,7 @@ components:
           description: Rules for checking unique users in JSON format.
           type: string
         connectionTimeoutConfig:
-          $ref: '#/components/schemas/ConnectionTimeoutConfig'
+          $ref: "#/components/schemas/ConnectionTimeoutConfig"
         isTimeoutConfigValidated:
           description: Indicates if timeout configuration is validated.
           type: boolean
@@ -2797,7 +2898,7 @@ components:
         PAM_CONFIG:
           type: string
         connectionTimeoutConfig:
-          $ref: '#/components/schemas/ConnectionTimeoutConfig'
+          $ref: "#/components/schemas/ConnectionTimeoutConfig"
         CreateAccountJSON:
           example: |
             {'accountIdPath': 'call1.message.id', 'dateFormat': "yyyy-MM-dd'T'HH:mm:ssXXX", 'responseColsToPropsMap': {'name': 'call1.message.username~#~char', 'displayName': 'call1.message.displayName~#~char', 'updatedate': 'call1.message.meta.created~#~date', 'comments': 'call1.message.emails[0].value~#~char'}, 'call': [{'name': 'call1', 'connection': 'Slack', 'url': 'https://api.slack.com/scim/v1/Users', 'httpMethod': 'POST', 'httpParams': '{"schemas":["urn:scim:schemas:core:1.0"],"userName": "${user.username}","nickName": "${user.firstname}", "name": {"givenName": "${user.firstname}","familyName": "${user.lastname}"},"active": false,"emails": [{"value": "${user.email}", "primary": true}]}', 'httpHeaders': {'Authorization': '${access_token}'}, 'httpContentType': 'application/json', 'successResponses': {'statusCode': [201]}, 'unsuccessResponses': {'statusCode': [400, 500]}}]}
@@ -2918,7 +3019,7 @@ components:
             </dataMapping>
           type: string
         connectionTimeoutConfig:
-          $ref: '#/components/schemas/ConnectionTimeoutConfig'
+          $ref: "#/components/schemas/ConnectionTimeoutConfig"
         UPDATEUSERJSON:
           example: "{\"UpdateUserQry\":[\"UPDATE mysqllocal.users SET firstname =\
             \ ${user.firstname}, lastname = ${user.lastname}, departmentname = ${user.departmentname},\
@@ -3211,7 +3312,7 @@ components:
             : false\\n    }\\n  ]\\n}"
           type: string
         connectionTimeoutConfig:
-          $ref: '#/components/schemas/ConnectionTimeoutConfig'
+          $ref: "#/components/schemas/ConnectionTimeoutConfig"
         UPDATEUSERJSON:
           type: string
         URL:
@@ -3324,7 +3425,7 @@ components:
         STATUS_KEY_JSON:
           type: string
         connectionTimeoutConfig:
-          $ref: '#/components/schemas/ConnectionTimeoutConfig'
+          $ref: "#/components/schemas/ConnectionTimeoutConfig"
         connectionType:
           example: MS_BASED_CONNECTOR
           type: string
@@ -3582,7 +3683,7 @@ components:
         CreateTeamJSON:
           type: string
         connectionTimeoutConfig:
-          $ref: '#/components/schemas/ConnectionTimeoutConfig'
+          $ref: "#/components/schemas/ConnectionTimeoutConfig"
         ENHANCEDDIRECTORYROLES:
           example: "FALSE"
           type: string
@@ -3731,7 +3832,7 @@ components:
         PROV_CUA_SNC:
           type: string
         connectionTimeoutConfig:
-          $ref: '#/components/schemas/ConnectionTimeoutConfig'
+          $ref: "#/components/schemas/ConnectionTimeoutConfig"
         PROV_JCO_USER:
           type: string
         JCO_LANG:
@@ -3813,7 +3914,7 @@ components:
           example: refresh_token
           type: string
         connectionTimeoutConfig:
-          $ref: '#/components/schemas/ConnectionTimeoutConfig'
+          $ref: "#/components/schemas/ConnectionTimeoutConfig"
         MODIFYACCOUNTJSON:
           type: string
         connectionType:
@@ -3859,7 +3960,7 @@ components:
         DISABLE_ACCOUNT_COMMAND:
           type: string
         connectionTimeoutConfig:
-          $ref: '#/components/schemas/ConnectionTimeoutConfig'
+          $ref: "#/components/schemas/ConnectionTimeoutConfig"
         PORT_NUMBER:
           type: string
         connectionType:
@@ -3950,7 +4051,7 @@ components:
         ACCESS_TOKENS:
           type: string
         connectionTimeoutConfig:
-          $ref: '#/components/schemas/ConnectionTimeoutConfig'
+          $ref: "#/components/schemas/ConnectionTimeoutConfig"
         connectionType:
           type: string
         isTimeoutConfigValidated:
@@ -3989,7 +4090,7 @@ components:
           example: ""
           type: string
         connectionTimeoutConfig:
-          $ref: '#/components/schemas/ConnectionTimeoutConfig'
+          $ref: "#/components/schemas/ConnectionTimeoutConfig"
         connectionType:
           example: MS_BASED_CONNECTOR
           type: string
@@ -4014,35 +4115,109 @@ components:
         STATUS_THRESHOLD_CONFIG:
           example: ""
           type: string
+    WorkdaySOAPConnectionAttributes:
+      properties:
+        ACCOUNTS_IMPORT_JSON:
+          type: string
+        CHANGEPASSJSON:
+          type: string
+        COMBINEDCREATEREQUEST:
+          type: string
+        CONNECTIONJSON:
+          type: string
+        CREATEACCOUNTJSON:
+          type: string
+        CUSTOM_CONFIG:
+          type: string
+        DATA_TO_IMPORT:
+          type: string
+        DATEFORMAT:
+          type: string
+        DELETEACCOUNTJSON:
+          type: string
+        DISABLEACCOUNTJSON:
+          type: string
+        ENABLEACCOUNTJSON:
+          type: string
+        GRANTACCESSJSON:
+          type: string
+        HR_IMPORT_JSON:
+          type: string
+        MODIFYUSERDATAJSON:
+          type: string
+        PAGE_SIZE:
+          type: string
+        PAM_CONFIG:
+          type: string
+        PASSWORD:
+          type: string
+        PASSWORD_MAX_LENGTH:
+          type: string
+        PASSWORD_MIN_LENGTH:
+          type: string
+        PASSWORD_NOOFCAPSALPHA:
+          type: string
+        PASSWORD_NOOFDIGITS:
+          type: string
+        PASSWORD_NOOFSPLCHARS:
+          type: string
+        PASSWORD_TYPE:
+          type: string
+        RESPONSEPATH_PAGERESULTS:
+          type: string
+        RESPONSEPATH_TOTALRESULTS:
+          type: string
+        RESPONSEPATH_USERLIST:
+          type: string
+        REVOKEACCESSJSON:
+          type: string
+        SOAP_ENDPOINT:
+          type: string
+        UPDATEACCOUNTJSON:
+          type: string
+        UPDATEUSERJSON:
+          type: string
+        USERNAME:
+          type: string
+        connectionTimeoutConfig:
+          $ref: "#/components/schemas/ConnectionTimeoutConfig"
+        connectionType:
+          type: string
+        isTimeoutConfigValidated:
+          type: boolean
+        isTimeoutSupported:
+          type: boolean
     createOrUpdate_request:
       discriminator:
         mapping:
-          AD: '#/components/schemas/ADConnector'
-          ADSI: '#/components/schemas/ADSIConnector'
-          SAP: '#/components/schemas/SAPConnector'
+          AD: "#/components/schemas/ADConnector"
+          ADSI: "#/components/schemas/ADSIConnector"
+          SAP: "#/components/schemas/SAPConnector"
           Salesforce: '''#/components/schemas/SalesforceConnector'
-          REST: '#/components/schemas/RESTConnector'
-          D365: '#/components/schemas/D365Connector'
-          Workday: '#/components/schemas/WorkdayConnector'
-          DB: '#/components/schemas/DBConnector'
-          EntraID: '#/components/schemas/EntraIDConnector'
-          UNIX: '#/components/schemas/UNIXConnector'
-          GithubREST: '#/components/schemas/GithubRESTConnector'
-          Okta: '#/components/schemas/OktaConnector'
+          REST: "#/components/schemas/RESTConnector"
+          D365: "#/components/schemas/D365Connector"
+          Workday: "#/components/schemas/WorkdayConnector"
+          DB: "#/components/schemas/DBConnector"
+          EntraID: "#/components/schemas/EntraIDConnector"
+          UNIX: "#/components/schemas/UNIXConnector"
+          GithubREST: "#/components/schemas/GithubRESTConnector"
+          Okta: "#/components/schemas/OktaConnector"
+          WorkdaySOAP: "#/components/schemas/WorkdaySOAPConnector"
         propertyName: connectiontype
       oneOf:
-      - $ref: '#/components/schemas/ADConnector'
-      - $ref: '#/components/schemas/ADSIConnector'
-      - $ref: '#/components/schemas/SAPConnector'
-      - $ref: '#/components/schemas/SalesforceConnector'
-      - $ref: '#/components/schemas/RESTConnector'
-      - $ref: '#/components/schemas/D365Connector'
-      - $ref: '#/components/schemas/WorkdayConnector'
-      - $ref: '#/components/schemas/DBConnector'
-      - $ref: '#/components/schemas/EntraIDConnector'
-      - $ref: '#/components/schemas/UNIXConnector'
-      - $ref: '#/components/schemas/GithubRESTConnector'
-      - $ref: '#/components/schemas/OktaConnector'
+      - $ref: "#/components/schemas/ADConnector"
+      - $ref: "#/components/schemas/ADSIConnector"
+      - $ref: "#/components/schemas/SAPConnector"
+      - $ref: "#/components/schemas/SalesforceConnector"
+      - $ref: "#/components/schemas/RESTConnector"
+      - $ref: "#/components/schemas/D365Connector"
+      - $ref: "#/components/schemas/WorkdayConnector"
+      - $ref: "#/components/schemas/DBConnector"
+      - $ref: "#/components/schemas/EntraIDConnector"
+      - $ref: "#/components/schemas/UNIXConnector"
+      - $ref: "#/components/schemas/GithubRESTConnector"
+      - $ref: "#/components/schemas/OktaConnector"
+      - $ref: "#/components/schemas/WorkdaySOAPConnector"
     getConnections_request:
       properties:
         connectionname:

@@ -1,3 +1,24 @@
+## 0.2.13 (Released)
+
+FEATURES:
+
+* **New Resource:** `saviynt_workday_soap_connection_resource` - Added support for managing Workday SOAP connectors with comprehensive configuration options
+  - Full CRUI lifecycle management (Create, Read, Update, Import)
+  - Write-only attribute support for sensitive data (`password_wo`, `change_pass_json_wo`, `connection_json_wo`)
+* **New Data Source:** `saviynt_workday_soap_connection_datasource` - Added support for reading Workday SOAP connector configurations
+
+ENHANCEMENTS:
+
+* **Enhanced Connection Handling for Compulsory Attributes** - Improved support for connections with mandatory attributes (AD, DB, etc.)
+  - Removed required validation for `password` and `password_wo` attributes to enable smoother Terraform operations
+  - Enhanced import functionality - existing connections can now be imported without requiring credential updates
+
+* **Version Compatibility with EIC Releases** - Added automatic validation for attribute compatibility with Saviynt EIC versions
+  - Validates that resource attributes are supported in your Saviynt EIC version (25.B, 25.A, 24.10)
+  - Provides clear error messages when using unsupported attributes for your EIC version
+  - Supports REST, DB, Workday, GitHub REST, Security System, Entitlement Type, and Enterprise Role resources
+  - Prevents deployment failures by catching version incompatibilities during planning phase
+  
 ## 0.2.12 (Released)
 
 FEATURES:
