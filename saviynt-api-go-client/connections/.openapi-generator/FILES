@@ -51,6 +51,9 @@ docs/UNIXConnector.md
 docs/WorkdayConnectionAttributes.md
 docs/WorkdayConnectionResponse.md
 docs/WorkdayConnector.md
+docs/WorkdaySOAPConnectionAttributes.md
+docs/WorkdaySOAPConnectionResponse.md
+docs/WorkdaySOAPConnector.md
 git_push.sh
 go.mod
 go.sum
@@ -98,6 +101,9 @@ model_unix_connector.go
 model_workday_connection_attributes.go
 model_workday_connection_response.go
 model_workday_connector.go
+model_workday_soap_connection_attributes.go
+model_workday_soap_connection_response.go
+model_workday_soap_connector.go
 response.go
 test/api_connections_test.go
 utils.go

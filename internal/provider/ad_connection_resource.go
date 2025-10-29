@@ -141,7 +141,7 @@ func ADConnectorResourceSchema() map[string]schema.Attribute {
 		"password": schema.StringAttribute{
 			Optional:    true,
 			Sensitive:   true,
-			Description: "Set the password. It is a compulsory field. Either this or password_wo need to be set",
+			Description: "Set the password.",
 			Validators: []validator.String{
 				stringvalidator.ConflictsWith(path.MatchRoot("password_wo")),
 			},
@@ -149,7 +149,7 @@ func ADConnectorResourceSchema() map[string]schema.Attribute {
 		"password_wo": schema.StringAttribute{
 			Optional:    true,
 			WriteOnly:   true,
-			Description: "Set the password_wo. It is a compulsory field. Either this or password need to be set",
+			Description: "Set the password_wo (write-only).",
 			Validators: []validator.String{
 				stringvalidator.ConflictsWith(path.MatchRoot("password")),
 			},
@@ -675,9 +675,9 @@ func (r *AdConnectionResource) CreateADConnection(ctx context.Context, plan *ADC
 	// Build AD connection create request
 	tflog.Debug(ctx, "Building AD connection create request")
 
-	if (config.Password.IsNull() || config.Password.IsUnknown()) && (config.PasswordWo.IsNull() || config.PasswordWo.IsUnknown()) {
-		return nil, fmt.Errorf("either password or password_wo must be set")
-	}
+	// if (config.Password.IsNull() || config.Password.IsUnknown()) && (config.PasswordWo.IsNull() || config.PasswordWo.IsUnknown()) {
+	// 	return nil, fmt.Errorf("either password or password_wo must be set")
+	// }
 
 	adConn := r.BuildADConnector(plan, config)
 	createReq := openapi.CreateOrUpdateRequest{
@@ -793,9 +793,9 @@ func (r *AdConnectionResource) UpdateADConnection(ctx context.Context, plan *ADC
 	// Build AD connection update request
 	tflog.Debug(logCtx, "Building AD connection update request")
 
-	if (config.Password.IsNull() || config.Password.IsUnknown()) && (config.PasswordWo.IsNull() || config.PasswordWo.IsUnknown()) {
-		return nil, fmt.Errorf("either password or password_wo must be set")
-	}
+	// if (config.Password.IsNull() || config.Password.IsUnknown()) && (config.PasswordWo.IsNull() || config.PasswordWo.IsUnknown()) {
+	// 	return nil, fmt.Errorf("either password or password_wo must be set")
+	// }
 
 	adConn := r.BuildADConnector(plan, config)
 
