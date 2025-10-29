@@ -87,6 +87,7 @@ type WorkdayConnectorResourceModel struct {
 type WorkdayConnectionResource struct {
 	client            client.SaviyntClientInterface
 	token             string
+	saviyntVersion    string
 	provider          client.SaviyntProviderInterface
 	connectionFactory client.ConnectionFactoryInterface
 }
@@ -379,6 +380,7 @@ func (r *WorkdayConnectionResource) Configure(ctx context.Context, req resource.
 	// Set the client and token from the provider state using interface wrapper.
 	r.client = &client.SaviyntClientWrapper{Client: prov.client}
 	r.token = prov.accessToken
+	r.saviyntVersion = prov.saviyntVersion
 	r.provider = &client.SaviyntProviderWrapper{Provider: prov} // Store provider reference for retry logic
 
 	opCtx.LogOperationEnd(ctx, "Workday connection resource configured successfully")
@@ -829,6 +831,13 @@ func (r *WorkdayConnectionResource) Create(ctx context.Context, req resource.Cre
 		return
 	}
 
+	// Validate version-specific attributes for Workday connector
+	util.ValidateAttributeCompatibility(r.saviyntVersion, "Workday", "ORGROLE_IMPORT_PAYLOAD", plan.OrgRoleImportPayload.ValueStringPointer(), &resp.Diagnostics)
+
+	if resp.Diagnostics.HasError() {
+		return
+	}
+
 	// Use interface pattern instead of direct API client creation
 	apiResp, err := r.CreateWorkdayConnection(ctx, &plan, &config)
 	if err != nil {
@@ -970,6 +979,12 @@ func (r *WorkdayConnectionResource) Update(ctx context.Context, req resource.Upd
 			errorsutil.GetErrorMessage(errorCode),
 			fmt.Sprintf("[%s] Cannot change connection name from '%s' to '%s'", errorCode, state.ConnectionName.ValueString(), plan.ConnectionName.ValueString()),
 		)
+		return
+	}
+	// Validate version-specific attributes for Workday connector
+	util.ValidateAttributeCompatibility(r.saviyntVersion, "Workday", "ORGROLE_IMPORT_PAYLOAD", plan.OrgRoleImportPayload.ValueStringPointer(), &resp.Diagnostics)
+
+	if resp.Diagnostics.HasError() {
 		return
 	}
 
