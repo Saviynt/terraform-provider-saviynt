@@ -315,13 +315,13 @@ resource "saviynt_ad_connection_resource" "example" {
 - `organization_attribute` (String) Organization attributes.
 - `page_size` (String) LDAP page size. Example: "1000"
 - `pam_config` (String) JSON for PAM bootstrap configuration. Example: '{"Connection":"AD",...}'
-- `password` (String, Sensitive) Set the password. It is a compulsory field. Either this or password_wo need to be set
+- `password` (String, Sensitive) Set the password.
 - `password_max_length` (String) Maximum password length. Example: "12"
 - `password_min_length` (String) Minimum password length. Example: "8"
 - `password_noofcapsalpha` (String) Number of capital letters required. Example: "2"
 - `password_noofdigits` (String) Number of digits required. Example: "5"
 - `password_noofsplchars` (String) Number of special characters required. Example: "1"
-- `password_wo` (String) Set the password_wo. It is a compulsory field. Either this or password need to be set
+- `password_wo` (String) Set the password_wo (write-only).
 - `read_operational_attributes` (String) Flag for reading operational attributes. Example: "FALSE"
 - `remove_account_action` (String) Action on account removal. Example: '{"removeAction":"DELETE"}'
 - `reset_and_change_passwrd_json` (String) JSON for reset/change password actions. Example: '{"RESET":{"pwdLastSet":"0","title":"password reset"},"CHANGE":{"pwdLastSet":"-1","title":"password changed"}}'

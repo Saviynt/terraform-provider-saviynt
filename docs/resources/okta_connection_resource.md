@@ -165,8 +165,8 @@ resource "saviynt_okta_connection_resource" "example" {
 - `activate_endpoint` (String) Auto-enables disabled endpoints based on application status.
 - `app_account_field_mappings` (String) Maps Okta application user fields to Saviynt account field.
 - `audit_filter` (String) Filter for importing specific audit events.
-- `auth_token` (String, Sensitive) API token for Okta authentication. It is a compulsory field. Either this or auth_token_wo need to be set
-- `auth_token_wo` (String) API token for Okta authentication (write-only). It is a compulsory field. Either this or auth_token need to be set
+- `auth_token` (String, Sensitive) API token for Okta authentication.
+- `auth_token_wo` (String) API token for Okta authentication (write-only).
 - `config_json` (String) General connector configuration including timeouts, retries, and connector-specific settings.
 - `defaultsavroles` (String) Default SAV roles for managing the connection. Example: "ROLE_ORG"
 - `description` (String) Description for the connection. Example: "ORG_AD"

@@ -108,6 +108,7 @@ type EntitlementTypeResourceModel struct {
 type EntitlementTypeResource struct {
 	client                 client.SaviyntClientInterface
 	token                  string
+	saviyntVersion         string
 	provider               client.SaviyntProviderInterface
 	entitlementTypeFactory client.EntitlementTypeFactoryInterface
 }
@@ -490,6 +491,7 @@ func (r *EntitlementTypeResource) Configure(ctx context.Context, req resource.Co
 	// Set the client and token from the provider state using interface wrapper.
 	r.client = &client.SaviyntClientWrapper{Client: prov.client}
 	r.token = prov.accessToken
+	r.saviyntVersion = prov.saviyntVersion
 	r.provider = &client.SaviyntProviderWrapper{Provider: prov} // Store provider reference for retry logic
 	log.Println("[DEBUG] EntitlementType: Resource configured successfully")
 }
@@ -953,6 +955,15 @@ func (r *EntitlementTypeResource) Create(ctx context.Context, req resource.Creat
 		return
 	}
 
+	// Validate version-specific attributes for Entitlement Type
+	if !plan.EnableEntitlementToRoleSync.IsNull() && !plan.EnableEntitlementToRoleSync.IsUnknown() {
+		util.ValidateAttributeCompatibility(r.saviyntVersion, "EntitlementType", "enable_entitlement_to_role_sync", plan.EnableEntitlementToRoleSync.ValueBool(), &resp.Diagnostics)
+	}
+
+	if resp.Diagnostics.HasError() {
+		return
+	}
+
 	apiResp, err := r.CreateEntitlementType(ctx, &plan)
 	if err != nil {
 		resp.Diagnostics.AddError("Entitlement Type Creation Failed", err.Error())
@@ -1009,6 +1020,15 @@ func (r *EntitlementTypeResource) Update(ctx context.Context, req resource.Updat
 
 	planGetDiagnostics := req.Plan.Get(ctx, &plan)
 	resp.Diagnostics.Append(planGetDiagnostics...)
+	if resp.Diagnostics.HasError() {
+		return
+	}
+
+	// Validate version-specific attributes for Entitlement Type
+	if !plan.EnableEntitlementToRoleSync.IsNull() && !plan.EnableEntitlementToRoleSync.IsUnknown() {
+		util.ValidateAttributeCompatibility(r.saviyntVersion, "EntitlementType", "enable_entitlement_to_role_sync", plan.EnableEntitlementToRoleSync.ValueBool(), &resp.Diagnostics)
+	}
+
 	if resp.Diagnostics.HasError() {
 		return
 	}
