@@ -207,9 +207,9 @@ resource "saviynt_sap_connection_resource" "ss" {
 
 - `alternate_output_parameter_et_data` (String) Alternateoutputparameteretdata.
 - `audit_log_json` (String) Auditlogjson.
-- `config_json` (String) Configjson.
+- `config_json` (String) Config json.
 - `create_account_json` (String) Createaccountjson.
-- `data_import_filter` (String) Dataimportfilter.
+- `data_import_filter` (String) Data import filter.
 - `defaultsavroles` (String) Default SAV roles for managing the connection. Example: "ROLE_ORG"
 - `description` (String) Description for the connection. Example: "ORG_AD"
 - `ecc_or_s4hana` (String) Eccors4hana.
@@ -260,6 +260,7 @@ resource "saviynt_sap_connection_resource" "ss" {
 - `prov_password` (String, Sensitive) Provpassword. Either this field or the prov_password_wo field must be populated to set the prov_password attribute.
 - `prov_password_wo` (String) Provpassword write-only attribute. Either this field or the prov_password field must be populated to set the prov_password attribute.
 - `reset_pwd_for_newaccount` (String) Resetpwdfornewaccount.
+- `role_default_date` (String) Role default date.
 - `saptable_filter_lang` (String) Saptablefilterlang.
 - `save_in_vault` (String) Flag indicating whether the encrypted attribute should be saved in the configured vault. Example: "false"
 - `set_cua_system` (String) Setcuasystem.

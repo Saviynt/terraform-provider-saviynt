@@ -112,6 +112,7 @@ Name | Type | Description | Notes
 **ECCORS4HANA** | Pointer to **string** | Property for ECC_OR_S4HANA | [optional] 
 **DATA_IMPORT_FILTER** | Pointer to **string** | Property for DATA_IMPORT_FILTER | [optional] 
 **ConfigJSON** | Pointer to **string** |  | [optional] 
+**ROLE_DEFAULT_DATE** | Pointer to **string** | Default end date for SAP roles. Format: yyyyMMdd (e.g., 20251231). If not configured, defaults to 99991231. | [optional] 
 **CLIENT_ID** | **string** |  | 
 **CLIENT_SECRET** | **string** | Property for CLIENT_SECRET | 
 **REFRESH_TOKEN** | Pointer to **string** |  | [optional] 
@@ -146,6 +147,7 @@ Name | Type | Description | Notes
 **DeleteEntitlementJSON** | Pointer to **string** |  | [optional] 
 **UpdateEntitlementJSON** | Pointer to **string** |  | [optional] 
 **ApplicationDiscoveryJSON** | Pointer to **string** |  | [optional] 
+**AppType** | Pointer to **string** | For CUA configuration | [optional] 
 **BASEURL** | **string** |  | 
 **TENANT_ID** | **string** |  | 
 **LOGIN_URL** | **string** |  | 
@@ -259,6 +261,7 @@ Name | Type | Description | Notes
 **SSHPassThroughPassword** | Pointer to **string** | Property for SSHPassThroughPassword | [optional] 
 **SSHPassThroughSSHKEY** | Pointer to **string** | Property for SSHPassThroughSSHKEY | [optional] 
 **SSHPassThroughPassphrase** | Pointer to **string** | Property for SSHPassThroughPassphrase | [optional] 
+**SERVER_TYPE** | Pointer to **string** |  | [optional] 
 **ACCESS_TOKENS** | Pointer to **string** | Property for ACCESS_TOKENS | [optional] 
 **ORGANIZATION_LIST** | Pointer to **string** | Property for ORGANIZATION_LIST | [optional] 
 **IMPORTURL** | **string** |  | 
@@ -2968,6 +2971,31 @@ SetConfigJSON sets ConfigJSON field to given value.
 
 HasConfigJSON returns a boolean if a field has been set.
 
+### GetROLE_DEFAULT_DATE
+
+`func (o *CreateOrUpdateRequest) GetROLE_DEFAULT_DATE() string`
+
+GetROLE_DEFAULT_DATE returns the ROLE_DEFAULT_DATE field if non-nil, zero value otherwise.
+
+### GetROLE_DEFAULT_DATEOk
+
+`func (o *CreateOrUpdateRequest) GetROLE_DEFAULT_DATEOk() (*string, bool)`
+
+GetROLE_DEFAULT_DATEOk returns a tuple with the ROLE_DEFAULT_DATE field if it's non-nil, zero value otherwise
+and a boolean to check if the value has been set.
+
+### SetROLE_DEFAULT_DATE
+
+`func (o *CreateOrUpdateRequest) SetROLE_DEFAULT_DATE(v string)`
+
+SetROLE_DEFAULT_DATE sets ROLE_DEFAULT_DATE field to given value.
+
+### HasROLE_DEFAULT_DATE
+
+`func (o *CreateOrUpdateRequest) HasROLE_DEFAULT_DATE() bool`
+
+HasROLE_DEFAULT_DATE returns a boolean if a field has been set.
+
 ### GetCLIENT_ID
 
 `func (o *CreateOrUpdateRequest) GetCLIENT_ID() string`
@@ -3807,6 +3835,31 @@ SetApplicationDiscoveryJSON sets ApplicationDiscoveryJSON field to given value.
 `func (o *CreateOrUpdateRequest) HasApplicationDiscoveryJSON() bool`
 
 HasApplicationDiscoveryJSON returns a boolean if a field has been set.
+
+### GetAppType
+
+`func (o *CreateOrUpdateRequest) GetAppType() string`
+
+GetAppType returns the AppType field if non-nil, zero value otherwise.
+
+### GetAppTypeOk
+
+`func (o *CreateOrUpdateRequest) GetAppTypeOk() (*string, bool)`
+
+GetAppTypeOk returns a tuple with the AppType field if it's non-nil, zero value otherwise
+and a boolean to check if the value has been set.
+
+### SetAppType
+
+`func (o *CreateOrUpdateRequest) SetAppType(v string)`
+
+SetAppType sets AppType field to given value.
+
+### HasAppType
+
+`func (o *CreateOrUpdateRequest) HasAppType() bool`
+
+HasAppType returns a boolean if a field has been set.
 
 ### GetBASEURL
 
@@ -6592,6 +6645,31 @@ SetSSHPassThroughPassphrase sets SSHPassThroughPassphrase field to given value.
 `func (o *CreateOrUpdateRequest) HasSSHPassThroughPassphrase() bool`
 
 HasSSHPassThroughPassphrase returns a boolean if a field has been set.
+
+### GetSERVER_TYPE
+
+`func (o *CreateOrUpdateRequest) GetSERVER_TYPE() string`
+
+GetSERVER_TYPE returns the SERVER_TYPE field if non-nil, zero value otherwise.
+
+### GetSERVER_TYPEOk
+
+`func (o *CreateOrUpdateRequest) GetSERVER_TYPEOk() (*string, bool)`
+
+GetSERVER_TYPEOk returns a tuple with the SERVER_TYPE field if it's non-nil, zero value otherwise
+and a boolean to check if the value has been set.
+
+### SetSERVER_TYPE
+
+`func (o *CreateOrUpdateRequest) SetSERVER_TYPE(v string)`
+
+SetSERVER_TYPE sets SERVER_TYPE field to given value.
+
+### HasSERVER_TYPE
+
+`func (o *CreateOrUpdateRequest) HasSERVER_TYPE() bool`
+
+HasSERVER_TYPE returns a boolean if a field has been set.
 
 ### GetACCESS_TOKENS
 

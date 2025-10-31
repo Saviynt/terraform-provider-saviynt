@@ -36,6 +36,7 @@ Name | Type | Description | Notes
 **ImportAccountEntJSON** | Pointer to **string** |  | [optional] 
 **IsTimeoutConfigValidated** | Pointer to **bool** |  | [optional] 
 **ConnectionJSON** | Pointer to **string** |  | [optional] 
+**AppType** | Pointer to **string** | For CUA configuration | [optional] 
 
 ## Methods
 
@@ -855,6 +856,31 @@ SetConnectionJSON sets ConnectionJSON field to given value.
 `func (o *RESTConnectionAttributes) HasConnectionJSON() bool`
 
 HasConnectionJSON returns a boolean if a field has been set.
+
+### GetAppType
+
+`func (o *RESTConnectionAttributes) GetAppType() string`
+
+GetAppType returns the AppType field if non-nil, zero value otherwise.
+
+### GetAppTypeOk
+
+`func (o *RESTConnectionAttributes) GetAppTypeOk() (*string, bool)`
+
+GetAppTypeOk returns a tuple with the AppType field if it's non-nil, zero value otherwise
+and a boolean to check if the value has been set.
+
+### SetAppType
+
+`func (o *RESTConnectionAttributes) SetAppType(v string)`
+
+SetAppType sets AppType field to given value.
+
+### HasAppType
+
+`func (o *RESTConnectionAttributes) HasAppType() bool`
+
+HasAppType returns a boolean if a field has been set.
 
 
 [[Back to Model list]](../README.md#documentation-for-models) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to README]](../README.md)

@@ -80,6 +80,7 @@ Check out the [Latest Saviynt Provider Docs](https://registry.terraform.io/provi
 
 | Supported Saviynt EIC Versions | Terraform Provider Version |
 | -------------------------- | ------------------------------ |
+| `25.B.1` | Latest Version: `v0.2.13`<br> Supported Version(s): `v0.2.13`|
 | `25.B` | Latest Version: `v0.2.13`<br> Supported Version(s): `v0.2.8` - `v0.2.13`|
 | `25.A` | Latest Version: `v0.2.13`<br> Supported Version(s): `v0.2.8` - `v0.2.13`|
 | `24.10` | Latest Version: `v0.2.13`<br> Supported Version(s): `v0.2.8` - `v0.2.13`|
@@ -90,15 +91,18 @@ Check out the [Latest Saviynt Provider Docs](https://registry.terraform.io/provi
 The table below shows attributes that are supported in newer versions of Saviynt EIC. If using an older version of Saviynt, some attributes may not work.
 Check the table to see which attributes are supported in your version before using them.
 
-| Connector                | Attribute(s) Added                                                                                                    | Present in 25.B | Present in 25.A | Present in 24.10 |
-| ------------------------ | --------------------------------------------------------------------------------------------------------------------- | --------------- | --------------- | ---------------- |
-| **Workday Connector**    | `ORGROLE_IMPORT_PAYLOAD`                                                                          | Yes              | No             | No              |
-| **REST Connector**       | `ApplicationDiscoveryJSON`, `CreateEntitlementJSON`, `DeleteEntitlementJSON`, `UpdateEntitlementJSON`         | Yes             | No              | No               |
-| **DB Connector**         | `CREATEENTITLEMENTJSON`, `DELETEENTITLEMENTJSON`, `ENTITLEMENTEXISTJSON`, `UPDATEENTITLEMENTJSON`             | Yes             | No              | No               |
-| **GithubREST Connector** | `status_threshold_config`                                                                           | Yes              | Yes              | No               |
-| **Security System** | `instant_provisioning`                                                                           | Yes              | No              | No               |
-| **Entitlement Type** | `enable_entitlement_to_role_sync`                                                                           | Yes              | Yes              | No               |
-| **Enterprise Role** | `child_roles`                                                                           | Yes              | No              | No               |
+| Connector                | Attribute(s) Added                                                                                                    | Present in 25.B.1 | Present in 25.B | Present in 25.A | Present in 24.10 |
+| ------------------------ | --------------------------------------------------------------------------------------------------------------------- | ------------------ | --------------- | --------------- | ---------------- |
+| **Workday Connector**    | `orgrole_import_payload`                                                                          | Yes                | Yes              | No             | No              |
+| **REST Connector**       | `application_discovery_json`, `create_entitlement_json`, `delete_entitlement_json`, `update_entitlement_json`         | Yes                | Yes             | No              | No               |
+| **REST Connector**       | `app_type`                                                                                         | Yes                | No              | No              | No               |
+| **DB Connector**         | `create_entitlement_json`, `delete_entitlement_json`, `entitlement_exist_json`, `update_entitlement_json`             | Yes                | Yes             | No              | No               |
+| **SAP Connector**        | `role_default_date`                                                                                 | Yes                | No              | No              | No               |
+| **Unix Connector**       | `server_type`                                                                                      | Yes                | No              | No              | No               |
+| **GithubREST Connector** | `status_threshold_config`                                                                           | Yes                | Yes              | Yes              | No               |
+| **Security System** | `instant_provisioning`                                                                           | Yes                | Yes              | No              | No               |
+| **Entitlement Type** | `enable_entitlement_to_role_sync`                                                                           | Yes                | Yes              | Yes              | No               |
+| **Enterprise Role** | `child_roles`                                                                           | Yes                | Yes              | No              | No               |
 
 ---
 

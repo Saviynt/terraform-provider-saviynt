@@ -42,6 +42,7 @@ Name | Type | Description | Notes
 **PASSWORD** | Pointer to **string** |  | [optional] 
 **CUSTOM_CONFIG_JSON** | Pointer to **string** |  | [optional] 
 **ENABLE_ACCOUNT_COMMAND** | Pointer to **string** |  | [optional] 
+**SERVER_TYPE** | Pointer to **string** |  | [optional] 
 
 ## Methods
 
@@ -1011,6 +1012,31 @@ SetENABLE_ACCOUNT_COMMAND sets ENABLE_ACCOUNT_COMMAND field to given value.
 `func (o *UNIXConnectionAttributes) HasENABLE_ACCOUNT_COMMAND() bool`
 
 HasENABLE_ACCOUNT_COMMAND returns a boolean if a field has been set.
+
+### GetSERVER_TYPE
+
+`func (o *UNIXConnectionAttributes) GetSERVER_TYPE() string`
+
+GetSERVER_TYPE returns the SERVER_TYPE field if non-nil, zero value otherwise.
+
+### GetSERVER_TYPEOk
+
+`func (o *UNIXConnectionAttributes) GetSERVER_TYPEOk() (*string, bool)`
+
+GetSERVER_TYPEOk returns a tuple with the SERVER_TYPE field if it's non-nil, zero value otherwise
+and a boolean to check if the value has been set.
+
+### SetSERVER_TYPE
+
+`func (o *UNIXConnectionAttributes) SetSERVER_TYPE(v string)`
+
+SetSERVER_TYPE sets SERVER_TYPE field to given value.
+
+### HasSERVER_TYPE
+
+`func (o *UNIXConnectionAttributes) HasSERVER_TYPE() bool`
+
+HasSERVER_TYPE returns a boolean if a field has been set.
 
 
 [[Back to Model list]](../README.md#documentation-for-models) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to README]](../README.md)

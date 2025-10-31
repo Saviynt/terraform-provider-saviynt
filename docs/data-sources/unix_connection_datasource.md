@@ -82,6 +82,7 @@ Read-Only:
 - `port_number` (String)
 - `provision_account_command` (String)
 - `remove_access_command` (String)
+- `server_type` (String)
 - `shadow_file` (String)
 - `status_threshold_config` (String)
 - `unlock_account_command` (String)

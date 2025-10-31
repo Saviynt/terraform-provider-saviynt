@@ -58,6 +58,7 @@ Read-Only:
 
 - `add_access_json` (String)
 - `add_ffid_access_json` (String)
+- `app_type` (String)
 - `application_discovery_json` (String)
 - `config_json` (String)
 - `connection_timeout_config` (Attributes) (see [below for nested schema](#nestedatt--connection_attributes--connection_timeout_config))

@@ -141,6 +141,8 @@ type SAPConnector struct {
 	DATA_IMPORT_FILTER *string `json:"DATA_IMPORT_FILTER,omitempty"`
 	// Property for ConfigJSON
 	ConfigJSON *string `json:"ConfigJSON,omitempty"`
+	// Default end date for SAP roles. Format: yyyyMMdd (e.g., 20251231). If not configured, defaults to 99991231.
+	ROLE_DEFAULT_DATE *string `json:"ROLE_DEFAULT_DATE,omitempty"`
 }
 
 type _SAPConnector SAPConnector
@@ -2084,6 +2086,38 @@ func (o *SAPConnector) SetConfigJSON(v string) {
 	o.ConfigJSON = &v
 }
 
+// GetROLE_DEFAULT_DATE returns the ROLE_DEFAULT_DATE field value if set, zero value otherwise.
+func (o *SAPConnector) GetROLE_DEFAULT_DATE() string {
+	if o == nil || IsNil(o.ROLE_DEFAULT_DATE) {
+		var ret string
+		return ret
+	}
+	return *o.ROLE_DEFAULT_DATE
+}
+
+// GetROLE_DEFAULT_DATEOk returns a tuple with the ROLE_DEFAULT_DATE field value if set, nil otherwise
+// and a boolean to check if the value has been set.
+func (o *SAPConnector) GetROLE_DEFAULT_DATEOk() (*string, bool) {
+	if o == nil || IsNil(o.ROLE_DEFAULT_DATE) {
+		return nil, false
+	}
+	return o.ROLE_DEFAULT_DATE, true
+}
+
+// HasROLE_DEFAULT_DATE returns a boolean if a field has been set.
+func (o *SAPConnector) HasROLE_DEFAULT_DATE() bool {
+	if o != nil && !IsNil(o.ROLE_DEFAULT_DATE) {
+		return true
+	}
+
+	return false
+}
+
+// SetROLE_DEFAULT_DATE gets a reference to the given string and assigns it to the ROLE_DEFAULT_DATE field.
+func (o *SAPConnector) SetROLE_DEFAULT_DATE(v string) {
+	o.ROLE_DEFAULT_DATE = &v
+}
+
 func (o SAPConnector) MarshalJSON() ([]byte, error) {
 	toSerialize, err := o.ToMap()
 	if err != nil {
@@ -2281,6 +2315,9 @@ func (o SAPConnector) ToMap() (map[string]interface{}, error) {
 	}
 	if !IsNil(o.ConfigJSON) {
 		toSerialize["ConfigJSON"] = o.ConfigJSON
+	}
+	if !IsNil(o.ROLE_DEFAULT_DATE) {
+		toSerialize["ROLE_DEFAULT_DATE"] = o.ROLE_DEFAULT_DATE
 	}
 	return toSerialize, nil
 }
