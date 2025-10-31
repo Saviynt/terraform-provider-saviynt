@@ -102,11 +102,15 @@ type SapConnectorResourceModel struct {
 	EccOrS4Hana                    types.String `tfsdk:"ecc_or_s4hana"`
 	DataImportFilter               types.String `tfsdk:"data_import_filter"`
 	Configjson                     types.String `tfsdk:"config_json"`
+
+	//25.B.1
+	RoleDefaultDate types.String `tfsdk:"role_default_date"`
 }
 
 type SapConnectionResource struct {
 	client            client.SaviyntClientInterface
 	token             string
+	saviyntVersion    string
 	provider          client.SaviyntProviderInterface
 	connectionFactory client.ConnectionFactoryInterface
 }
@@ -448,12 +452,17 @@ func SapConnectorResourceSchema() map[string]schema.Attribute {
 		"data_import_filter": schema.StringAttribute{
 			Optional:    true,
 			Computed:    true,
-			Description: "Dataimportfilter.",
+			Description: "Data import filter.",
 		},
 		"config_json": schema.StringAttribute{
 			Optional:    true,
 			Computed:    true,
-			Description: "Configjson.",
+			Description: "Config json.",
+		},
+		"role_default_date": schema.StringAttribute{
+			Optional:    true,
+			Computed:    true,
+			Description: "Role default date.",
 		},
 	}
 }
@@ -496,6 +505,7 @@ func (r *SapConnectionResource) Configure(ctx context.Context, req resource.Conf
 	// Set the client and token from the provider state using interface wrapper.
 	r.client = &client.SaviyntClientWrapper{Client: prov.client}
 	r.token = prov.accessToken
+	r.saviyntVersion = prov.saviyntVersion
 	r.provider = &client.SaviyntProviderWrapper{Provider: prov} // Store provider reference for retry logic
 
 	opCtx.LogOperationEnd(ctx, "SAP connection resource configured successfully")
@@ -691,6 +701,8 @@ func (r *SapConnectionResource) BuildSAPConnector(plan *SapConnectorResourceMode
 		ECCORS4HANA:                        util.StringPointerOrEmpty(plan.EccOrS4Hana),
 		DATA_IMPORT_FILTER:                 util.StringPointerOrEmpty(plan.DataImportFilter),
 		ConfigJSON:                         util.StringPointerOrEmpty(plan.Configjson),
+
+		ROLE_DEFAULT_DATE: util.StringPointerOrEmpty(plan.RoleDefaultDate),
 	}
 
 	if plan.VaultConnection.ValueString() != "" {
@@ -768,6 +780,8 @@ func (r *SapConnectionResource) UpdateModelFromCreateResponse(plan *SapConnector
 	plan.EccOrS4Hana = util.SafeStringDatasource(plan.EccOrS4Hana.ValueStringPointer())
 	plan.DataImportFilter = util.SafeStringDatasource(plan.DataImportFilter.ValueStringPointer())
 	plan.Configjson = util.SafeStringDatasource(plan.Configjson.ValueStringPointer())
+
+	plan.RoleDefaultDate = util.SafeStringDatasource(plan.RoleDefaultDate.ValueStringPointer())
 
 	plan.Msg = types.StringValue(util.SafeDeref(apiResp.Msg))
 	plan.ErrorCode = types.StringValue(util.SafeDeref(apiResp.ErrorCode))
@@ -895,6 +909,8 @@ func (r *SapConnectionResource) UpdateModelFromReadResponse(state *SapConnectorR
 	state.Userimportjson = util.SafeStringDatasource(apiResp.SAPConnectionResponse.Connectionattributes.USERIMPORTJSON)
 	state.Systemname = util.SafeStringDatasource(apiResp.SAPConnectionResponse.Connectionattributes.SYSTEMNAME)
 	state.Updateaccountjson = util.SafeStringDatasource(apiResp.SAPConnectionResponse.Connectionattributes.UPDATEACCOUNTJSON)
+
+	state.RoleDefaultDate = util.SafeStringDatasource(apiResp.SAPConnectionResponse.Connectionattributes.ROLE_DEFAULT_DATE)
 }
 
 func (r *SapConnectionResource) ValidateSAPConnectionResponse(apiResp *openapi.GetConnectionDetailsResponse) error {
@@ -982,6 +998,12 @@ func (r *SapConnectionResource) Create(ctx context.Context, req resource.CreateR
 			errorsutil.GetErrorMessage(errorsutil.ErrPlanExtraction),
 			fmt.Sprintf("[%s] Unable to extract Terraform plan from request", errorCode),
 		)
+		return
+	}
+
+	util.ValidateAttributeCompatibility(r.saviyntVersion, "SAP", "RoleDefaultDate", plan.RoleDefaultDate.ValueStringPointer(), &resp.Diagnostics)
+
+	if resp.Diagnostics.HasError() {
 		return
 	}
 
@@ -1145,6 +1167,12 @@ func (r *SapConnectionResource) Update(ctx context.Context, req resource.UpdateR
 			errorsutil.GetErrorMessage(errorCode),
 			fmt.Sprintf("[%s] Cannot change connection name from '%s' to '%s'", errorCode, state.ConnectionName.ValueString(), plan.ConnectionName.ValueString()),
 		)
+		return
+	}
+
+	util.ValidateAttributeCompatibility(r.saviyntVersion, "SAP", "RoleDefaultDate", plan.RoleDefaultDate.ValueStringPointer(), &resp.Diagnostics)
+
+	if resp.Diagnostics.HasError() {
 		return
 	}
 
