@@ -1,0 +1,36 @@
+{
+  "connection": "userAuth",
+  "method": "GET",
+  "url": "https://graph.microsoft.com/v1.0/users?$select=Id,userPrincipalName,accountEnabled,mail,userType,createdDateTime,country,preferredLanguage,displayName,surname,givenName,mobilePhone,businessPhones,mailNickname,mail",
+  "headers": {
+    "Authorization": "Bearer ${access_token}",
+    "Accept": "application/json"
+  },
+  "statusConfig": {
+    "active": "true",
+    "inactive": "false"
+  },
+  "colsToPropsMap": {
+    "username": "userPrincipalName~#~char",
+    "displayname": "displayName~#~char",
+    "firstname": "givenName~#~char",
+    "lastname": "surname~#~char",
+    "country": "country~#~char",
+    "phonenumber": "mobilePhone~#~char",
+    "statuskey": "accountEnabled~#~char",
+    "email": "mail~#~char",
+    "employeetype": "userType~#~char",
+    "customproperty1": "preferredLanguage~#~char",
+    "customproperty2": "businessPhones~#~char",
+    "customproperty3": "mailNickname~#~char",
+    "customproperty4": "Id~#~char",
+    "customproperty5": "userPrincipalName~#~char",
+    "customproperty6": "createdDateTime~#~char"
+  },
+  "userResponsePath": "value",
+  "pagination": {
+    "nextUrl": {
+      "nextUrlPath": "${(response?.completeResponseMap?.get('@odata.nextLink')==null)? null : response?.completeResponseMap?.get('@odata.nextLink')}"
+    }
+  }
+}

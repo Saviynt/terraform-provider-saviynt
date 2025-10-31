@@ -1,0 +1,16 @@
+{
+  "acctLabels": {
+    "customproperty1": "FirstName",
+    "customproperty2": "LastName",
+    "customproperty3": "OfficePhone",
+    "customproperty10": "AccountStatus"
+  },
+  "colsToPropsMap": {
+    "accountID": "id~#~char",
+    "name": "userPrincipalName~#~char",
+    "customproperty1": "givenName~#~char",
+    "customproperty2": "surname~#~char",
+    "customproperty3": "businessPhones~#~char",
+    "customproperty10": "accountEnabled~#~char"
+  }
+}

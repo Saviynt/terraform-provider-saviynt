@@ -1,0 +1,101 @@
+# Copyright (c) Saviynt Inc.
+# SPDX-License-Identifier: MPL-2.0
+
+
+openapi: 3.1.0
+info:
+  contact:
+    email: https://github.com/saviynt
+    name: Saviynt Developers Team
+  description: Saviynt Email API
+  title: Saviynt Email API
+  version: "1.0"
+servers:
+- url: http://localhost:3000
+tags:
+- name: Email
+paths:
+  /ECM/api/v5/sendEmail:
+    post:
+      description: This API can be used send an email from Saviynt.
+      operationId: sendEmail
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SendEmailRequest'
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SendEmailResponse'
+          description: OK
+      summary: Send Email
+      tags:
+      - Email
+components:
+  schemas:
+    SendEmailRequest:
+      example:
+        cc: cc
+        bcc: bcc
+        subject: subject
+        from: from
+        to: to
+        body: body
+      properties:
+        to:
+          type: string
+          x-stoplight:
+            id: bpfswohcpy5y5
+        from:
+          type: string
+          x-stoplight:
+            id: v5t04vikuj35u
+        subject:
+          type: string
+          x-stoplight:
+            id: 787cc70jiguqe
+        body:
+          type: string
+          x-stoplight:
+            id: d30ilrzzdr47h
+        cc:
+          type: string
+          x-stoplight:
+            id: m8zzf304e7nph
+        bcc:
+          type: string
+          x-stoplight:
+            id: uh121n5jqhago
+      required:
+      - body
+      - from
+      - subject
+      - to
+      title: SendEmailRequest
+      x-stoplight:
+        id: ysie9dbqi2zyc
+    SendEmailResponse:
+      example:
+        msg: msg
+        errorCode: errorCode
+      properties:
+        errorCode:
+          description: '`"0"` indicates success. Other values indicate failure.'
+          type: string
+          x-stoplight:
+            id: idq45zs5wufpr
+        msg:
+          type: string
+          x-stoplight:
+            id: zs4bz2zwjczsh
+      required:
+      - errorCode
+      - msg
+      title: SendEmailResponse
+      x-stoplight:
+        id: d2jjbl7o7xsee
+x-stoplight:
+  id: 66iq5vm0oqtw8

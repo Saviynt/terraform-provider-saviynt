@@ -1,0 +1,17 @@
+.gitignore
+.openapi-generator-ignore
+.travis.yml
+README.md
+api/openapi.yaml
+api_file_directory.go
+client.go
+configuration.go
+docs/FileDirectoryAPI.md
+docs/UploadSchemaFileResponse.md
+git_push.sh
+go.mod
+go.sum
+model_upload_schema_file_response.go
+response.go
+test/api_file_directory_test.go
+utils.go
