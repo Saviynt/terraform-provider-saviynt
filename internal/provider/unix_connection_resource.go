@@ -79,11 +79,15 @@ type UnixConnectorResourceModel struct {
 	SSHPassThroughSSHKEYWo        types.String `tfsdk:"ssh_pass_through_sshkey_wo"`
 	SSHPassThroughPassphrase      types.String `tfsdk:"ssh_pass_through_passphrase"`
 	SSHPassThroughPassphraseWo    types.String `tfsdk:"ssh_pass_through_passphrase_wo"`
+
+	//25.B.1
+	ServerType types.String `tfsdk:"server_type"`
 }
 
 type UnixConnectionResource struct {
 	client            client.SaviyntClientInterface
 	token             string
+	saviyntVersion    string
 	provider          client.SaviyntProviderInterface
 	connectionFactory client.ConnectionFactoryInterface
 }
@@ -343,6 +347,11 @@ func UnixConnectorResourceSchema() map[string]schema.Attribute {
 				stringvalidator.ConflictsWith(path.MatchRoot("ssh_pass_through_passphrase")),
 			},
 		},
+		"server_type": schema.StringAttribute{
+			Optional:    true,
+			Computed:    true,
+			Description: "Server type",
+		},
 	}
 }
 
@@ -384,6 +393,7 @@ func (r *UnixConnectionResource) Configure(ctx context.Context, req resource.Con
 	// Set the client and token from the provider state using interface wrapper.
 	r.client = &client.SaviyntClientWrapper{Client: prov.client}
 	r.token = prov.accessToken
+	r.saviyntVersion = prov.saviyntVersion
 	r.provider = &client.SaviyntProviderWrapper{Provider: prov} // Store provider reference for retry logic
 
 	opCtx.LogOperationEnd(ctx, "Unix connection resource configured successfully")
@@ -493,6 +503,8 @@ func (r *UnixConnectionResource) BuildUnixConnector(plan *UnixConnectorResourceM
 		SSHPassThroughPassword:              util.StringPointerOrEmpty(types.StringValue(sshPassthroughPassword)),
 		SSHPassThroughSSHKEY:                util.StringPointerOrEmpty(types.StringValue(sshPassthroughSSHKey)),
 		SSHPassThroughPassphrase:            util.StringPointerOrEmpty(types.StringValue(SSHPassthroughPassphrase)),
+
+		SERVER_TYPE: util.StringPointerOrEmpty(plan.ServerType),
 	}
 
 	// Handle vault configuration
@@ -539,6 +551,9 @@ func (r *UnixConnectionResource) UpdateModelFromCreateResponse(plan *UnixConnect
 	plan.LockAccountCommand = util.SafeStringDatasource(plan.LockAccountCommand.ValueStringPointer())
 	plan.UnlockAccountCommand = util.SafeStringDatasource(plan.UnlockAccountCommand.ValueStringPointer())
 	plan.PassThroughConnectionDetails = util.SafeStringDatasource(plan.PassThroughConnectionDetails.ValueStringPointer())
+
+	plan.ServerType = util.SafeStringDatasource(plan.ServerType.ValueStringPointer())
+
 	plan.Msg = types.StringValue(util.SafeDeref(apiResp.Msg))
 	plan.ErrorCode = types.StringValue(util.SafeDeref(apiResp.ErrorCode))
 }
@@ -729,6 +744,7 @@ func (r *UnixConnectionResource) UpdateModelFromReadResponse(state *UnixConnecto
 		state.LockAccountCommand = util.SafeStringDatasource(apiResp.UNIXConnectionResponse.Connectionattributes.LOCK_ACCOUNT_COMMAND)
 		state.UnlockAccountCommand = util.SafeStringDatasource(apiResp.UNIXConnectionResponse.Connectionattributes.UNLOCK_ACCOUNT_COMMAND)
 		state.PassThroughConnectionDetails = util.SafeStringDatasource(apiResp.UNIXConnectionResponse.Connectionattributes.PassThroughConnectionDetails)
+		state.ServerType = util.SafeStringDatasource(apiResp.UNIXConnectionResponse.Connectionattributes.SERVER_TYPE)
 	}
 }
 
@@ -817,6 +833,12 @@ func (r *UnixConnectionResource) Create(ctx context.Context, req resource.Create
 			errorsutil.GetErrorMessage(errorsutil.ErrPlanExtraction),
 			fmt.Sprintf("[%s] Unable to extract Terraform plan from request", errorCode),
 		)
+		return
+	}
+
+	util.ValidateAttributeCompatibility(r.saviyntVersion, "Unix", "ServerType", plan.ServerType.ValueStringPointer(), &resp.Diagnostics)
+
+	if resp.Diagnostics.HasError() {
 		return
 	}
 
@@ -980,6 +1002,12 @@ func (r *UnixConnectionResource) Update(ctx context.Context, req resource.Update
 			errorsutil.GetErrorMessage(errorCode),
 			fmt.Sprintf("[%s] Cannot change connection name from '%s' to '%s'", errorCode, state.ConnectionName.ValueString(), plan.ConnectionName.ValueString()),
 		)
+		return
+	}
+
+	util.ValidateAttributeCompatibility(r.saviyntVersion, "Unix", "ServerType", plan.ServerType.ValueStringPointer(), &resp.Diagnostics)
+
+	if resp.Diagnostics.HasError() {
 		return
 	}
 
