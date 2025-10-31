@@ -64,6 +64,7 @@ Name | Type | Description | Notes
 **ECCORS4HANA** | Pointer to **string** | Property for ECC_OR_S4HANA | [optional] 
 **DATA_IMPORT_FILTER** | Pointer to **string** | Property for DATA_IMPORT_FILTER | [optional] 
 **ConfigJSON** | Pointer to **string** | Property for ConfigJSON | [optional] 
+**ROLE_DEFAULT_DATE** | Pointer to **string** | Default end date for SAP roles. Format: yyyyMMdd (e.g., 20251231). If not configured, defaults to 99991231. | [optional] 
 
 ## Methods
 
@@ -1583,6 +1584,31 @@ SetConfigJSON sets ConfigJSON field to given value.
 `func (o *SAPConnector) HasConfigJSON() bool`
 
 HasConfigJSON returns a boolean if a field has been set.
+
+### GetROLE_DEFAULT_DATE
+
+`func (o *SAPConnector) GetROLE_DEFAULT_DATE() string`
+
+GetROLE_DEFAULT_DATE returns the ROLE_DEFAULT_DATE field if non-nil, zero value otherwise.
+
+### GetROLE_DEFAULT_DATEOk
+
+`func (o *SAPConnector) GetROLE_DEFAULT_DATEOk() (*string, bool)`
+
+GetROLE_DEFAULT_DATEOk returns a tuple with the ROLE_DEFAULT_DATE field if it's non-nil, zero value otherwise
+and a boolean to check if the value has been set.
+
+### SetROLE_DEFAULT_DATE
+
+`func (o *SAPConnector) SetROLE_DEFAULT_DATE(v string)`
+
+SetROLE_DEFAULT_DATE sets ROLE_DEFAULT_DATE field to given value.
+
+### HasROLE_DEFAULT_DATE
+
+`func (o *SAPConnector) HasROLE_DEFAULT_DATE() bool`
+
+HasROLE_DEFAULT_DATE returns a boolean if a field has been set.
 
 
 [[Back to Model list]](../README.md#documentation-for-models) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to README]](../README.md)

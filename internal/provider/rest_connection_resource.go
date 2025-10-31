@@ -64,6 +64,9 @@ type RestConnectorResourceModel struct {
 	CreateEntitlementJson    types.String `tfsdk:"create_entitlement_json"`
 	DeleteEntitlementJson    types.String `tfsdk:"delete_entitlement_json"`
 	UpdateEntitlementJson    types.String `tfsdk:"update_entitlement_json"`
+
+	//25.B.1
+	AppType types.String `tfsdk:"app_type"`
 }
 
 type RestConnectionResource struct {
@@ -247,6 +250,11 @@ func RestConnectorResourceSchema() map[string]schema.Attribute {
 			Optional:    true,
 			Computed:    true,
 			Description: "The three entitlement JSON attributes (Create, Update, Delete) are part of a comprehensive entitlement management system for REST connectors, with supporting constants and service classes.",
+		},
+		"app_type": schema.StringAttribute{
+			Optional:    true,
+			Computed:    true,
+			Description: "For CUA configuration",
 		},
 	}
 }
@@ -451,6 +459,8 @@ func (r *RestConnectionResource) BuildRESTConnector(plan *RestConnectorResourceM
 		CreateEntitlementJSON:    util.StringPointerOrEmpty(plan.CreateEntitlementJson),
 		DeleteEntitlementJSON:    util.StringPointerOrEmpty(plan.DeleteEntitlementJson),
 		UpdateEntitlementJSON:    util.StringPointerOrEmpty(plan.UpdateEntitlementJson),
+
+		AppType: util.StringPointerOrEmpty(plan.AppType),
 	}
 
 	if plan.VaultConnection.ValueString() != "" {
@@ -498,6 +508,8 @@ func (r *RestConnectionResource) UpdateModelFromCreateResponse(plan *RestConnect
 	plan.CreateEntitlementJson = util.SafeStringDatasource(plan.CreateEntitlementJson.ValueStringPointer())
 	plan.DeleteEntitlementJson = util.SafeStringDatasource(plan.DeleteEntitlementJson.ValueStringPointer())
 	plan.UpdateEntitlementJson = util.SafeStringDatasource(plan.UpdateEntitlementJson.ValueStringPointer())
+
+	plan.AppType = util.SafeStringDatasource(plan.AppType.ValueStringPointer())
 
 	plan.Msg = types.StringValue(util.SafeDeref(apiResp.Msg))
 	plan.ErrorCode = types.StringValue(util.SafeDeref(apiResp.ErrorCode))
@@ -595,6 +607,8 @@ func (r *RestConnectionResource) UpdateModelFromReadResponse(state *RestConnecto
 	state.CreateEntitlementJson = util.SafeStringDatasource(apiResp.RESTConnectionResponse.Connectionattributes.CreateEntitlementJSON)
 	state.DeleteEntitlementJson = util.SafeStringDatasource(apiResp.RESTConnectionResponse.Connectionattributes.DeleteEntitlementJSON)
 	state.UpdateEntitlementJson = util.SafeStringDatasource(apiResp.RESTConnectionResponse.Connectionattributes.UpdateEntitlementJSON)
+
+	state.AppType = util.SafeStringDatasource(apiResp.RESTConnectionResponse.Connectionattributes.AppType)
 }
 
 func (r *RestConnectionResource) ValidateRESTConnectionResponse(apiResp *openapi.GetConnectionDetailsResponse) error {
@@ -690,6 +704,7 @@ func (r *RestConnectionResource) Create(ctx context.Context, req resource.Create
 	util.ValidateAttributeCompatibility(r.saviyntVersion, "REST", "CreateEntitlementJSON", plan.CreateEntitlementJson.ValueStringPointer(), &resp.Diagnostics)
 	util.ValidateAttributeCompatibility(r.saviyntVersion, "REST", "DeleteEntitlementJSON", plan.DeleteEntitlementJson.ValueStringPointer(), &resp.Diagnostics)
 	util.ValidateAttributeCompatibility(r.saviyntVersion, "REST", "UpdateEntitlementJSON", plan.UpdateEntitlementJson.ValueStringPointer(), &resp.Diagnostics)
+	util.ValidateAttributeCompatibility(r.saviyntVersion, "REST", "AppType", plan.AppType.ValueStringPointer(), &resp.Diagnostics)
 
 	if resp.Diagnostics.HasError() {
 		return
@@ -863,6 +878,7 @@ func (r *RestConnectionResource) Update(ctx context.Context, req resource.Update
 	util.ValidateAttributeCompatibility(r.saviyntVersion, "REST", "CreateEntitlementJSON", plan.CreateEntitlementJson.ValueStringPointer(), &resp.Diagnostics)
 	util.ValidateAttributeCompatibility(r.saviyntVersion, "REST", "DeleteEntitlementJSON", plan.DeleteEntitlementJson.ValueStringPointer(), &resp.Diagnostics)
 	util.ValidateAttributeCompatibility(r.saviyntVersion, "REST", "UpdateEntitlementJSON", plan.UpdateEntitlementJson.ValueStringPointer(), &resp.Diagnostics)
+	util.ValidateAttributeCompatibility(r.saviyntVersion, "REST", "AppType", plan.AppType.ValueStringPointer(), &resp.Diagnostics)
 
 	if resp.Diagnostics.HasError() {
 		return

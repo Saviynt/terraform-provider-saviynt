@@ -13,6 +13,7 @@ import (
 // AttributeVersionCompatibility defines which attributes are supported in which versions
 type AttributeVersionCompatibility struct {
 	AttributeName    string
+	Supported25B_1   bool
 	SupportedIn25B   bool
 	SupportedIn25A   bool
 	SupportedIn24_10 bool
@@ -22,31 +23,38 @@ type AttributeVersionCompatibility struct {
 // VersionCompatibilityMap contains the compatibility matrix from README.md
 var VersionCompatibilityMap = []AttributeVersionCompatibility{
 	// Workday Connector
-	{"ORGROLE_IMPORT_PAYLOAD", true, false, false, "Workday"},
+	{"ORGROLE_IMPORT_PAYLOAD", true, true, false, false, "Workday"},
 
 	// REST Connector
-	{"ApplicationDiscoveryJSON", true, false, false, "REST"},
-	{"CreateEntitlementJSON", true, false, false, "REST"},
-	{"DeleteEntitlementJSON", true, false, false, "REST"},
-	{"UpdateEntitlementJSON", true, false, false, "REST"},
+	{"ApplicationDiscoveryJSON", true, true, false, false, "REST"},
+	{"CreateEntitlementJSON", true, true, false, false, "REST"},
+	{"DeleteEntitlementJSON", true, true, false, false, "REST"},
+	{"UpdateEntitlementJSON", true, true, false, false, "REST"},
+	{"AppType", true, false, false, false, "REST"},
 
 	// DB Connector
-	{"CREATEENTITLEMENTJSON", true, false, false, "DB"},
-	{"DELETEENTITLEMENTJSON", true, false, false, "DB"},
-	{"ENTITLEMENTEXISTJSON", true, false, false, "DB"},
-	{"UPDATEENTITLEMENTJSON", true, false, false, "DB"},
+	{"CREATEENTITLEMENTJSON", true, true, false, false, "DB"},
+	{"DELETEENTITLEMENTJSON", true, true, false, false, "DB"},
+	{"ENTITLEMENTEXISTJSON", true, true, false, false, "DB"},
+	{"UPDATEENTITLEMENTJSON", true, true, false, false, "DB"},
 
 	// GitHub REST Connector
-	{"status_threshold_config", true, true, false, "GitHubREST"},
+	{"status_threshold_config", true, true, true, false, "GitHubREST"},
 
 	// Security System
-	{"instant_provisioning", true, false, false, "SecuritySystem"},
+	{"instant_provisioning", true, true, false, false, "SecuritySystem"},
 
 	// Entitlement Type
-	{"enable_entitlement_to_role_sync", true, true, false, "EntitlementType"},
+	{"enable_entitlement_to_role_sync", true, true, true, false, "EntitlementType"},
 
 	// Enterprise Role
-	{"child_roles", true, false, false, "EnterpriseRole"},
+	{"child_roles", true, true, false, false, "EnterpriseRole"},
+
+	//SAP
+	{"RoleDefaultDate", true, false, false, false, "SAP"},
+
+	//Unix
+	{"ServerType", true, false, false, false, "Unix"},
 }
 
 // ValidateAttributeCompatibility checks if an attribute is supported in the given Saviynt version
@@ -61,7 +69,7 @@ func ValidateAttributeCompatibility(saviyntVersion, resourceType, attributeName 
 		diags.AddWarning(
 			"Unsupported Saviynt Version Detected",
 			fmt.Sprintf("Saviynt version '%s' is not officially supported. "+
-				"This provider supports versions: 25.Brisbane (25.B), 25.Amsterdam (25.A), and 24.10. "+
+				"This provider supports versions: 25.Brisbane.1, 25.Brisbane (25.B), 25.Amsterdam (25.A), and 24.10. "+
 				"Some features may not work as expected. "+
 				"Please check compatibility at: "+
 				"https://registry.terraform.io/providers/saviynt/saviynt/latest/docs#supported-saviynt-versions-by-provider",
@@ -94,7 +102,7 @@ func isSupportedVersion(version string) bool {
 	version = strings.ToLower(strings.TrimSpace(version))
 
 	// Check for supported versions
-	supportedVersions := []string{"25.brisbane", "25.b", "25.amsterdam", "25.a", "24.10"}
+	supportedVersions := []string{"25.brisbane.1", "25.brisbane", "25.b", "25.amsterdam", "25.a", "24.10"}
 
 	for _, supported := range supportedVersions {
 		if strings.Contains(version, supported) {
@@ -108,6 +116,11 @@ func isSupportedVersion(version string) bool {
 // isAttributeSupported checks if attribute is supported in the given version
 func isAttributeSupported(version string, compat AttributeVersionCompatibility) bool {
 	version = strings.ToLower(strings.TrimSpace(version))
+
+	// Check for 25.B.1 (most specific first)
+	if strings.Contains(version, "25.brisbane.1") {
+		return compat.Supported25B_1
+	}
 
 	// Check for 25.Brisbane (25.B)
 	if strings.Contains(version, "25.brisbane") || strings.Contains(version, "25.b") {
