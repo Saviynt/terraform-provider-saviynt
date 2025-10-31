@@ -71,6 +71,9 @@ type RESTConnectionAttributes struct {
 	CreateEntitlementJson    types.String `tfsdk:"create_entitlement_json"`
 	DeleteEntitlementJson    types.String `tfsdk:"delete_entitlement_json"`
 	UpdateEntitlementJson    types.String `tfsdk:"update_entitlement_json"`
+
+	//25.B.1
+	AppType types.String `tfsdk:"app_type"`
 }
 
 // NewRESTConnectionsDataSource creates a new REST connections data source with default factory
@@ -151,6 +154,8 @@ func RESTConnectorsDataSourceSchema() map[string]schema.Attribute {
 				"create_entitlement_json":    schema.StringAttribute{Computed: true},
 				"delete_entitlement_json":    schema.StringAttribute{Computed: true},
 				"update_entitlement_json":    schema.StringAttribute{Computed: true},
+
+				"app_type": schema.StringAttribute{Computed: true},
 			},
 		},
 	}
@@ -427,6 +432,8 @@ func (d *restConnectionDatasource) MapRESTConnectionAttributes(state *RESTConnec
 		CreateEntitlementJson:    util.SafeStringDatasource(attrs.CreateEntitlementJSON),
 		DeleteEntitlementJson:    util.SafeStringDatasource(attrs.DeleteEntitlementJSON),
 		UpdateEntitlementJson:    util.SafeStringDatasource(attrs.UpdateEntitlementJSON),
+
+		AppType: util.SafeStringDatasource(attrs.AppType),
 	}
 
 	// Map connection timeout config if present
