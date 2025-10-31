@@ -68,6 +68,7 @@ Name | Type | Description | Notes
 **USERIMPORTJSON** | Pointer to **string** |  | [optional] 
 **SYSTEMNAME** | Pointer to **string** |  | [optional] 
 **UPDATEACCOUNTJSON** | Pointer to **string** |  | [optional] 
+**ROLE_DEFAULT_DATE** | Pointer to **string** | Default end date for SAP roles. Format: yyyyMMdd (e.g., 20251231). If not configured, defaults to 99991231. | [optional] 
 
 ## Methods
 
@@ -1687,6 +1688,31 @@ SetUPDATEACCOUNTJSON sets UPDATEACCOUNTJSON field to given value.
 `func (o *SAPConnectionAttributes) HasUPDATEACCOUNTJSON() bool`
 
 HasUPDATEACCOUNTJSON returns a boolean if a field has been set.
+
+### GetROLE_DEFAULT_DATE
+
+`func (o *SAPConnectionAttributes) GetROLE_DEFAULT_DATE() string`
+
+GetROLE_DEFAULT_DATE returns the ROLE_DEFAULT_DATE field if non-nil, zero value otherwise.
+
+### GetROLE_DEFAULT_DATEOk
+
+`func (o *SAPConnectionAttributes) GetROLE_DEFAULT_DATEOk() (*string, bool)`
+
+GetROLE_DEFAULT_DATEOk returns a tuple with the ROLE_DEFAULT_DATE field if it's non-nil, zero value otherwise
+and a boolean to check if the value has been set.
+
+### SetROLE_DEFAULT_DATE
+
+`func (o *SAPConnectionAttributes) SetROLE_DEFAULT_DATE(v string)`
+
+SetROLE_DEFAULT_DATE sets ROLE_DEFAULT_DATE field to given value.
+
+### HasROLE_DEFAULT_DATE
+
+`func (o *SAPConnectionAttributes) HasROLE_DEFAULT_DATE() bool`
+
+HasROLE_DEFAULT_DATE returns a boolean if a field has been set.
 
 
 [[Back to Model list]](../README.md#documentation-for-models) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to README]](../README.md)
