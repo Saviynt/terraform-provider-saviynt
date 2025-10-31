@@ -1,204 +1,244 @@
 // Copyright (c) 2025 Saviynt Inc.
 // SPDX-License-Identifier: MPL-2.0
 
-# Variables for sensitive and configurable values
-variable "WORKDAY_USERNAME" {
-  type        = string
-  description = "Username for Workday SOAP connection"
-}
-
-variable "WORKDAY_PASSWORD" {
-  type        = string
-  description = "Password for Workday SOAP connection"
-  sensitive   = true
-}
-
-variable "SOAP_ENDPOINT_URL" {
-  type        = string
-  description = "Workday SOAP endpoint URL"
-}
-
-variable "TENANT_NAME" {
-  type        = string
-  description = "Workday tenant name"
-}
-
-variable "VAULT_CONNECTION" {
-  type        = string
-  description = "Vault connection name for credential management"
-  default     = ""
-}
-
-variable "VAULT_CONFIG" {
-  type        = string
-  description = "Vault configuration"
-  default     = ""
-}
-
-
 resource "saviynt_workday_soap_connection_resource" "example" {
   # Required attributes
   connection_name = "Terraform_Workday_SOAP_Connector"
 
   # Optional base connector attributes
-  description         = "Workday SOAP connection for HR data integration - ${var.TENANT_NAME}"
-  default_sav_roles   = "ROLE_ADMIN"
-  email_template      = "default_template"
   vault_connection    = var.VAULT_CONNECTION
   vault_configuration = var.VAULT_CONFIG
   save_in_vault       = var.VAULT_CONNECTION != "" ? "true" : "false"
-  wo_version          = "v1.0"
 
   # Authentication - using variables for sensitive data
   username = var.WORKDAY_USERNAME
   password = var.WORKDAY_PASSWORD
   # Alternative: Use write-only password for enhanced security
   # password_wo  = var.WORKDAY_PASSWORD
+  # wo_version          = "v1.0"
   soap_endpoint = var.SOAP_ENDPOINT_URL
 
   # Data Import Configuration
   accounts_import_json = jsonencode({
-    "call1" : {
-      "call" : [
-        {
-          "name" : "GetWorkers",
-          "connection" : "userAuth",
-          "url" : var.SOAP_ENDPOINT_URL,
-          "httpMethod" : "POST",
-          "httpParams" : "{}",
-          "httpHeaders" : {
-            "Authorization" : "$${access_token}",
-            "Content-Type" : "text/xml; charset=utf-8",
-            "SOAPAction" : "urn:com.workday/bsvc/Human_Resources/v35.0#Get_Workers"
-          },
-          "httpContentType" : "text/xml",
-          "successResponses" : {
-            "statusCode" : [200, 201]
-          },
-          "requestBody" : trimspace(<<-EOF
-            <soapenv:Envelope xmlns:soapenv="http://schemas.xmlsoap.org/soap/envelope/" xmlns:bsvc="urn:com.workday/bsvc">
-              <soapenv:Header>
-                <bsvc:Workday_Common_Header>
-                  <bsvc:Include_Reference_Descriptors_In_Response>true</bsvc:Include_Reference_Descriptors_In_Response>
-                </bsvc:Workday_Common_Header>
-              </soapenv:Header>
-              <soapenv:Body>
-                <bsvc:Get_Workers_Request bsvc:version="v35.0">
-                  <bsvc:Request_Criteria>
-                    <bsvc:Exclude_Inactive_Workers>false</bsvc:Exclude_Inactive_Workers>
-                    <bsvc:Exclude_Employees>false</bsvc:Exclude_Employees>
-                    <bsvc:Exclude_Contingent_Workers>false</bsvc:Exclude_Contingent_Workers>
-                  </bsvc:Request_Criteria>
-                  <bsvc:Response_Filter>
-                    <bsvc:Page>${PAGE_NUMBER}</bsvc:Page>
-                    <bsvc:Count>${PAGE_SIZE}</bsvc:Count>
-                  </bsvc:Response_Filter>
-                  <bsvc:Response_Group>
-                    <bsvc:Include_Reference>true</bsvc:Include_Reference>
-                    <bsvc:Include_Personal_Information>true</bsvc:Include_Personal_Information>
-                    <bsvc:Include_Employment_Information>true</bsvc:Include_Employment_Information>
-                    <bsvc:Include_Organizations>true</bsvc:Include_Organizations>
-                    <bsvc:Include_Roles>true</bsvc:Include_Roles>
-                  </bsvc:Response_Group>
-                </bsvc:Get_Workers_Request>
-              </soapenv:Body>
-            </soapenv:Envelope>
-          EOF
-          )
-        }
-      ]
+    "CONNECTION1" = "samplewebservice"
+    "REQUESTXML1" = "<soapenv:Envelope xmlns:soapenv=\"http://schemas.xmlsoap.org/soap/envelope/\" xmlns:bir=\"http://<domain>/\"> <soapenv:Header></soapenv:Header> <soapenv:Body> <bir:Login>  <bir:username>$${USERNAME}</bir:username>  <bir:password>$${PASSWORD}</bir:password> </bir:Login> </soapenv:Body> </soapenv:Envelope>"
+    "REQUESTPARAMS1" = {
+      "Content-Type" = "text/xml"
+    }
+    "RESPONSEDATAPATH1" = "Body.LoginResponse"
+    "RESPONSEMAPPING1" = {
+      "TOKEN" = "LoginResult"
+    }
+    "CONNECTION3"         = "samplewebservice"
+    "RECONCILATIONFIELD3" = "ACCOUNTID"
+    "REQUESTXML3"         = "<soap:Envelope xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\" xmlns:xsd=\"http://www.w3.org/2001/XMLSchema\" xmlns:soap=\"http://schemas.xmlsoap.org/soap/envelope/\"><soap:Body><getUsersInAccount xmlns=\"http://<domain>/\"><token>$${TOKEN}</token><offset>$${PAGE_NUMBER}</offset><limit>$${PAGE_SIZE}</limit><usernameSearchString></usernameSearchString></getUsersInAccount></soap:Body></soap:Envelope>"
+    "REQUESTPARAMS3" = {
+      "Content-Type" = "text/xml"
+    }
+    "RESPONSEDATAPATH3"     = "Body.getUsersInAccountResponse.getUsersInAccountResult.UserObject"
+    "RESPONSETOTALRESULTS3" = "PAGINATE"
+    "ACCOUNTMAPPING3"       = "NAME:email,ACCOUNTID:username"
+    "REQUESTTYPE6"          = "ENTITLEMENTS"
+    "CONNECTION6"           = "samplewebservice"
+    "REQUESTXML6"           = "<soap:Envelope xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\" xmlns:xsd=\"http://www.w3.org/2001/XMLSchema\" xmlns:soap=\"http://schemas.xmlsoap.org/soap/envelope/\"> <soap:Body> <listGroupsInSpace xmlns=\"http://<domain>/\"> <token>$${TOKEN}</token> <spaceID>$${endpoints?.customproperty1}</spaceID> </listGroupsInSpace> </soap:Body> </soap:Envelope>"
+    "REQUESTPARAMS6" = {
+      "Content-Type" = "text/xml"
+    }
+    "RESPONSEDATAPATH6" = "Body.listGroupsInSpaceResponse.listGroupsInSpaceResult.string"
+    "ENTITLEMENTMAPPING6" = {
+      "Group" = "."
     }
   })
 
-  hr_import_json = jsonencode({
-    "call1" : {
-      "call" : [
-        {
-          "name" : "GetOrganizations",
-          "connection" : "userAuth",
-          "url" : var.SOAP_ENDPOINT_URL,
-          "httpMethod" : "POST",
-          "httpHeaders" : {
-            "Content-Type" : "text/xml; charset=utf-8",
-            "SOAPAction" : "urn:com.workday/bsvc/Human_Resources/v35.0#Get_Organizations"
-          }
-        }
-      ]
-    }
+  hr_import_json = jsonencode(
+    {
+      "REQUESTXML1"  = "<soapenv:Envelope xmlns:soapenv=\"http://schemas.xmlsoap.org/soap/envelope/\" xmlns:bsvc=\"urn:com.workday/bsvc\"> <soapenv:Header> <wsse:Security soapenv:mustUnderstand=\"1\" xmlns:wsse=\"http://docs.oasis-open.org/wss/2004/01/oasis-200401-wss-wssecurity-secext-1.0.xsd\" xmlns:wsu=\"http://docs.oasis-open.org/wss/2004/01/oasis-200401-wss-wssecurity-utility-1.0.xsd\"> <wsse:UsernameToken wsu:Id=\"UsernameToken-AF7DBE0D8832CC288F150119366041544\"> <wsse:Username>username@domain</wsse:Username> <wsse:Password Type=\"http://docs.oasis-open.org/wss/2004/01/oasis-200401-wss-username-token-profile-1.0#PasswordText\">XXXX</wsse:Password> <wsse:Nonce EncodingType=\"http://docs.oasis-open.org/wss/2004/01/oasis-200401-wss-soap-message-security-1.0#Base64Binary\">hVovDsRjkofd3OphNZ83kg==</wsse:Nonce> <wsu:Created>2017-07-27T22:14:20.415Z</wsu:Created> </wsse:UsernameToken> </wsse:Security> </soapenv:Header> <soapenv:Body> <bsvc:Get_Workers_Request bsvc:version=\"v31.0\"> <bsvc:Request_Criteria> <bsvc:Exclude_Inactive_Workers>false</bsvc:Exclude_Inactive_Workers> <bsvc:Exclude_Employees>false</bsvc:Exclude_Employees> <bsvc:Exclude_Contingent_Workers>false</bsvc:Exclude_Contingent_Workers> <bsvc:Transaction_Log_Criteria_Data> <bsvc:Transaction_Date_Range_Data> <bsvc:Effective_From>2020-02-06T00:00:00</bsvc:Effective_From> <bsvc:Effective_Through>2020-02-07T00:00:00</bsvc:Effective_Through> </bsvc:Transaction_Date_Range_Data> </bsvc:Transaction_Log_Criteria_Data> </bsvc:Request_Criteria> <bsvc:Response_Filter> <bsvc:Page>1</bsvc:Page> <bsvc:Count>500</bsvc:Count> </bsvc:Response_Filter> <bsvc:Response_Group> <bsvc:Include_Reference>false</bsvc:Include_Reference> <bsvc:Include_Personal_Information>true</bsvc:Include_Personal_Information> <bsvc:Include_Additional_Jobs>false</bsvc:Include_Additional_Jobs> <bsvc:Include_Employment_Information>true</bsvc:Include_Employment_Information> <bsvc:Include_Compensation>false</bsvc:Include_Compensation> <bsvc:Include_Organizations>true</bsvc:Include_Organizations> <bsvc:Exclude_Organization_Support_Role_Data>true</bsvc:Exclude_Organization_Support_Role_Data> <bsvc:Exclude_Location_Hierarchies>true</bsvc:Exclude_Location_Hierarchies> <bsvc:Exclude_Cost_Centers>false</bsvc:Exclude_Cost_Centers> <bsvc:Exclude_Cost_Center_Hierarchies>true</bsvc:Exclude_Cost_Center_Hierarchies> <bsvc:Exclude_Companies>true</bsvc:Exclude_Companies> <bsvc:Exclude_Company_Hierarchies>true</bsvc:Exclude_Company_Hierarchies> <bsvc:Exclude_Matrix_Organizations>true</bsvc:Exclude_Matrix_Organizations> <bsvc:Exclude_Pay_Groups>true</bsvc:Exclude_Pay_Groups> <bsvc:Exclude_Regions>true</bsvc:Exclude_Regions> <bsvc:Exclude_Region_Hierarchies>true</bsvc:Exclude_Region_Hierarchies> <bsvc:Exclude_Supervisory_Organizations>true</bsvc:Exclude_Supervisory_Organizations> <bsvc:Exclude_Teams>true</bsvc:Exclude_Teams> <bsvc:Exclude_Custom_Organizations>true</bsvc:Exclude_Custom_Organizations> <bsvc:Include_Roles>true</bsvc:Include_Roles> <bsvc:Include_Management_Chain_Data>true</bsvc:Include_Management_Chain_Data> <bsvc:Include_Multiple_Managers_in_Management_Chain_Data>false</bsvc:Include_Multiple_Managers_in_Management_Chain_Data> <bsvc:Include_Benefit_Enrollments>false</bsvc:Include_Benefit_Enrollments> <bsvc:Include_Benefit_Eligibility>false</bsvc:Include_Benefit_Eligibility> <bsvc:Include_Related_Persons>false</bsvc:Include_Related_Persons> <bsvc:Include_Qualifications>false</bsvc:Include_Qualifications> <bsvc:Include_Employee_Review>false</bsvc:Include_Employee_Review> <bsvc:Include_Goals>false</bsvc:Include_Goals> <bsvc:Include_Development_Items>false</bsvc:Include_Development_Items> <bsvc:Include_Skills>false</bsvc:Include_Skills> <bsvc:Include_Photo>false</bsvc:Include_Photo> <bsvc:Include_Worker_Documents>false</bsvc:Include_Worker_Documents> <bsvc:Include_Transaction_Log_Data>false</bsvc:Include_Transaction_Log_Data> <bsvc:Include_Subevents_for_Corrected_Transaction>false</bsvc:Include_Subevents_for_Corrected_Transaction> <bsvc:Include_Subevents_for_Rescinded_Transaction>false</bsvc:Include_Subevents_for_Rescinded_Transaction> <bsvc:Include_Succession_Profile>false</bsvc:Include_Succession_Profile> <bsvc:Include_Talent_Assessment>false</bsvc:Include_Talent_Assessment> <bsvc:Include_Employee_Contract_Data>true</bsvc:Include_Employee_Contract_Data> <bsvc:Include_Collective_Agreement_Data>false</bsvc:Include_Collective_Agreement_Data> <bsvc:Include_Probation_Period_Data>false</bsvc:Include_Probation_Period_Data> <bsvc:Include_Feedback_Received>false</bsvc:Include_Feedback_Received> <bsvc:Include_User_Account>false</bsvc:Include_User_Account> <bsvc:Include_Career>false</bsvc:Include_Career> <bsvc:Include_Account_Provisioning>false</bsvc:Include_Account_Provisioning> <bsvc:Include_Background_Check_Data>false</bsvc:Include_Background_Check_Data> <bsvc:Include_Contingent_Worker_Tax_Authority_Form_Information>false</bsvc:Include_Contingent_Worker_Tax_Authority_Form_Information> <bsvc:Exclude_Funds>true</bsvc:Exclude_Funds> <bsvc:Exclude_Fund_Hierarchies>true</bsvc:Exclude_Fund_Hierarchies> <bsvc:Exclude_Grants>true</bsvc:Exclude_Grants> <bsvc:Exclude_Grant_Hierarchies>true</bsvc:Exclude_Grant_Hierarchies> <bsvc:Exclude_Business_Units>true</bsvc:Exclude_Business_Units> <bsvc:Exclude_Business_Unit_Hierarchies>true</bsvc:Exclude_Business_Unit_Hierarchies> <bsvc:Exclude_Programs>true</bsvc:Exclude_Programs> <bsvc:Exclude_Program_Hierarchies>true</bsvc:Exclude_Program_Hierarchies> <bsvc:Exclude_Gifts>true</bsvc:Exclude_Gifts> <bsvc:Exclude_Gift_Hierarchies>true</bsvc:Exclude_Gift_Hierarchies> </bsvc:Response_Group> </bsvc:Get_Workers_Request> </soapenv:Body> </soapenv:Envelope>",
+      "USERMAPPING1" = "CITY:Worker_Data.Personal_Data.Contact_Data.Address_Data(Usage_Data->Type_Data->Type_Reference->ID=='WORK').Municipality,COMPANYNAME:Worker_Data.Employment_Data.Worker_Job_Data.Position_Organizations_Data.Position_Organization_Data.Organization_Data.Organization_Name,COSTCENTER:Worker_Data.Organization_Data.Worker_Organization_Data.Organization_Reference.ID(@type=='Cost_Center_Reference_ID'),COUNTRY:Worker_Data.Employment_Data.Worker_Job_Data.Position_Data.Business_Site_Summary_Data.Address_Data.Country_Reference.ID(@type=='ISO_3166-1_Alpha-3_Code'),CUSTOMPROPERTY16:Worker_Data.Employment_Data.Worker_Job_Data.Position_Data.Job_Profile_Summary_Data.Job_Family_Reference.ID(@type=='Job_Family_ID'),CUSTOMPROPERTY18:Worker_Data.Personal_Data.Name_Data.Preferred_Name_Data.Name_Detail_Data.Last_Name,CUSTOMPROPERTY37:Worker_Data.Personal_Data.Contact_Data.Address_Data.Municipality,CUSTOMPROPERTY20:Worker_Data.Employment_Data.Worker_Job_Data.Position_Data.Pay_Rate_Type_Reference.ID(@type=='Pay_Rate_Type_ID'),CUSTOMPROPERTY21:Worker_Data.Employment_Data.Worker_Job_Data.Position_Data.Business_Site_Summary_Data.Name,CUSTOMPROPERTY25:Worker_Data.Employment_Data.Worker_Status_Data.Hire_Rescinded,CUSTOMPROPERTY26:Worker_Data.Employment_Data.Worker_Status_Data.Hire_Date,CUSTOMPROPERTY24:Worker_Data.Employment_Data.Worker_Status_Data.Original_Hire_Date,CUSTOMPROPERTY27:Worker_Data.Employment_Data.Worker_Status_Data.Terminated,CUSTOMPROPERTY28:Worker_Data.Employment_Data.Worker_Status_Data.Regrettable_Termination,CUSTOMPROPERTY22:Worker_Data.User_ID,EMAIL:Worker_Data.Personal_Data.Contact_Data.Email_Address_Data(Usage_Data->Type_Data->Type_Reference->ID=='WORK').Email_Address,EMPLOYEEID:Worker_Data.Worker_ID,FIRSTNAME:Worker_Data.Personal_Data.Name_Data.Legal_Name_Data.Name_Detail_Data.First_Name,JOBCODE:Worker_Data.Employment_Data.Worker_Job_Data.Position_Data.Job_Profile_Summary_Data.Job_Profile_Reference.ID(@type=='Job_Profile_ID'),JOBCODEDESC:Worker_Data.Employment_Data.Worker_Job_Data.Position_Data.Job_Profile_Summary_Data.Job_Profile_Name,LASTNAME:Worker_Data.Personal_Data.Name_Data.Legal_Name_Data.Name_Detail_Data.Last_Name,LOCATION:Worker_Data.Employment_Data.Worker_Job_Data.Position_Data.Business_Site_Summary_Data.Location_Reference.ID(@type=='Location_ID'),CUSTOMPROPERTY30:Worker_Data.Employment_Data.Worker_Job_Data.Position_Data.Business_Site_Summary_Data.Location_Reference.ID(@type=='Location_ID'),LOCATIONDESC:Worker_Data.Employment_Data.Worker_Job_Data.Position_Data.Business_Site_Summary_Data.Location_Type_Reference.ID(@type=='Location_Type_ID'), MIDDLENAME:Worker_Data.Personal_Data.Name_Data.Legal_Name_Data.Name_Detail_Data.Middle_Name,PHONENUMBER:Worker_Data.Personal_Data.Contact_Data.Phone_Data(Usage_Data->Type_Data->Type_Reference->ID=='WORK').@Formatted_Phone,PREFEREDFIRSTNAME:Worker_Data.Personal_Data.Name_Data.Preferred_Name_Data.Name_Detail_Data.First_Name,REGIONCODE:Worker_Data.Personal_Data.Contact_Data.Address_Data(Usage_Data->Type_Data->Type_Reference->ID=='WORK').Postal_Code,STARTDATE:Worker_Data.Employment_Data.Worker_Status_Data.Hire_Date,STATE:Worker_Data.Personal_Data.Contact_Data.Address_Data(Usage_Data->Type_Data->Type_Reference->ID=='WORK').Country_Region_Descriptor,STATUSKEY:Worker_Data.Employment_Data.Worker_Status_Data.Active,STREET:Worker_Data.Personal_Data.Contact_Data.Address_Data(Usage_Data->Type_Data->Type_Reference->ID=='WORK').Address_Line_Data(@Type=='ADDRESS_LINE_1'),TITLE:Worker_Data.Employment_Data.Worker_Job_Data.Position_Data.Business_Title,USERNAME:Worker_Data.Worker_ID,CUSTOMPROPERTY35:Worker_Data.Employment_Data.Worker_Job_Data.Position_Data.Business_Site_Summary_Data.Location_Reference.ID(@type=='Location_ID'),OWNER:Worker_Data.Employment_Data.Worker_Job_Data.Position_Data.Manager_as_of_last_detected_manager_change_Reference.ID(@type=='Employee_ID')",
+      "TEMPMAPPING1" = [
+        "CUSTOMPROPERTY36='Promotion'"
+      ],
+      "PREFIX1"               = "wd",
+      "RESPONSETOTALRESULTS1" = "Body.Get_Workers_Response.Response_Results.Total_Results",
+      "RESPONSEPAGERESULTS1"  = "Body.Get_Workers_Response.Response_Results.Page_Results",
+      "RESPONSEDATAPATH1"     = "Body.Get_Workers_Response.Response_Data.Worker"
   })
 
-  data_to_import = "Users,Accounts,Organizations"
+  data_to_import = "Users"
   page_size      = "100"
-  date_format    = "yyyy-MM-dd'T'HH:mm:ss.SSS'Z'"
+  date_format    = "YYYY-MM-DD"
 
   # Account Management with Workday-specific SOAP operations
-  create_account_json = jsonencode({
-    "accountIdPath" : "$.Response_Data.Worker.Worker_Reference.ID[?(@.type=='Employee_ID')].value",
-    "processingType" : "SequentialAndIterative",
-    "createAccountRequestPath" : "$.call1.call[0]",
-    "successResponses" : {
-      "statusCode" : [200, 201]
+  create_account_json = jsonencode([
+    {
+      "CONNECTION" = "samplewebservice",
+      "REQUESTXML" = "<soapenv:Envelope xmlns:soapenv=\"http://schemas.xmlsoap.org/soap/envelope/\" xmlns:bir=\"http://<domain>/\"> <soapenv:Header></soapenv:Header> <soapenv:Body> <bir:Login>  <bir:username>$${USERNAME}</bir:username>  <bir:password>$${PASSWORD}</bir:password> </bir:Login> </soapenv:Body> </soapenv:Envelope>",
+      "REQUESTPARAMS" = {
+        "Content-Type" = "text/xml"
+      },
+      "RESPONSEMAPPING" = {
+        "TOKEN" = "Body.LoginResponse.LoginResult"
+      }
+    },
+    {
+      "CONNECTION" = "samplewebservice",
+      "REQUESTXML" = "<?xml version=\"1.0\" encoding=\"utf-16\"?> <soap:Envelope xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\" xmlns:xsd=\"http://www.w3.org/2001/XMLSchema\" xmlns:soap=\"http://schemas.xmlsoap.org/soap/envelope/\"> <soap:Body><addUser xmlns=\"http://<domain>/\"><token>$${TOKEN}</token><userName>$${accountName}</userName><additionalParams>email=$${user.email!=null?user.email:''} firstname=$${user.firstname!=null?user.firstname:''} lastname=$${user.lastname!=null?user.lastname:''}</additionalParams></addUser></soap:Body></soap:Envelope>",
+      "REQUESTPARAMS" = {
+        "Content-Type" = "text/xml"
+      },
+      "RESPONSEMAPPING" = {
+        "ADDUSERRESPONSE" = "Body.addUserResponse.nodeexists",
+        "FAULTSTRING"     = "Body.Fault.faultstring"
+      },
+      "SUCCESSCRITERIA" = {
+        "ADDUSERRESPONSE" = "1",
+        "FAULTSTRING"     = "already exists"
+      }
+    },
+    {
+      "CONNECTION" = "samplewebservice",
+      "REQUESTXML" = "$${task.endpoint.endpointname != 'SAMPLE_SOAP' ? '<?xml version=\"1.0\" encoding=\"utf-8\"?> <soap:Envelope xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\" xmlns:xsd=\"http://www.w3.org/2001/XMLSchema\" xmlns:soap=\"http://schemas.xmlsoap.org/soap/envelope/\"> <soap:Body> <addUserToSpace xmlns=\"http://<domain>/\"> <token>'+TOKEN+'</token> <userName>'+accountName+'</userName> <spaceID>'+task.endpoint.customproperty1+'</spaceID> <hasAdmin>false</hasAdmin> </addUserToSpace> </soap:Body> </soap:Envelope>' : ''}",
+      "REQUESTPARAMS" = {
+        "Content-Type" = "text/xml"
+      },
+      "RESPONSEMAPPING" = {
+        "ADDUSERTOSPACERESPONSE" = "Body.addUserToSpaceResponse.nodeexists"
+      },
+      "SUCCESSCRITERIA" = {
+        "ADDUSERTOSPACERESPONSE" = "1"
+      }
     }
-  })
+  ])
 
   update_account_json = jsonencode({
-    "accountIdPath" : "$.Response_Data.Worker.Worker_Reference.ID[?(@.type=='Employee_ID')].value",
-    "processingType" : "SequentialAndIterative",
-    "updateAccountRequestPath" : "$.call1.call[0]",
-    "successResponses" : {
-      "statusCode" : [200, 201]
+    "CONNECTION" = "login"
+    "REQUESTXML" = "$${user.email != null && user.email != '' ? ('<soapenv:Envelope xmlns:soapenv=\"http://schemas.xmlsoap.org/soap/envelope/\" xmlns:bsvc=\"urn:com.workday/bsvc\"> <soapenv:Header> <wsse:Security soapenv:mustUnderstand=\"1\" xmlns:wsse=\"http://docs.oasis-open.org/wss/2004/01/oasis-200401-wss-wssecurity-secext-1.0.xsd\" xmlns:wsu=\"http://docs.oasis-open.org/wss/2004/01/oasis-200401-wss-wssecurity-utility-1.0.xsd\"><wsse:UsernameToken wsu:Id=\"UsernameToken-64DBF26FBA30D3CCB6146964280369918\"> <wsse:Username>' +USERNAME + '</wsse:Username> <wsse:Password Type=\"http://docs.oasis-open.org/wss/2004/01/oasis-200401-wss-username-token-profile-1.0#PasswordText\">' +PASSWORD+'</wsse:Password><wsse:Nonce EncodingType=\"http://docs.oasis-open.org/wss/2004/01/oasis-200401-wss-soap-message-security-1.0#Base64Binary\">lLP+oysknDXxg0ZcnRTUXg==</wsse:Nonce> </wsse:UsernameToken> </wsse:Security> </soapenv:Header> <soapenv:Body><bsvc:Maintain_Contact_Information_for_Person_Event_Request bsvc:Add_Only=\"false\" bsvc:version=\"v31.0\"> <bsvc:Business_Process_Parameters> <bsvc:Auto_Complete>true</bsvc:Auto_Complete> <bsvc:Run_Now>true</bsvc:Run_Now> </bsvc:Business_Process_Parameters> <bsvc:Maintain_Contact_Information_Data> <bsvc:Worker_Reference bsvc:Descriptor=\"?\"> <bsvc:ID bsvc:type=\"Employee_ID\">'+user.username+'</bsvc:ID> </bsvc:Worker_Reference> <bsvc:Effective_Date>'+new Date().format(DATEFORMAT)+'</bsvc:Effective_Date> <bsvc:Worker_Contact_Information_Data> <bsvc:Email_Address_Data> <bsvc:Email_Address>'+user?.email+'</bsvc:Email_Address> <bsvc:Usage_Data bsvc:Public=\"true\"> <bsvc:Type_Data bsvc:Primary=\"true\"> <bsvc:Type_Reference bsvc:Descriptor=\"work\"> <bsvc:ID bsvc:type=\"Communication_Usage_Type_ID\">WORK</bsvc:ID> </bsvc:Type_Reference> </bsvc:Type_Data> </bsvc:Usage_Data> </bsvc:Email_Address_Data> </bsvc:Worker_Contact_Information_Data></bsvc:Maintain_Contact_Information_Data> </bsvc:Maintain_Contact_Information_for_Person_Event_Request> </soapenv:Body> </soapenv:Envelope>') : ''}"
+  })
+
+
+  delete_account_json = jsonencode([
+    {
+      "CONNECTION"      = "login",
+      "REQUESTXML"      = "<soapenv:Envelope xmlns:soapenv=\"http://schemas.xmlsoap.org/soap/envelope/\" xmlns:bsvc=\"urn:com.workday/bsvc\">\n<soapenv:Header>\n<wsse:Security xmlns:wsse=\"http://docs.oasis-open.org/wss/2004/01/oasis-200401-wss-wssecurity-secext-1.0.xsd\" xmlns:wsu=\"http://docs.oasis-open.org/wss/2004/01/oasis-200401-wss-wssecurity-utility-1.0.xsd\" soapenv:mustUnderstand=\"1\">\n<wsse:UsernameToken wsu:Id=\"UsernameToken-<token>\">\n<wsse:Username><username></wsse:Username>\n<wsse:Password Type=\"http://docs.oasis-open.org/wss/2004/01/oasis-200401-wss-username-token-profile-1.0#PasswordText\"><password></wsse:Password>\n<wsse:Nonce EncodingType=\"http://docs.oasis-open.org/wss/2004/01/oasis-200401-wss-soap-message-security-1.0#Base64Binary\"><encode value>==</wsse:Nonce>\n</wsse:UsernameToken>\n</wsse:Security>\n</soapenv:Header>\n<soapenv:Body>\n<bsvc:Maintain_Contact_Information_for_Person_Event_Request bsvc:Add_Only=\"false\" bsvc:version=\"v34.0\">    <bsvc:Business_Process_Parameters>        <bsvc:Auto_Complete>true</bsvc:Auto_Complete>        <bsvc:Run_Now>true</bsvc:Run_Now>    </bsvc:Business_Process_Parameters>    <bsvc:Maintain_Contact_Information_Data>        <bsvc:Worker_Reference bsvc:Descriptor=\"\">            <bsvc:ID bsvc:type=\"WID\">$${user.customproperty1}</bsvc:ID>        </bsvc:Worker_Reference>        <bsvc:Effective_Date>2023-12-05T00:00:00.0Z</bsvc:Effective_Date>        <bsvc:Worker_Contact_Information_Data>            <bsvc:Email_Address_Data>                <bsvc:Email_Address>$${user.email}</bsvc:Email_Address>                <bsvc:Usage_Data bsvc:Public=\"true\">                    <bsvc:Type_Data bsvc:Primary=\"true\">                        <bsvc:Type_Reference bsvc:Descriptor=\"work\">                            <bsvc:ID bsvc:type=\"Communication_Usage_Type_ID\">WORK</bsvc:ID>                        </bsvc:Type_Reference>                    </bsvc:Type_Data>                </bsvc:Usage_Data>            </bsvc:Email_Address_Data>        </bsvc:Worker_Contact_Information_Data>    </bsvc:Maintain_Contact_Information_Data></bsvc:Maintain_Contact_Information_for_Person_Event_Request></soapenv:Body>\n</soapenv:Envelope>",
+      "SOAPACTION"      = "Maintain_Contact_Information_for_Person_Event_Request",
+      "SUCCESSCRITERIA" = "true"
     }
-  })
+  ])
 
-  delete_account_json = jsonencode({
-    "accountIdPath" : "$.Response_Data.Worker.Worker_Reference.ID[?(@.type=='Employee_ID')].value",
-    "processingType" : "SequentialAndIterative",
-    "deleteAccountRequestPath" : "$.call1.call[0]"
-  })
+  enable_account_json = jsonencode([
+    {
+      "CONNECTION" = "samplewebservice",
+      "REQUESTXML" = "<soapenv:Envelope xmlns:soapenv=\"http://schemas.xmlsoap.org/soap/envelope/\" xmlns:bir=\"http://<domain>/\"> <soapenv:Header></soapenv:Header> <soapenv:Body> <bir:Login>  <bir:username>$${USERNAME}</bir:username>  <bir:password>$${PASSWORD}</bir:password> </bir:Login> </soapenv:Body> </soapenv:Envelope>",
+      "REQUESTPARAMS" = {
+        "Content-Type" = "text/xml"
+      },
+      "RESPONSEMAPPING" = {
+        "TOKEN" = "Body.LoginResponse.LoginResult"
+      }
+    },
+    {
+      "CONNECTION" = "samplewebservice",
+      "REQUESTXML" = "<?xml version=\"1.0\" encoding=\"utf-8\"?> <soap:Envelope xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\" xmlns:xsd=\"http://www.w3.org/2001/XMLSchema\" xmlns:soap=\"http://schemas.xmlsoap.org/soap/envelope/\"> <soap:Body> <enableUser xmlns=\"http://<domain>/\"> <token>$${TOKEN}</token> <userName>$${account.accountID != null ? account.accountID : account.name}</userName> <enable>true</enable> </enableUser> </soap:Body> </soap:Envelope>",
+      "REQUESTPARAMS" = {
+        "Content-Type" = "text/xml"
+      },
+      "RESPONSEMAPPING" = {
 
-  enable_account_json = jsonencode({
-    "accountIdPath" : "$.Response_Data.Worker.Worker_Reference.ID[?(@.type=='Employee_ID')].value",
-    "processingType" : "SequentialAndIterative",
-    "enableAccountRequestPath" : "$.call1.call[0]"
-  })
+      }
+    }
+  ])
 
-  disable_account_json = jsonencode({
-    "accountIdPath" : "$.Response_Data.Worker.Worker_Reference.ID[?(@.type=='Employee_ID')].value",
-    "processingType" : "SequentialAndIterative",
-    "disableAccountRequestPath" : "$.call1.call[0]"
-  })
+  disable_account_json = jsonencode([
+    {
+      "CONNECTION" = "samplewebservice",
+      "REQUESTXML" = "<soapenv:Envelope xmlns:soapenv=\"http://schemas.xmlsoap.org/soap/envelope/\" xmlns:bir=\"http://<domain>/\"> <soapenv:Header></soapenv:Header> <soapenv:Body> <bir:Login>  <bir:username>$${USERNAME}</bir:username>  <bir:password>$${PASSWORD}</bir:password> </bir:Login> </soapenv:Body> </soapenv:Envelope>",
+      "REQUESTPARAMS" = {
+        "Content-Type" = "text/xml"
+      },
+      "RESPONSEMAPPING" = {
+        "TOKEN" = "Body.LoginResponse.LoginResult"
+      }
+    },
+    {
+      "CONNECTION" = "samplewebservice",
+      "REQUESTXML" = "<?xml version=\"1.0\" encoding=\"utf-8\"?> <soap:Envelope xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\" xmlns:xsd=\"http://www.w3.org/2001/XMLSchema\" xmlns:soap=\"http://schemas.xmlsoap.org/soap/envelope/\"> <soap:Body> <enableUser xmlns=\"http://<domain>/\"> <token>$${TOKEN}</token> <userName>$${account.accountID != null ? account.accountID : account.name}</userName> <enable>false</enable> </enableUser> </soap:Body> </soap:Envelope>",
+      "REQUESTPARAMS" = {
+        "Content-Type" = "text/xml"
+      },
+      "RESPONSEMAPPING" = {
 
+      }
+    }
+  ])
   # User Management
   update_user_json = jsonencode({
-    "userIdPath" : "$.Response_Data.Worker.Worker_Reference.ID[?(@.type=='Employee_ID')].value",
-    "processingType" : "SequentialAndIterative",
-    "updateUserRequestPath" : "$.call1.call[0]"
-  })
-
-  modify_user_data_json = jsonencode({
-    "userIdPath" : "$.Response_Data.Worker.Worker_Reference.ID[?(@.type=='Employee_ID')].value",
-    "processingType" : "SequentialAndIterative",
-    "modifyUserDataRequestPath" : "$.call1.call[0]"
+    "CONNECTION" = "login",
+    "REQUESTXML" = "$${user.email != null && user.email != '' ? ('<soapenv:Envelope xmlns:soapenv=\"http://schemas.xmlsoap.org/soap/envelope/\" xmlns:bsvc=\"urn:com.workday/bsvc\"> <soapenv:Header> <wsse:Security soapenv:mustUnderstand=\"1\" xmlns:wsse=\"http://docs.oasis-open.org/wss/2004/01/oasis-200401-wss-wssecurity-secext-1.0.xsd\" xmlns:wsu=\"http://docs.oasis-open.org/wss/2004/01/oasis-200401-wss-wssecurity-utility-1.0.xsd\"> <wsse:UsernameToken wsu:Id=\"UsernameToken-64DBF26FBA30D3CCB6146964280369918\"> <wsse:Username>' +USERNAME + '</wsse:Username> <wsse:Password Type=\"http://docs.oasis-open.org/wss/2004/01/oasis-200401-wss-username-token-profile-1.0#PasswordText\">' +PASSWORD+'</wsse:Password><wsse:Nonce EncodingType=\"http://docs.oasis-open.org/wss/2004/01/oasis-200401-wss-soap-message-security-1.0#Base64Binary\">lLP+oysknDXxg0ZcnRTUXg==</wsse:Nonce> </wsse:UsernameToken> </wsse:Security> </soapenv:Header> <soapenv:Body> <bsvc:Maintain_Contact_Information_for_Person_Event_Request bsvc:Add_Only=\"false\" bsvc:version=\"v31.0\"> <bsvc:Business_Process_Parameters> <bsvc:Auto_Complete>true</bsvc:Auto_Complete> <bsvc:Run_Now>true</bsvc:Run_Now> </bsvc:Business_Process_Parameters> <bsvc:Maintain_Contact_Information_Data> <bsvc:Worker_Reference bsvc:Descriptor=\"?\"><bsvc:ID bsvc:type=\"Employee_ID\">'+user.username+'</bsvc:ID> </bsvc:Worker_Reference> <bsvc:Effective_Date>'+new Date().format(DATEFORMAT)+'</bsvc:Effective_Date><bsvc:Worker_Contact_Information_Data> <bsvc:Email_Address_Data> <bsvc:Email_Address>'+user?.email+'</bsvc:Email_Address> <bsvc:Usage_Data bsvc:Public=\"true\"> <bsvc:Type_Data bsvc:Primary=\"true\"> <bsvc:Type_Reference bsvc:Descriptor=\"work\"> <bsvc:ID bsvc:type=\"Communication_Usage_Type_ID\">WORK</bsvc:ID></bsvc:Type_Reference> </bsvc:Type_Data> </bsvc:Usage_Data> </bsvc:Email_Address_Data> </bsvc:Worker_Contact_Information_Data> </bsvc:Maintain_Contact_Information_Data> </bsvc:Maintain_Contact_Information_for_Person_Event_Request> </soapenv:Body> </soapenv:Envelope>') : ''}"
   })
 
   # Access Management
-  grant_access_json = jsonencode({
-    "accountIdPath" : "$.Response_Data.Worker.Worker_Reference.ID[?(@.type=='Employee_ID')].value",
-    "processingType" : "SequentialAndIterative",
-    "grantAccessRequestPath" : "$.call1.call[0]"
-  })
+  grant_access_json = jsonencode([
+    {
+      "CONNECTION" = "samplewebservice",
+      "REQUESTXML" = "<soapenv:Envelope xmlns:soapenv=\"http://schemas.xmlsoap.org/soap/envelope/\" xmlns:bir=\"http://<domain>/\"> <soapenv:Header></soapenv:Header> <soapenv:Body> <bir:Login>  <bir:username>$${USERNAME}</bir:username>  <bir:password>$${PASSWORD}</bir:password> </bir:Login> </soapenv:Body> </soapenv:Envelope>",
+      "REQUESTPARAMS" = {
+        "Content-Type" = "text/xml"
+      },
+      "RESPONSEMAPPING" = {
+        "TOKEN" = "Body.LoginResponse.LoginResult"
+      }
+    },
+    {
+      "CONNECTION"    = "samplewebservice",
+      "REQUESTXML"    = "<soap:Envelope xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\" xmlns:xsd=\"http://www.w3.org/2001/XMLSchema\" xmlns:soap=\"http://schemas.xmlsoap.org/soap/envelope/\"> <soap:Body> <addUserToGroupInSpace xmlns=\"http://<domain>/\"> <token>$${TOKEN}</token> <userName>$${accountName}</userName> <groupName>$${entTask.entitlement_valueKey.entitlement_value}</groupName> <spaceID>$${task.endpoint.customproperty1}</spaceID> </addUserToGroupInSpace> </soap:Body> </soap:Envelope>",
+      "RUNFOREACHENT" = true,
+      "REQUESTPARAMS" = {
+        "Content-Type" = "text/xml"
+      },
+      "RESPONSEMAPPING" = {
+        "ADDUSERTOGROUPINSPACERESPONSE" = "Body.addUserToGroupInSpaceResponse.nodeexists"
+      },
+      "SUCCESSCRITERIA" = {
+        "ADDUSERTOGROUPINSPACERESPONSE" = "1"
+      }
+    }
+  ])
 
-  revoke_access_json = jsonencode({
-    "accountIdPath" : "$.Response_Data.Worker.Worker_Reference.ID[?(@.type=='Employee_ID')].value",
-    "processingType" : "SequentialAndIterative",
-    "revokeAccessRequestPath" : "$.call1.call[0]"
-  })
+  revoke_access_json = jsonencode([
+    {
+      "CONNECTION" = "samplewebservice",
+      "REQUESTXML" = "<soapenv:Envelope xmlns:soapenv=\"http://schemas.xmlsoap.org/soap/envelope/\" xmlns:bir=\"http://<domain>/\"> <soapenv:Header></soapenv:Header> <soapenv:Body> <bir:Login>  <bir:username>$${USERNAME}</bir:username>  <bir:password>$${PASSWORD}</bir:password> </bir:Login> </soapenv:Body> </soapenv:Envelope>",
+      "REQUESTPARAMS" = {
+        "Content-Type" = "text/xml"
+      },
+      "RESPONSEMAPPING" = {
+        "TOKEN" = "Body.LoginResponse.LoginResult"
+      }
+    },
+    {
+      "CONNECTION"    = "samplewebservice",
+      "REQUESTXML"    = "<soap:Envelope xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\" xmlns:xsd=\"http://www.w3.org/2001/XMLSchema\" xmlns:soap=\"http://schemas.xmlsoap.org/soap/envelope/\"> <soap:Body> <removeUserFromGroupInSpace xmlns=\"http://<domain>/\"> <token>$${TOKEN}</token> <userName>$${accountName}</userName> <groupName>$${entTask.entitlement_valueKey.entitlement_value}</groupName> <spaceID>$${task.endpoint.customproperty1}</spaceID> </removeUserFromGroupInSpace> </soap:Body> </soap:Envelope>",
+      "RUNFOREACHENT" = true,
+      "REQUESTPARAMS" = {
+        "Content-Type" = "text/xml"
+      },
+      "RESPONSEMAPPING" = {
+        "REMOVEUSERFROMGROUPINSPACERESPONSE" = "Body.removeUserFromGroupInSpaceResponse.nodeexists"
+      },
+      "SUCCESSCRITERIA" = {
+        "REMOVEUSERFROMGROUPINSPACERESPONSE" = "1"
+      }
+    }
+  ])
+
 
   # Password Management
   change_pass_json = jsonencode({
-    "accountIdPath" : "$.Response_Data.Worker.Worker_Reference.ID[?(@.type=='Employee_ID')].value",
-    "processingType" : "SequentialAndIterative",
-    "changePasswordRequestPath" : "$.call1.call[0]"
+    "REQUESTXML" = "<soapenv:Envelope><soapenv:Header></soapenv:Header><soapenv:Body></soapenv:Body></soapenv:Envelope>",
+    "SOAPACTION" = "soap.action.string",
+    "RESPONSEMAPPING" : {
+      "TABLETYPE1.COLUMNNAME1" = "XML.Response.Path.To.Attribute1",
+      "TABLETYPE2.COLUMNNAME1" = "XML.Response.Path.To.Attribute2"
+    }
   })
   # Alternative: Use write-only for enhanced security
   # change_pass_json_wo = jsonencode({ ... })
@@ -211,49 +251,55 @@ resource "saviynt_workday_soap_connection_resource" "example" {
   password_noofsplchars  = "1"
 
   # Response Path Configuration for Workday SOAP responses
-  responsepath_userlist     = "$.Response_Data.Worker"
-  responsepath_pageresults  = "$.Response_Results.Page_Results"
-  responsepath_totalresults = "$.Response_Results.Total_Results"
+  responsepath_userlist     = "Body.Get_Workers_Response.Response_Data.Worker"
+  responsepath_pageresults  = "Body.Get_Workers_Response.Response_Results.Page_Results"
+  responsepath_totalresults = "Body.Get_Workers_Response.Response_Results.Total_Results"
 
   # Advanced Configuration
   connection_json = jsonencode({
-    "authType" : "basic",
-    "url" : var.SOAP_ENDPOINT_URL,
-    "httpMethod" : "POST",
-    "httpHeaders" : {
-      "Content-Type" : "text/xml; charset=utf-8"
-    },
-    "tenant" : var.TENANT_NAME,
-    "timeout" : 30000,
-    "retryCount" : 3
+    "authentications" = {
+      "login" = {
+        "authType" = "basic",
+        "properties" = {
+          "SOAP_ENDPOINT" = "<URL>",
+          "USERNAME"      = "<username>",
+          "PASSWORD"      = "<PASSWORD>",
+          "PASSWORD_TYPE" = "PasswordText",
+          "REQUESTPARAMS" = {
+            "CONTENT-TYPE" = "text/xml;charset=UTF-8",
+            "Connection"   = "Keep-Alive",
+            "Keep-Alive"   = "timeout=600, max=1000"
+          }
+        }
+      },
+      "accessProvisioning" = {
+        "authType" = "basic",
+        "properties" = {
+          "SOAP_ENDPOINT" = "<URL>",
+          "USERNAME"      = "<username>",
+          "PASSWORD"      = "<PASSWORD>",
+          "PASSWORD_TYPE" = "PasswordText",
+          "REQUESTPARAMS" = {
+            "CONTENT-TYPE" = "text/xml;charset=UTF-8",
+            "Connection"   = "Keep-Alive",
+            "Keep-Alive"   = "timeout=600, max=1000"
+          }
+        }
+      }
+    }
   })
   # Alternative: Use write-only for enhanced security
   # connection_json_wo = jsonencode({ ... })
-
   custom_config = jsonencode({
-    "pagination" : {
-      "enabled" : true,
-      "pageSize" : 100,
-      "maxPages" : 1000
-    },
-    "workdaySpecific" : {
-      "tenant" : var.TENANT_NAME,
-      "apiVersion" : "v35.0",
-      "includeInactiveWorkers" : false
-    },
-    "errorHandling" : {
-      "retryOnFailure" : true,
-      "maxRetries" : 3,
-      "retryDelay" : 5000
+    "connectionTimeoutConfig" = {
+      "connectionTimeout" = 10
+      "readTimeout"       = 900
+      "writeTimeout"      = 300
+      "retryWait"         = 2
+      "retryCount"        = 3
     }
   })
 
-  pam_config = jsonencode({
-    "Connection" : "Workday-SOAP",
-    "ConnectorClass" : "sailpoint.connector.WorkdaySOAPConnector",
-    "tenant" : var.TENANT_NAME,
-    "apiVersion" : "v35.0"
-  })
+  combined_create_request = "True" # True - Combines account and entitlement provisioning in a single call.False - Does not combine account and entitlement provisioning in a single call.
 
-  combined_create_request = "true"
 }
