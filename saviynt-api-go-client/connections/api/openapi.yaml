@@ -1,3 +1,6 @@
+# Copyright (c) Saviynt Inc.
+# SPDX-License-Identifier: MPL-2.0
+
 openapi: 3.1.0
 info:
   description: |-
@@ -978,7 +981,7 @@ components:
             type: string
           PASSWORD:
             description: Password for connection for Import
-            example: 'password'
+            example: password
             type: string
           JCO_LANG:
             description: LANGUAGE for the SAP Instance for Import
@@ -1062,7 +1065,7 @@ components:
             type: string
           PROV_PASSWORD:
             description: Password for connection for Provisioning
-            example: 'password'
+            example: password
             type: string
           PROV_JCO_LANG:
             description: LANGUAGE for the SAP Instance for Provisioning
@@ -1199,6 +1202,10 @@ components:
             type: string
           ConfigJSON:
             description: Property for ConfigJSON
+            type: string
+          ROLE_DEFAULT_DATE:
+            description: "Default end date for SAP roles. Format: yyyyMMdd (e.g.,\
+              \ 20251231). If not configured, defaults to 99991231."
             type: string
     D365Connector:
       allOf:
@@ -1367,6 +1374,9 @@ components:
           UpdateEntitlementJSON:
             type: string
           ApplicationDiscoveryJSON:
+            type: string
+          AppType:
+            description: For CUA configuration
             type: string
     SalesforceConnector:
       allOf:
@@ -1867,6 +1877,8 @@ components:
             type: string
           SSHPassThroughPassphrase:
             description: Property for SSHPassThroughPassphrase
+            type: string
+          SERVER_TYPE:
             type: string
         required:
         - HOST_NAME
@@ -2933,6 +2945,9 @@ components:
           type: boolean
         ConnectionJSON:
           type: string
+        AppType:
+          description: For CUA configuration
+          type: string
     DBConnectionAttributes:
       properties:
         PASSWORD_MIN_LENGTH:
@@ -3893,6 +3908,10 @@ components:
           type: string
         UPDATEACCOUNTJSON:
           type: string
+        ROLE_DEFAULT_DATE:
+          description: "Default end date for SAP roles. Format: yyyyMMdd (e.g., 20251231).\
+            \ If not configured, defaults to 99991231."
+          type: string
     SalesforceConnectionAttributes:
       properties:
         isTimeoutSupported:
@@ -4032,6 +4051,8 @@ components:
         CUSTOM_CONFIG_JSON:
           type: string
         ENABLE_ACCOUNT_COMMAND:
+          type: string
+        SERVER_TYPE:
           type: string
     GithubRESTConnectionAttributes:
       properties:

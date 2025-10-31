@@ -18,6 +18,12 @@ ENHANCEMENTS:
   - Provides clear error messages when using unsupported attributes for your EIC version
   - Supports REST, DB, Workday, GitHub REST, Security System, Entitlement Type, and Enterprise Role resources
   - Prevents deployment failures by catching version incompatibilities during planning phase
+
+* **New 25.Brisbane.1 Attributes Support** - Added support for new attributes available in Saviynt EIC 25.Brisbane.1
+  - **REST Connector**: Added `app_type` attribute for CUA configuration
+  - **SAP Connector**: Added `role_default_date` attribute for default end date configuration
+  - **Unix Connector**: Added `server_type` attribute for server type specification
+  - All new attributes include proper version validation and are available in both resource and datasource implementations
   
 ## 0.2.12 (Released)
 
