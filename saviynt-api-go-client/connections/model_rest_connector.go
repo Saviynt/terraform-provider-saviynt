@@ -53,6 +53,8 @@ type RESTConnector struct {
 	DeleteEntitlementJSON    *string `json:"DeleteEntitlementJSON,omitempty"`
 	UpdateEntitlementJSON    *string `json:"UpdateEntitlementJSON,omitempty"`
 	ApplicationDiscoveryJSON *string `json:"ApplicationDiscoveryJSON,omitempty"`
+	// For CUA configuration
+	AppType *string `json:"AppType,omitempty"`
 }
 
 type _RESTConnector RESTConnector
@@ -972,6 +974,38 @@ func (o *RESTConnector) SetApplicationDiscoveryJSON(v string) {
 	o.ApplicationDiscoveryJSON = &v
 }
 
+// GetAppType returns the AppType field value if set, zero value otherwise.
+func (o *RESTConnector) GetAppType() string {
+	if o == nil || IsNil(o.AppType) {
+		var ret string
+		return ret
+	}
+	return *o.AppType
+}
+
+// GetAppTypeOk returns a tuple with the AppType field value if set, nil otherwise
+// and a boolean to check if the value has been set.
+func (o *RESTConnector) GetAppTypeOk() (*string, bool) {
+	if o == nil || IsNil(o.AppType) {
+		return nil, false
+	}
+	return o.AppType, true
+}
+
+// HasAppType returns a boolean if a field has been set.
+func (o *RESTConnector) HasAppType() bool {
+	if o != nil && !IsNil(o.AppType) {
+		return true
+	}
+
+	return false
+}
+
+// SetAppType gets a reference to the given string and assigns it to the AppType field.
+func (o *RESTConnector) SetAppType(v string) {
+	o.AppType = &v
+}
+
 func (o RESTConnector) MarshalJSON() ([]byte, error) {
 	toSerialize, err := o.ToMap()
 	if err != nil {
@@ -1073,6 +1107,9 @@ func (o RESTConnector) ToMap() (map[string]interface{}, error) {
 	}
 	if !IsNil(o.ApplicationDiscoveryJSON) {
 		toSerialize["ApplicationDiscoveryJSON"] = o.ApplicationDiscoveryJSON
+	}
+	if !IsNil(o.AppType) {
+		toSerialize["AppType"] = o.AppType
 	}
 	return toSerialize, nil
 }

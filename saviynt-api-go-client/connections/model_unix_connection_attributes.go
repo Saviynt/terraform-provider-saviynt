@@ -57,6 +57,7 @@ type UNIXConnectionAttributes struct {
 	PASSWORD                            *string                  `json:"PASSWORD,omitempty"`
 	CUSTOM_CONFIG_JSON                  *string                  `json:"CUSTOM_CONFIG_JSON,omitempty"`
 	ENABLE_ACCOUNT_COMMAND              *string                  `json:"ENABLE_ACCOUNT_COMMAND,omitempty"`
+	SERVER_TYPE                         *string                  `json:"SERVER_TYPE,omitempty"`
 }
 
 // NewUNIXConnectionAttributes instantiates a new UNIXConnectionAttributes object
@@ -1292,6 +1293,38 @@ func (o *UNIXConnectionAttributes) SetENABLE_ACCOUNT_COMMAND(v string) {
 	o.ENABLE_ACCOUNT_COMMAND = &v
 }
 
+// GetSERVER_TYPE returns the SERVER_TYPE field value if set, zero value otherwise.
+func (o *UNIXConnectionAttributes) GetSERVER_TYPE() string {
+	if o == nil || IsNil(o.SERVER_TYPE) {
+		var ret string
+		return ret
+	}
+	return *o.SERVER_TYPE
+}
+
+// GetSERVER_TYPEOk returns a tuple with the SERVER_TYPE field value if set, nil otherwise
+// and a boolean to check if the value has been set.
+func (o *UNIXConnectionAttributes) GetSERVER_TYPEOk() (*string, bool) {
+	if o == nil || IsNil(o.SERVER_TYPE) {
+		return nil, false
+	}
+	return o.SERVER_TYPE, true
+}
+
+// HasSERVER_TYPE returns a boolean if a field has been set.
+func (o *UNIXConnectionAttributes) HasSERVER_TYPE() bool {
+	if o != nil && !IsNil(o.SERVER_TYPE) {
+		return true
+	}
+
+	return false
+}
+
+// SetSERVER_TYPE gets a reference to the given string and assigns it to the SERVER_TYPE field.
+func (o *UNIXConnectionAttributes) SetSERVER_TYPE(v string) {
+	o.SERVER_TYPE = &v
+}
+
 func (o UNIXConnectionAttributes) MarshalJSON() ([]byte, error) {
 	toSerialize, err := o.ToMap()
 	if err != nil {
@@ -1415,6 +1448,9 @@ func (o UNIXConnectionAttributes) ToMap() (map[string]interface{}, error) {
 	}
 	if !IsNil(o.ENABLE_ACCOUNT_COMMAND) {
 		toSerialize["ENABLE_ACCOUNT_COMMAND"] = o.ENABLE_ACCOUNT_COMMAND
+	}
+	if !IsNil(o.SERVER_TYPE) {
+		toSerialize["SERVER_TYPE"] = o.SERVER_TYPE
 	}
 	return toSerialize, nil
 }

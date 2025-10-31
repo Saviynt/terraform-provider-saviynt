@@ -32,6 +32,7 @@ Name | Type | Description | Notes
 **DeleteEntitlementJSON** | Pointer to **string** |  | [optional] 
 **UpdateEntitlementJSON** | Pointer to **string** |  | [optional] 
 **ApplicationDiscoveryJSON** | Pointer to **string** |  | [optional] 
+**AppType** | Pointer to **string** | For CUA configuration | [optional] 
 
 ## Methods
 
@@ -751,6 +752,31 @@ SetApplicationDiscoveryJSON sets ApplicationDiscoveryJSON field to given value.
 `func (o *RESTConnector) HasApplicationDiscoveryJSON() bool`
 
 HasApplicationDiscoveryJSON returns a boolean if a field has been set.
+
+### GetAppType
+
+`func (o *RESTConnector) GetAppType() string`
+
+GetAppType returns the AppType field if non-nil, zero value otherwise.
+
+### GetAppTypeOk
+
+`func (o *RESTConnector) GetAppTypeOk() (*string, bool)`
+
+GetAppTypeOk returns a tuple with the AppType field if it's non-nil, zero value otherwise
+and a boolean to check if the value has been set.
+
+### SetAppType
+
+`func (o *RESTConnector) SetAppType(v string)`
+
+SetAppType sets AppType field to given value.
+
+### HasAppType
+
+`func (o *RESTConnector) HasAppType() bool`
+
+HasAppType returns a boolean if a field has been set.
 
 
 [[Back to Model list]](../README.md#documentation-for-models) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to README]](../README.md)
