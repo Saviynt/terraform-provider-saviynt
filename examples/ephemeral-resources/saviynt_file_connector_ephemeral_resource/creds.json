@@ -1,0 +1,38 @@
+
+{
+  "USERNAME": "username",
+  "PASSWORD": "password",
+  "CLIENT_ID": "client_id",
+  "AUTH_TOKEN":"auth_token",
+  "CLIENT_SECRET": "client_secret",
+  "ACCESS_TOKEN": "access_token",
+  "REFRESH_TOKEN": "refresh_token",
+  "PROV_PASSWORD": "prov_password",
+  "CONNECTION_JSON": {
+    "authentications": {
+      "acctAuth": {
+        "authType": "oauth2",
+        "url": "https://api.github.com/login/oauth/access_token",
+        "httpMethod": "POST",
+        "httpParams": {
+          "code": "code",
+          "state": "state",
+          "client_id": "client_id",
+          "client_secret": "client_secret"
+        },
+        "httpHeaders": {
+          "contentType": "application/x-www-form-urlencoded"
+        },
+        "httpContentType": "application/x-www-form-urlencoded",
+        "expiryError": "ExpiredAuthenticationToken",
+        "authError": ["InvalidAuthenticationToken", "AuthenticationFailed"],
+        "timeOutError": "Read timed out",
+        "errorPath": "error.code",
+        "maxRefreshTryCount": 5,
+        "tokenResponsePath": "access_token",
+        "tokenType": "Bearer",
+        "accessToken": "access_token"
+      }
+    }
+  }
+}

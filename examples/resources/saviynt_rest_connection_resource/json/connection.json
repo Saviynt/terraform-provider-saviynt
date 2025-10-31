@@ -1,0 +1,27 @@
+{
+  "authentications": {
+    "acctAuth": {
+      "authType": "Basic",
+      "url": "@HOSTNAME@",
+      "httpMethod": "POST",
+      "httpParams": {},
+      "httpHeaders": {},
+      "httpContentType": "text/html",
+      "properties": {
+        "userName": "@USERNAME@",
+        "password": "@PASSWORD@"
+      },
+      "expiryError": "ExpiredAuthenticationToken",
+      "authError": [
+        "InvalidAuthenticationToken",
+        "AuthenticationFailed"
+      ],
+      "timeOutError": "Read timed out",
+      "errorPath": "error.code",
+      "maxRefreshTryCount": 5,
+      "tokenResponsePath": "access_token",
+      "tokenType": "Basic",
+      "accessToken": "Basic bmlzaGFyLmJhYnVAc2"
+    }
+  }
+}

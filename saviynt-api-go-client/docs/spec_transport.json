@@ -1,0 +1,427 @@
+{
+  "openapi": "3.1.0",
+  "x-stoplight": {
+    "id": "nj0buptcpdipb"
+  },
+  "info": {
+    "title": "Saviynt Transport API",
+    "version": "1.0",
+    "description": "Transporting Packages: https://docs.saviyntcloud.com/bundle/EIC-Admin-AMS/page/Content/Chapter07-General-Administrator/Transporting-Packages.htm",
+    "contact": {
+      "name": "Saviynt Developers Team",
+      "email": "https://github.com/saviynt"
+    }
+  },
+  "servers": [
+    {
+      "url": "http://localhost:3000"
+    }
+  ],
+  "tags": [
+    {
+      "name": "Transport"
+    }
+  ],
+  "paths": {
+    "/ECM/api/v5/exportTransportPackage": {
+      "post": {
+        "summary": "Export Transport Package",
+        "tags": [
+          "Transport"
+        ],
+        "operationId": "exportTransportPackage",
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ExportTransportPackageResponse"
+                }
+              }
+            }
+          }
+        },
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ExportTransportPackageRequest"
+              }
+            }
+          }
+        },
+        "description": "This API creates a compressed file containing objects specified for T2P migration."
+      }
+    },
+    "/ECM/api/v5/importTransportPackage": {
+      "post": {
+        "summary": "Import Transport Package",
+        "tags": [
+          "Transport"
+        ],
+        "operationId": "importTransportPackage",
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ImportTransportPackageResponse"
+                }
+              }
+            }
+          }
+        },
+        "description": "This API imports a compressed file containing objects specified for T2P migration.\n\nSupported objects:\n\nsavRoles, emailTemplate, roles, analyticsV1, analyticsV2, globalConfig, workflows, connection, appOnboarding, userGroups, scanRules, organizations, securitySystems",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ImportTransportPackageRequest"
+              },
+              "examples": {
+                "Example 1": {
+                  "value": {
+                    "updateuser": "admin",
+                    "packagetoimport": "/saviynt_shared/testexport/transportPackage/transport_admin_2023-01-13_10-19-11(UTC).zip",
+                    "businessjustification": "test"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/ECM/api/v5/transportPackageStatus": {
+      "get": {
+        "summary": "Transport Package Status",
+        "tags": [
+          "Transport"
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TransportPackageStatusResponse"
+                }
+              }
+            }
+          }
+        },
+        "operationId": "transportPackageStatus",
+        "description": "This API obtains the status of the transport request (import, export, or transfer), and helps in confirming whether the transport was completed successfully or failed.\n\nNote: This API returns the status of only those requests that have been processed using the Enhanced Transport feature.",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/TransportPackageStatusRequest"
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "ExportTransportPackageRequest": {
+        "title": "ExportTransportPackageRequest",
+        "x-stoplight": {
+          "id": "bn1ui71jne1we"
+        },
+        "type": "object",
+        "properties": {
+          "updateuser": {
+            "type": "string",
+            "x-stoplight": {
+              "id": "fu9d0rj8la3eo"
+            },
+            "description": "username of the user exporting the package"
+          },
+          "transportowner": {
+            "type": "string",
+            "x-stoplight": {
+              "id": "kokb7b8w3v3yy"
+            },
+            "description": "(can be true or false) - option to transport owners for selected objects"
+          },
+          "transportmembers": {
+            "type": "string",
+            "x-stoplight": {
+              "id": "xto5ohy0603ys"
+            },
+            "description": "can be true or false) - option to transport members for selected objects such as SAV role"
+          },
+          "exportonline": {
+            "type": "string",
+            "x-stoplight": {
+              "id": "m3zbu3f1s4md4"
+            },
+            "description": "(can be true or false) - Determines if package needs to be exported online"
+          },
+          "exportpath": {
+            "type": "string",
+            "x-stoplight": {
+              "id": "e3mri1ib5patv"
+            },
+            "description": "(if exportonline is false) - Local path where export package will be generated"
+          },
+          "environmentname": {
+            "type": "string",
+            "x-stoplight": {
+              "id": "poxj5q3j7zvt7"
+            },
+            "description": "(if exportonline is true) - Name of the environment which can be created at the following path : Admin -> Global Configurations -> Misc -> Transport -> Add New Transport"
+          },
+          "businessjustification": {
+            "type": "string",
+            "x-stoplight": {
+              "id": "po8i7fv2v5rik"
+            }
+          },
+          "objectstoexport": {
+            "$ref": "#/components/schemas/ObjectsToExport",
+            "x-stoplight": {
+              "id": "06h4cnkfphhaq"
+            },
+            "description": "Supported objects : savRoles, emailTemplate, roles, analyticsV1, analyticsV2, globalConfig, workflows, connection, appOnboarding, userGroups, scanRules, organizations, securitySystems"
+          }
+        },
+        "required": [
+          "exportonline",
+          "objectstoexport"
+        ],
+        "examples": [
+          {
+            "updateuser": "admin",
+            "transportowner": "true",
+            "transportmembers": "true",
+            "exportonline": "false",
+            "exportpath": "/saviynt_shared/testexport/transportPackage",
+            "objectstoexport": {
+              "savRoles": [
+                "ROLE_ADMIN"
+              ],
+              "emailTemplate": [
+                "Account Password Expiry Email",
+                "Entitlement Expiry Email"
+              ]
+            },
+            "businessjustification": "justified..."
+          }
+        ],
+        "description": ""
+      },
+      "ObjectsToExport": {
+        "title": "ObjectsToExport",
+        "x-stoplight": {
+          "id": "9z1hfxvbn0zav"
+        },
+        "type": "object",
+        "properties": {
+          "savRoles": {
+            "type": "array",
+            "x-stoplight": {
+              "id": "if4npvrn65ly8"
+            },
+            "items": {
+              "x-stoplight": {
+                "id": "2val4wnerkqd2"
+              },
+              "type": "string"
+            }
+          },
+          "emailTemplate": {
+            "type": "array",
+            "x-stoplight": {
+              "id": "glkjtgi0jiqpt"
+            },
+            "items": {
+              "x-stoplight": {
+                "id": "cwse89xfavmeq"
+              },
+              "type": "string"
+            }
+          }
+        }
+      },
+      "ExportTransportPackageResponse": {
+        "title": "ExportTransportPackageResponse",
+        "x-stoplight": {
+          "id": "ctaaycs2pwfmd"
+        },
+        "type": "object",
+        "examples": [
+          {
+            "msg": "success",
+            "fileName": "transport_admin_2023-01-13_10-19-11(UTC).zip",
+            "msgDescription": "Export Requested. If other requests are currently processing, your export will begin after they complete. You can call /transportPackageStatus API to check the status of your export.",
+            "errorcode": 0
+          }
+        ],
+        "properties": {
+          "msg": {
+            "type": "string",
+            "x-stoplight": {
+              "id": "ofd1xk6jm68l1"
+            }
+          },
+          "fileName": {
+            "type": "string",
+            "x-stoplight": {
+              "id": "0mgsqu430jj4s"
+            }
+          },
+          "msgDescription": {
+            "type": "string",
+            "x-stoplight": {
+              "id": "mbsk6vd4s85zm"
+            }
+          },
+          "errorcode": {
+            "type": "integer",
+            "x-stoplight": {
+              "id": "l5896jtsfm1fy"
+            }
+          }
+        },
+        "required": [
+          "msg",
+          "fileName",
+          "msgDescription",
+          "errorcode"
+        ]
+      },
+      "TransportPackageStatusRequest": {
+        "title": "TransportPackageStatusRequest",
+        "x-stoplight": {
+          "id": "7tg0ihg4biemh"
+        },
+        "type": "object",
+        "properties": {
+          "operation": {
+            "type": "string",
+            "enum": [
+              "export",
+              "import",
+              "transfer"
+            ],
+            "x-stoplight": {
+              "id": "o6g12n9rxn2t4"
+            },
+            "description": "enter the type of transport request (export, import, or transfer)"
+          },
+          "filename": {
+            "type": "string",
+            "x-stoplight": {
+              "id": "xlnkv5gq8w9ev"
+            },
+            "description": "enter the transport package zip file name in full (including the .zip extension)"
+          },
+          "requestid": {
+            "type": "string",
+            "x-stoplight": {
+              "id": "j82ir7ym6at2m"
+            },
+            "description": "(required only if the operation is import) - enter the request ID generated during the submission of the import request"
+          }
+        },
+        "required": [
+          "operation",
+          "filename"
+        ]
+      },
+      "TransportPackageStatusResponse": {
+        "title": "TransportPackageStatusResponse",
+        "x-stoplight": {
+          "id": "xh4kaggchfgoc"
+        },
+        "type": "object",
+        "properties": {
+          "msg": {
+            "type": "string",
+            "x-stoplight": {
+              "id": "ahrsh2vc4m3c7"
+            }
+          },
+          "msgDescription": {
+            "type": "string",
+            "x-stoplight": {
+              "id": "778at054odbjn"
+            }
+          },
+          "errorCode": {
+            "type": "integer",
+            "x-stoplight": {
+              "id": "ebuqgop7yv8q6"
+            }
+          }
+        },
+        "required": [
+          "msg",
+          "msgDescription",
+          "errorCode"
+        ]
+      },
+      "ImportTransportPackageRequest": {
+        "type": "object",
+        "x-examples": {
+          "Example 1": {
+            "updateuser": "admin",
+            "packagetoimport": "/saviynt_shared/testexport/transportPackage/transport_admin_2023-01-13_10-19-11(UTC).zip",
+            "businessjustification": "test"
+          }
+        },
+        "properties": {
+          "packagetoimport": {
+            "type": "string",
+            "description": "Complete path of the package that needs to be imported"
+          },
+          "updateuser": {
+            "type": "string",
+            "description": "username of the user importing the package"
+          },
+          "businessjustification": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "packagetoimport"
+        ]
+      },
+      "ImportTransportPackageResponse": {
+        "type": "object",
+        "x-examples": {
+          "Example 1": {
+            "msg": "success",
+            "requestId": "2490001",
+            "msgDescription": "Import Requested. If other requests are currently processing, your import will begin after they complete. You can call /transportPackageStatus API to check the status of your import",
+            "errorcode": 0
+          }
+        },
+        "properties": {
+          "msg": {
+            "type": "string"
+          },
+          "requestId": {
+            "type": "string"
+          },
+          "msgDescription": {
+            "type": "string"
+          },
+          "errorcode": {
+            "type": "integer"
+          }
+        },
+        "required": [
+          "msg",
+          "errorcode"
+        ]
+      }
+    }
+  }
+}
