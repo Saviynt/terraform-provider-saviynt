@@ -108,6 +108,7 @@ Read-Only:
 - `prov_jco_sysnr` (String)
 - `prov_jco_user` (String)
 - `reset_pwd_for_new_account` (String)
+- `role_default_date` (String)
 - `saptable_filter_lang` (String)
 - `set_cua_system` (String)
 - `snc` (String)

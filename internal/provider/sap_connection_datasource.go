@@ -102,6 +102,9 @@ type SapConnectionAttributes struct {
 	UserImportJson                 types.String             `tfsdk:"user_import_json"`
 	SystemName                     types.String             `tfsdk:"system_name"`
 	UpdateAccountJson              types.String             `tfsdk:"update_account_json"`
+
+	//25.B.1
+	RoleDefaultDate types.String `tfsdk:"role_default_date"`
 }
 
 // NewSAPConnectionsDataSource creates a new SAP connections data source with default factory
@@ -209,6 +212,7 @@ func SapConnectorsDataSourceSchema() map[string]schema.Attribute {
 				"user_import_json":                   schema.StringAttribute{Computed: true},
 				"system_name":                        schema.StringAttribute{Computed: true},
 				"update_account_json":                schema.StringAttribute{Computed: true},
+				"role_default_date":                  schema.StringAttribute{Computed: true},
 				"connection_timeout_config": schema.SingleNestedAttribute{
 					Computed:   true,
 					Attributes: ConnectionTimeoutConfigeSchema(),
@@ -520,6 +524,8 @@ func (d *SapConnectionDataSource) MapSAPConnectionAttributes(state *SapConnectio
 		UserImportJson:                 util.SafeStringDatasource(attrs.USERIMPORTJSON),
 		SystemName:                     util.SafeStringDatasource(attrs.SYSTEMNAME),
 		UpdateAccountJson:              util.SafeStringDatasource(attrs.UPDATEACCOUNTJSON),
+
+		RoleDefaultDate: util.SafeStringDatasource(attrs.ROLE_DEFAULT_DATE),
 	}
 
 	// Map connection timeout config if present
