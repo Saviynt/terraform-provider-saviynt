@@ -83,6 +83,8 @@ type SAPConnectionAttributes struct {
 	USERIMPORTJSON                     *string                  `json:"USERIMPORTJSON,omitempty"`
 	SYSTEMNAME                         *string                  `json:"SYSTEMNAME,omitempty"`
 	UPDATEACCOUNTJSON                  *string                  `json:"UPDATEACCOUNTJSON,omitempty"`
+	// Default end date for SAP roles. Format: yyyyMMdd (e.g., 20251231). If not configured, defaults to 99991231.
+	ROLE_DEFAULT_DATE *string `json:"ROLE_DEFAULT_DATE,omitempty"`
 }
 
 // NewSAPConnectionAttributes instantiates a new SAPConnectionAttributes object
@@ -2150,6 +2152,38 @@ func (o *SAPConnectionAttributes) SetUPDATEACCOUNTJSON(v string) {
 	o.UPDATEACCOUNTJSON = &v
 }
 
+// GetROLE_DEFAULT_DATE returns the ROLE_DEFAULT_DATE field value if set, zero value otherwise.
+func (o *SAPConnectionAttributes) GetROLE_DEFAULT_DATE() string {
+	if o == nil || IsNil(o.ROLE_DEFAULT_DATE) {
+		var ret string
+		return ret
+	}
+	return *o.ROLE_DEFAULT_DATE
+}
+
+// GetROLE_DEFAULT_DATEOk returns a tuple with the ROLE_DEFAULT_DATE field value if set, nil otherwise
+// and a boolean to check if the value has been set.
+func (o *SAPConnectionAttributes) GetROLE_DEFAULT_DATEOk() (*string, bool) {
+	if o == nil || IsNil(o.ROLE_DEFAULT_DATE) {
+		return nil, false
+	}
+	return o.ROLE_DEFAULT_DATE, true
+}
+
+// HasROLE_DEFAULT_DATE returns a boolean if a field has been set.
+func (o *SAPConnectionAttributes) HasROLE_DEFAULT_DATE() bool {
+	if o != nil && !IsNil(o.ROLE_DEFAULT_DATE) {
+		return true
+	}
+
+	return false
+}
+
+// SetROLE_DEFAULT_DATE gets a reference to the given string and assigns it to the ROLE_DEFAULT_DATE field.
+func (o *SAPConnectionAttributes) SetROLE_DEFAULT_DATE(v string) {
+	o.ROLE_DEFAULT_DATE = &v
+}
+
 func (o SAPConnectionAttributes) MarshalJSON() ([]byte, error) {
 	toSerialize, err := o.ToMap()
 	if err != nil {
@@ -2351,6 +2385,9 @@ func (o SAPConnectionAttributes) ToMap() (map[string]interface{}, error) {
 	}
 	if !IsNil(o.UPDATEACCOUNTJSON) {
 		toSerialize["UPDATEACCOUNTJSON"] = o.UPDATEACCOUNTJSON
+	}
+	if !IsNil(o.ROLE_DEFAULT_DATE) {
+		toSerialize["ROLE_DEFAULT_DATE"] = o.ROLE_DEFAULT_DATE
 	}
 	return toSerialize, nil
 }

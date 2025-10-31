@@ -70,6 +70,9 @@ type UnixConnectionAttributes struct {
 	LockAccountCommand               types.String             `tfsdk:"lock_account_command"`
 	CustomConfigJSON                 types.String             `tfsdk:"custom_config_json"`
 	EnableAccountCommand             types.String             `tfsdk:"enable_account_command"`
+
+	//25.B.1
+	ServerType types.String `tfsdk:"server_type"`
 }
 
 // NewUnixConnectionsDataSource creates a new Unix connections data source with default factory
@@ -145,6 +148,7 @@ func UnixConnectorsDataSourceSchema() map[string]schema.Attribute {
 				"lock_account_command":                schema.StringAttribute{Computed: true},
 				"custom_config_json":                  schema.StringAttribute{Computed: true},
 				"enable_account_command":              schema.StringAttribute{Computed: true},
+				"server_type":                         schema.StringAttribute{Computed: true},
 				"connection_timeout_config": schema.SingleNestedAttribute{
 					Computed:   true,
 					Attributes: ConnectionTimeoutConfigeSchema(),
@@ -424,6 +428,8 @@ func (d *UnixConnectionsDataSource) MapUnixConnectionAttributes(state *UnixConne
 		LockAccountCommand:               util.SafeStringDatasource(attrs.LOCK_ACCOUNT_COMMAND),
 		CustomConfigJSON:                 util.SafeStringDatasource(attrs.CUSTOM_CONFIG_JSON),
 		EnableAccountCommand:             util.SafeStringDatasource(attrs.ENABLE_ACCOUNT_COMMAND),
+
+		ServerType: util.SafeStringDatasource(attrs.SERVER_TYPE),
 	}
 
 	// Map connection timeout config if present

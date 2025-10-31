@@ -47,6 +47,7 @@ resource "saviynt_rest_connection_resource" "example" {
 
 - `add_access_json` (String) JSON to add access.
 - `add_ffid_access_json` (String) JSON to add FFID access.
+- `app_type` (String) For CUA configuration
 - `application_discovery_json` (String) The ApplicationDiscoveryJSON attribute is specifically implemented for ServiceNow application discovery, allowing automated discovery and import of applications from ServiceNow instances.
 - `change_pass_json` (String) JSON to change a user's password.
 - `config_json` (String) General configuration JSON for the REST connector.
