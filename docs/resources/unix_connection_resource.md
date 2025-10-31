@@ -175,6 +175,7 @@ resource "saviynt_unix_connection_resource" "example" {
 - `provision_account_command` (String) Property for PROVISION_ACCOUNT_COMMAND
 - `remove_access_command` (String) Property for REMOVE_ACCESS_COMMAND
 - `save_in_vault` (String) Flag indicating whether the encrypted attribute should be saved in the configured vault. Example: "false"
+- `server_type` (String) Server type
 - `shadow_file` (String) Property for SHADOW_FILE
 - `ssh_key` (String, Sensitive) Property for SSH_KEY. Either this or ssh_key_wo need to be set to configure the ssh_key attribute.
 - `ssh_key_wo` (String) SSH key write-only attribute. Either this or ssh_key need to be set to configure the ssh_key attribute.

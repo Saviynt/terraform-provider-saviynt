@@ -55,6 +55,8 @@ type RESTConnectionAttributes struct {
 	ImportAccountEntJSON     *string                  `json:"ImportAccountEntJSON,omitempty"`
 	IsTimeoutConfigValidated *bool                    `json:"isTimeoutConfigValidated,omitempty"`
 	ConnectionJSON           *string                  `json:"ConnectionJSON,omitempty"`
+	// For CUA configuration
+	AppType *string `json:"AppType,omitempty"`
 }
 
 // NewRESTConnectionAttributes instantiates a new RESTConnectionAttributes object
@@ -1098,6 +1100,38 @@ func (o *RESTConnectionAttributes) SetConnectionJSON(v string) {
 	o.ConnectionJSON = &v
 }
 
+// GetAppType returns the AppType field value if set, zero value otherwise.
+func (o *RESTConnectionAttributes) GetAppType() string {
+	if o == nil || IsNil(o.AppType) {
+		var ret string
+		return ret
+	}
+	return *o.AppType
+}
+
+// GetAppTypeOk returns a tuple with the AppType field value if set, nil otherwise
+// and a boolean to check if the value has been set.
+func (o *RESTConnectionAttributes) GetAppTypeOk() (*string, bool) {
+	if o == nil || IsNil(o.AppType) {
+		return nil, false
+	}
+	return o.AppType, true
+}
+
+// HasAppType returns a boolean if a field has been set.
+func (o *RESTConnectionAttributes) HasAppType() bool {
+	if o != nil && !IsNil(o.AppType) {
+		return true
+	}
+
+	return false
+}
+
+// SetAppType gets a reference to the given string and assigns it to the AppType field.
+func (o *RESTConnectionAttributes) SetAppType(v string) {
+	o.AppType = &v
+}
+
 func (o RESTConnectionAttributes) MarshalJSON() ([]byte, error) {
 	toSerialize, err := o.ToMap()
 	if err != nil {
@@ -1203,6 +1237,9 @@ func (o RESTConnectionAttributes) ToMap() (map[string]interface{}, error) {
 	}
 	if !IsNil(o.ConnectionJSON) {
 		toSerialize["ConnectionJSON"] = o.ConnectionJSON
+	}
+	if !IsNil(o.AppType) {
+		toSerialize["AppType"] = o.AppType
 	}
 	return toSerialize, nil
 }
