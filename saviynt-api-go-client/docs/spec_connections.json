@@ -1,0 +1,1169 @@
+{
+  "openapi": "3.1.0",
+  "x-stoplight": {
+    "id": "11gpcfoz001w2"
+  },
+  "info": {
+    "title": "Saviynt Connections API",
+    "version": "1.0",
+    "description": "Connections",
+    "contact": {
+      "name": "Saviynt Developers Team",
+      "email": "https://github.com/saviynt"
+    }
+  },
+  "servers": [
+    {
+      "url": "http://localhost:3000"
+    }
+  ],
+  "tags": [
+    {
+      "name": "Connections"
+    }
+  ],
+  "paths": {
+    "/ECM/api/v5/getConnections": {
+      "post": {
+        "tags": [
+          "Connections"
+        ],
+        "summary": "Get List of Connections",
+        "description": "This API returns list of Connections in Saviynt.",
+        "operationId": "getConnections",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/GetConnectionsRequest"
+              }
+            }
+          },
+          "description": ""
+        },
+        "responses": {
+          "200": {
+            "description": "Get Connections",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/GetConnectionsResponse"
+                },
+                "examples": {
+                  "Get Connections": {
+                    "value": {
+                      "ConnectionList": [
+                        {
+                          "CONNECTIONDESCRIPTION": "",
+                          "CONNECTIONNAME": "AD Test",
+                          "CONNECTIONTYPE": "AD",
+                          "CREATEDBY": "admin(     ADMIN)",
+                          "CREATEDON": "2017-03-23T00:48:28Z",
+                          "STATUS": 1,
+                          "UPDATEDBY": "admin(ADMIN   ADMIN)",
+                          "UPDATEDON": "2017-08-18T04:18:19Z"
+                        }
+                      ],
+                      "errorCode": "0",
+                      "msg": "Successful"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/ECM/api/v5/getConnectionDetails": {
+      "post": {
+        "summary": "Get Connection Details",
+        "operationId": "getConnectionDetails",
+        "tags": [
+          "Connections"
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/GetConnectionDetailsResponse"
+                }
+              }
+            }
+          }
+        },
+        "description": "This API returns connection details in Saviynt.\n\nMandatory params: `connectiontype` or `connectionname` (if both are passed then `connectionkey` will be considered).",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/GetConnectionDetailsRequest"
+              }
+            }
+          },
+          "description": ""
+        }
+      }
+    },
+    "/ECM/api/v5/testConnection": {
+      "post": {
+        "summary": "Create or Update Connection",
+        "operationId": "createOrUpdateConnection",
+        "tags": [
+          "Connections"
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CreateOrUpdateConnectionResponse"
+                }
+              }
+            }
+          }
+        },
+        "description": "This API is used to save and test a connection.\n\nMandatory params: `connectiontype`, `connectionName` OR `connectionkey` (if both are passed `connectionkey` is considered) Additional connection parameters can also be passed - For example, for SAP Import, provide paramters - `JCO_ASHOST`, `JCO_SYSNR`, `JCO_CLIENT`, `JCO_USER`, `PASSWORD`.\n\nThis API is enhanced to update vaultconnection, and vaultconfiguration connection details.\n\nFrom Release v23.10, if you specify the key value for header response as standard, a detailed error message is displayed in the Response that enables you to troubleshoot errors.",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateOrUpdateConnectionRequest"
+              }
+            }
+          }
+        }
+      }
+    },
+    "/ECM/api/v5/deleteConnection": {
+      "delete": {
+        "summary": "Delete Connection",
+        "operationId": "deleteConnection",
+        "tags": [
+          "Connections"
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DeleteConnectionResponse"
+                }
+              }
+            }
+          }
+        },
+        "description": "This API deletes connections in Saviynt.\n\nMandatory params: `updateuser`, and `connectionQuery` or `connectionkey` (If both are passed then `connectionkey` will be considered).",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/DeleteConnectionRequest"
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "GetConnectionsRequest": {
+        "type": "object",
+        "x-stoplight": {
+          "id": "49262a7b0d012"
+        },
+        "properties": {
+          "connectionname": {
+            "type": "string",
+            "x-stoplight": {
+              "id": "4yy42vvf9dd4s"
+            },
+            "example": "AD Test"
+          },
+          "connectiontype": {
+            "type": "string",
+            "x-stoplight": {
+              "id": "jn0p6wgfwjlkf"
+            },
+            "example": "AD"
+          },
+          "max": {
+            "type": "string",
+            "x-stoplight": {
+              "id": "0brloqpqd7v6r"
+            }
+          },
+          "offset": {
+            "type": "string",
+            "x-stoplight": {
+              "id": "aej6n9yegpufu"
+            }
+          }
+        }
+      },
+      "GetConnectionsResponse": {
+        "type": "object",
+        "x-stoplight": {
+          "id": "49262a7b0d012"
+        },
+        "properties": {
+          "ConnectionList": {
+            "type": "array",
+            "example": [
+              {
+                "CONNECTIONDESCRIPTION": "",
+                "CONNECTIONNAME": "AD Test",
+                "CONNECTIONTYPE": "AD",
+                "CREATEDBY": "admin(     ADMIN)",
+                "CREATEDON": "2017-03-23T00:48:28Z",
+                "STATUS": 1,
+                "UPDATEDBY": "admin(ADMIN   ADMIN)",
+                "UPDATEDON": "2017-08-18T04:18:19Z"
+              }
+            ],
+            "items": {
+              "$ref": "#/components/schemas/Connection",
+              "x-stoplight": {
+                "id": "sr461fcjvtnrm"
+              }
+            }
+          },
+          "errorCode": {
+            "type": "string",
+            "example": "0"
+          },
+          "msg": {
+            "type": "string",
+            "example": "Successful"
+          },
+          "displayCount": {
+            "type": "integer",
+            "x-stoplight": {
+              "id": "y45at7v80pgsd"
+            }
+          },
+          "totalCount": {
+            "type": "integer",
+            "x-stoplight": {
+              "id": "fudiru57n8sa5"
+            }
+          }
+        },
+        "required": [
+          "ConnectionList",
+          "errorCode",
+          "msg"
+        ]
+      },
+      "Connection": {
+        "type": "object",
+        "properties": {
+          "CONNECTIONDESCRIPTION": {
+            "type": "string"
+          },
+          "CONNECTIONNAME": {
+            "type": "string",
+            "example": "AD Test"
+          },
+          "CONNECTIONTYPE": {
+            "type": "string",
+            "example": "AD"
+          },
+          "CREATEDBY": {
+            "type": "string",
+            "example": "admin(     ADMIN)"
+          },
+          "CREATEDON": {
+            "type": "string",
+            "example": "2017-03-23T00:48:28Z",
+            "format": "date-time"
+          },
+          "STATUS": {
+            "type": "number",
+            "example": 1
+          },
+          "UPDATEDBY": {
+            "type": "string",
+            "example": "admin(ADMIN   ADMIN)"
+          },
+          "UPDATEDON": {
+            "type": "string",
+            "example": "2017-08-18T04:18:19Z",
+            "format": "date-time"
+          }
+        },
+        "required": [
+          "CONNECTIONDESCRIPTION",
+          "CONNECTIONNAME",
+          "CONNECTIONTYPE",
+          "CREATEDON",
+          "STATUS"
+        ]
+      },
+      "GetConnectionDetailsRequest": {
+        "title": "GetConnectionDetailsRequest",
+        "x-stoplight": {
+          "id": "wjjihw80mv760"
+        },
+        "type": "object",
+        "properties": {
+          "connectionkey": {
+            "type": "string",
+            "x-stoplight": {
+              "id": "k0y09wqiczm23"
+            },
+            "example": "'120'"
+          },
+          "connectionname": {
+            "type": "string",
+            "x-stoplight": {
+              "id": "vldqcll61vb19"
+            },
+            "example": "Workday"
+          }
+        }
+      },
+      "ConnectionAttributes": {
+        "type": "object",
+        "x-examples": {
+          "Example 1": {
+            "LAST_IMPORT_TIME": "{\"usersImport\":{\"createdate\":\"2024-11-21 09:49:23\",\"updatedate\":\"2024-11-21 09:49:23\"}}",
+            "CREATEACCOUNTJSON": "{\"displayName\":\"${user.displayname}\",\"givenName\":\"${user.firstname}\",\"name\":\"${user.displayname}\",\"sn\":\"${user.lastname}\",\"cn\":\"${cn}\",\"objectclass\":[\"top\",\"person\",\"organizationalPerson\",\"user\"],\"userAccountControl\":\"544\",\"samaccountname\":\"${task.accountName}\"}",
+            "ENDPOINTS_FILTER": "",
+            "DISABLEACCOUNTJSON": "{\"deleteAllGroups\":\"No\",\"userAccountControl\":\"546\"}",
+            "groupSearchBaseDN": "OU=Users,OU=ATOU_IWYKHBh,DC=saviyntlabs,DC=org",
+            "PASSWORD_NOOFSPLCHARS": "",
+            "connectionType": "MS_BASED_CONNECTOR",
+            "STATUSKEYJSON": "{\"STATUS_INACTIVE\":[\"0\",\"546\",\"514\"],\"STATUS_ACTIVE\":[\"1\",\"544\"]}",
+            "DEFAULT_USER_ROLE": "",
+            "CREATEORGJSON": "",
+            "ConfigJSON": "",
+            "REMOVEACCOUNTACTION": "{\"removeAction\":\"SUSPEND\",\"userAccountControl\":\"546\"}",
+            "USERNAME": "CN=CONNQATEAM,CN=Users,DC=saviyntlabs,DC=org",
+            "ACCOUNTNAMERULE": "CN=${user.username},OU=Users,OU=ATOU_IWYKHBh,DC=saviyntlabs,DC=org",
+            "SETRANDOMPASSWORD": "FALSE",
+            "SETDEFAULTPAGESIZE": "",
+            "isTimeoutSupported": true,
+            "REUSEINACTIVEACCOUNT": "",
+            "PASSWORD_NOOFDIGITS": "",
+            "IMPORTJSON": "{\"envproperties\":{\"com.sun.jndi.ldap.connect.timeout\":\"10000\",\"com.sun.jndi.ldap.read.timeout\":\"60000\"}}",
+            "createUpdateMappings": "",
+            "ACCOUNT_ATTRIBUTE": "[customproperty1::pwdlastset#String,customproperty30::useraccountcontrol#String,customproperty2::userPrincipalName#emchar,customproperty28::primaryGroupID#String,lastlogondate::lastLogon#millisec,displayname::name#emchar,customproperty25::description#emchar,customproperty20::employeeID#String,customproperty3::sn#emchar,comments::distinguishedName#emchar,customproperty4::homeDirectory#String,lastpasswordchange::pwdLastSet#millisec,customproperty5::co#String,customproperty6::employeeNumber#String,customproperty7::givenName#emchar,customproperty8::title#emchar,customproperty9::telephoneNumber#String,customproperty10::c#String,description::description#emchar,customproperty11::uSNCreated#String,validthrough::accountExpires#millisec,customproperty12::logonCount#String,customproperty13::physicalDeliveryOfficeName#String,updatedate::whenChanged#date,customproperty14::extensionAttribute1#String,customproperty15::extensionAttribute2#String,customproperty16::streetAddress#String,customproperty17::mailNickname#String,customproperty18::department#String,customproperty19::countryCode#String,name::sAMAccountName#emchar,customproperty21::manager#String,customproperty22::city#String,customproperty23::proxyaddresses#String,created_on::whenCreated#date,accountclass::objectClass#String,accountid::objectGUID#Binary,customproperty24::userAccountControl#String,customproperty27::objectSid#Binary,RECONCILATION_FIELD::customproperty26,customproperty26::objectGUID#Binary,customproperty29::st#String]",
+            "PASSWORD": "******",
+            "ADVANCE_FILTER_JSON": "",
+            "ORGIMPORTJSON": "",
+            "PAM_CONFIG": "",
+            "PAGE_SIZE": "1000",
+            "SEARCHFILTER": "OU=Users,OU=ATOU_IWYKHBh,DC=saviyntlabs,DC=org",
+            "MAX_CHANGENUMBER": "",
+            "PASSWORD_MIN_LENGTH": "",
+            "ENTITLEMENT_ATTRIBUTE": "memberOf",
+            "INCREMENTAL_CONFIG": "",
+            "CHECKFORUNIQUE": "",
+            "DC_LOCATOR": "",
+            "connectionTimeoutConfig": {
+              "retryWait": 2,
+              "tokenRefreshMaxTryCount": 3,
+              "retryWaitMaxValue": 100,
+              "retryCount": 3,
+              "readTimeout": 1800,
+              "connectionTimeout": 10
+            },
+            "UPDATEUSERJSON": "{\"sn\":\"AD_lastname\"}",
+            "URL": "LDAP://3.19.17.34:389",
+            "READ_OPERATIONAL_ATTRIBUTES": "",
+            "BASE": "OU=Users,OU=ATOU_IWYKHBh,DC=saviyntlabs,DC=org",
+            "LDAP_OR_AD": "AD",
+            "ORG_BASE": "",
+            "STATUS_THRESHOLD_CONFIG": "{\"statusAndThresholdConfig\":{\"inactivateAccountsNotInFile\":false,\"activeStatus\":[\"512\",\"544\",\"66048\"],\"statusColumn\":\"customproperty30\",\"lockedStatusMapping\":{\"Locked\":[\"\"],\"Unlocked\":[\"\"]},\"lockedStatusColumn\":\"\",\"accountThresholdValue\":1000,\"inactiveStatus\":[\"546\",\"514\",\"66050\"],\"correlateInactiveAccounts\":true,\"deleteLinks\":false}}",
+            "UPDATEORGJSON": "",
+            "groupImportMapping": "{\"mapping\":\"memberHash:member_char,customProperty1:sAMAccountType_char,customProperty2:instanceType_char,customProperty3:uSNCreated_char,customProperty4:groupType_char,customProperty5:dSCorePropagationData_char,customProperty12:dn_emchar,customProperty13:cn_emchar,lastscandate:whenCreated_date,customProperty15:managedBy_char,entitlement_glossary:description_emchar,description:description_emchar,displayname:name_emchar,customProperty9:name_emchar,customProperty10:objectCategory_char,customProperty11:sAMAccountName_emchar,entitlement_value:distinguishedName_emchar,entitlementid:distinguishedName_emchar,customProperty14:objectClass_char,updatedate:whenChanged_date,customProperty17:distinguishedName_emchar,RECONCILATION_FIELD:customproperty18,customProperty18:objectGUID_Binary,customProperty19:managedBy_char\",\"performGroupAccountLinking\":\"true\",\"incrementalTimeField\":\"whenChanged\",\"tableFieldAttribute\":\"comments\",\"entitlementTypeName\":\"memberOf\",\"entitlementOwnerAttribute\":\"managedBy\",\"importGroupHierarchy\":\"true\",\"groupObjectClass\":\"(objectclass=group)\"}",
+            "FILTER": "",
+            "RESETANDCHANGEPASSWRDJSON": "{\"CHANGE\":{\"title\":\"password changed\",\"lockoutTime\":\"0\",\"pwdLastSet\":\"-1\"},\"RESET\":{\"title\":\"password reset\",\"pwdLastSet\":\"0\"}}",
+            "USER_ATTRIBUTE": "[FIRSTNAME::givenname#emchar,LASTNAME::sn#emchar,CUSTOMPROPERTY1::samaccountname#emchar,USERNAME::sAMAccountName#emchar,DISPLAYNAME::cn#emchar,CUSTOMPROPERTY25::description#emchar,CUSTOMPROPERTY3::sn#emchar,COMMENTS::distinguishedname#emchar,CUSTOMPROPERTY4::homedirectory#String,CUSTOMPROPERTY5::co#String,CUSTOMPROPERTY6::cn#emchar,CUSTOMPROPERTY7::givenname#emchar,CUSTOMPROPERTY8::title#emchar,CUSTOMPROPERTY9::telephonenumber#String,CUSTOMPROPERTY10::c#String,CUSTOMPROPERTY11::uSNCreated#String,ENDDATE::accountExpires#millisec,CUSTOMPROPERTY12::logonCount#String,CUSTOMPROPERTY13::physicaldeliveryofficename#String,UPDATEDATE::whenchanged#date,CUSTOMPROPERTY14::extensionattribute1#String,CUSTOMPROPERTY15::extensionattribute2#String,CUSTOMPROPERTY16::streetaddress#String,CUSTOMPROPERTY17::mailnickname#String,CUSTOMPROPERTY18::department#String,CUSTOMPROPERTY19::countrycode#String,CUSTOMPROPERTY2::samaccountname#emchar,CUSTOMPROPERTY20::userprincipalname#emchar,CUSTOMPROPERTY21::manager#String,CUSTOMPROPERTY22::city#String,CUSTOMPROPERTY23::proxyaddresses#String,CREATEDATE::whencreated#date,customproperty24::useraccountcontrol#String,CUSTOMPROPERTY26::distinguishedname#emchar,CUSTOMPROPERTY41::distinguishedname#emchar,statuskey::useraccountcontrol#String,CUSTOMPROPERTY27::objectguid#String,RECONCILATION_FIELD::CUSTOMPROPERTY27,CUSTOMPROPERTY28::forest#String,CUSTOMPROPERTY29::domain#string,CUSTOMPROPERTY40::distinguishedName#emchar,USERATTRIBUTE_EMAIL::proxyaddresses#String]",
+            "PASSWORD_NOOFCAPSALPHA": "",
+            "MODIFYUSERDATAJSON": "",
+            "isTimeoutConfigValidated": true,
+            "ADVSEARCH": "",
+            "SUPPORTEMPTYSTRING": "",
+            "ENABLEGROUPMANAGEMENT": "",
+            "UNLOCKACCOUNTJSON": "{\"lockoutTime\":\"0\"}",
+            "ENABLEACCOUNTJSON": "{\"AFTERMOVEACTIONS\":{\"otherMailbox\":[\"${user?.customproperty15.toString().replace(',','\\\",\\\"')}}\"],\"userAccountControl\":\"544\"},\"ENABLEACCOUNTOU\":\"OU=Users,OU=CONNQA,OU=SaviyntTeams,DC=saviyntlabs,DC=org\",\"USEDNFROMACCOUNT\":\"YES\",\"REMOVEGROUPS\":\"NO\",\"MOVEDN\":\"NO\"}",
+            "REUSEACCOUNTJSON": "",
+            "PASSWORD_MAX_LENGTH": "",
+            "ENFORCE_TREE_DELETION": "",
+            "OBJECTFILTER": "(&(objectCategory=CN=Person,CN=Schema,CN=Configuration,DC=saviyntlabs,DC=org)(objectClass=user))",
+            "ORGANIZATION_ATTRIBUTE": "{\"mapping\":\"CUSTOMERNAME::ou#emchar,CUSTOMPROPERTY1::name#emchar,CUSTOMPROPERTY11::whenChanged#String,CUSTOMPROPERTY2::st#String,CUSTOMPROPERTY3::postBoxOffice#String,CUSTOMPROPERTY4::postalAddress#String,CUSTOMPROPERTY5::postalCode#String,CUSTOMPROPERTY6::cn#emchar,DESCRIPTION::description#emchar,CREATEDATE::whenCreated#date,UPDATEDATE::whenChanged#date,ENTITYCLASS::objectClass#String,RECONCILATION_FIELD::CUSTOMPROPERTY10,CUSTOMPROPERTY10::objectGUID#Binary,CUSTOMERTYPE::1#SavData,STATUS::1#SavData,RISK::0#SavData,SCORE::0#SavData\",\"attributes\":[{\"filter\":[\"(L=*)\"],\"RECONCILATION_FIELD\":\"objectGUID\",\"mapping\":\"description#emchar,displayName#emchar,street#String\",\"name\":\"locality\"}]}",
+            "UPDATEACCOUNTJSON": "{\"description\":\"Automation Test\"}"
+          }
+        },
+        "properties": {
+          "ACCOUNT_ATTRIBUTE": {
+            "type": "string"
+          },
+          "ACCOUNT_ATTRIBUTES": {
+            "type": "string"
+          },
+          "ACCOUNT_ATTRIBUTE_LABEL": {
+            "type": "string"
+          },
+          "ACCOUNTNAMERULE": {
+            "type": "string"
+          },
+          "ADVANCE_FILTER_JSON": {
+            "type": "string"
+          },
+          "ADVSEARCH": {
+            "type": "string"
+          },
+          "APPLICATION_NAME": {
+            "type": "string"
+          },
+          "BASE": {
+            "type": "string"
+          },
+          "CHECKFORUNIQUE": {
+            "type": "string"
+          },
+          "ConfigJSON": {
+            "type": "string"
+          },
+          "CONNECTOR_FILE_PATH": {
+            "type": "string"
+          },
+          "CREATEACCOUNTJSON": {
+            "type": "string"
+          },
+          "CREATEORGJSON": {
+            "type": "string"
+          },
+          "CUSTOM_ACCOUNT_ATTRIBUTES": {
+            "type": "string"
+          },
+          "CUSTOMER_ID": {
+            "type": "string"
+          },
+          "DC_LOCATOR": {
+            "type": "string"
+          },
+          "DEFAULT_USER_ROLE": {
+            "type": "string"
+          },
+          "DISABLEACCOUNTJSON": {
+            "type": "string"
+          },
+          "ENABLEACCOUNTJSON": {
+            "type": "string"
+          },
+          "ENABLEGROUPMANAGEMENT": {
+            "type": "string"
+          },
+          "ENDPOINTS_FILTER": {
+            "type": "string"
+          },
+          "ENFORCE_TREE_DELETION": {
+            "type": "string"
+          },
+          "ENTITLEMENT_ATTRIBUTE": {
+            "type": "string"
+          },
+          "FILEFOLDER_ATTRIBUTES": {
+            "type": "string"
+          },
+          "FILTER": {
+            "type": "string"
+          },
+          "GROUP_ATTRIBUTES": {
+            "type": "string"
+          },
+          "IMPORT_USERS": {
+            "type": "string"
+          },
+          "IMPORTJSON": {
+            "type": "string"
+          },
+          "INCREMENTAL_CONFIG": {
+            "type": "string"
+          },
+          "LAST_IMPORT_TIME": {
+            "type": "string"
+          },
+          "LDAP_OR_AD": {
+            "type": "string"
+          },
+          "MAX_CHANGENUMBER": {
+            "type": "string"
+          },
+          "MKTPLACEAPP_ATTRIBUTES": {
+            "type": "string"
+          },
+          "MODIFYUSERDATAJSON": {
+            "type": "string"
+          },
+          "OBJECTFILTER": {
+            "type": "string"
+          },
+          "ORG_BASE": {
+            "type": "string"
+          },
+          "ORGANIZATION_ATTRIBUTE": {
+            "type": "string"
+          },
+          "ORGIMPORTJSON": {
+            "type": "string"
+          },
+          "PAGE_SIZE": {
+            "type": "string"
+          },
+          "PAM_CONFIG": {
+            "type": "string"
+          },
+          "PASSWORD": {
+            "type": "string"
+          },
+          "PASSWORD_MAX_LENGTH": {
+            "type": "string"
+          },
+          "PASSWORD_MIN_LENGTH": {
+            "type": "string"
+          },
+          "PASSWORD_NOOFCAPSALPHA": {
+            "type": "string"
+          },
+          "PASSWORD_NOOFDIGITS": {
+            "type": "string"
+          },
+          "PASSWORD_NOOFSPLCHARS": {
+            "type": "string"
+          },
+          "QUARANTINE_FOLDER_ID": {
+            "type": "string"
+          },
+          "READ_OPERATIONAL_ATTRIBUTES": {
+            "type": "string"
+          },
+          "REMOVEACCOUNTACTION": {
+            "type": "string"
+          },
+          "RESETANDCHANGEPASSWRDJSON": {
+            "type": "string"
+          },
+          "REUSEACCOUNTJSON": {
+            "type": "string"
+          },
+          "REUSEINACTIVEACCOUNT": {
+            "type": "string"
+          },
+          "SCOPES": {
+            "type": "string"
+          },
+          "SEARCHFILTER": {
+            "type": "string"
+          },
+          "SERVICE_ACCOUNT_ID": {
+            "type": "string"
+          },
+          "SERVICE_ACCOUNT_KEY_JSON": {
+            "type": "string"
+          },
+          "SERVICE_ACCOUNT_USER": {
+            "type": "string"
+          },
+          "SETDEFAULTPAGESIZE": {
+            "type": "string"
+          },
+          "SETRANDOMPASSWORD": {
+            "type": "string"
+          },
+          "STATUS_THRESHOLD_CONFIG": {
+            "type": "string"
+          },
+          "STATUSKEYJSON": {
+            "type": "string"
+          },
+          "SUPPORTEMPTYSTRING": {
+            "type": "string"
+          },
+          "SUSPEND_USER_ORGANIZATIONAL_UNIT": {
+            "type": "string"
+          },
+          "UNLOCKACCOUNTJSON": {
+            "type": "string"
+          },
+          "UPDATEACCOUNTJSON": {
+            "type": "string"
+          },
+          "UPDATEORGJSON": {
+            "type": "string"
+          },
+          "UPDATEUSERJSON": {
+            "type": "string"
+          },
+          "USER_ATTRIBUTE": {
+            "type": "string"
+          },
+          "USER_ATTRIBUTES": {
+            "type": "string"
+          },
+          "URL": {
+            "type": "string"
+          },
+          "USERNAME": {
+            "type": "string"
+          },
+          "connectionTimeoutConfig": {
+            "$ref": "#/components/schemas/ConnectionTimeoutConfig"
+          },
+          "connectionType": {
+            "type": "string"
+          },
+          "createUpdateMappings": {
+            "type": "string"
+          },
+          "groupImportMapping": {
+            "type": "string"
+          },
+          "groupSearchBaseDN": {
+            "type": "string"
+          },
+          "isTimeoutConfigValidated": {
+            "type": "boolean"
+          },
+          "isTimeoutSupported": {
+            "type": "boolean"
+          }
+        }
+      },
+      "GetConnectionDetailsResponse": {
+        "title": "GetConnectionDetailsResponse",
+        "x-stoplight": {
+          "id": "ludtwvhfelscc"
+        },
+        "type": "object",
+        "properties": {
+          "msg": {
+            "type": "string",
+            "x-stoplight": {
+              "id": "yztcsav05e000"
+            }
+          },
+          "errorcode": {
+            "type": "integer",
+            "x-stoplight": {
+              "id": "zcpj3n3n2a430"
+            }
+          },
+          "connectionattributes": {
+            "$ref": "#/components/schemas/ConnectionAttributes",
+            "x-stoplight": {
+              "id": "8iks9mwaxy5n0"
+            }
+          },
+          "connectionkey": {
+            "type": "integer",
+            "x-stoplight": {
+              "id": "lg3fbrphhr452"
+            }
+          },
+          "connectionname": {
+            "type": "string",
+            "x-stoplight": {
+              "id": "fsf3y6c8zdrbp"
+            }
+          },
+          "connectionType": {
+            "type": "string",
+            "x-stoplight": {
+              "id": "lja9jknxjy8jw"
+            }
+          },
+          "createdby": {
+            "type": "string",
+            "x-stoplight": {
+              "id": "p35hcr26jvg87"
+            }
+          },
+          "createdon": {
+            "type": "string",
+            "x-stoplight": {
+              "id": "x361ctsepl8a8"
+            },
+            "format": "date-time"
+          },
+          "defaultsavroles": {
+            "type": "string",
+            "x-stoplight": {
+              "id": "rvtuogcy6pb69"
+            }
+          },
+          "description": {
+            "type": "string",
+            "x-stoplight": {
+              "id": "bgtijzohoyuxl"
+            }
+          },
+          "emailtemplate": {
+            "type": "string",
+            "x-stoplight": {
+              "id": "f4ts6cuu6id4z"
+            }
+          },
+          "status": {
+            "type": "integer",
+            "x-stoplight": {
+              "id": "0myeewl0w1ftq"
+            }
+          },
+          "updatedby": {
+            "type": "string",
+            "x-stoplight": {
+              "id": "xkbp5ysti5o7x"
+            }
+          }
+        },
+        "required": [
+          "msg",
+          "errorcode"
+        ]
+      },
+      "ConnectionTimeoutConfig": {
+        "type": "object",
+        "x-examples": {
+          "Example 1": {
+            "retryWait": 2,
+            "tokenRefreshMaxTryCount": 3,
+            "retryWaitMaxValue": 100,
+            "retryCount": 3,
+            "readTimeout": 1800,
+            "connectionTimeout": 10
+          }
+        },
+        "properties": {
+          "connectionTimeout": {
+            "type": "integer"
+          },
+          "retryCount": {
+            "type": "integer"
+          },
+          "readTimeout": {
+            "type": "integer"
+          },
+          "retryWait": {
+            "type": "integer"
+          },
+          "retryWaitMaxValue": {
+            "type": "integer"
+          },
+          "tokenRefreshMaxTryCount": {
+            "type": "integer"
+          }
+        }
+      },
+      "CreateOrUpdateConnectionRequest": {
+        "title": "CreateOrUpdateConnectionRequest",
+        "x-stoplight": {
+          "id": "d9n7utxsjjf8p"
+        },
+        "type": "object",
+        "properties": {
+          "connectionName": {
+            "type": "string",
+            "x-stoplight": {
+              "id": "kpzefbwhy0oua"
+            },
+            "example": "Active_Directory_Doc",
+            "description": "Specify the name to identify the connection."
+          },
+          "connectiontype": {
+            "type": "string",
+            "x-stoplight": {
+              "id": "wuk6vl9fxl2fz"
+            },
+            "example": "AD",
+            "description": "Specify a connection type. For example, if your target application is Active Directory, specify the connection type as `AD`."
+          },
+          "connectionkey": {
+            "type": "string",
+            "x-stoplight": {
+              "id": "k5iuq3jqkuwfn"
+            }
+          },
+          "defaultSavRole": {
+            "type": "string",
+            "description": "Sepcfiy the SAV role or combination of SAV roles. This SAV roles must hvae permissions that the users need for managing this connection along with its associated security systems, endpoints, accounts, and entitlements."
+          },
+          "description": {
+            "type": "string",
+            "description": "Specify the description for the connection."
+          },
+          "emailTemplate": {
+            "type": "string",
+            "description": "Specify the email template applicable for notifications."
+          },
+          "groupSearchBaseDN": {
+            "type": "string"
+          },
+          "saveconnection": {
+            "type": "string",
+            "x-stoplight": {
+              "id": "1t0b3va60lisy"
+            },
+            "example": "Y"
+          },
+          "saveinvault": {
+            "type": "string",
+            "enum": [
+              "true",
+              "false"
+            ],
+            "description": "Specify `true` to save the encrypted attribute in the vault configured with the connector."
+          },
+          "sslCertificate": {
+            "type": "string",
+            "description": "Specify the SSL certificates to use for securing the connection between EIC and the target application to encrypt the data shared between them."
+          },
+          "systemname": {
+            "type": "string"
+          },
+          "vaultconnection": {
+            "type": "string",
+            "description": "Vault connection identifier.",
+            "example": "hashicorp\\_dev"
+          },
+          "vaultconfiguration": {
+            "description": "Specify the path of the vault to obtain the secret data. Suffix the name of the connector to this path to make it unique for the connector. Note: The format of this string is a JSON string of the VaultConfiguration model.",
+            "x-stoplight": {
+              "id": "lljr6c8suzjmy"
+            },
+            "type": "string"
+          },
+          "ACCOUNT_ATTRIBUTE": {
+            "type": "string"
+          },
+          "ACCOUNTNAMERULE": {
+            "type": "string"
+          },
+          "BASE": {
+            "type": "string"
+          },
+          "CHECKFORUNIQUE": {
+            "type": "string"
+          },
+          "CREATEORGJSON": {
+            "type": "string"
+          },
+          "ConfigJSON": {
+            "type": "string"
+          },
+          "ENABLEACCOUNTJSON": {
+            "type": "string"
+          },
+          "ENFORCE_TREE_DELETION": {
+            "type": "string"
+          },
+          "ENTITLEMENT_ATTRIBUTE": {
+            "type": "string"
+          },
+          "IMPORTJSON": {
+            "type": "string"
+          },
+          "JCO_ASHOST": {
+            "type": "string",
+            "x-stoplight": {
+              "id": "n8mn5evw92rmz"
+            }
+          },
+          "JCO_CLIENT": {
+            "type": "string",
+            "x-stoplight": {
+              "id": "1jovo79h5xbx7"
+            }
+          },
+          "JCO_SYSNR": {
+            "type": "string",
+            "x-stoplight": {
+              "id": "jjvsoejpx3gyx"
+            }
+          },
+          "JCO_USER": {
+            "type": "string",
+            "x-stoplight": {
+              "id": "cx8byx5kgcpep"
+            }
+          },
+          "LDAP_OR_AD": {
+            "type": "string"
+          },
+          "OBJECTFILTER": {
+            "type": "string"
+          },
+          "ORGANIZATION_ATTRIBUTE": {
+            "type": "string"
+          },
+          "ORGIMPORTJSON": {
+            "type": "string"
+          },
+          "ORG_BASE": {
+            "type": "string"
+          },
+          "PAGE_SIZE": {
+            "type": "string"
+          },
+          "PAM_CONFIG": {
+            "type": "string"
+          },
+          "PASSWORD": {
+            "type": "string",
+            "x-stoplight": {
+              "id": "l7myxh12vypcr"
+            },
+            "example": "{{password}}"
+          },
+          "PASSWORD_MAX_LENGTH": {
+            "type": "string"
+          },
+          "PASSWORD_MIN_LENGTH": {
+            "type": "string"
+          },
+          "PASSWORD_NOOFCAPSALPHA": {
+            "type": "string"
+          },
+          "PASSWORD_NOOFDIGITS": {
+            "type": "string"
+          },
+          "PASSWORD_NOOFSPLCHARS": {
+            "type": "string"
+          },
+          "READ_OPERATIONAL_ATTRIBUTES": {
+            "type": "string"
+          },
+          "REMOVEACCOUNTACTION": {
+            "type": "string"
+          },
+          "RESETANDCHANGEPASSWRDJSON": {
+            "type": "string"
+          },
+          "REUSEINACTIVEACCOUNT": {
+            "type": "string"
+          },
+          "SEARCHFILTER": {
+            "type": "string"
+          },
+          "SETDEFAULTPAGESIZE": {
+            "type": "string"
+          },
+          "SETRANDOMPASSWORD": {
+            "type": "string"
+          },
+          "STATUSKEYJSON": {
+            "type": "string"
+          },
+          "STATUS_THRESHOLD_CONFIG": {
+            "type": "string"
+          },
+          "SUPPORTEMPTYSTRING": {
+            "type": "string"
+          },
+          "UNLOCKACCOUNTJSON": {
+            "type": "string"
+          },
+          "UPDATEORGJSON": {
+            "type": "string"
+          },
+          "URL": {
+            "type": "string",
+            "x-stoplight": {
+              "id": "yuoozvp6ihpcz"
+            },
+            "example": "LDAP://3.19.17.34:386"
+          },
+          "USERNAME": {
+            "type": "string",
+            "x-stoplight": {
+              "id": "1zlvwawhijk3x"
+            },
+            "example": "CN=Doc Admin,OU=SaviyntAdmins,DC=saviyntlabs,DC=org"
+          }
+        },
+        "required": [
+          "connectiontype"
+        ]
+      },
+      "CreateOrUpdateConnectionResponse": {
+        "title": "CreateOrUpdateConnectionResponse",
+        "x-stoplight": {
+          "id": "fok5zvqgln0z8"
+        },
+        "type": "object",
+        "properties": {
+          "msg": {
+            "type": "string",
+            "x-stoplight": {
+              "id": "br4jba4brydxw"
+            }
+          },
+          "errorCode": {
+            "type": "string",
+            "x-stoplight": {
+              "id": "f5q0uhvpk4j8d"
+            }
+          },
+          "connectionKey": {
+            "type": "integer",
+            "x-stoplight": {
+              "id": "lmvwqmnvlymvw"
+            }
+          }
+        },
+        "required": [
+          "msg",
+          "errorCode"
+        ]
+      },
+      "DeleteConnectionRequest": {
+        "title": "DeleteConnectionRequest",
+        "x-stoplight": {
+          "id": "bqwudyuqtmqv4"
+        },
+        "type": "object",
+        "properties": {
+          "connectionkey": {
+            "type": "array",
+            "x-stoplight": {
+              "id": "om8s9l6kbqx7c"
+            },
+            "items": {
+              "x-stoplight": {
+                "id": "w7x0rbdy052sx"
+              },
+              "type": "string"
+            }
+          },
+          "updateuser": {
+            "type": "string",
+            "x-stoplight": {
+              "id": "mni74pd0ixcg2"
+            }
+          }
+        }
+      },
+      "DeleteConnectionResponse": {
+        "title": "DeleteConnectionResponse",
+        "x-stoplight": {
+          "id": "2ejl6du4vhzey"
+        },
+        "type": "object",
+        "properties": {
+          "msg": {
+            "type": "string",
+            "x-stoplight": {
+              "id": "bnakjns15cdu3"
+            },
+            "example": "success"
+          },
+          "errorcode": {
+            "type": "string",
+            "x-stoplight": {
+              "id": "hytd754r51rra"
+            },
+            "example": "0"
+          }
+        },
+        "required": [
+          "msg",
+          "errorcode"
+        ]
+      },
+      "VaultConfiguration": {
+        "title": "VaultConfiguration",
+        "x-stoplight": {
+          "id": "619fvo66n2azf"
+        },
+        "type": "object",
+        "properties": {
+          "path": {
+            "type": "string",
+            "x-stoplight": {
+              "id": "xzo4eglvt2fex"
+            },
+            "description": "Vault secret path.",
+            "example": "/secrets/data/kv-dev-intgn1/aob1/-5MAY23-TEST1/<ConnectionName>\\_externalconnection"
+          },
+          "keyMapping": {
+            "$ref": "#/components/schemas/VaultConfigurationKeyMapping",
+            "x-stoplight": {
+              "id": "qqan3ena6hgf4"
+            }
+          }
+        }
+      },
+      "VaultConfigurationKeyMapping": {
+        "title": "VaultConfigurationKeyMapping",
+        "x-stoplight": {
+          "id": "8r2cuk5xlxx2f"
+        },
+        "type": "object",
+        "properties": {
+          "AUTHTOKEN": {
+            "type": "string",
+            "x-stoplight": {
+              "id": "xflvoo59ydvif"
+            }
+          },
+          "PASSWORD": {
+            "$ref": "#/components/schemas/VaultConfigurationKeyMappingPassword",
+            "x-stoplight": {
+              "id": "iolk9y3qvlabh"
+            }
+          }
+        }
+      },
+      "VaultConfigurationKeyMappingPassword": {
+        "title": "VaultConfigurationKeyMappingPassword",
+        "x-stoplight": {
+          "id": "5ftwxo54l3sfx"
+        },
+        "type": "object",
+        "properties": {
+          "keyName": {
+            "type": "string",
+            "x-stoplight": {
+              "id": "iwodcp3y332d3"
+            }
+          },
+          "groupName": {
+            "type": "string",
+            "x-stoplight": {
+              "id": "xuea1kvnqtrdz"
+            }
+          },
+          "encryptionmechanism": {
+            "type": "string",
+            "x-stoplight": {
+              "id": "vcg7q9mva79xi"
+            },
+            "example": "None"
+          },
+          "ignoreMapping": {
+            "x-stoplight": {
+              "id": "ap6g4hm3xk77t"
+            },
+            "type": "array",
+            "description": "Use mappings such as `groupName` and `keyName`.",
+            "items": {
+              "x-stoplight": {
+                "id": "qbmddkv5bzydu"
+              },
+              "type": "string"
+            }
+          }
+        }
+      }
+    }
+  }
+}

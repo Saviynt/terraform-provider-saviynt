@@ -1,0 +1,264 @@
+{
+  "openapi": "3.1.0",
+  "x-stoplight": {
+    "id": "vqaggj7sqeqfe"
+  },
+  "info": {
+    "title": "Saviynt Tasks API",
+    "version": "1.0",
+    "description": "Saviynt Tasks API",
+    "contact": {
+      "name": "Saviynt Developers Team",
+      "email": "https://github.com/saviynt"
+    }
+  },
+  "servers": [
+    {
+      "url": "http://localhost:3000"
+    }
+  ],
+  "tags": [
+    {
+      "name": "Tasks"
+    }
+  ],
+  "paths": {
+    "/ECM/api/v5/checkTaskStatus": {
+      "post": {
+        "summary": "Check Task Status",
+        "operationId": "checkTaskStatus",
+        "tags": [
+          "Tasks"
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CheckTaskStatusResponse"
+                }
+              }
+            }
+          }
+        },
+        "requestBody": {
+          "content": {
+            "application/x-www-form-urlencoded": {
+              "schema": {
+                "$ref": "#/components/schemas/CheckTaskStatusRequest"
+              }
+            }
+          },
+          "description": ""
+        },
+        "description": "This API can be used to check the task status. Response can return task status as “New/Complete/In Progress/Discontinued”."
+      },
+      "parameters": []
+    },
+    "/ECM/api/v5/updateTasks": {
+      "post": {
+        "summary": "Update Tasks",
+        "operationId": "updateTasks",
+        "tags": [
+          "Tasks"
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UpdateTasksResponse"
+                }
+              }
+            }
+          }
+        },
+        "description": "It can update certain params of a task as well as complete a task.",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateTasksRequest"
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "CheckTaskStatusRequest": {
+        "title": "CheckTaskStatusRequest",
+        "x-stoplight": {
+          "id": "u7nkg6jz4b8dl"
+        },
+        "type": "object",
+        "properties": {
+          "taskid": {
+            "type": "string",
+            "x-stoplight": {
+              "id": "9au7lq8dxsbp3"
+            }
+          }
+        },
+        "required": [
+          "taskid"
+        ]
+      },
+      "CheckTaskStatusResponse": {
+        "title": "CheckTaskStatusResponse",
+        "x-stoplight": {
+          "id": "ev00l66p331k3"
+        },
+        "type": "object",
+        "properties": {
+          "Status": {
+            "x-stoplight": {
+              "id": "xvc1tuukf1ia3"
+            },
+            "type": "string",
+            "description": "Can be null or one of the following:\n\n1. `New`\n2. `In Progress`\n3. `Complete`\n4. `Discontinued`\n5. `Pending Create`\n6. `Pending Provision`\n7. `Provisioning Failed`\n8. `Error`\n9. `No Action Required`"
+          },
+          "UpdateDate": {
+            "type": "string",
+            "x-stoplight": {
+              "id": "eqvgny125a1jr"
+            }
+          },
+          "Comments": {
+            "type": "string",
+            "x-stoplight": {
+              "id": "uht8mb3oqa84f"
+            }
+          },
+          "ProvisioningComments": {
+            "type": "string",
+            "x-stoplight": {
+              "id": "0zwyd4r8v825f"
+            }
+          },
+          "UpdateUser": {
+            "type": "string",
+            "x-stoplight": {
+              "id": "4dbj2dneg5jvm"
+            }
+          },
+          "ProvisioningMetadata": {
+            "type": "object",
+            "x-stoplight": {
+              "id": "pp42szdd91wr3"
+            }
+          }
+        },
+        "description": ""
+      },
+      "UpdateTaskRequestInfo": {
+        "title": "UpdateTaskRequestInfo",
+        "x-stoplight": {
+          "id": "sclcppzc5yn6n"
+        },
+        "type": "object",
+        "properties": {
+          "taskid": {
+            "type": "string",
+            "x-stoplight": {
+              "id": "zuqc9n0uloizr"
+            }
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "1",
+              "2",
+              "3",
+              "4",
+              "5",
+              "6",
+              "7",
+              "8",
+              "9"
+            ],
+            "x-stoplight": {
+              "id": "f1yxjoi1tnz2y"
+            },
+            "description": "Use the following numeric status codes to represent the following status. These string status values are returned in the `checkTaskStatus` endpoint.\n1: New\n2: In Progress\n3: Complete\n4: Discontinued\n5: Pending Create\n6: Pending Provision\n7: Provisioning Failed\n8: Error\n9: No Action Required"
+          }
+        },
+        "required": [
+          "taskid",
+          "status"
+        ],
+        "description": "1. `updatetype` (if this is set to \"completetask\" then refer completetask api and pass appropriate params as well),\n1. `comments`\n1. `provisioningComments`\n1. `provisioningMetadata`\n1. `password`\n1. `status`\n1. `ticketId`\n1. `taskownerusergroup`\n1. `taskowneruser`\n1. `updateuser` - username of user who is updating the task,\n1. `completeassociatedtasks` - true / false,\n1. `emailto`\n1. `notify` - to pick up data from the task, supported values - \"notify\":[\"USER\",\"requestor\",\"MANAGER\"],\n1. `from`\n1. `subject`\n1. `emailbody`"
+      },
+      "UpdateTaskResponseInfo": {
+        "title": "UpateTaskResponseInfo",
+        "x-stoplight": {
+          "id": "5txk1wm5gp1ok"
+        },
+        "type": "object",
+        "properties": {
+          "msg": {
+            "type": "string",
+            "x-stoplight": {
+              "id": "pqkj5h32eikew"
+            }
+          },
+          "errorCode": {
+            "type": "string",
+            "x-stoplight": {
+              "id": "tpd9zvjvqu450"
+            }
+          }
+        },
+        "required": [
+          "msg",
+          "errorCode"
+        ]
+      },
+      "UpdateTasksResponse": {
+        "title": "UpdateTasksResponse",
+        "additionalProperties": {
+          "$ref": "#/components/schemas/UpdateTaskResponseInfo"
+        },
+        "x-stoplight": {
+          "id": "252egi48pfxga"
+        },
+        "type": "object"
+      },
+      "UpdateTasksRequest": {
+        "title": "UpdateTasksRequest",
+        "x-stoplight": {
+          "id": "3rtx1z2yu3dbq"
+        },
+        "type": "object",
+        "description": "",
+        "properties": {
+          "taskKeyToUpdate": {
+            "type": "array",
+            "x-stoplight": {
+              "id": "ew8s4sdh02wzl"
+            },
+            "items": {
+              "$ref": "#/components/schemas/UpdateTaskRequestInfo",
+              "x-stoplight": {
+                "id": "i1t7r6weqnaky"
+              }
+            }
+          },
+          "updateuser": {
+            "type": "string",
+            "x-stoplight": {
+              "id": "j99s86kf7ltqs"
+            }
+          }
+        },
+        "required": [
+          "taskKeyToUpdate"
+        ]
+      }
+    }
+  }
+}

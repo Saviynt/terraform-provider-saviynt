@@ -1,0 +1,4660 @@
+{
+  "components": {
+    "schemas": {
+      "CertificateDetail": {
+        "properties": {
+          "alias": {
+            "type": "string"
+          },
+          "certificateExpiry": {
+            "type": "string"
+          },
+          "certificateIssuerName": {
+            "type": "string"
+          },
+          "certificateStatus": {
+            "type": "string"
+          },
+          "certificateSubjectName": {
+            "type": "string"
+          },
+          "thumbprints": {
+            "items": {
+              "$ref": "#/components/schemas/CertificateThumbprint"
+            },
+            "type": "array"
+          }
+        },
+        "title": "CertificateDetail",
+        "type": "object",
+        "x-stoplight": {
+          "id": "zjhn6dmnyyxla"
+        }
+      },
+      "CertificateThumbprint": {
+        "properties": {
+          "expiry": {
+            "type": "string"
+          },
+          "thumbprint": {
+            "type": "string",
+            "x-stoplight": {
+              "id": "k5fx1vt33fqfg"
+            }
+          }
+        },
+        "title": "CertificateThumbprint",
+        "type": "object"
+      },
+      "CheckJobStatusRequest": {
+        "properties": {
+          "jobgroup": {
+            "type": "string",
+            "x-stoplight": {
+              "id": "8ypc6y1fo4t4n"
+            }
+          },
+          "jobname": {
+            "type": "string",
+            "x-stoplight": {
+              "id": "afvzbom2l6dmo"
+            }
+          }
+        },
+        "required": [
+          "jobgroup",
+          "jobname"
+        ],
+        "title": "CheckJobStatusRequest",
+        "type": "object",
+        "x-stoplight": {
+          "id": "sgskilxuqx1ng"
+        }
+      },
+      "CheckJobStatusResponse": {
+        "properties": {
+          "errorCode": {
+            "type": "string",
+            "x-stoplight": {
+              "id": "vywsiuk8okt0v"
+            }
+          },
+          "msg": {
+            "type": "string",
+            "x-stoplight": {
+              "id": "8f07qxf5fpmnu"
+            }
+          }
+        },
+        "title": "CheckJobStatusResponse",
+        "type": "object",
+        "x-stoplight": {
+          "id": "2gqodxah1rk0u"
+        }
+      },
+      "CheckTaskStatusRequest": {
+        "properties": {
+          "taskid": {
+            "type": "string",
+            "x-stoplight": {
+              "id": "9au7lq8dxsbp3"
+            }
+          }
+        },
+        "required": [
+          "taskid"
+        ],
+        "title": "CheckTaskStatusRequest",
+        "type": "object",
+        "x-stoplight": {
+          "id": "u7nkg6jz4b8dl"
+        }
+      },
+      "CheckTaskStatusResponse": {
+        "properties": {
+          "Comments": {
+            "type": "string",
+            "x-stoplight": {
+              "id": "uht8mb3oqa84f"
+            }
+          },
+          "ProvisioningComments": {
+            "type": "string",
+            "x-stoplight": {
+              "id": "0zwyd4r8v825f"
+            }
+          },
+          "ProvisioningMetadata": {
+            "type": "object",
+            "x-stoplight": {
+              "id": "pp42szdd91wr3"
+            }
+          },
+          "Status": {
+            "description": "Can be null or one of the following:\n\n1. `New`\n2. `In Progress`\n3. `Complete`\n4. `Discontinued`\n5. `Pending Create`\n6. `Pending Provision`\n7. `Provisioning Failed`\n8. `Error`\n9. `No Action Required`",
+            "type": "string",
+            "x-stoplight": {
+              "id": "xvc1tuukf1ia3"
+            }
+          },
+          "UpdateDate": {
+            "type": "string",
+            "x-stoplight": {
+              "id": "eqvgny125a1jr"
+            }
+          },
+          "UpdateUser": {
+            "type": "string",
+            "x-stoplight": {
+              "id": "4dbj2dneg5jvm"
+            }
+          }
+        },
+        "title": "CheckTaskStatusResponse",
+        "type": "object",
+        "x-stoplight": {
+          "id": "ev00l66p331k3"
+        }
+      },
+      "Connection": {
+        "properties": {
+          "CONNECTIONDESCRIPTION": {
+            "type": "string"
+          },
+          "CONNECTIONNAME": {
+            "example": "AD Test",
+            "type": "string"
+          },
+          "CONNECTIONTYPE": {
+            "example": "AD",
+            "type": "string"
+          },
+          "CREATEDBY": {
+            "example": "admin(     ADMIN)",
+            "type": "string"
+          },
+          "CREATEDON": {
+            "example": "2017-03-23T00:48:28Z",
+            "format": "date-time",
+            "type": "string"
+          },
+          "STATUS": {
+            "example": 1,
+            "type": "number"
+          },
+          "UPDATEDBY": {
+            "example": "admin(ADMIN   ADMIN)",
+            "type": "string"
+          },
+          "UPDATEDON": {
+            "example": "2017-08-18T04:18:19Z",
+            "format": "date-time",
+            "type": "string"
+          }
+        },
+        "required": [
+          "CONNECTIONDESCRIPTION",
+          "CONNECTIONNAME",
+          "CONNECTIONTYPE",
+          "CREATEDON",
+          "STATUS"
+        ],
+        "type": "object"
+      },
+      "ConnectionAttributes": {
+        "properties": {
+          "ACCOUNTNAMERULE": {
+            "type": "string"
+          },
+          "ACCOUNT_ATTRIBUTE": {
+            "type": "string"
+          },
+          "ACCOUNT_ATTRIBUTES": {
+            "type": "string"
+          },
+          "ACCOUNT_ATTRIBUTE_LABEL": {
+            "type": "string"
+          },
+          "ADVANCE_FILTER_JSON": {
+            "type": "string"
+          },
+          "ADVSEARCH": {
+            "type": "string"
+          },
+          "APPLICATION_NAME": {
+            "type": "string"
+          },
+          "BASE": {
+            "type": "string"
+          },
+          "CHECKFORUNIQUE": {
+            "type": "string"
+          },
+          "CONNECTOR_FILE_PATH": {
+            "type": "string"
+          },
+          "CREATEACCOUNTJSON": {
+            "type": "string"
+          },
+          "CREATEORGJSON": {
+            "type": "string"
+          },
+          "CUSTOMER_ID": {
+            "type": "string"
+          },
+          "CUSTOM_ACCOUNT_ATTRIBUTES": {
+            "type": "string"
+          },
+          "ConfigJSON": {
+            "type": "string"
+          },
+          "DC_LOCATOR": {
+            "type": "string"
+          },
+          "DEFAULT_USER_ROLE": {
+            "type": "string"
+          },
+          "DISABLEACCOUNTJSON": {
+            "type": "string"
+          },
+          "ENABLEACCOUNTJSON": {
+            "type": "string"
+          },
+          "ENABLEGROUPMANAGEMENT": {
+            "type": "string"
+          },
+          "ENDPOINTS_FILTER": {
+            "type": "string"
+          },
+          "ENFORCE_TREE_DELETION": {
+            "type": "string"
+          },
+          "ENTITLEMENT_ATTRIBUTE": {
+            "type": "string"
+          },
+          "FILEFOLDER_ATTRIBUTES": {
+            "type": "string"
+          },
+          "FILTER": {
+            "type": "string"
+          },
+          "GROUP_ATTRIBUTES": {
+            "type": "string"
+          },
+          "IMPORTJSON": {
+            "type": "string"
+          },
+          "IMPORT_USERS": {
+            "type": "string"
+          },
+          "INCREMENTAL_CONFIG": {
+            "type": "string"
+          },
+          "LAST_IMPORT_TIME": {
+            "type": "string"
+          },
+          "LDAP_OR_AD": {
+            "type": "string"
+          },
+          "MAX_CHANGENUMBER": {
+            "type": "string"
+          },
+          "MKTPLACEAPP_ATTRIBUTES": {
+            "type": "string"
+          },
+          "MODIFYUSERDATAJSON": {
+            "type": "string"
+          },
+          "OBJECTFILTER": {
+            "type": "string"
+          },
+          "ORGANIZATION_ATTRIBUTE": {
+            "type": "string"
+          },
+          "ORGIMPORTJSON": {
+            "type": "string"
+          },
+          "ORG_BASE": {
+            "type": "string"
+          },
+          "PAGE_SIZE": {
+            "type": "string"
+          },
+          "PAM_CONFIG": {
+            "type": "string"
+          },
+          "PASSWORD": {
+            "type": "string"
+          },
+          "PASSWORD_MAX_LENGTH": {
+            "type": "string"
+          },
+          "PASSWORD_MIN_LENGTH": {
+            "type": "string"
+          },
+          "PASSWORD_NOOFCAPSALPHA": {
+            "type": "string"
+          },
+          "PASSWORD_NOOFDIGITS": {
+            "type": "string"
+          },
+          "PASSWORD_NOOFSPLCHARS": {
+            "type": "string"
+          },
+          "QUARANTINE_FOLDER_ID": {
+            "type": "string"
+          },
+          "READ_OPERATIONAL_ATTRIBUTES": {
+            "type": "string"
+          },
+          "REMOVEACCOUNTACTION": {
+            "type": "string"
+          },
+          "RESETANDCHANGEPASSWRDJSON": {
+            "type": "string"
+          },
+          "REUSEACCOUNTJSON": {
+            "type": "string"
+          },
+          "REUSEINACTIVEACCOUNT": {
+            "type": "string"
+          },
+          "SCOPES": {
+            "type": "string"
+          },
+          "SEARCHFILTER": {
+            "type": "string"
+          },
+          "SERVICE_ACCOUNT_ID": {
+            "type": "string"
+          },
+          "SERVICE_ACCOUNT_KEY_JSON": {
+            "type": "string"
+          },
+          "SERVICE_ACCOUNT_USER": {
+            "type": "string"
+          },
+          "SETDEFAULTPAGESIZE": {
+            "type": "string"
+          },
+          "SETRANDOMPASSWORD": {
+            "type": "string"
+          },
+          "STATUSKEYJSON": {
+            "type": "string"
+          },
+          "STATUS_THRESHOLD_CONFIG": {
+            "type": "string"
+          },
+          "SUPPORTEMPTYSTRING": {
+            "type": "string"
+          },
+          "SUSPEND_USER_ORGANIZATIONAL_UNIT": {
+            "type": "string"
+          },
+          "UNLOCKACCOUNTJSON": {
+            "type": "string"
+          },
+          "UPDATEACCOUNTJSON": {
+            "type": "string"
+          },
+          "UPDATEORGJSON": {
+            "type": "string"
+          },
+          "UPDATEUSERJSON": {
+            "type": "string"
+          },
+          "URL": {
+            "type": "string"
+          },
+          "USERNAME": {
+            "type": "string"
+          },
+          "USER_ATTRIBUTE": {
+            "type": "string"
+          },
+          "USER_ATTRIBUTES": {
+            "type": "string"
+          },
+          "connectionTimeoutConfig": {
+            "$ref": "#/components/schemas/ConnectionTimeoutConfig"
+          },
+          "connectionType": {
+            "type": "string"
+          },
+          "createUpdateMappings": {
+            "type": "string"
+          },
+          "groupImportMapping": {
+            "type": "string"
+          },
+          "groupSearchBaseDN": {
+            "type": "string"
+          },
+          "isTimeoutConfigValidated": {
+            "type": "boolean"
+          },
+          "isTimeoutSupported": {
+            "type": "boolean"
+          }
+        },
+        "type": "object",
+        "x-examples": {
+          "Example 1": {
+            "ACCOUNTNAMERULE": "CN=${user.username},OU=Users,OU=ATOU_IWYKHBh,DC=saviyntlabs,DC=org",
+            "ACCOUNT_ATTRIBUTE": "[customproperty1::pwdlastset#String,customproperty30::useraccountcontrol#String,customproperty2::userPrincipalName#emchar,customproperty28::primaryGroupID#String,lastlogondate::lastLogon#millisec,displayname::name#emchar,customproperty25::description#emchar,customproperty20::employeeID#String,customproperty3::sn#emchar,comments::distinguishedName#emchar,customproperty4::homeDirectory#String,lastpasswordchange::pwdLastSet#millisec,customproperty5::co#String,customproperty6::employeeNumber#String,customproperty7::givenName#emchar,customproperty8::title#emchar,customproperty9::telephoneNumber#String,customproperty10::c#String,description::description#emchar,customproperty11::uSNCreated#String,validthrough::accountExpires#millisec,customproperty12::logonCount#String,customproperty13::physicalDeliveryOfficeName#String,updatedate::whenChanged#date,customproperty14::extensionAttribute1#String,customproperty15::extensionAttribute2#String,customproperty16::streetAddress#String,customproperty17::mailNickname#String,customproperty18::department#String,customproperty19::countryCode#String,name::sAMAccountName#emchar,customproperty21::manager#String,customproperty22::city#String,customproperty23::proxyaddresses#String,created_on::whenCreated#date,accountclass::objectClass#String,accountid::objectGUID#Binary,customproperty24::userAccountControl#String,customproperty27::objectSid#Binary,RECONCILATION_FIELD::customproperty26,customproperty26::objectGUID#Binary,customproperty29::st#String]",
+            "ADVANCE_FILTER_JSON": "",
+            "ADVSEARCH": "",
+            "BASE": "OU=Users,OU=ATOU_IWYKHBh,DC=saviyntlabs,DC=org",
+            "CHECKFORUNIQUE": "",
+            "CREATEACCOUNTJSON": "{\"displayName\":\"${user.displayname}\",\"givenName\":\"${user.firstname}\",\"name\":\"${user.displayname}\",\"sn\":\"${user.lastname}\",\"cn\":\"${cn}\",\"objectclass\":[\"top\",\"person\",\"organizationalPerson\",\"user\"],\"userAccountControl\":\"544\",\"samaccountname\":\"${task.accountName}\"}",
+            "CREATEORGJSON": "",
+            "ConfigJSON": "",
+            "DC_LOCATOR": "",
+            "DEFAULT_USER_ROLE": "",
+            "DISABLEACCOUNTJSON": "{\"deleteAllGroups\":\"No\",\"userAccountControl\":\"546\"}",
+            "ENABLEACCOUNTJSON": "{\"AFTERMOVEACTIONS\":{\"otherMailbox\":[\"${user?.customproperty15.toString().replace(',','\\\",\\\"')}}\"],\"userAccountControl\":\"544\"},\"ENABLEACCOUNTOU\":\"OU=Users,OU=CONNQA,OU=SaviyntTeams,DC=saviyntlabs,DC=org\",\"USEDNFROMACCOUNT\":\"YES\",\"REMOVEGROUPS\":\"NO\",\"MOVEDN\":\"NO\"}",
+            "ENABLEGROUPMANAGEMENT": "",
+            "ENDPOINTS_FILTER": "",
+            "ENFORCE_TREE_DELETION": "",
+            "ENTITLEMENT_ATTRIBUTE": "memberOf",
+            "FILTER": "",
+            "IMPORTJSON": "{\"envproperties\":{\"com.sun.jndi.ldap.connect.timeout\":\"10000\",\"com.sun.jndi.ldap.read.timeout\":\"60000\"}}",
+            "INCREMENTAL_CONFIG": "",
+            "LAST_IMPORT_TIME": "{\"usersImport\":{\"createdate\":\"2024-11-21 09:49:23\",\"updatedate\":\"2024-11-21 09:49:23\"}}",
+            "LDAP_OR_AD": "AD",
+            "MAX_CHANGENUMBER": "",
+            "MODIFYUSERDATAJSON": "",
+            "OBJECTFILTER": "(\u0026(objectCategory=CN=Person,CN=Schema,CN=Configuration,DC=saviyntlabs,DC=org)(objectClass=user))",
+            "ORGANIZATION_ATTRIBUTE": "{\"mapping\":\"CUSTOMERNAME::ou#emchar,CUSTOMPROPERTY1::name#emchar,CUSTOMPROPERTY11::whenChanged#String,CUSTOMPROPERTY2::st#String,CUSTOMPROPERTY3::postBoxOffice#String,CUSTOMPROPERTY4::postalAddress#String,CUSTOMPROPERTY5::postalCode#String,CUSTOMPROPERTY6::cn#emchar,DESCRIPTION::description#emchar,CREATEDATE::whenCreated#date,UPDATEDATE::whenChanged#date,ENTITYCLASS::objectClass#String,RECONCILATION_FIELD::CUSTOMPROPERTY10,CUSTOMPROPERTY10::objectGUID#Binary,CUSTOMERTYPE::1#SavData,STATUS::1#SavData,RISK::0#SavData,SCORE::0#SavData\",\"attributes\":[{\"filter\":[\"(L=*)\"],\"RECONCILATION_FIELD\":\"objectGUID\",\"mapping\":\"description#emchar,displayName#emchar,street#String\",\"name\":\"locality\"}]}",
+            "ORGIMPORTJSON": "",
+            "ORG_BASE": "",
+            "PAGE_SIZE": "1000",
+            "PAM_CONFIG": "",
+            "PASSWORD": "******",
+            "PASSWORD_MAX_LENGTH": "",
+            "PASSWORD_MIN_LENGTH": "",
+            "PASSWORD_NOOFCAPSALPHA": "",
+            "PASSWORD_NOOFDIGITS": "",
+            "PASSWORD_NOOFSPLCHARS": "",
+            "READ_OPERATIONAL_ATTRIBUTES": "",
+            "REMOVEACCOUNTACTION": "{\"removeAction\":\"SUSPEND\",\"userAccountControl\":\"546\"}",
+            "RESETANDCHANGEPASSWRDJSON": "{\"CHANGE\":{\"title\":\"password changed\",\"lockoutTime\":\"0\",\"pwdLastSet\":\"-1\"},\"RESET\":{\"title\":\"password reset\",\"pwdLastSet\":\"0\"}}",
+            "REUSEACCOUNTJSON": "",
+            "REUSEINACTIVEACCOUNT": "",
+            "SEARCHFILTER": "OU=Users,OU=ATOU_IWYKHBh,DC=saviyntlabs,DC=org",
+            "SETDEFAULTPAGESIZE": "",
+            "SETRANDOMPASSWORD": "FALSE",
+            "STATUSKEYJSON": "{\"STATUS_INACTIVE\":[\"0\",\"546\",\"514\"],\"STATUS_ACTIVE\":[\"1\",\"544\"]}",
+            "STATUS_THRESHOLD_CONFIG": "{\"statusAndThresholdConfig\":{\"inactivateAccountsNotInFile\":false,\"activeStatus\":[\"512\",\"544\",\"66048\"],\"statusColumn\":\"customproperty30\",\"lockedStatusMapping\":{\"Locked\":[\"\"],\"Unlocked\":[\"\"]},\"lockedStatusColumn\":\"\",\"accountThresholdValue\":1000,\"inactiveStatus\":[\"546\",\"514\",\"66050\"],\"correlateInactiveAccounts\":true,\"deleteLinks\":false}}",
+            "SUPPORTEMPTYSTRING": "",
+            "UNLOCKACCOUNTJSON": "{\"lockoutTime\":\"0\"}",
+            "UPDATEACCOUNTJSON": "{\"description\":\"Automation Test\"}",
+            "UPDATEORGJSON": "",
+            "UPDATEUSERJSON": "{\"sn\":\"AD_lastname\"}",
+            "URL": "LDAP://3.19.17.34:389",
+            "USERNAME": "CN=CONNQATEAM,CN=Users,DC=saviyntlabs,DC=org",
+            "USER_ATTRIBUTE": "[FIRSTNAME::givenname#emchar,LASTNAME::sn#emchar,CUSTOMPROPERTY1::samaccountname#emchar,USERNAME::sAMAccountName#emchar,DISPLAYNAME::cn#emchar,CUSTOMPROPERTY25::description#emchar,CUSTOMPROPERTY3::sn#emchar,COMMENTS::distinguishedname#emchar,CUSTOMPROPERTY4::homedirectory#String,CUSTOMPROPERTY5::co#String,CUSTOMPROPERTY6::cn#emchar,CUSTOMPROPERTY7::givenname#emchar,CUSTOMPROPERTY8::title#emchar,CUSTOMPROPERTY9::telephonenumber#String,CUSTOMPROPERTY10::c#String,CUSTOMPROPERTY11::uSNCreated#String,ENDDATE::accountExpires#millisec,CUSTOMPROPERTY12::logonCount#String,CUSTOMPROPERTY13::physicaldeliveryofficename#String,UPDATEDATE::whenchanged#date,CUSTOMPROPERTY14::extensionattribute1#String,CUSTOMPROPERTY15::extensionattribute2#String,CUSTOMPROPERTY16::streetaddress#String,CUSTOMPROPERTY17::mailnickname#String,CUSTOMPROPERTY18::department#String,CUSTOMPROPERTY19::countrycode#String,CUSTOMPROPERTY2::samaccountname#emchar,CUSTOMPROPERTY20::userprincipalname#emchar,CUSTOMPROPERTY21::manager#String,CUSTOMPROPERTY22::city#String,CUSTOMPROPERTY23::proxyaddresses#String,CREATEDATE::whencreated#date,customproperty24::useraccountcontrol#String,CUSTOMPROPERTY26::distinguishedname#emchar,CUSTOMPROPERTY41::distinguishedname#emchar,statuskey::useraccountcontrol#String,CUSTOMPROPERTY27::objectguid#String,RECONCILATION_FIELD::CUSTOMPROPERTY27,CUSTOMPROPERTY28::forest#String,CUSTOMPROPERTY29::domain#string,CUSTOMPROPERTY40::distinguishedName#emchar,USERATTRIBUTE_EMAIL::proxyaddresses#String]",
+            "connectionTimeoutConfig": {
+              "connectionTimeout": 10,
+              "readTimeout": 1800,
+              "retryCount": 3,
+              "retryWait": 2,
+              "retryWaitMaxValue": 100,
+              "tokenRefreshMaxTryCount": 3
+            },
+            "connectionType": "MS_BASED_CONNECTOR",
+            "createUpdateMappings": "",
+            "groupImportMapping": "{\"mapping\":\"memberHash:member_char,customProperty1:sAMAccountType_char,customProperty2:instanceType_char,customProperty3:uSNCreated_char,customProperty4:groupType_char,customProperty5:dSCorePropagationData_char,customProperty12:dn_emchar,customProperty13:cn_emchar,lastscandate:whenCreated_date,customProperty15:managedBy_char,entitlement_glossary:description_emchar,description:description_emchar,displayname:name_emchar,customProperty9:name_emchar,customProperty10:objectCategory_char,customProperty11:sAMAccountName_emchar,entitlement_value:distinguishedName_emchar,entitlementid:distinguishedName_emchar,customProperty14:objectClass_char,updatedate:whenChanged_date,customProperty17:distinguishedName_emchar,RECONCILATION_FIELD:customproperty18,customProperty18:objectGUID_Binary,customProperty19:managedBy_char\",\"performGroupAccountLinking\":\"true\",\"incrementalTimeField\":\"whenChanged\",\"tableFieldAttribute\":\"comments\",\"entitlementTypeName\":\"memberOf\",\"entitlementOwnerAttribute\":\"managedBy\",\"importGroupHierarchy\":\"true\",\"groupObjectClass\":\"(objectclass=group)\"}",
+            "groupSearchBaseDN": "OU=Users,OU=ATOU_IWYKHBh,DC=saviyntlabs,DC=org",
+            "isTimeoutConfigValidated": true,
+            "isTimeoutSupported": true
+          }
+        }
+      },
+      "ConnectionTimeoutConfig": {
+        "properties": {
+          "connectionTimeout": {
+            "type": "integer"
+          },
+          "readTimeout": {
+            "type": "integer"
+          },
+          "retryCount": {
+            "type": "integer"
+          },
+          "retryWait": {
+            "type": "integer"
+          },
+          "retryWaitMaxValue": {
+            "type": "integer"
+          },
+          "tokenRefreshMaxTryCount": {
+            "type": "integer"
+          }
+        },
+        "type": "object",
+        "x-examples": {
+          "Example 1": {
+            "connectionTimeout": 10,
+            "readTimeout": 1800,
+            "retryCount": 3,
+            "retryWait": 2,
+            "retryWaitMaxValue": 100,
+            "tokenRefreshMaxTryCount": 3
+          }
+        }
+      },
+      "CreateDelegateRequest": {
+        "properties": {
+          "delegateenddate": {
+            "description": "in format MMDDYYYY",
+            "type": "string",
+            "x-stoplight": {
+              "id": "r2d2t9ketxoee"
+            }
+          },
+          "delegatestartdate": {
+            "description": "in format MMDDYYYY",
+            "type": "string",
+            "x-stoplight": {
+              "id": "d1whomrq2rx8e"
+            }
+          },
+          "delegateusername": {
+            "description": "This is the user who should be assigned as the delegate of the parent user. It must match `username` in `GetDelegateUserList` API response.",
+            "type": "string",
+            "x-stoplight": {
+              "id": "vzezs3yglrcbi"
+            }
+          },
+          "description": {
+            "type": "string",
+            "x-stoplight": {
+              "id": "8b3lt6r1hlfyq"
+            }
+          },
+          "name": {
+            "description": "name of delegate.",
+            "type": "string",
+            "x-stoplight": {
+              "id": "a76jr4ozrl1m4"
+            }
+          },
+          "parentusername": {
+            "description": "this is the parent username, if not passed it will consider `userName` as parentusername",
+            "type": "string",
+            "x-stoplight": {
+              "id": "isjdqzs6dx7qk"
+            }
+          },
+          "userName": {
+            "description": "this is user who is creating the delegation",
+            "type": "string",
+            "x-stoplight": {
+              "id": "crkmqc783f671"
+            }
+          }
+        },
+        "required": [
+          "userName",
+          "name",
+          "delegateusername",
+          "delegatestartdate",
+          "delegateenddate"
+        ],
+        "title": "CreateDelegateRequest",
+        "type": "object",
+        "x-stoplight": {
+          "id": "3loxtkwxpp2q2"
+        }
+      },
+      "CreateDelegateResponse": {
+        "properties": {
+          "delegatekey": {
+            "type": "string",
+            "x-stoplight": {
+              "id": "o1ks5a4u2un4v"
+            }
+          },
+          "errorCode": {
+            "type": "string",
+            "x-stoplight": {
+              "id": "7jsbk17c231ua"
+            }
+          },
+          "msg": {
+            "type": "string",
+            "x-stoplight": {
+              "id": "cy2ccy2bon9xt"
+            }
+          }
+        },
+        "required": [
+          "msg",
+          "errorCode"
+        ],
+        "title": "CreateDelegateResponse",
+        "type": "object",
+        "x-stoplight": {
+          "id": "vqand6dgyglet"
+        }
+      },
+      "CreateEndpointRequest": {
+        "properties": {
+          "accessquery": {
+            "description": "Access query",
+            "type": "string"
+          },
+          "accountNameRule": {
+            "description": "Account name rule",
+            "type": "string"
+          },
+          "blockInflightRequest": {
+            "description": "Flag to block inflight requests",
+            "type": "string"
+          },
+          "connectionconfig": {
+            "description": "Connection configuration in JSON format (escaped)",
+            "type": "string"
+          },
+          "description": {
+            "description": "Description of the endpoint",
+            "type": "string"
+          },
+          "disableModifyAccount": {
+            "description": "Flag to disable modify account functionality",
+            "type": "string"
+          },
+          "disableNewAccountRequestIfAccountExists": {
+            "description": "Flag to disable new account request if account exists",
+            "type": "string"
+          },
+          "disableRemoveAccount": {
+            "description": "Flag to disable remove account functionality",
+            "type": "string"
+          },
+          "displayName": {
+            "description": "Name displayed in the user interface (can be different from endpoint name)",
+            "type": "string"
+          },
+          "enableCopyAccess": {
+            "description": "Flag to enable copy access",
+            "type": "string"
+          },
+          "endpointname": {
+            "description": "Logical name for the endpoint that helps identify it easily",
+            "type": "string"
+          },
+          "owner": {
+            "description": "Owner identifier",
+            "type": "string"
+          },
+          "ownerType": {
+            "description": "Type of owner (e.g., User, Usergroup)",
+            "type": "string"
+          },
+          "resourceOwner": {
+            "description": "Resource owner identifier",
+            "type": "string"
+          },
+          "resourceOwnerType": {
+            "description": "Type of resource owner",
+            "type": "string"
+          },
+          "securitysystem": {
+            "description": "The security system for which you want to create an endpoint. The security system encapsulates the endpoint along with other endpoints sharing the same connections, workflows, or more.",
+            "type": "string"
+          },
+          "userAccountCorrelationRule": {
+            "description": "Rule for correlating users to accounts",
+            "type": "string"
+          }
+        },
+        "required": [
+          "displayName",
+          "endpointname",
+          "securitysystem"
+        ],
+        "type": "object"
+      },
+      "CreateEndpointResponse": {
+        "properties": {
+          "errorCode": {
+            "description": "Error code (0 indicates success)",
+            "type": "string"
+          },
+          "msg": {
+            "description": "Response message",
+            "type": "string"
+          }
+        },
+        "required": [
+          "msg",
+          "errorCode"
+        ],
+        "type": "object",
+        "x-stoplight": {
+          "id": "84af8425b9be9"
+        }
+      },
+      "CreateOrUpdateConnectionRequest": {
+        "properties": {
+          "ACCOUNTNAMERULE": {
+            "type": "string"
+          },
+          "ACCOUNT_ATTRIBUTE": {
+            "type": "string"
+          },
+          "BASE": {
+            "type": "string"
+          },
+          "CHECKFORUNIQUE": {
+            "type": "string"
+          },
+          "CREATEORGJSON": {
+            "type": "string"
+          },
+          "ConfigJSON": {
+            "type": "string"
+          },
+          "ENABLEACCOUNTJSON": {
+            "type": "string"
+          },
+          "ENFORCE_TREE_DELETION": {
+            "type": "string"
+          },
+          "ENTITLEMENT_ATTRIBUTE": {
+            "type": "string"
+          },
+          "IMPORTJSON": {
+            "type": "string"
+          },
+          "JCO_ASHOST": {
+            "type": "string",
+            "x-stoplight": {
+              "id": "n8mn5evw92rmz"
+            }
+          },
+          "JCO_CLIENT": {
+            "type": "string",
+            "x-stoplight": {
+              "id": "1jovo79h5xbx7"
+            }
+          },
+          "JCO_SYSNR": {
+            "type": "string",
+            "x-stoplight": {
+              "id": "jjvsoejpx3gyx"
+            }
+          },
+          "JCO_USER": {
+            "type": "string",
+            "x-stoplight": {
+              "id": "cx8byx5kgcpep"
+            }
+          },
+          "LDAP_OR_AD": {
+            "type": "string"
+          },
+          "OBJECTFILTER": {
+            "type": "string"
+          },
+          "ORGANIZATION_ATTRIBUTE": {
+            "type": "string"
+          },
+          "ORGIMPORTJSON": {
+            "type": "string"
+          },
+          "ORG_BASE": {
+            "type": "string"
+          },
+          "PAGE_SIZE": {
+            "type": "string"
+          },
+          "PAM_CONFIG": {
+            "type": "string"
+          },
+          "PASSWORD": {
+            "example": "{{password}}",
+            "type": "string",
+            "x-stoplight": {
+              "id": "l7myxh12vypcr"
+            }
+          },
+          "PASSWORD_MAX_LENGTH": {
+            "type": "string"
+          },
+          "PASSWORD_MIN_LENGTH": {
+            "type": "string"
+          },
+          "PASSWORD_NOOFCAPSALPHA": {
+            "type": "string"
+          },
+          "PASSWORD_NOOFDIGITS": {
+            "type": "string"
+          },
+          "PASSWORD_NOOFSPLCHARS": {
+            "type": "string"
+          },
+          "READ_OPERATIONAL_ATTRIBUTES": {
+            "type": "string"
+          },
+          "REMOVEACCOUNTACTION": {
+            "type": "string"
+          },
+          "RESETANDCHANGEPASSWRDJSON": {
+            "type": "string"
+          },
+          "REUSEINACTIVEACCOUNT": {
+            "type": "string"
+          },
+          "SEARCHFILTER": {
+            "type": "string"
+          },
+          "SETDEFAULTPAGESIZE": {
+            "type": "string"
+          },
+          "SETRANDOMPASSWORD": {
+            "type": "string"
+          },
+          "STATUSKEYJSON": {
+            "type": "string"
+          },
+          "STATUS_THRESHOLD_CONFIG": {
+            "type": "string"
+          },
+          "SUPPORTEMPTYSTRING": {
+            "type": "string"
+          },
+          "UNLOCKACCOUNTJSON": {
+            "type": "string"
+          },
+          "UPDATEORGJSON": {
+            "type": "string"
+          },
+          "URL": {
+            "example": "LDAP://3.19.17.34:386",
+            "type": "string",
+            "x-stoplight": {
+              "id": "yuoozvp6ihpcz"
+            }
+          },
+          "USERNAME": {
+            "example": "CN=Doc Admin,OU=SaviyntAdmins,DC=saviyntlabs,DC=org",
+            "type": "string",
+            "x-stoplight": {
+              "id": "1zlvwawhijk3x"
+            }
+          },
+          "connectionName": {
+            "description": "Specify the name to identify the connection.",
+            "example": "Active_Directory_Doc",
+            "type": "string",
+            "x-stoplight": {
+              "id": "kpzefbwhy0oua"
+            }
+          },
+          "connectionkey": {
+            "type": "string",
+            "x-stoplight": {
+              "id": "k5iuq3jqkuwfn"
+            }
+          },
+          "connectiontype": {
+            "description": "Specify a connection type. For example, if your target application is Active Directory, specify the connection type as `AD`.",
+            "example": "AD",
+            "type": "string",
+            "x-stoplight": {
+              "id": "wuk6vl9fxl2fz"
+            }
+          },
+          "defaultSavRole": {
+            "description": "Sepcfiy the SAV role or combination of SAV roles. This SAV roles must hvae permissions that the users need for managing this connection along with its associated security systems, endpoints, accounts, and entitlements.",
+            "type": "string"
+          },
+          "description": {
+            "description": "Specify the description for the connection.",
+            "type": "string"
+          },
+          "emailTemplate": {
+            "description": "Specify the email template applicable for notifications.",
+            "type": "string"
+          },
+          "groupSearchBaseDN": {
+            "type": "string"
+          },
+          "saveconnection": {
+            "example": "Y",
+            "type": "string",
+            "x-stoplight": {
+              "id": "1t0b3va60lisy"
+            }
+          },
+          "saveinvault": {
+            "description": "Specify `true` to save the encrypted attribute in the vault configured with the connector.",
+            "enum": [
+              "true",
+              "false"
+            ],
+            "type": "string"
+          },
+          "sslCertificate": {
+            "description": "Specify the SSL certificates to use for securing the connection between EIC and the target application to encrypt the data shared between them.",
+            "type": "string"
+          },
+          "systemname": {
+            "type": "string"
+          },
+          "vaultconfiguration": {
+            "description": "Specify the path of the vault to obtain the secret data. Suffix the name of the connector to this path to make it unique for the connector. Note: The format of this string is a JSON string of the VaultConfiguration model.",
+            "type": "string",
+            "x-stoplight": {
+              "id": "lljr6c8suzjmy"
+            }
+          },
+          "vaultconnection": {
+            "description": "Vault connection identifier.",
+            "example": "hashicorp\\_dev",
+            "type": "string"
+          }
+        },
+        "required": [
+          "connectiontype"
+        ],
+        "title": "CreateOrUpdateConnectionRequest",
+        "type": "object",
+        "x-stoplight": {
+          "id": "d9n7utxsjjf8p"
+        }
+      },
+      "CreateOrUpdateConnectionResponse": {
+        "properties": {
+          "connectionKey": {
+            "type": "integer",
+            "x-stoplight": {
+              "id": "lmvwqmnvlymvw"
+            }
+          },
+          "errorCode": {
+            "type": "string",
+            "x-stoplight": {
+              "id": "f5q0uhvpk4j8d"
+            }
+          },
+          "msg": {
+            "type": "string",
+            "x-stoplight": {
+              "id": "br4jba4brydxw"
+            }
+          }
+        },
+        "required": [
+          "msg",
+          "errorCode"
+        ],
+        "title": "CreateOrUpdateConnectionResponse",
+        "type": "object",
+        "x-stoplight": {
+          "id": "fok5zvqgln0z8"
+        }
+      },
+      "Delegate": {
+        "description": "Delegate represents a Deleate returne dfrom the Fetch Eisting Delegates List API.",
+        "properties": {
+          "delegateFirstName": {
+            "type": "string"
+          },
+          "delegateLastName": {
+            "type": "string"
+          },
+          "delegatekey": {
+            "type": "string"
+          },
+          "delegateusername": {
+            "type": "string"
+          },
+          "description": {
+            "type": "string"
+          },
+          "enddate": {
+            "description": "date with format 07/14/2020",
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "parentFirstName": {
+            "type": "string"
+          },
+          "parentLastName": {
+            "type": "string"
+          },
+          "parentusername": {
+            "type": "string"
+          },
+          "startdate": {
+            "description": "date format 07/14/2020",
+            "type": "string"
+          },
+          "status": {
+            "enum": [
+              "ACTIVE",
+              "INACTIVE"
+            ],
+            "type": "string"
+          }
+        },
+        "required": [
+          "delegatekey",
+          "name",
+          "description",
+          "parentusername",
+          "status",
+          "delegateusername",
+          "startdate",
+          "enddate"
+        ],
+        "type": "object",
+        "x-examples": {
+          "Example 1": {
+            "delegateFirstName": "Daniel",
+            "delegateLastName": "Schibler",
+            "delegatekey": "1",
+            "delegateusername": "U011556",
+            "description": "",
+            "enddate": "08/18/2020",
+            "name": "delegatetest",
+            "parentFirstName": "Maureen",
+            "parentLastName": "Knauber",
+            "parentusername": "U013053",
+            "startdate": "07/14/2020",
+            "status": "ACTIVE"
+          }
+        }
+      },
+      "DelegateUser": {
+        "properties": {
+          "firstname": {
+            "type": "string",
+            "x-stoplight": {
+              "id": "s6bfbv2e0x8r7"
+            }
+          },
+          "lastname": {
+            "type": "string",
+            "x-stoplight": {
+              "id": "6pac6s1vzrobw"
+            }
+          },
+          "username": {
+            "description": "This value is used in the `createDelegate` API.",
+            "type": "string",
+            "x-stoplight": {
+              "id": "miwr2qeqxhofr"
+            }
+          }
+        },
+        "required": [
+          "firstname",
+          "lastname",
+          "username"
+        ],
+        "title": "DelegateUser",
+        "type": "object",
+        "x-stoplight": {
+          "id": "8q5oto3vw02aq"
+        }
+      },
+      "DeleteConnectionRequest": {
+        "properties": {
+          "connectionkey": {
+            "items": {
+              "type": "string",
+              "x-stoplight": {
+                "id": "w7x0rbdy052sx"
+              }
+            },
+            "type": "array",
+            "x-stoplight": {
+              "id": "om8s9l6kbqx7c"
+            }
+          },
+          "updateuser": {
+            "type": "string",
+            "x-stoplight": {
+              "id": "mni74pd0ixcg2"
+            }
+          }
+        },
+        "title": "DeleteConnectionRequest",
+        "type": "object",
+        "x-stoplight": {
+          "id": "bqwudyuqtmqv4"
+        }
+      },
+      "DeleteConnectionResponse": {
+        "properties": {
+          "errorcode": {
+            "example": "0",
+            "type": "string",
+            "x-stoplight": {
+              "id": "hytd754r51rra"
+            }
+          },
+          "msg": {
+            "example": "success",
+            "type": "string",
+            "x-stoplight": {
+              "id": "bnakjns15cdu3"
+            }
+          }
+        },
+        "required": [
+          "msg",
+          "errorcode"
+        ],
+        "title": "DeleteConnectionResponse",
+        "type": "object",
+        "x-stoplight": {
+          "id": "2ejl6du4vhzey"
+        }
+      },
+      "DeleteDelegateRequest": {
+        "properties": {
+          "key": {
+            "description": "the is the delegatekey",
+            "type": "string",
+            "x-stoplight": {
+              "id": "b57khz3q7au1g"
+            }
+          },
+          "userName": {
+            "description": "this is the user who is deleting the delegate",
+            "type": "string",
+            "x-stoplight": {
+              "id": "mffcamvadscwu"
+            }
+          }
+        },
+        "required": [
+          "userName",
+          "key"
+        ],
+        "title": "DeleteDelegateRequest",
+        "type": "object",
+        "x-stoplight": {
+          "id": "2xz3g64u4cg35"
+        }
+      },
+      "DeleteTriggerRequest": {
+        "properties": {
+          "jobgroup": {
+            "type": "string",
+            "x-stoplight": {
+              "id": "ze7cut4s3g2r0"
+            }
+          },
+          "jobname": {
+            "type": "string",
+            "x-stoplight": {
+              "id": "s5k92socxnck0"
+            }
+          },
+          "triggername": {
+            "type": "string",
+            "x-stoplight": {
+              "id": "f5egb9c3qcldo"
+            }
+          }
+        },
+        "required": [
+          "jobname"
+        ],
+        "title": "DeleteTriggerRequest",
+        "type": "object",
+        "x-stoplight": {
+          "id": "c2oolhf2vbnmh"
+        }
+      },
+      "DeleteTriggerResponse": {
+        "properties": {
+          "errorCode": {
+            "type": "string",
+            "x-stoplight": {
+              "id": "f755k6c3mpnec"
+            }
+          },
+          "msg": {
+            "type": "string",
+            "x-stoplight": {
+              "id": "1kzo52rrekugx"
+            }
+          }
+        },
+        "title": "DeleteTriggerResponse",
+        "type": "object",
+        "x-stoplight": {
+          "id": "5hebwug4olh4h"
+        }
+      },
+      "EditDelegateRequest": {
+        "properties": {
+          "delegateenddate": {
+            "description": "in format MMDDYYYY",
+            "type": "string",
+            "x-stoplight": {
+              "id": "7r3gxhcrq3477"
+            }
+          },
+          "delegatestartdate": {
+            "description": "in format MMDDYYYY",
+            "type": "string",
+            "x-stoplight": {
+              "id": "bn1i05twfri5v"
+            }
+          },
+          "delegateusername": {
+            "description": "this is the user who should be assigned as the delegate of the parent use",
+            "type": "string",
+            "x-stoplight": {
+              "id": "kba006ufar4dy"
+            }
+          },
+          "description": {
+            "type": "string",
+            "x-stoplight": {
+              "id": "s2yc7c2jlywbg"
+            }
+          },
+          "key": {
+            "description": "this is the delegatekey",
+            "type": "string",
+            "x-stoplight": {
+              "id": "rauhsewht9qkq"
+            }
+          },
+          "name": {
+            "description": "name of delegate",
+            "type": "string",
+            "x-stoplight": {
+              "id": "15ym3yee41nl0"
+            }
+          },
+          "parentusername": {
+            "description": "this is the parent username, if not passed it will consider userName as parentusername",
+            "type": "string",
+            "x-stoplight": {
+              "id": "vv77oo1e2dj1k"
+            }
+          },
+          "userName": {
+            "description": "this is user who is updating the delegation",
+            "type": "string",
+            "x-stoplight": {
+              "id": "6figb1cav109o"
+            }
+          }
+        },
+        "required": [
+          "key",
+          "userName",
+          "name",
+          "delegateusername",
+          "delegatestartdate",
+          "delegateenddate"
+        ],
+        "title": "EditDelegateRequest",
+        "type": "object",
+        "x-stoplight": {
+          "id": "1cejr83h2s5a4"
+        }
+      },
+      "Endpoint": {
+        "properties": {
+          "Account Custom Property 1 Label": {
+            "type": "string"
+          },
+          "Account Custom Property 10 Label": {
+            "type": "string"
+          },
+          "Account Custom Property 11 Label": {
+            "type": "string"
+          },
+          "Account Custom Property 12 Label": {
+            "type": "string"
+          },
+          "Account Custom Property 13 Label": {
+            "type": "string"
+          },
+          "Account Custom Property 14 Label": {
+            "type": "string"
+          },
+          "Account Custom Property 15 Label": {
+            "type": "string"
+          },
+          "Account Custom Property 16 Label": {
+            "type": "string"
+          },
+          "Account Custom Property 17 Label": {
+            "type": "string"
+          },
+          "Account Custom Property 18 Label": {
+            "type": "string"
+          },
+          "Account Custom Property 19 Label": {
+            "type": "string"
+          },
+          "Account Custom Property 2 Label": {
+            "type": "string"
+          },
+          "Account Custom Property 20 Label": {
+            "type": "string"
+          },
+          "Account Custom Property 21 Label": {
+            "type": "string"
+          },
+          "Account Custom Property 22 Label": {
+            "type": "string"
+          },
+          "Account Custom Property 23 Label": {
+            "type": "string"
+          },
+          "Account Custom Property 24 Label": {
+            "type": "string"
+          },
+          "Account Custom Property 25 Label": {
+            "type": "string"
+          },
+          "Account Custom Property 26 Label": {
+            "type": "string"
+          },
+          "Account Custom Property 27 Label": {
+            "type": "string"
+          },
+          "Account Custom Property 28 Label": {
+            "type": "string"
+          },
+          "Account Custom Property 29 Label": {
+            "type": "string"
+          },
+          "Account Custom Property 3 Label": {
+            "type": "string"
+          },
+          "Account Custom Property 30 Label": {
+            "type": "string"
+          },
+          "Account Custom Property 4 Label": {
+            "type": "string"
+          },
+          "Account Custom Property 5 Label": {
+            "type": "string"
+          },
+          "Account Custom Property 6 Label": {
+            "type": "string"
+          },
+          "Account Custom Property 7 Label": {
+            "type": "string"
+          },
+          "Account Custom Property 8 Label": {
+            "type": "string"
+          },
+          "Account Custom Property 9 Label": {
+            "type": "string"
+          },
+          "Custom Property 1": {
+            "type": "string"
+          },
+          "Custom Property 10": {
+            "type": "string"
+          },
+          "Custom Property 11": {
+            "type": "string"
+          },
+          "Custom Property 12": {
+            "type": "string"
+          },
+          "Custom Property 13": {
+            "type": "string"
+          },
+          "Custom Property 14": {
+            "type": "string"
+          },
+          "Custom Property 15": {
+            "type": "string"
+          },
+          "Custom Property 16": {
+            "type": "string"
+          },
+          "Custom Property 17": {
+            "type": "string"
+          },
+          "Custom Property 18": {
+            "type": "string"
+          },
+          "Custom Property 19": {
+            "type": "string"
+          },
+          "Custom Property 2": {
+            "type": "string"
+          },
+          "Custom Property 20": {
+            "type": "string"
+          },
+          "Custom Property 21": {
+            "type": "string"
+          },
+          "Custom Property 22": {
+            "type": "string"
+          },
+          "Custom Property 23": {
+            "type": "string"
+          },
+          "Custom Property 24": {
+            "type": "string"
+          },
+          "Custom Property 25": {
+            "type": "string"
+          },
+          "Custom Property 26": {
+            "type": "string"
+          },
+          "Custom Property 27": {
+            "type": "string"
+          },
+          "Custom Property 28": {
+            "type": "string"
+          },
+          "Custom Property 29": {
+            "type": "string"
+          },
+          "Custom Property 3": {
+            "type": "string"
+          },
+          "Custom Property 30": {
+            "type": "string"
+          },
+          "Custom Property 4": {
+            "type": "string"
+          },
+          "Custom Property 5": {
+            "type": "string"
+          },
+          "Custom Property 6": {
+            "type": "string"
+          },
+          "Custom Property 7": {
+            "type": "string"
+          },
+          "Custom Property 8": {
+            "type": "string"
+          },
+          "Custom Property 9": {
+            "type": "string"
+          },
+          "accessquery": {
+            "type": "string"
+          },
+          "accountNameRule": {
+            "type": "string"
+          },
+          "accountNameValidatorRegex": {
+            "type": "string"
+          },
+          "accountTypeForServiceAccount": {
+            "type": "string"
+          },
+          "accountTypeNoDeprovision": {
+            "type": "string"
+          },
+          "allowChangePassword_sqlquery": {
+            "type": "string"
+          },
+          "allowRemoveAllRoleOnRequest": {
+            "type": "string"
+          },
+          "baseLineConfig": {
+            "type": "string"
+          },
+          "connectionconfig": {
+            "type": "string"
+          },
+          "connectionconfig_as_json": {
+            "type": "string"
+          },
+          "createDate": {
+            "description": "date time in `YYYY-MM-DD HH:MM:SS` format",
+            "type": "string"
+          },
+          "createEntTaskforRemoveAcc": {
+            "type": "string"
+          },
+          "createdBy": {
+            "type": "string"
+          },
+          "createdFrom": {
+            "type": "string"
+          },
+          "customproperty1": {
+            "type": "string"
+          },
+          "customproperty31": {
+            "type": "string"
+          },
+          "customproperty31Label": {
+            "type": "string"
+          },
+          "customproperty32": {
+            "type": "string"
+          },
+          "customproperty32Label": {
+            "type": "string"
+          },
+          "customproperty33": {
+            "type": "string"
+          },
+          "customproperty33Label": {
+            "type": "string"
+          },
+          "customproperty34": {
+            "type": "string"
+          },
+          "customproperty34Label": {
+            "type": "string"
+          },
+          "customproperty35": {
+            "type": "string"
+          },
+          "customproperty35Label": {
+            "type": "string"
+          },
+          "customproperty36": {
+            "type": "string"
+          },
+          "customproperty36Label": {
+            "type": "string"
+          },
+          "customproperty37": {
+            "type": "string"
+          },
+          "customproperty37Label": {
+            "type": "string"
+          },
+          "customproperty38": {
+            "type": "string"
+          },
+          "customproperty38Label": {
+            "type": "string"
+          },
+          "customproperty39": {
+            "type": "string"
+          },
+          "customproperty39Label": {
+            "type": "string"
+          },
+          "customproperty40": {
+            "type": "string"
+          },
+          "customproperty40Label": {
+            "type": "string"
+          },
+          "customproperty41": {
+            "type": "string"
+          },
+          "customproperty41Label": {
+            "type": "string"
+          },
+          "customproperty42": {
+            "type": "string"
+          },
+          "customproperty42Label": {
+            "type": "string"
+          },
+          "customproperty43": {
+            "type": "string"
+          },
+          "customproperty43Label": {
+            "type": "string"
+          },
+          "customproperty44": {
+            "type": "string"
+          },
+          "customproperty44Label": {
+            "type": "string"
+          },
+          "customproperty45": {
+            "type": "string"
+          },
+          "customproperty45Label": {
+            "type": "string"
+          },
+          "customproperty46": {
+            "type": "string"
+          },
+          "customproperty46Label": {
+            "type": "string"
+          },
+          "customproperty47": {
+            "type": "string"
+          },
+          "customproperty47Label": {
+            "type": "string"
+          },
+          "customproperty48": {
+            "type": "string"
+          },
+          "customproperty48Label": {
+            "type": "string"
+          },
+          "customproperty49": {
+            "type": "string"
+          },
+          "customproperty49Label": {
+            "type": "string"
+          },
+          "customproperty50": {
+            "type": "string"
+          },
+          "customproperty50Label": {
+            "type": "string"
+          },
+          "customproperty51": {
+            "type": "string"
+          },
+          "customproperty51Label": {
+            "type": "string"
+          },
+          "customproperty52": {
+            "type": "string"
+          },
+          "customproperty52Label": {
+            "type": "string"
+          },
+          "customproperty53": {
+            "type": "string"
+          },
+          "customproperty53Label": {
+            "type": "string"
+          },
+          "customproperty54": {
+            "type": "string"
+          },
+          "customproperty54Label": {
+            "type": "string"
+          },
+          "customproperty55": {
+            "type": "string"
+          },
+          "customproperty55Label": {
+            "type": "string"
+          },
+          "customproperty56": {
+            "type": "string"
+          },
+          "customproperty56Label": {
+            "type": "string"
+          },
+          "customproperty57": {
+            "type": "string"
+          },
+          "customproperty57Label": {
+            "type": "string"
+          },
+          "customproperty58": {
+            "type": "string"
+          },
+          "customproperty58Label": {
+            "type": "string"
+          },
+          "customproperty59": {
+            "type": "string"
+          },
+          "customproperty59Label": {
+            "type": "string"
+          },
+          "customproperty60": {
+            "type": "string"
+          },
+          "customproperty60Label": {
+            "type": "string"
+          },
+          "description": {
+            "type": "string"
+          },
+          "disableaccountrequest": {
+            "type": "string"
+          },
+          "disableaccountrequestServiceAccount": {
+            "type": "string"
+          },
+          "displayName": {
+            "type": "string"
+          },
+          "enableCopyAccess": {
+            "type": "string"
+          },
+          "endpointConfig": {
+            "type": "string"
+          },
+          "endpointname": {
+            "type": "string"
+          },
+          "entsWithNewAccount": {
+            "type": "string"
+          },
+          "id": {
+            "type": "string"
+          },
+          "imageId": {
+            "type": "string"
+          },
+          "jrmDataPopulated": {
+            "type": "string"
+          },
+          "lastImport": {
+            "type": "string"
+          },
+          "lastReviewedBy": {
+            "type": "string"
+          },
+          "lastReviewedCampaignName": {
+            "type": "string"
+          },
+          "lastReviewedDate": {
+            "type": "string"
+          },
+          "ownerType": {
+            "type": "string"
+          },
+          "ownerkey": {
+            "type": "string"
+          },
+          "parentAccountPattern": {
+            "type": "string"
+          },
+          "parentEndpoint": {
+            "type": "string"
+          },
+          "pluginConfigs": {
+            "type": "string"
+          },
+          "primaryAccountType": {
+            "type": "string"
+          },
+          "requestable": {
+            "type": "string"
+          },
+          "requestableapplication": {
+            "type": "string"
+          },
+          "requestowner": {
+            "type": "string"
+          },
+          "requestownertype": {
+            "type": "string"
+          },
+          "roleTypeAsJson": {
+            "type": "string"
+          },
+          "securitySystem": {
+            "type": "string"
+          },
+          "serviceAccountAccessQuery": {
+            "type": "string"
+          },
+          "serviceAccountNameRule": {
+            "type": "string"
+          },
+          "status": {
+            "type": "string"
+          },
+          "statusConfig": {
+            "type": "string"
+          },
+          "statusForUniqueAccount": {
+            "type": "string"
+          },
+          "taskemailtemplates": {
+            "type": "string"
+          },
+          "updateDate": {
+            "description": "date time in `YYYY-MM-DD HH:MM:SS` format",
+            "type": "string"
+          },
+          "updatedBy": {
+            "type": "string"
+          },
+          "userAccountCorrelationRule": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "endpointname"
+        ],
+        "type": "object",
+        "x-stoplight": {
+          "id": "c89f42523dee7"
+        }
+      },
+      "ExportTransportPackageRequest": {
+        "examples": [
+          {
+            "businessjustification": "justified...",
+            "exportonline": "false",
+            "exportpath": "/saviynt_shared/testexport/transportPackage",
+            "objectstoexport": {
+              "emailTemplate": [
+                "Account Password Expiry Email",
+                "Entitlement Expiry Email"
+              ],
+              "savRoles": [
+                "ROLE_ADMIN"
+              ]
+            },
+            "transportmembers": "true",
+            "transportowner": "true",
+            "updateuser": "admin"
+          }
+        ],
+        "properties": {
+          "businessjustification": {
+            "type": "string",
+            "x-stoplight": {
+              "id": "po8i7fv2v5rik"
+            }
+          },
+          "environmentname": {
+            "description": "(if exportonline is true) - Name of the environment which can be created at the following path : Admin -\u003e Global Configurations -\u003e Misc -\u003e Transport -\u003e Add New Transport",
+            "type": "string",
+            "x-stoplight": {
+              "id": "poxj5q3j7zvt7"
+            }
+          },
+          "exportonline": {
+            "description": "(can be true or false) - Determines if package needs to be exported online",
+            "type": "string",
+            "x-stoplight": {
+              "id": "m3zbu3f1s4md4"
+            }
+          },
+          "exportpath": {
+            "description": "(if exportonline is false) - Local path where export package will be generated",
+            "type": "string",
+            "x-stoplight": {
+              "id": "e3mri1ib5patv"
+            }
+          },
+          "objectstoexport": {
+            "$ref": "#/components/schemas/ObjectsToExport"
+          },
+          "transportmembers": {
+            "description": "can be true or false) - option to transport members for selected objects such as SAV role",
+            "type": "string",
+            "x-stoplight": {
+              "id": "xto5ohy0603ys"
+            }
+          },
+          "transportowner": {
+            "description": "(can be true or false) - option to transport owners for selected objects",
+            "type": "string",
+            "x-stoplight": {
+              "id": "kokb7b8w3v3yy"
+            }
+          },
+          "updateuser": {
+            "description": "username of the user exporting the package",
+            "type": "string",
+            "x-stoplight": {
+              "id": "fu9d0rj8la3eo"
+            }
+          }
+        },
+        "required": [
+          "exportonline",
+          "objectstoexport"
+        ],
+        "title": "ExportTransportPackageRequest",
+        "type": "object",
+        "x-stoplight": {
+          "id": "bn1ui71jne1we"
+        }
+      },
+      "ExportTransportPackageResponse": {
+        "examples": [
+          {
+            "errorcode": 0,
+            "fileName": "transport_admin_2023-01-13_10-19-11(UTC).zip",
+            "msg": "success",
+            "msgDescription": "Export Requested. If other requests are currently processing, your export will begin after they complete. You can call /transportPackageStatus API to check the status of your export."
+          }
+        ],
+        "properties": {
+          "errorcode": {
+            "type": "integer",
+            "x-stoplight": {
+              "id": "l5896jtsfm1fy"
+            }
+          },
+          "fileName": {
+            "type": "string",
+            "x-stoplight": {
+              "id": "0mgsqu430jj4s"
+            }
+          },
+          "msg": {
+            "type": "string",
+            "x-stoplight": {
+              "id": "ofd1xk6jm68l1"
+            }
+          },
+          "msgDescription": {
+            "type": "string",
+            "x-stoplight": {
+              "id": "mbsk6vd4s85zm"
+            }
+          }
+        },
+        "required": [
+          "msg",
+          "fileName",
+          "msgDescription",
+          "errorcode"
+        ],
+        "title": "ExportTransportPackageResponse",
+        "type": "object",
+        "x-stoplight": {
+          "id": "ctaaycs2pwfmd"
+        }
+      },
+      "FetchExistingDelegatesListRequest": {
+        "examples": [
+          {
+            "max": 0,
+            "offset": 0,
+            "status": "ACTIVE",
+            "userName": "string"
+          }
+        ],
+        "properties": {
+          "max": {
+            "type": "integer",
+            "x-stoplight": {
+              "id": "i8mqep5s7fsh8"
+            }
+          },
+          "offset": {
+            "type": "integer",
+            "x-stoplight": {
+              "id": "e13vah1wuz5u7"
+            }
+          },
+          "status": {
+            "description": "values can be ACTIVE / INACTIVE",
+            "enum": [
+              "ACTIVE",
+              "INACTIVE"
+            ],
+            "type": "string",
+            "x-stoplight": {
+              "id": "yhodygv8v5srk"
+            }
+          },
+          "userName": {
+            "description": "this is the parentusername",
+            "type": "string",
+            "x-stoplight": {
+              "id": "36tid2febza2x"
+            }
+          }
+        },
+        "required": [
+          "userName"
+        ],
+        "title": "FetchDelegatesListRequest",
+        "type": "object",
+        "x-stoplight": {
+          "id": "3vp1pbxoxnha7"
+        }
+      },
+      "FetchExistingDelegatesListResponse": {
+        "properties": {
+          "delegateCount": {
+            "type": "integer",
+            "x-stoplight": {
+              "id": "ol8319l5zv6pm"
+            }
+          },
+          "delegateList": {
+            "items": {
+              "$ref": "#/components/schemas/Delegate"
+            },
+            "type": "array",
+            "x-stoplight": {
+              "id": "ouxs7d2smf6s2"
+            }
+          },
+          "errorCode": {
+            "type": "string",
+            "x-stoplight": {
+              "id": "52vigy54bcfwh"
+            }
+          },
+          "msg": {
+            "type": "string",
+            "x-stoplight": {
+              "id": "9gb768at9zs11"
+            }
+          },
+          "totalCount": {
+            "type": "string",
+            "x-stoplight": {
+              "id": "lx6kmumhnzpk3"
+            }
+          }
+        },
+        "required": [
+          "delegateList",
+          "msg",
+          "errorCode"
+        ],
+        "title": "FetchDelegatesListResponse",
+        "type": "object",
+        "x-stoplight": {
+          "id": "7w1uzfkcq72d4"
+        }
+      },
+      "FetchJobMetadataRequest": {
+        "properties": {
+          "jobgroup": {
+            "type": "string",
+            "x-stoplight": {
+              "id": "eg0od7k6qppj3"
+            }
+          },
+          "jobname": {
+            "type": "string",
+            "x-stoplight": {
+              "id": "debkp5wftr5l6"
+            }
+          },
+          "triggername": {
+            "type": "string",
+            "x-stoplight": {
+              "id": "qt5w1qws7s64s"
+            }
+          }
+        },
+        "required": [
+          "jobname"
+        ],
+        "title": "FetchJobMetadataRequest",
+        "type": "object",
+        "x-stoplight": {
+          "id": "t7fzs0it0fdhv"
+        }
+      },
+      "FetchJobMetadataResponse": {
+        "properties": {
+          "errorCode": {
+            "type": "integer",
+            "x-stoplight": {
+              "id": "5cjzjtra4phal"
+            }
+          },
+          "msg": {
+            "type": "string",
+            "x-stoplight": {
+              "id": "s5h1a3wf6stjx"
+            }
+          },
+          "result": {
+            "additionalProperties": true,
+            "type": "object",
+            "x-stoplight": {
+              "id": "t99p2zgl9t1al"
+            }
+          }
+        },
+        "title": "FetchJobMetadataResponse",
+        "type": "object",
+        "x-stoplight": {
+          "id": "r6jctqk6z8npb"
+        }
+      },
+      "GetAllSAVRolesResponse": {
+        "properties": {
+          "savroles": {
+            "items": {
+              "$ref": "#/components/schemas/SAVRole"
+            },
+            "type": "array",
+            "x-stoplight": {
+              "id": "zgro4g0m3s9mh"
+            }
+          }
+        },
+        "title": "GetAllSAVRolesResponse",
+        "type": "object",
+        "x-stoplight": {
+          "id": "qbji4q7oj3c61"
+        }
+      },
+      "GetConnectionDetailsRequest": {
+        "properties": {
+          "connectionkey": {
+            "example": "'120'",
+            "type": "string",
+            "x-stoplight": {
+              "id": "k0y09wqiczm23"
+            }
+          },
+          "connectionname": {
+            "example": "Workday",
+            "type": "string",
+            "x-stoplight": {
+              "id": "vldqcll61vb19"
+            }
+          }
+        },
+        "title": "GetConnectionDetailsRequest",
+        "type": "object",
+        "x-stoplight": {
+          "id": "wjjihw80mv760"
+        }
+      },
+      "GetConnectionDetailsResponse": {
+        "properties": {
+          "connectionType": {
+            "type": "string",
+            "x-stoplight": {
+              "id": "lja9jknxjy8jw"
+            }
+          },
+          "connectionattributes": {
+            "$ref": "#/components/schemas/ConnectionAttributes"
+          },
+          "connectionkey": {
+            "type": "integer",
+            "x-stoplight": {
+              "id": "lg3fbrphhr452"
+            }
+          },
+          "connectionname": {
+            "type": "string",
+            "x-stoplight": {
+              "id": "fsf3y6c8zdrbp"
+            }
+          },
+          "createdby": {
+            "type": "string",
+            "x-stoplight": {
+              "id": "p35hcr26jvg87"
+            }
+          },
+          "createdon": {
+            "format": "date-time",
+            "type": "string",
+            "x-stoplight": {
+              "id": "x361ctsepl8a8"
+            }
+          },
+          "defaultsavroles": {
+            "type": "string",
+            "x-stoplight": {
+              "id": "rvtuogcy6pb69"
+            }
+          },
+          "description": {
+            "type": "string",
+            "x-stoplight": {
+              "id": "bgtijzohoyuxl"
+            }
+          },
+          "emailtemplate": {
+            "type": "string",
+            "x-stoplight": {
+              "id": "f4ts6cuu6id4z"
+            }
+          },
+          "errorcode": {
+            "type": "integer",
+            "x-stoplight": {
+              "id": "zcpj3n3n2a430"
+            }
+          },
+          "msg": {
+            "type": "string",
+            "x-stoplight": {
+              "id": "yztcsav05e000"
+            }
+          },
+          "status": {
+            "type": "integer",
+            "x-stoplight": {
+              "id": "0myeewl0w1ftq"
+            }
+          },
+          "updatedby": {
+            "type": "string",
+            "x-stoplight": {
+              "id": "xkbp5ysti5o7x"
+            }
+          }
+        },
+        "required": [
+          "msg",
+          "errorcode"
+        ],
+        "title": "GetConnectionDetailsResponse",
+        "type": "object",
+        "x-stoplight": {
+          "id": "ludtwvhfelscc"
+        }
+      },
+      "GetConnectionsRequest": {
+        "properties": {
+          "connectionname": {
+            "example": "AD Test",
+            "type": "string",
+            "x-stoplight": {
+              "id": "4yy42vvf9dd4s"
+            }
+          },
+          "connectiontype": {
+            "example": "AD",
+            "type": "string",
+            "x-stoplight": {
+              "id": "jn0p6wgfwjlkf"
+            }
+          },
+          "max": {
+            "type": "string",
+            "x-stoplight": {
+              "id": "0brloqpqd7v6r"
+            }
+          },
+          "offset": {
+            "type": "string",
+            "x-stoplight": {
+              "id": "aej6n9yegpufu"
+            }
+          }
+        },
+        "type": "object",
+        "x-stoplight": {
+          "id": "49262a7b0d012"
+        }
+      },
+      "GetConnectionsResponse": {
+        "properties": {
+          "ConnectionList": {
+            "example": [
+              {
+                "CONNECTIONDESCRIPTION": "",
+                "CONNECTIONNAME": "AD Test",
+                "CONNECTIONTYPE": "AD",
+                "CREATEDBY": "admin(     ADMIN)",
+                "CREATEDON": "2017-03-23T00:48:28Z",
+                "STATUS": 1,
+                "UPDATEDBY": "admin(ADMIN   ADMIN)",
+                "UPDATEDON": "2017-08-18T04:18:19Z"
+              }
+            ],
+            "items": {
+              "$ref": "#/components/schemas/Connection"
+            },
+            "type": "array"
+          },
+          "displayCount": {
+            "type": "integer",
+            "x-stoplight": {
+              "id": "y45at7v80pgsd"
+            }
+          },
+          "errorCode": {
+            "example": "0",
+            "type": "string"
+          },
+          "msg": {
+            "example": "Successful",
+            "type": "string"
+          },
+          "totalCount": {
+            "type": "integer",
+            "x-stoplight": {
+              "id": "fudiru57n8sa5"
+            }
+          }
+        },
+        "required": [
+          "ConnectionList",
+          "errorCode",
+          "msg"
+        ],
+        "type": "object",
+        "x-stoplight": {
+          "id": "49262a7b0d012"
+        }
+      },
+      "GetDelegateUserListRequest": {
+        "properties": {
+          "max": {
+            "type": "integer",
+            "x-stoplight": {
+              "id": "l0vdpd8sm35pv"
+            }
+          },
+          "offset": {
+            "type": "integer",
+            "x-stoplight": {
+              "id": "e1y1qosrnhxbg"
+            }
+          },
+          "parentusername": {
+            "type": "string",
+            "x-stoplight": {
+              "id": "nua9g1y9exw77"
+            }
+          },
+          "searchCriteria": {
+            "description": "example \"t*\" or \"te\" or \"test\" to search in username or firstname or lastname for the delegate user",
+            "type": "string",
+            "x-stoplight": {
+              "id": "o7lumu6vnp1zf"
+            }
+          }
+        },
+        "required": [
+          "parentusername"
+        ],
+        "title": "GetDelegateUserListRequest",
+        "type": "object",
+        "x-stoplight": {
+          "id": "vpqc1aeip3unw"
+        }
+      },
+      "GetDelegateUserListResponse": {
+        "properties": {
+          "displayCount": {
+            "type": "string",
+            "x-stoplight": {
+              "id": "sdwaxoeyw0ub6"
+            }
+          },
+          "errorCode": {
+            "type": "string",
+            "x-stoplight": {
+              "id": "da0skyxhruzld"
+            }
+          },
+          "msg": {
+            "type": "string",
+            "x-stoplight": {
+              "id": "hfqdwub8svmvd"
+            }
+          },
+          "result": {
+            "items": {
+              "$ref": "#/components/schemas/DelegateUser"
+            },
+            "type": "array",
+            "x-stoplight": {
+              "id": "mj1odjmtfuac8"
+            }
+          },
+          "totalCount": {
+            "type": "string",
+            "x-stoplight": {
+              "id": "lxoew67pqc6f2"
+            }
+          }
+        },
+        "title": "GetDelegateUserListResponse",
+        "type": "object",
+        "x-stoplight": {
+          "id": "cw443dnw8ly41"
+        }
+      },
+      "GetEndpointsRequest": {
+        "properties": {
+          "connectionType": {
+            "description": "Filter by connection type",
+            "type": "string"
+          },
+          "endpointkey": {
+            "description": "Filter by endpoint key(s)",
+            "items": {
+              "type": "integer"
+            },
+            "type": "array"
+          },
+          "endpointname": {
+            "description": "Filter by endpoint name",
+            "type": "string"
+          },
+          "filterCriteria": {
+            "description": "Custom filter criteria",
+            "type": "object"
+          },
+          "max": {
+            "description": "Maximum number of results to return. Maximium is 500.",
+            "maximum": 500,
+            "minimum": 0,
+            "type": "integer"
+          },
+          "offset": {
+            "description": "Pagination offset",
+            "minimum": 0,
+            "type": "integer"
+          }
+        },
+        "type": "object"
+      },
+      "GetEndpointsResponse": {
+        "properties": {
+          "displayCount": {
+            "description": "Number of endpoints returned",
+            "type": "integer"
+          },
+          "endpoints": {
+            "items": {
+              "$ref": "#/components/schemas/Endpoint"
+            },
+            "type": "array"
+          },
+          "errorCode": {
+            "description": "Error code (0 indicates success)",
+            "type": "string"
+          },
+          "message": {
+            "description": "Response message",
+            "type": "string"
+          },
+          "totalCount": {
+            "description": "Total number of endpoints matching the criteria",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "errorCode",
+          "message"
+        ],
+        "type": "object"
+      },
+      "GetKeyStoreCertificateDetailsResponse": {
+        "properties": {
+          "certificateDetails": {
+            "items": {
+              "$ref": "#/components/schemas/CertificateDetail"
+            },
+            "type": "array"
+          },
+          "errorCode": {
+            "type": "integer"
+          },
+          "message": {
+            "type": "string"
+          }
+        },
+        "title": "GetKeyStoreCertificateDetailsResponse",
+        "type": "object",
+        "x-stoplight": {
+          "id": "dbw0szixh4s5f"
+        }
+      },
+      "GetSAVRoleUsersResponse": {
+        "properties": {
+          "users": {
+            "items": {
+              "$ref": "#/components/schemas/SAVRoleUser"
+            },
+            "type": "array",
+            "x-stoplight": {
+              "id": "v8woquwbseecb"
+            }
+          }
+        },
+        "title": "GetSAVRoleUsersResponse",
+        "type": "object",
+        "x-stoplight": {
+          "id": "lktoz32ra9zhz"
+        }
+      },
+      "GetUserRequest": {
+        "description": "Note - By default, if no responsefields param is passed, required attrs that will always return are username, email, statuskey, firstname, lastname, employeeid along with other attributes with nonblank values only.",
+        "properties": {
+          "advsearchcriteria": {
+            "type": "string",
+            "x-stoplight": {
+              "id": "h2ih4de0d8mob"
+            }
+          },
+          "filtercriteria": {
+            "type": "object",
+            "x-stoplight": {
+              "id": "65zepm9wb9agk"
+            }
+          },
+          "manager": {
+            "description": "username",
+            "type": "string",
+            "x-stoplight": {
+              "id": "ms90im7k0znkz"
+            }
+          },
+          "max": {
+            "type": "integer",
+            "x-stoplight": {
+              "id": "3i28kqxmzng2c"
+            }
+          },
+          "offset": {
+            "type": "integer",
+            "x-stoplight": {
+              "id": "5up263ahshv5k"
+            }
+          },
+          "order": {
+            "type": "string",
+            "x-stoplight": {
+              "id": "xz6t6f9if6bw6"
+            }
+          },
+          "responsefields": {
+            "description": "User attributes which you want to see in the response(for encrypted values, mention ecp\u003c1-5\u003e, and for hashed values, mention hcp\u003c1-5\u003e)",
+            "items": {},
+            "type": "array",
+            "x-stoplight": {
+              "id": "7va47nfqpz2j7"
+            }
+          },
+          "searchCriteria": {
+            "type": "string",
+            "x-stoplight": {
+              "id": "lmd3jk9cti289"
+            }
+          },
+          "secondarymanager": {
+            "description": "userkey OR `secondaryManager` - username",
+            "type": "string",
+            "x-stoplight": {
+              "id": "korobvxvxvuzl"
+            }
+          },
+          "showsecurityanswers": {
+            "description": "\"0\"/\"1\" to display encrypted security answers for the user",
+            "type": "string",
+            "x-stoplight": {
+              "id": "yq5qkor0chrn9"
+            }
+          },
+          "userQuery": {
+            "type": "string",
+            "x-stoplight": {
+              "id": "85yn4a081dwx9"
+            }
+          },
+          "username": {
+            "description": "Specify the username for which you want to get the user attribute details",
+            "type": "string",
+            "x-stoplight": {
+              "id": "5vdioatm7fxm6"
+            }
+          }
+        },
+        "title": "GetUserRequest",
+        "type": "object",
+        "x-stoplight": {
+          "id": "w4hrcn4swva93"
+        }
+      },
+      "GetUserResponse": {
+        "examples": [
+          {
+            "displaycount": "1",
+            "errorCode": "0",
+            "msg": "Successful",
+            "totalcount": "1",
+            "userlist": [
+              {
+                "firstname": "John",
+                "statuskey": "1",
+                "userKey": 5,
+                "username": "johndoe"
+              }
+            ]
+          }
+        ],
+        "properties": {
+          "displaycount": {
+            "type": "string",
+            "x-stoplight": {
+              "id": "c0it9o4mbfb6z"
+            }
+          },
+          "errorCode": {
+            "type": "string",
+            "x-stoplight": {
+              "id": "n9equ9c5sitvv"
+            }
+          },
+          "msg": {
+            "type": "string",
+            "x-stoplight": {
+              "id": "oi9cm2o66r4by"
+            }
+          },
+          "totalcount": {
+            "type": "string",
+            "x-stoplight": {
+              "id": "21ymo3imf7eah"
+            }
+          },
+          "userdetails": {
+            "items": {
+              "$ref": "#/components/schemas/User"
+            },
+            "type": "array",
+            "x-stoplight": {
+              "id": "xpfhxj7e1k935"
+            }
+          }
+        },
+        "title": "GetUserResponse",
+        "type": "object",
+        "x-stoplight": {
+          "id": "81wgmqii4nyym"
+        }
+      },
+      "ImportTransportPackageRequest": {
+        "properties": {
+          "businessjustification": {
+            "type": "string"
+          },
+          "packagetoimport": {
+            "description": "Complete path of the package that needs to be imported",
+            "type": "string"
+          },
+          "updateuser": {
+            "description": "username of the user importing the package",
+            "type": "string"
+          }
+        },
+        "required": [
+          "packagetoimport"
+        ],
+        "type": "object",
+        "x-examples": {
+          "Example 1": {
+            "businessjustification": "test",
+            "packagetoimport": "/saviynt_shared/testexport/transportPackage/transport_admin_2023-01-13_10-19-11(UTC).zip",
+            "updateuser": "admin"
+          }
+        }
+      },
+      "ImportTransportPackageResponse": {
+        "properties": {
+          "errorcode": {
+            "type": "integer"
+          },
+          "msg": {
+            "type": "string"
+          },
+          "msgDescription": {
+            "type": "string"
+          },
+          "requestId": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "msg",
+          "errorcode"
+        ],
+        "type": "object",
+        "x-examples": {
+          "Example 1": {
+            "errorcode": 0,
+            "msg": "success",
+            "msgDescription": "Import Requested. If other requests are currently processing, your import will begin after they complete. You can call /transportPackageStatus API to check the status of your import",
+            "requestId": "2490001"
+          }
+        }
+      },
+      "ObjectsToExport": {
+        "properties": {
+          "emailTemplate": {
+            "items": {
+              "type": "string",
+              "x-stoplight": {
+                "id": "cwse89xfavmeq"
+              }
+            },
+            "type": "array",
+            "x-stoplight": {
+              "id": "glkjtgi0jiqpt"
+            }
+          },
+          "savRoles": {
+            "items": {
+              "type": "string",
+              "x-stoplight": {
+                "id": "2val4wnerkqd2"
+              }
+            },
+            "type": "array",
+            "x-stoplight": {
+              "id": "if4npvrn65ly8"
+            }
+          }
+        },
+        "title": "ObjectsToExport",
+        "type": "object",
+        "x-stoplight": {
+          "id": "9z1hfxvbn0zav"
+        }
+      },
+      "Response": {
+        "properties": {
+          "errorCode": {
+            "type": "string",
+            "x-stoplight": {
+              "id": "wf376c67qe5h6"
+            }
+          },
+          "msg": {
+            "type": "string",
+            "x-stoplight": {
+              "id": "hj8ij8k8u90da"
+            }
+          }
+        },
+        "required": [
+          "msg",
+          "errorCode"
+        ],
+        "title": "Response",
+        "type": "object",
+        "x-stoplight": {
+          "id": "zd7zr47c75zkz"
+        }
+      },
+      "ResumePauseJobsRequest": {
+        "properties": {
+          "action": {
+            "enum": [
+              "PAUSE",
+              "RESUME"
+            ],
+            "type": "string",
+            "x-stoplight": {
+              "id": "527d2rxyp6gw3"
+            }
+          },
+          "jobname": {
+            "type": "string",
+            "x-stoplight": {
+              "id": "979nwfj8yobyy"
+            }
+          },
+          "triggername": {
+            "type": "string",
+            "x-stoplight": {
+              "id": "cmbimxzyk4and"
+            }
+          }
+        },
+        "required": [
+          "action"
+        ],
+        "title": "ResumePauseJobsRequest",
+        "type": "object",
+        "x-stoplight": {
+          "id": "ru7xvuen9hqhr"
+        }
+      },
+      "ResumePauseJobsResponse": {
+        "properties": {
+          "id": {
+            "type": "string"
+          }
+        },
+        "title": "ResumePauseJobsResponse",
+        "type": "object",
+        "x-stoplight": {
+          "id": "jq15kv6uajh6e"
+        }
+      },
+      "SAVRole": {
+        "properties": {
+          "CUSTOMPROPERTY1": {
+            "type": "string"
+          },
+          "CUSTOMPROPERTY10": {
+            "type": "string"
+          },
+          "CUSTOMPROPERTY11": {
+            "type": "string"
+          },
+          "CUSTOMPROPERTY12": {
+            "type": "string"
+          },
+          "CUSTOMPROPERTY13": {
+            "type": "string"
+          },
+          "CUSTOMPROPERTY14": {
+            "type": "string"
+          },
+          "CUSTOMPROPERTY15": {
+            "type": "string"
+          },
+          "CUSTOMPROPERTY16": {
+            "type": "string"
+          },
+          "CUSTOMPROPERTY17": {
+            "type": "string"
+          },
+          "CUSTOMPROPERTY18": {
+            "type": "string"
+          },
+          "CUSTOMPROPERTY19": {
+            "type": "string"
+          },
+          "CUSTOMPROPERTY2": {
+            "type": "string"
+          },
+          "CUSTOMPROPERTY20": {
+            "type": "string"
+          },
+          "CUSTOMPROPERTY3": {
+            "type": "string"
+          },
+          "CUSTOMPROPERTY4": {
+            "type": "string"
+          },
+          "CUSTOMPROPERTY5": {
+            "type": "string"
+          },
+          "CUSTOMPROPERTY6": {
+            "type": "string"
+          },
+          "CUSTOMPROPERTY7": {
+            "type": "string"
+          },
+          "CUSTOMPROPERTY8": {
+            "type": "string"
+          },
+          "CUSTOMPROPERTY9": {
+            "type": "string"
+          },
+          "HOMEPAGE": {
+            "type": "string"
+          },
+          "ISOOTB": {
+            "type": "string"
+          },
+          "READONLY": {
+            "type": "string"
+          },
+          "ROLEDESCRIPTION": {
+            "type": "string"
+          },
+          "ROLENAME": {
+            "type": "string"
+          },
+          "STATUSKEY": {
+            "type": "string"
+          },
+          "UPDATEDATE": {
+            "type": "string"
+          },
+          "UPDATEUSER": {
+            "type": "string"
+          }
+        },
+        "type": "object",
+        "x-examples": {
+          "Example 1": {
+            "CUSTOMPROPERTY1": "null",
+            "CUSTOMPROPERTY10": "null",
+            "CUSTOMPROPERTY11": "null",
+            "CUSTOMPROPERTY12": "null",
+            "CUSTOMPROPERTY13": "null",
+            "CUSTOMPROPERTY14": "null",
+            "CUSTOMPROPERTY15": "null",
+            "CUSTOMPROPERTY16": "",
+            "CUSTOMPROPERTY17": "",
+            "CUSTOMPROPERTY18": "",
+            "CUSTOMPROPERTY19": "",
+            "CUSTOMPROPERTY2": "null",
+            "CUSTOMPROPERTY20": "",
+            "CUSTOMPROPERTY3": "null",
+            "CUSTOMPROPERTY4": "null",
+            "CUSTOMPROPERTY5": "null",
+            "CUSTOMPROPERTY6": "null",
+            "CUSTOMPROPERTY7": "null",
+            "CUSTOMPROPERTY8": "null",
+            "CUSTOMPROPERTY9": "null",
+            "HOMEPAGE": "null",
+            "ISOOTB": "true",
+            "READONLY": "false",
+            "ROLEDESCRIPTION": "ADMIN USER",
+            "ROLENAME": "ROLE_ADMIN",
+            "STATUSKEY": "Active",
+            "UPDATEDATE": "2022-12-06 07:30:18.0",
+            "UPDATEUSER": "admin"
+          }
+        }
+      },
+      "SAVRoleUser": {
+        "properties": {
+          "username": {
+            "type": "string",
+            "x-stoplight": {
+              "id": "28gglgfsfnw9m"
+            }
+          }
+        },
+        "title": "User",
+        "type": "object",
+        "x-stoplight": {
+          "id": "2uw2ub7z4e8vp"
+        }
+      },
+      "SendEmailRequest": {
+        "properties": {
+          "bcc": {
+            "type": "string",
+            "x-stoplight": {
+              "id": "uh121n5jqhago"
+            }
+          },
+          "body": {
+            "type": "string",
+            "x-stoplight": {
+              "id": "d30ilrzzdr47h"
+            }
+          },
+          "cc": {
+            "type": "string",
+            "x-stoplight": {
+              "id": "m8zzf304e7nph"
+            }
+          },
+          "from": {
+            "type": "string",
+            "x-stoplight": {
+              "id": "v5t04vikuj35u"
+            }
+          },
+          "subject": {
+            "type": "string",
+            "x-stoplight": {
+              "id": "787cc70jiguqe"
+            }
+          },
+          "to": {
+            "type": "string",
+            "x-stoplight": {
+              "id": "bpfswohcpy5y5"
+            }
+          }
+        },
+        "required": [
+          "to",
+          "from",
+          "subject",
+          "body"
+        ],
+        "title": "SendEmailRequest",
+        "type": "object",
+        "x-stoplight": {
+          "id": "ysie9dbqi2zyc"
+        }
+      },
+      "SendEmailResponse": {
+        "properties": {
+          "errorCode": {
+            "description": "`\"0\"` indicates success. Other values indicate failure.",
+            "type": "string",
+            "x-stoplight": {
+              "id": "idq45zs5wufpr"
+            }
+          },
+          "msg": {
+            "type": "string",
+            "x-stoplight": {
+              "id": "zs4bz2zwjczsh"
+            }
+          }
+        },
+        "required": [
+          "errorCode",
+          "msg"
+        ],
+        "title": "SendEmailResponse",
+        "type": "object",
+        "x-stoplight": {
+          "id": "d2jjbl7o7xsee"
+        }
+      },
+      "TransportPackageStatusRequest": {
+        "properties": {
+          "filename": {
+            "description": "enter the transport package zip file name in full (including the .zip extension)",
+            "type": "string",
+            "x-stoplight": {
+              "id": "xlnkv5gq8w9ev"
+            }
+          },
+          "operation": {
+            "description": "enter the type of transport request (export, import, or transfer)",
+            "enum": [
+              "export",
+              "import",
+              "transfer"
+            ],
+            "type": "string",
+            "x-stoplight": {
+              "id": "o6g12n9rxn2t4"
+            }
+          },
+          "requestid": {
+            "description": "(required only if the operation is import) - enter the request ID generated during the submission of the import request",
+            "type": "string",
+            "x-stoplight": {
+              "id": "j82ir7ym6at2m"
+            }
+          }
+        },
+        "required": [
+          "operation",
+          "filename"
+        ],
+        "title": "TransportPackageStatusRequest",
+        "type": "object",
+        "x-stoplight": {
+          "id": "7tg0ihg4biemh"
+        }
+      },
+      "TransportPackageStatusResponse": {
+        "properties": {
+          "errorCode": {
+            "type": "integer",
+            "x-stoplight": {
+              "id": "ebuqgop7yv8q6"
+            }
+          },
+          "msg": {
+            "type": "string",
+            "x-stoplight": {
+              "id": "ahrsh2vc4m3c7"
+            }
+          },
+          "msgDescription": {
+            "type": "string",
+            "x-stoplight": {
+              "id": "778at054odbjn"
+            }
+          }
+        },
+        "required": [
+          "msg",
+          "msgDescription",
+          "errorCode"
+        ],
+        "title": "TransportPackageStatusResponse",
+        "type": "object",
+        "x-stoplight": {
+          "id": "xh4kaggchfgoc"
+        }
+      },
+      "UpdateEndpointRequest": {
+        "properties": {
+          "accessquery": {
+            "description": "Access query",
+            "type": "string"
+          },
+          "accountNameRule": {
+            "type": "string"
+          },
+          "blockInflightRequest": {
+            "description": "Flag to block inflight requests",
+            "type": "string"
+          },
+          "connectionconfig": {
+            "description": "Connection configuration in JSON format (escaped). Supports valid case-senstive string values such as “None”, “DropDownSingle”, “Table”, and “TableOnlyAdd”",
+            "type": "string"
+          },
+          "createEntTaskforRemoveAcc": {
+            "description": "Flag to create enterprise task for remove account",
+            "type": "string"
+          },
+          "description": {
+            "description": "Description of the endpoint",
+            "type": "string"
+          },
+          "disableModifyAccount": {
+            "description": "Flag to disable modify account functionality",
+            "type": "string"
+          },
+          "disableNewAccountRequestIfAccountExists": {
+            "description": "Flag to disable new account request if account exists",
+            "type": "string"
+          },
+          "disableRemoveAccount": {
+            "description": "Flag to disable remove account functionality",
+            "type": "string"
+          },
+          "displayName": {
+            "description": "Name displayed in the user interface",
+            "type": "string"
+          },
+          "enableCopyAccess": {
+            "description": "Flag to enable copy access",
+            "type": "string"
+          },
+          "endpointname": {
+            "description": "Name of the endpoint to update",
+            "type": "string"
+          },
+          "owner": {
+            "description": "Owner identifier",
+            "type": "string"
+          },
+          "ownerType": {
+            "description": "Type of owner",
+            "type": "string"
+          },
+          "requestOption": {
+            "type": "string"
+          },
+          "requestableRoleType": {
+            "description": "Configuration for requestable role types (available from v23.9)",
+            "items": {
+              "properties": {
+                "requestOption": {
+                  "description": "How roles are displayed (e.g., None, DropDownSingle, Table, TableOnlyAdd)",
+                  "type": "string"
+                },
+                "requestedQuery": {
+                  "description": "Query for filtering requested roles",
+                  "type": "string"
+                },
+                "required": {
+                  "description": "Whether role selection is required",
+                  "type": "boolean"
+                },
+                "roleType": {
+                  "description": "Type of role (e.g., Application, Enterprise, Enabler, Transactional, EmergencyAccess)",
+                  "type": "string"
+                },
+                "selectedQuery": {
+                  "description": "Query for filtering selected roles",
+                  "type": "string"
+                },
+                "showOn": {
+                  "description": "Specifies where to display roles (e.g., All, ShowOnApplicationRequest, ShowOnServiceAccountRequest)",
+                  "type": "string"
+                }
+              },
+              "type": "object"
+            },
+            "type": "array"
+          },
+          "required": {
+            "description": "Supports valid boolean values are true and falserequestedQuery/selectedQuery Supports string values in double quotes",
+            "type": "string"
+          },
+          "resourceOwner": {
+            "description": "Resource owner identifier",
+            "type": "string"
+          },
+          "resourceOwnerType": {
+            "description": "Type of resource owner",
+            "type": "string"
+          },
+          "roleType": {
+            "description": "Supports valid case-senstive string values such as “Enabler”, “Transactional”, “EmergencyAccess”, “Enterprise”, and “Application”",
+            "type": "string"
+          },
+          "securitysystem": {
+            "description": "Security system that encapsulates the endpoint",
+            "type": "string"
+          },
+          "showOn": {
+            "description": "Supports valid case-sensitive string values such as “All”, “ShowOnApplicationRequest”, and “ShowOnServiceAccountRequest”. specify the value to display the roles on Application Requests, Service Account Requests, or both. This parameter is available from the Release v24.6 onwards.",
+            "type": "string"
+          },
+          "userAccountCorrelationRule": {
+            "description": "Rule for correlating users to accounts",
+            "type": "string"
+          }
+        },
+        "required": [
+          "endpointname"
+        ],
+        "type": "object"
+      },
+      "UpdateEndpointResponse": {
+        "properties": {
+          "errorCode": {
+            "type": "string",
+            "x-stoplight": {
+              "id": "gart4xtpgbzb7"
+            }
+          },
+          "msg": {
+            "type": "string",
+            "x-stoplight": {
+              "id": "f1khdm6trvs9a"
+            }
+          }
+        },
+        "required": [
+          "msg",
+          "errorCode"
+        ],
+        "title": "UpdateEndpointResponse",
+        "type": "object",
+        "x-stoplight": {
+          "id": "b26jc7jdirrls"
+        }
+      },
+      "UpdateTaskRequestInfo": {
+        "description": "1. `updatetype` (if this is set to \"completetask\" then refer completetask api and pass appropriate params as well),\n1. `comments`\n1. `provisioningComments`\n1. `provisioningMetadata`\n1. `password`\n1. `status`\n1. `ticketId`\n1. `taskownerusergroup`\n1. `taskowneruser`\n1. `updateuser` - username of user who is updating the task,\n1. `completeassociatedtasks` - true / false,\n1. `emailto`\n1. `notify` - to pick up data from the task, supported values - \"notify\":[\"USER\",\"requestor\",\"MANAGER\"],\n1. `from`\n1. `subject`\n1. `emailbody`",
+        "properties": {
+          "status": {
+            "description": "Use the following numeric status codes to represent the following status. These string status values are returned in the `checkTaskStatus` endpoint.\n1: New\n2: In Progress\n3: Complete\n4: Discontinued\n5: Pending Create\n6: Pending Provision\n7: Provisioning Failed\n8: Error\n9: No Action Required",
+            "enum": [
+              "1",
+              "2",
+              "3",
+              "4",
+              "5",
+              "6",
+              "7",
+              "8",
+              "9"
+            ],
+            "type": "string",
+            "x-stoplight": {
+              "id": "f1yxjoi1tnz2y"
+            }
+          },
+          "taskid": {
+            "type": "string",
+            "x-stoplight": {
+              "id": "zuqc9n0uloizr"
+            }
+          }
+        },
+        "required": [
+          "taskid",
+          "status"
+        ],
+        "title": "UpdateTaskRequestInfo",
+        "type": "object",
+        "x-stoplight": {
+          "id": "sclcppzc5yn6n"
+        }
+      },
+      "UpdateTaskResponseInfo": {
+        "properties": {
+          "errorCode": {
+            "type": "string",
+            "x-stoplight": {
+              "id": "tpd9zvjvqu450"
+            }
+          },
+          "msg": {
+            "type": "string",
+            "x-stoplight": {
+              "id": "pqkj5h32eikew"
+            }
+          }
+        },
+        "required": [
+          "msg",
+          "errorCode"
+        ],
+        "title": "UpateTaskResponseInfo",
+        "type": "object",
+        "x-stoplight": {
+          "id": "5txk1wm5gp1ok"
+        }
+      },
+      "UpdateTasksRequest": {
+        "properties": {
+          "taskKeyToUpdate": {
+            "items": {
+              "$ref": "#/components/schemas/UpdateTaskRequestInfo"
+            },
+            "type": "array",
+            "x-stoplight": {
+              "id": "ew8s4sdh02wzl"
+            }
+          },
+          "updateuser": {
+            "type": "string",
+            "x-stoplight": {
+              "id": "j99s86kf7ltqs"
+            }
+          }
+        },
+        "required": [
+          "taskKeyToUpdate"
+        ],
+        "title": "UpdateTasksRequest",
+        "type": "object",
+        "x-stoplight": {
+          "id": "3rtx1z2yu3dbq"
+        }
+      },
+      "UpdateTasksResponse": {
+        "additionalProperties": {
+          "$ref": "#/components/schemas/UpdateTaskResponseInfo"
+        },
+        "title": "UpdateTasksResponse",
+        "type": "object",
+        "x-stoplight": {
+          "id": "252egi48pfxga"
+        }
+      },
+      "UploadKeyStoreRequest": {
+        "properties": {
+          "keyStoreFile": {
+            "format": "binary",
+            "type": "string"
+          },
+          "keyStorePassword": {
+            "type": "string"
+          }
+        },
+        "title": "UploadKeyStoreRequest",
+        "type": "object"
+      },
+      "UploadKeyStoreResponse": {
+        "properties": {
+          "errorCode": {
+            "type": "integer"
+          },
+          "message": {
+            "type": "string"
+          }
+        },
+        "title": "UploadKeyStoreResponse",
+        "type": "object",
+        "x-stoplight": {
+          "id": "uoufvdzkvbo36"
+        }
+      },
+      "UploadSchemaFileRequest": {
+        "examples": [
+          {
+            "file": "string",
+            "pathLocation": "string"
+          }
+        ],
+        "properties": {
+          "file": {
+            "description": "the file to upload",
+            "format": "binary",
+            "type": "string",
+            "x-stoplight": {
+              "id": "mjy4e4r2rzhrm"
+            }
+          },
+          "pathLocation": {
+            "description": "Should be set to `Datafiles` to upload to `job.ecm.imp.file.path` in `InternalConfig.groovy`, or `SAV` to upload to `job.ecm.savfile.path` in `InternalConfig.groovy`. ",
+            "type": "string",
+            "x-stoplight": {
+              "id": "pqex6epn1nyb3"
+            }
+          }
+        },
+        "required": [
+          "file",
+          "pathLocation"
+        ],
+        "title": "UploadSchemaFileRequest",
+        "type": "object",
+        "x-stoplight": {
+          "id": "e4sccz84nbpq4"
+        }
+      },
+      "UploadSchemaFileResponse": {
+        "examples": [
+          {
+            "errorCode": "0",
+            "msg": "file Save Successfully"
+          },
+          {
+            "errorCode": "1",
+            "msg": "Unexpected error occurred"
+          }
+        ],
+        "properties": {
+          "errorCode": {
+            "type": "string",
+            "x-stoplight": {
+              "id": "05nyb4pfsu45i"
+            }
+          },
+          "msg": {
+            "type": "string",
+            "x-stoplight": {
+              "id": "831ozp44vzt0c"
+            }
+          }
+        },
+        "required": [
+          "msg",
+          "errorCode"
+        ],
+        "title": "UploadSchemaFileResponse",
+        "type": "object",
+        "x-stoplight": {
+          "id": "jvrbda21bzmt8"
+        }
+      },
+      "User": {
+        "properties": {
+          "displayname": {
+            "type": "string",
+            "x-stoplight": {
+              "id": "z1kihkv0lfz24"
+            }
+          },
+          "firstname": {
+            "type": "string",
+            "x-stoplight": {
+              "id": "y466wvn24q6pj"
+            }
+          },
+          "statuskey": {
+            "type": "string",
+            "x-stoplight": {
+              "id": "48ztn3751301d"
+            }
+          },
+          "userKey": {
+            "type": "integer",
+            "x-stoplight": {
+              "id": "ne6qzizzvqr3b"
+            }
+          },
+          "username": {
+            "type": "string",
+            "x-stoplight": {
+              "id": "qkdtzzhc2ppoq"
+            }
+          }
+        },
+        "title": "User",
+        "type": "object",
+        "x-stoplight": {
+          "id": "uhnhmn93bi53q"
+        }
+      },
+      "VaultConfiguration": {
+        "properties": {
+          "keyMapping": {
+            "$ref": "#/components/schemas/VaultConfigurationKeyMapping"
+          },
+          "path": {
+            "description": "Vault secret path.",
+            "example": "/secrets/data/kv-dev-intgn1/aob1/-5MAY23-TEST1/\u003cConnectionName\u003e\\_externalconnection",
+            "type": "string",
+            "x-stoplight": {
+              "id": "xzo4eglvt2fex"
+            }
+          }
+        },
+        "title": "VaultConfiguration",
+        "type": "object",
+        "x-stoplight": {
+          "id": "619fvo66n2azf"
+        }
+      },
+      "VaultConfigurationKeyMapping": {
+        "properties": {
+          "AUTHTOKEN": {
+            "type": "string",
+            "x-stoplight": {
+              "id": "xflvoo59ydvif"
+            }
+          },
+          "PASSWORD": {
+            "$ref": "#/components/schemas/VaultConfigurationKeyMappingPassword"
+          }
+        },
+        "title": "VaultConfigurationKeyMapping",
+        "type": "object",
+        "x-stoplight": {
+          "id": "8r2cuk5xlxx2f"
+        }
+      },
+      "VaultConfigurationKeyMappingPassword": {
+        "properties": {
+          "encryptionmechanism": {
+            "example": "None",
+            "type": "string",
+            "x-stoplight": {
+              "id": "vcg7q9mva79xi"
+            }
+          },
+          "groupName": {
+            "type": "string",
+            "x-stoplight": {
+              "id": "xuea1kvnqtrdz"
+            }
+          },
+          "ignoreMapping": {
+            "description": "Use mappings such as `groupName` and `keyName`.",
+            "items": {
+              "type": "string",
+              "x-stoplight": {
+                "id": "qbmddkv5bzydu"
+              }
+            },
+            "type": "array",
+            "x-stoplight": {
+              "id": "ap6g4hm3xk77t"
+            }
+          },
+          "keyName": {
+            "type": "string",
+            "x-stoplight": {
+              "id": "iwodcp3y332d3"
+            }
+          }
+        },
+        "title": "VaultConfigurationKeyMappingPassword",
+        "type": "object",
+        "x-stoplight": {
+          "id": "5ftwxo54l3sfx"
+        }
+      }
+    }
+  },
+  "info": {
+    "contact": {
+      "email": "https://github.com/saviynt",
+      "name": "Saviynt Developers Team"
+    },
+    "description": "API for the Saviynt Enterprise Identity Cloud identity security solution covering Identity Governance and Administration (IGA), External Identity Management, Privileged Access Management, and Application Access Governance.",
+    "title": "Saviynt EIC API",
+    "version": "5.0"
+  },
+  "openapi": "3.1.0",
+  "paths": {
+    "/ECM/api/v5/checkJobStatus": {
+      "post": {
+        "description": "This API is used to fetch the status of any job other than Data Import Job.",
+        "operationId": "checkJobStatus",
+        "requestBody": {
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "$ref": "#/components/schemas/CheckJobStatusRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CheckJobStatusResponse"
+                }
+              }
+            },
+            "description": "OK"
+          }
+        },
+        "summary": "Check Job Status",
+        "tags": [
+          "Job Control"
+        ]
+      }
+    },
+    "/ECM/api/v5/checkTaskStatus": {
+      "post": {
+        "description": "This API can be used to check the task status. Response can return task status as “New/Complete/In Progress/Discontinued”.",
+        "operationId": "checkTaskStatus",
+        "requestBody": {
+          "content": {
+            "application/x-www-form-urlencoded": {
+              "schema": {
+                "$ref": "#/components/schemas/CheckTaskStatusRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CheckTaskStatusResponse"
+                }
+              }
+            },
+            "description": "OK"
+          }
+        },
+        "summary": "Check Task Status",
+        "tags": [
+          "Tasks"
+        ]
+      }
+    },
+    "/ECM/api/v5/createDelegate": {
+      "post": {
+        "description": "This method creates a new delegate for a parent User. The input parameters of this method contains the details of the Parent User as well as the one to whom the Delegation is carried out.",
+        "operationId": "createDelegate",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateDelegateRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CreateDelegateResponse"
+                }
+              }
+            },
+            "description": "OK"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "summary": "Create Delegate",
+        "tags": [
+          "Delegated Administration"
+        ]
+      }
+    },
+    "/ECM/api/v5/createEndpoint": {
+      "post": {
+        "description": "Creates a new endpoint in EIC",
+        "operationId": "createEndpoint",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateEndpointRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CreateEndpointResponse"
+                }
+              }
+            },
+            "description": "Successful operation"
+          },
+          "400": {
+            "description": "Bad request"
+          },
+          "401": {
+            "description": "Unauthorized"
+          }
+        },
+        "summary": "Create Endpoint",
+        "tags": [
+          "Endpoints"
+        ]
+      }
+    },
+    "/ECM/api/v5/createTriggers": {
+      "post": {
+        "description": "This API is used to create job triggers.",
+        "operationId": "createTriggers",
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        },
+        "summary": "Create Triggers",
+        "tags": [
+          "Job Control"
+        ]
+      }
+    },
+    "/ECM/api/v5/createUpdateTrigger": {
+      "post": {
+        "description": "This API call can be used to create and update a trigger for a particular `jobgroup` in Saviynt.\n\nStarting with Release v24.7, a new `analysistypes` parameter has been introduced for the **Recommendations** job. To execute an analysis type using this API, you can use the `analysistypes` parameter and specify the following values in its request:\n\n* 0 – Run All Steps\n* 1 – Run Attribute Discovery\n* 2 – Generate Correlation Rules\n* 3 – Rule Consolidation for Access\n* 4 – Rule Consolidation for Apps\n* 5 – Compute Access Confidence\n* 6 – Compute Model Performance Statistics\n* 7 – Incremental Rule Creation",
+        "operationId": "createUpdateTrigger",
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        },
+        "summary": "Create and Update Trigger",
+        "tags": [
+          "Job Control"
+        ]
+      }
+    },
+    "/ECM/api/v5/deleteConnection": {
+      "delete": {
+        "description": "This API deletes connections in Saviynt.\n\nMandatory params: `updateuser`, and `connectionQuery` or `connectionkey` (If both are passed then `connectionkey` will be considered).",
+        "operationId": "deleteConnection",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/DeleteConnectionRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DeleteConnectionResponse"
+                }
+              }
+            },
+            "description": "OK"
+          }
+        },
+        "summary": "Delete Connection",
+        "tags": [
+          "Connections"
+        ]
+      }
+    },
+    "/ECM/api/v5/deleteDelegate": {
+      "post": {
+        "description": "This API is used to delete a specific delegate.",
+        "operationId": "deleteDelegate",
+        "requestBody": {
+          "content": {
+            "application/x-www-form-urlencoded": {
+              "schema": {
+                "$ref": "#/components/schemas/DeleteDelegateRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Response"
+                }
+              }
+            },
+            "description": "OK"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "summary": "Delete Delegate",
+        "tags": [
+          "Delegated Administration"
+        ]
+      }
+    },
+    "/ECM/api/v5/deleteKeyStoreAlias/{alias}": {
+      "delete": {
+        "description": "Introduced in Release v24.7, this API lets administrators delete an mTLS certificate that is uploaded in the EIC keystore.\n\nNote: Ensure that you have specified the name of the alias in the request URL.",
+        "operationId": "deleteKeyStore",
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        },
+        "summary": "Delete KeyStore",
+        "tags": [
+          "mTLS Authentication"
+        ]
+      },
+      "parameters": [
+        {
+          "in": "path",
+          "name": "alias",
+          "required": true,
+          "schema": {
+            "type": "string"
+          }
+        }
+      ]
+    },
+    "/ECM/api/v5/deleteTrigger": {
+      "post": {
+        "description": "This API call can be used to delete a trigger for a particular \"jobgroup\" in Saviynt.",
+        "operationId": "deleteTrigger",
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        },
+        "summary": "Delete Trigger",
+        "tags": [
+          "Job Control"
+        ]
+      }
+    },
+    "/ECM/api/v5/editDelegate": {
+      "post": {
+        "description": "This method is used to edit a specific delegate. The input parameters of this method contain the details of the Parent User as well as the one to whom the Delegation is carried out.",
+        "operationId": "editDelegate",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/EditDelegateRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Response"
+                }
+              }
+            },
+            "description": "OK"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "summary": "Edit Delegate",
+        "tags": [
+          "Delegated Administration"
+        ]
+      }
+    },
+    "/ECM/api/v5/exportTransportPackage": {
+      "post": {
+        "description": "This API creates a compressed file containing objects specified for T2P migration.",
+        "operationId": "exportTransportPackage",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ExportTransportPackageRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ExportTransportPackageResponse"
+                }
+              }
+            },
+            "description": "OK"
+          }
+        },
+        "summary": "Export Transport Package",
+        "tags": [
+          "Transport"
+        ]
+      }
+    },
+    "/ECM/api/v5/fetchDelegatesList": {
+      "post": {
+        "description": "This API is used to retrieve the list of existing delegates and their details. If any optional parameter is not specified then only active delegates are displayed.",
+        "operationId": "fetchExistingDelegatesList",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/FetchExistingDelegatesListRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/FetchExistingDelegatesListResponse"
+                }
+              }
+            },
+            "description": "OK"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "summary": "Fetch Existing Delegates List",
+        "tags": [
+          "Delegated Administration"
+        ]
+      }
+    },
+    "/ECM/api/v5/fetchJobMetadata": {
+      "post": {
+        "description": "This API call return job metadata for the last run of a job in Saviynt.\n\nNote: The structure of the result param in response can change based upon the Job History saved in Saviynt",
+        "operationId": "fetchJobMetadata",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/FetchJobMetadataRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/FetchJobMetadataResponse"
+                }
+              }
+            },
+            "description": "OK"
+          }
+        },
+        "summary": "Fetch Job Metadata",
+        "tags": [
+          "Job Control"
+        ]
+      }
+    },
+    "/ECM/api/v5/getConnectionDetails": {
+      "post": {
+        "description": "This API returns connection details in Saviynt.\n\nMandatory params: `connectiontype` or `connectionname` (if both are passed then `connectionkey` will be considered).",
+        "operationId": "getConnectionDetails",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/GetConnectionDetailsRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/GetConnectionDetailsResponse"
+                }
+              }
+            },
+            "description": "OK"
+          }
+        },
+        "summary": "Get Connection Details",
+        "tags": [
+          "Connections"
+        ]
+      }
+    },
+    "/ECM/api/v5/getConnections": {
+      "post": {
+        "description": "This API returns list of Connections in Saviynt.",
+        "operationId": "getConnections",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/GetConnectionsRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "examples": {
+                  "Get Connections": {
+                    "value": {
+                      "ConnectionList": [
+                        {
+                          "CONNECTIONDESCRIPTION": "",
+                          "CONNECTIONNAME": "AD Test",
+                          "CONNECTIONTYPE": "AD",
+                          "CREATEDBY": "admin(     ADMIN)",
+                          "CREATEDON": "2017-03-23T00:48:28Z",
+                          "STATUS": 1,
+                          "UPDATEDBY": "admin(ADMIN   ADMIN)",
+                          "UPDATEDON": "2017-08-18T04:18:19Z"
+                        }
+                      ],
+                      "errorCode": "0",
+                      "msg": "Successful"
+                    }
+                  }
+                },
+                "schema": {
+                  "$ref": "#/components/schemas/GetConnectionsResponse"
+                }
+              }
+            },
+            "description": "Get Connections"
+          }
+        },
+        "summary": "Get List of Connections",
+        "tags": [
+          "Connections"
+        ]
+      }
+    },
+    "/ECM/api/v5/getDelegateUserList": {
+      "get": {
+        "description": "This API returns list of users that are allowed to be added as delegate for a parentuser in SSM.",
+        "operationId": "getDelegateUserList",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/GetDelegateUserListRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/GetDelegateUserListResponse"
+                }
+              }
+            },
+            "description": "OK"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "summary": "Get Delegate User List",
+        "tags": [
+          "Delegated Administration"
+        ]
+      }
+    },
+    "/ECM/api/v5/getEndpoints": {
+      "post": {
+        "description": "Returns a list of endpoints based on the specified filters",
+        "operationId": "getEndpoints",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/GetEndpointsRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/GetEndpointsResponse"
+                }
+              }
+            },
+            "description": "Successful operation"
+          },
+          "400": {
+            "description": "Bad request"
+          },
+          "401": {
+            "description": "Unauthorized"
+          }
+        },
+        "summary": "Get List of Endpoints",
+        "tags": [
+          "Endpoints"
+        ]
+      }
+    },
+    "/ECM/api/v5/getKeyStoreCertificateDetails": {
+      "get": {
+        "description": "Introduced in Release v24.7, this API enables administrators to view the details of mTLS certificates that are uploaded in the EIC keystore.\n\nA thumbprint is an unique identification of the certificate. The thumbprints attribute of this API provides a unique identification of the certificate. It displays expiry and thumbprint details in the following order:\n\n* Leaf certificate\n* Intermediate certificate\n* Root certificate",
+        "operationId": "getKeyStoreCertificateDetails",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/GetKeyStoreCertificateDetailsResponse"
+                }
+              }
+            },
+            "description": "OK"
+          }
+        },
+        "summary": "Get KeyStore Details",
+        "tags": [
+          "mTLS Authentication"
+        ]
+      }
+    },
+    "/ECM/api/v5/getUser": {
+      "post": {
+        "description": "This method returns a List of Users in Saviynt.",
+        "operationId": "getUser",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/GetUserRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/GetUserResponse"
+                }
+              }
+            },
+            "description": "OK"
+          }
+        },
+        "summary": "Get User Details",
+        "tags": [
+          "Users"
+        ]
+      }
+    },
+    "/ECM/api/v5/importTransportPackage": {
+      "post": {
+        "description": "This API imports a compressed file containing objects specified for T2P migration.\n\nSupported objects:\n\nsavRoles, emailTemplate, roles, analyticsV1, analyticsV2, globalConfig, workflows, connection, appOnboarding, userGroups, scanRules, organizations, securitySystems",
+        "operationId": "importTransportPackage",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "examples": {
+                "Example 1": {
+                  "value": {
+                    "businessjustification": "test",
+                    "packagetoimport": "/saviynt_shared/testexport/transportPackage/transport_admin_2023-01-13_10-19-11(UTC).zip",
+                    "updateuser": "admin"
+                  }
+                }
+              },
+              "schema": {
+                "$ref": "#/components/schemas/ImportTransportPackageRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ImportTransportPackageResponse"
+                }
+              }
+            },
+            "description": "OK"
+          }
+        },
+        "summary": "Import Transport Package",
+        "tags": [
+          "Transport"
+        ]
+      }
+    },
+    "/ECM/api/v5/resumePauseJobs": {
+      "post": {
+        "description": "Starting with Release v23.10, the `resumePauseJobs` API enables you to pause jobs based on their job type and job name.\n\nWhen a job is paused, its status is displayed as Paused on the Job Control Panel page.",
+        "operationId": "resumePauseJobs",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ResumePauseJobsRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "text/plain": {
+                "examples": {
+                  "Error on No Triggers": {
+                    "value": "No triggers found"
+                  },
+                  "Successful Pause": {
+                    "value": "Job(s) Paused successfully"
+                  },
+                  "Successful Resume": {
+                    "value": "Job(s) Resumed successfully"
+                  }
+                },
+                "schema": {
+                  "type": "string"
+                }
+              }
+            },
+            "description": "OK"
+          },
+          "201": {
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "type": "string"
+                }
+              }
+            },
+            "description": "Created"
+          }
+        },
+        "summary": "Resume Pause Jobs",
+        "tags": [
+          "Job Control"
+        ]
+      }
+    },
+    "/ECM/api/v5/runJobTrigger": {
+      "post": {
+        "description": "This API call can be used to run a job trigger in Saviynt.\n\nThe following cases illustrate different scenarios on the usage of the `analyticsAdvanceQuery` parameter in the API:\n\n* Case 1: When you configure the `analyticsAdvanceQuery` within the payload, set the `defaultActionForAnalytics` as `\"true\"`, and then execute the control from the API, it overrides the default action and the advanced query configuration within the job trigger.\n* Case 2: When you configure the `analyticsAdvanceQuery` within the payload, set the `defaultActionForAnalytics` as `\"false\"`, and then execute the control from the API without performing the default actions configured in the control, it overrides the default action and the advanced query configuration within the job trigger.\n* Case 3: When you do not configure both the `analyticsAdvanceQuery` and the `defaultActionForAnalytics`x, the default action will depend on the configuration provided in the analytics job trigger.\n\nThe following cases illustrate different scenarios on the usage of the `analyticsCategories` parameter in the API:\n\n* Case 1: When you set the \"defaultActionForAnalytics\" as \"true\" to perform default actions for analytics controls by executing the control from job API, it will override the default action configuration within the job trigger.\n* Case 2: When you set the \"defaultActionForAnalytics\" as \"false\" to not perform default actions for analytics controls by executing the control from job API, it will override the default action configuration within the job trigger.\n* Case 3: When the defaultActionForAnalytics parameter is not set in the payload, the default action will depend on the configuration provided in the analytics job trigger.",
+        "operationId": "runJobTrigger",
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        },
+        "summary": "Run Job Trigger",
+        "tags": [
+          "Job Control"
+        ]
+      }
+    },
+    "/ECM/api/v5/sendEmail": {
+      "post": {
+        "description": "This API can be used send an email from Saviynt.",
+        "operationId": "sendEmail",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SendEmailRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SendEmailResponse"
+                }
+              }
+            },
+            "description": "OK"
+          }
+        },
+        "summary": "Send Email",
+        "tags": [
+          "Email"
+        ]
+      }
+    },
+    "/ECM/api/v5/testConnection": {
+      "post": {
+        "description": "This API is used to save and test a connection.\n\nMandatory params: `connectiontype`, `connectionName` OR `connectionkey` (if both are passed `connectionkey` is considered) Additional connection parameters can also be passed - For example, for SAP Import, provide paramters - `JCO_ASHOST`, `JCO_SYSNR`, `JCO_CLIENT`, `JCO_USER`, `PASSWORD`.\n\nThis API is enhanced to update vaultconnection, and vaultconfiguration connection details.\n\nFrom Release v23.10, if you specify the key value for header response as standard, a detailed error message is displayed in the Response that enables you to troubleshoot errors.",
+        "operationId": "createOrUpdateConnection",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateOrUpdateConnectionRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CreateOrUpdateConnectionResponse"
+                }
+              }
+            },
+            "description": "OK"
+          }
+        },
+        "summary": "Create or Update Connection",
+        "tags": [
+          "Connections"
+        ]
+      }
+    },
+    "/ECM/api/v5/transportPackageStatus": {
+      "get": {
+        "description": "This API obtains the status of the transport request (import, export, or transfer), and helps in confirming whether the transport was completed successfully or failed.\n\nNote: This API returns the status of only those requests that have been processed using the Enhanced Transport feature.",
+        "operationId": "transportPackageStatus",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/TransportPackageStatusRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TransportPackageStatusResponse"
+                }
+              }
+            },
+            "description": "OK"
+          }
+        },
+        "summary": "Transport Package Status",
+        "tags": [
+          "Transport"
+        ]
+      }
+    },
+    "/ECM/api/v5/updateEndpoint": {
+      "put": {
+        "description": "Updates an existing endpoint in EIC",
+        "operationId": "updateEndpoint",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateEndpointRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UpdateEndpointResponse"
+                }
+              }
+            },
+            "description": "Successful operation"
+          },
+          "400": {
+            "description": "Bad request"
+          },
+          "401": {
+            "description": "Unauthorized"
+          }
+        },
+        "summary": "Update Endpoint",
+        "tags": [
+          "Endpoints"
+        ]
+      }
+    },
+    "/ECM/api/v5/updateTasks": {
+      "post": {
+        "description": "It can update certain params of a task as well as complete a task.",
+        "operationId": "updateTasks",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateTasksRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UpdateTasksResponse"
+                }
+              }
+            },
+            "description": "OK"
+          }
+        },
+        "summary": "Update Tasks",
+        "tags": [
+          "Tasks"
+        ]
+      }
+    },
+    "/ECM/api/v5/uploadKeyStore": {
+      "post": {
+        "description": "Introduced in Release v24.7, this API lets administrators upload Mutual Transport Layer Security (mTLS) certificates in the EIC keystore.",
+        "operationId": "uploadKeyStore",
+        "requestBody": {
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "$ref": "#/components/schemas/UploadKeyStoreRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UploadKeyStoreResponse"
+                }
+              }
+            },
+            "description": "OK"
+          }
+        },
+        "summary": "Upload KeyStore",
+        "tags": [
+          "mTLS Authentication"
+        ]
+      }
+    },
+    "/ECM/api/v5/uploadSchemaFile": {
+      "post": {
+        "description": "This API call can be used to upload the file in a specific location based on the property `job.ecm.imp.file.path` or  `job.ecm.savfile.path` in `InternalConfig.groovy`.",
+        "operationId": "uploadNewFile",
+        "requestBody": {
+          "content": {
+            "application/x-www-form-urlencoded": {
+              "schema": {
+                "$ref": "#/components/schemas/UploadSchemaFileRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UploadSchemaFileResponse"
+                }
+              }
+            },
+            "description": "OK"
+          }
+        },
+        "summary": "Upload File",
+        "tags": [
+          "File Directory"
+        ]
+      }
+    },
+    "/ECMv6/api/userms/savroles": {
+      "get": {
+        "description": "This API returns all out-of-the-box (OOTB) and custom SAV roles along with their properties.",
+        "operationId": "getAllSAVRoles",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/GetAllSAVRolesResponse"
+                }
+              }
+            },
+            "description": "OK"
+          }
+        },
+        "summary": "Get All SAV Roles",
+        "tags": [
+          "SAV Roles"
+        ]
+      }
+    },
+    "/ECMv6/api/userms/savroles/{savRoleName}/users": {
+      "get": {
+        "description": "This API returns a list of users associated with a particular SAV role.\n\n",
+        "operationId": "getSAVRoleUsers",
+        "parameters": [
+          {
+            "description": "Specifies the number of retrieved results",
+            "in": "query",
+            "name": "limit",
+            "required": true,
+            "schema": {
+              "default": "0",
+              "type": "string"
+            }
+          },
+          {
+            "description": "Specifies the number of rows of the result to skip before any rows are retrieved, and must be used with the `limit` parameter",
+            "in": "query",
+            "name": "offset",
+            "required": true,
+            "schema": {
+              "default": "1000",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/GetSAVRoleUsersResponse"
+                }
+              }
+            },
+            "description": "OK"
+          }
+        },
+        "summary": "Get Users Associated with a Particular SAV Role",
+        "tags": [
+          "SAV Roles"
+        ]
+      },
+      "parameters": [
+        {
+          "description": "The `ROLENAME` field in geAllSAVRoles API",
+          "in": "path",
+          "name": "savRoleName",
+          "required": true,
+          "schema": {
+            "type": "string"
+          }
+        }
+      ]
+    }
+  },
+  "servers": [
+    {
+      "url": "http://localhost:3000"
+    }
+  ],
+  "tags": [
+    {
+      "name": "Connections"
+    },
+    {
+      "name": "Delegated Administration"
+    },
+    {
+      "name": "Email"
+    },
+    {
+      "name": "Endpoints"
+    },
+    {
+      "name": "File Directory"
+    },
+    {
+      "name": "Job Control"
+    },
+    {
+      "name": "mTLS Authentication"
+    },
+    {
+      "name": "SAV Roles"
+    },
+    {
+      "name": "Tasks"
+    },
+    {
+      "name": "Transport"
+    },
+    {
+      "name": "Users"
+    }
+  ],
+  "x-stoplight": {
+    "id": "11gpcfoz001w2"
+  }
+}

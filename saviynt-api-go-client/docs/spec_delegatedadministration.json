@@ -1,0 +1,733 @@
+{
+  "openapi": "3.1.0",
+  "x-stoplight": {
+    "id": "11gpcfoz001w2"
+  },
+  "info": {
+    "title": "Saviynt Delegated Administration API",
+    "version": "1.0",
+    "description": "Deglated Administration",
+    "contact": {
+      "name": "Saviynt Developers Team",
+      "email": "https://github.com/saviynt"
+    }
+  },
+  "servers": [
+    {
+      "url": "http://localhost:3000"
+    }
+  ],
+  "tags": [
+    {
+      "name": "Delegated Administration"
+    }
+  ],
+  "paths": {
+    "/ECM/api/v5/getDelegateUserList": {
+      "get": {
+        "summary": "Get Delegate User List",
+        "tags": [
+          "Delegated Administration"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/GetDelegateUserListResponse"
+                }
+              }
+            }
+          }
+        },
+        "operationId": "getDelegateUserList",
+        "description": "This API returns list of users that are allowed to be added as delegate for a parentuser in SSM.",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/GetDelegateUserListRequest"
+              }
+            }
+          }
+        }
+      },
+      "parameters": []
+    },
+    "/ECM/api/v5/fetchDelegatesList": {
+      "post": {
+        "summary": "Fetch Existing Delegates List",
+        "operationId": "fetchExistingDelegatesList",
+        "tags": [
+          "Delegated Administration"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/FetchExistingDelegatesListResponse"
+                }
+              }
+            }
+          }
+        },
+        "description": "This API is used to retrieve the list of existing delegates and their details. If any optional parameter is not specified then only active delegates are displayed.",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/FetchExistingDelegatesListRequest"
+              }
+            }
+          },
+          "description": ""
+        }
+      },
+      "parameters": []
+    },
+    "/ECM/api/v5/createDelegate": {
+      "post": {
+        "summary": "Create Delegate",
+        "operationId": "createDelegate",
+        "tags": [
+          "Delegated Administration"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CreateDelegateResponse"
+                }
+              }
+            }
+          }
+        },
+        "description": "This method creates a new delegate for a parent User. The input parameters of this method contains the details of the Parent User as well as the one to whom the Delegation is carried out.",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateDelegateRequest"
+              }
+            }
+          },
+          "description": ""
+        }
+      },
+      "parameters": []
+    },
+    "/ECM/api/v5/editDelegate": {
+      "post": {
+        "summary": "Edit Delegate",
+        "operationId": "editDelegate",
+        "tags": [
+          "Delegated Administration"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Response"
+                }
+              }
+            }
+          }
+        },
+        "description": "This method is used to edit a specific delegate. The input parameters of this method contain the details of the Parent User as well as the one to whom the Delegation is carried out.",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/EditDelegateRequest"
+              }
+            }
+          }
+        }
+      },
+      "parameters": []
+    },
+    "/ECM/api/v5/deleteDelegate": {
+      "post": {
+        "summary": "Delete Delegate",
+        "operationId": "deleteDelegate",
+        "tags": [
+          "Delegated Administration"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Response"
+                }
+              }
+            }
+          }
+        },
+        "description": "This API is used to delete a specific delegate.",
+        "requestBody": {
+          "content": {
+            "application/x-www-form-urlencoded": {
+              "schema": {
+                "$ref": "#/components/schemas/DeleteDelegateRequest"
+              }
+            }
+          }
+        }
+      },
+      "parameters": []
+    }
+  },
+  "components": {
+    "securitySchemes": {
+      "bearerAuth": {
+        "type": "http",
+        "scheme": "bearer",
+        "bearerFormat": "JWT"
+      }
+    },
+    "schemas": {
+      "GetDelegateUserListRequest": {
+        "title": "GetDelegateUserListRequest",
+        "x-stoplight": {
+          "id": "vpqc1aeip3unw"
+        },
+        "type": "object",
+        "properties": {
+          "parentusername": {
+            "type": "string",
+            "x-stoplight": {
+              "id": "nua9g1y9exw77"
+            }
+          },
+          "max": {
+            "type": "integer",
+            "x-stoplight": {
+              "id": "l0vdpd8sm35pv"
+            }
+          },
+          "offset": {
+            "type": "integer",
+            "x-stoplight": {
+              "id": "e1y1qosrnhxbg"
+            }
+          },
+          "searchCriteria": {
+            "type": "string",
+            "x-stoplight": {
+              "id": "o7lumu6vnp1zf"
+            },
+            "description": "example \"t*\" or \"te\" or \"test\" to search in username or firstname or lastname for the delegate user"
+          }
+        },
+        "required": [
+          "parentusername"
+        ]
+      },
+      "GetDelegateUserListResponse": {
+        "title": "GetDelegateUserListResponse",
+        "x-stoplight": {
+          "id": "cw443dnw8ly41"
+        },
+        "type": "object",
+        "properties": {
+          "result": {
+            "type": "array",
+            "x-stoplight": {
+              "id": "mj1odjmtfuac8"
+            },
+            "items": {
+              "$ref": "#/components/schemas/DelegateUser",
+              "x-stoplight": {
+                "id": "5w9jo0k47uvrq"
+              }
+            }
+          },
+          "msg": {
+            "type": "string",
+            "x-stoplight": {
+              "id": "hfqdwub8svmvd"
+            }
+          },
+          "displayCount": {
+            "type": "string",
+            "x-stoplight": {
+              "id": "sdwaxoeyw0ub6"
+            }
+          },
+          "errorCode": {
+            "type": "string",
+            "x-stoplight": {
+              "id": "da0skyxhruzld"
+            }
+          },
+          "totalCount": {
+            "type": "string",
+            "x-stoplight": {
+              "id": "lxoew67pqc6f2"
+            }
+          }
+        }
+      },
+      "CreateDelegateRequest": {
+        "title": "CreateDelegateRequest",
+        "x-stoplight": {
+          "id": "3loxtkwxpp2q2"
+        },
+        "type": "object",
+        "properties": {
+          "userName": {
+            "type": "string",
+            "x-stoplight": {
+              "id": "crkmqc783f671"
+            },
+            "description": "this is user who is creating the delegation"
+          },
+          "name": {
+            "type": "string",
+            "x-stoplight": {
+              "id": "a76jr4ozrl1m4"
+            },
+            "description": "name of delegate."
+          },
+          "delegateusername": {
+            "type": "string",
+            "x-stoplight": {
+              "id": "vzezs3yglrcbi"
+            },
+            "description": "This is the user who should be assigned as the delegate of the parent user. It must match `username` in `GetDelegateUserList` API response."
+          },
+          "delegatestartdate": {
+            "type": "string",
+            "x-stoplight": {
+              "id": "d1whomrq2rx8e"
+            },
+            "description": "in format MMDDYYYY"
+          },
+          "delegateenddate": {
+            "type": "string",
+            "x-stoplight": {
+              "id": "r2d2t9ketxoee"
+            },
+            "description": "in format MMDDYYYY"
+          },
+          "parentusername": {
+            "type": "string",
+            "x-stoplight": {
+              "id": "isjdqzs6dx7qk"
+            },
+            "description": "this is the parent username, if not passed it will consider `userName` as parentusername"
+          },
+          "description": {
+            "type": "string",
+            "x-stoplight": {
+              "id": "8b3lt6r1hlfyq"
+            }
+          }
+        },
+        "required": [
+          "userName",
+          "name",
+          "delegateusername",
+          "delegatestartdate",
+          "delegateenddate"
+        ]
+      },
+      "DelegateUser": {
+        "title": "DelegateUser",
+        "x-stoplight": {
+          "id": "8q5oto3vw02aq"
+        },
+        "type": "object",
+        "properties": {
+          "firstname": {
+            "type": "string",
+            "x-stoplight": {
+              "id": "s6bfbv2e0x8r7"
+            }
+          },
+          "lastname": {
+            "type": "string",
+            "x-stoplight": {
+              "id": "6pac6s1vzrobw"
+            }
+          },
+          "username": {
+            "type": "string",
+            "x-stoplight": {
+              "id": "miwr2qeqxhofr"
+            },
+            "description": "This value is used in the `createDelegate` API."
+          }
+        },
+        "required": [
+          "firstname",
+          "lastname",
+          "username"
+        ]
+      },
+      "CreateDelegateResponse": {
+        "title": "CreateDelegateResponse",
+        "x-stoplight": {
+          "id": "vqand6dgyglet"
+        },
+        "type": "object",
+        "properties": {
+          "msg": {
+            "type": "string",
+            "x-stoplight": {
+              "id": "cy2ccy2bon9xt"
+            }
+          },
+          "delegatekey": {
+            "type": "string",
+            "x-stoplight": {
+              "id": "o1ks5a4u2un4v"
+            }
+          },
+          "errorCode": {
+            "type": "string",
+            "x-stoplight": {
+              "id": "7jsbk17c231ua"
+            }
+          }
+        },
+        "required": [
+          "msg",
+          "errorCode"
+        ]
+      },
+      "DeleteDelegateRequest": {
+        "title": "DeleteDelegateRequest",
+        "x-stoplight": {
+          "id": "2xz3g64u4cg35"
+        },
+        "type": "object",
+        "properties": {
+          "userName": {
+            "type": "string",
+            "x-stoplight": {
+              "id": "mffcamvadscwu"
+            },
+            "description": "this is the user who is deleting the delegate"
+          },
+          "key": {
+            "type": "string",
+            "x-stoplight": {
+              "id": "b57khz3q7au1g"
+            },
+            "description": "the is the delegatekey"
+          }
+        },
+        "required": [
+          "userName",
+          "key"
+        ]
+      },
+      "FetchExistingDelegatesListRequest": {
+        "title": "FetchDelegatesListRequest",
+        "x-stoplight": {
+          "id": "3vp1pbxoxnha7"
+        },
+        "type": "object",
+        "examples": [
+          {
+            "userName": "string",
+            "max": 0,
+            "offset": 0,
+            "status": "ACTIVE"
+          }
+        ],
+        "properties": {
+          "userName": {
+            "type": "string",
+            "x-stoplight": {
+              "id": "36tid2febza2x"
+            },
+            "description": "this is the parentusername"
+          },
+          "max": {
+            "type": "integer",
+            "x-stoplight": {
+              "id": "i8mqep5s7fsh8"
+            }
+          },
+          "offset": {
+            "type": "integer",
+            "x-stoplight": {
+              "id": "e13vah1wuz5u7"
+            }
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "ACTIVE",
+              "INACTIVE"
+            ],
+            "x-stoplight": {
+              "id": "yhodygv8v5srk"
+            },
+            "description": "values can be ACTIVE / INACTIVE"
+          }
+        },
+        "required": [
+          "userName"
+        ]
+      },
+      "Delegate": {
+        "type": "object",
+        "x-examples": {
+          "Example 1": {
+            "delegatekey": "1",
+            "name": "delegatetest",
+            "description": "",
+            "parentusername": "U013053",
+            "parentFirstName": "Maureen",
+            "parentLastName": "Knauber",
+            "delegateFirstName": "Daniel",
+            "delegateLastName": "Schibler",
+            "status": "ACTIVE",
+            "delegateusername": "U011556",
+            "startdate": "07/14/2020",
+            "enddate": "08/18/2020"
+          }
+        },
+        "description": "Delegate represents a Deleate returne dfrom the Fetch Eisting Delegates List API.",
+        "properties": {
+          "delegatekey": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "description": {
+            "type": "string"
+          },
+          "parentusername": {
+            "type": "string"
+          },
+          "parentFirstName": {
+            "type": "string"
+          },
+          "parentLastName": {
+            "type": "string"
+          },
+          "delegateFirstName": {
+            "type": "string"
+          },
+          "delegateLastName": {
+            "type": "string"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "ACTIVE",
+              "INACTIVE"
+            ]
+          },
+          "delegateusername": {
+            "type": "string"
+          },
+          "startdate": {
+            "type": "string",
+            "description": "date format 07/14/2020"
+          },
+          "enddate": {
+            "type": "string",
+            "description": "date with format 07/14/2020"
+          }
+        },
+        "required": [
+          "delegatekey",
+          "name",
+          "description",
+          "parentusername",
+          "status",
+          "delegateusername",
+          "startdate",
+          "enddate"
+        ]
+      },
+      "Response": {
+        "title": "Response",
+        "x-stoplight": {
+          "id": "zd7zr47c75zkz"
+        },
+        "type": "object",
+        "properties": {
+          "msg": {
+            "type": "string",
+            "x-stoplight": {
+              "id": "hj8ij8k8u90da"
+            }
+          },
+          "errorCode": {
+            "type": "string",
+            "x-stoplight": {
+              "id": "wf376c67qe5h6"
+            }
+          }
+        },
+        "required": [
+          "msg",
+          "errorCode"
+        ]
+      },
+      "FetchExistingDelegatesListResponse": {
+        "title": "FetchDelegatesListResponse",
+        "x-stoplight": {
+          "id": "7w1uzfkcq72d4"
+        },
+        "type": "object",
+        "properties": {
+          "delegateList": {
+            "type": "array",
+            "x-stoplight": {
+              "id": "ouxs7d2smf6s2"
+            },
+            "items": {
+              "$ref": "#/components/schemas/Delegate",
+              "x-stoplight": {
+                "id": "3ku8hhd102u78"
+              }
+            }
+          },
+          "msg": {
+            "type": "string",
+            "x-stoplight": {
+              "id": "9gb768at9zs11"
+            }
+          },
+          "errorCode": {
+            "type": "string",
+            "x-stoplight": {
+              "id": "52vigy54bcfwh"
+            }
+          },
+          "totalCount": {
+            "type": "string",
+            "x-stoplight": {
+              "id": "lx6kmumhnzpk3"
+            }
+          },
+          "delegateCount": {
+            "type": "integer",
+            "x-stoplight": {
+              "id": "ol8319l5zv6pm"
+            }
+          }
+        },
+        "required": [
+          "delegateList",
+          "msg",
+          "errorCode"
+        ]
+      },
+      "EditDelegateRequest": {
+        "title": "EditDelegateRequest",
+        "x-stoplight": {
+          "id": "1cejr83h2s5a4"
+        },
+        "type": "object",
+        "properties": {
+          "key": {
+            "type": "string",
+            "x-stoplight": {
+              "id": "rauhsewht9qkq"
+            },
+            "description": "this is the delegatekey"
+          },
+          "userName": {
+            "type": "string",
+            "x-stoplight": {
+              "id": "6figb1cav109o"
+            },
+            "description": "this is user who is updating the delegation"
+          },
+          "name": {
+            "type": "string",
+            "x-stoplight": {
+              "id": "15ym3yee41nl0"
+            },
+            "description": "name of delegate"
+          },
+          "delegateusername": {
+            "type": "string",
+            "x-stoplight": {
+              "id": "kba006ufar4dy"
+            },
+            "description": "this is the user who should be assigned as the delegate of the parent use"
+          },
+          "delegatestartdate": {
+            "type": "string",
+            "x-stoplight": {
+              "id": "bn1i05twfri5v"
+            },
+            "description": "in format MMDDYYYY"
+          },
+          "delegateenddate": {
+            "type": "string",
+            "x-stoplight": {
+              "id": "7r3gxhcrq3477"
+            },
+            "description": "in format MMDDYYYY"
+          },
+          "parentusername": {
+            "type": "string",
+            "x-stoplight": {
+              "id": "vv77oo1e2dj1k"
+            },
+            "description": "this is the parent username, if not passed it will consider userName as parentusername"
+          },
+          "description": {
+            "type": "string",
+            "x-stoplight": {
+              "id": "s2yc7c2jlywbg"
+            }
+          }
+        },
+        "required": [
+          "key",
+          "userName",
+          "name",
+          "delegateusername",
+          "delegatestartdate",
+          "delegateenddate"
+        ]
+      }
+    }
+  }
+}
