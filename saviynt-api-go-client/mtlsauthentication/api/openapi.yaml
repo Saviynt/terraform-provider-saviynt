@@ -1,0 +1,191 @@
+# Copyright (c) Saviynt Inc.
+# SPDX-License-Identifier: MPL-2.0
+
+
+openapi: 3.1.0
+info:
+  contact:
+    email: https://github.com/saviynt
+    name: Saviynt Developers Team
+  description: mTLS Authentication
+  title: Saviynt mTLS Authentication API
+  version: "1.0"
+servers:
+- url: http://localhost:3000
+tags:
+- name: mTLS Authentication
+paths:
+  /ECM/api/v5/uploadKeyStore:
+    post:
+      description: "Introduced in Release v24.7, this API lets administrators upload\
+        \ Mutual Transport Layer Security (mTLS) certificates in the EIC keystore."
+      operationId: uploadKeyStore
+      requestBody:
+        content:
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/UploadKeyStoreRequest'
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UploadKeyStoreResponse'
+          description: OK
+      summary: Upload KeyStore
+      tags:
+      - mTLS Authentication
+  /ECM/api/v5/getKeyStoreCertificateDetails:
+    get:
+      description: |-
+        Introduced in Release v24.7, this API enables administrators to view the details of mTLS certificates that are uploaded in the EIC keystore.
+
+        A thumbprint is an unique identification of the certificate. The thumbprints attribute of this API provides a unique identification of the certificate. It displays expiry and thumbprint details in the following order:
+
+        * Leaf certificate
+        * Intermediate certificate
+        * Root certificate
+      operationId: getKeyStoreCertificateDetails
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GetKeyStoreCertificateDetailsResponse'
+          description: OK
+      summary: Get KeyStore Details
+      tags:
+      - mTLS Authentication
+  /ECM/api/v5/deleteKeyStoreAlias/{alias}:
+    delete:
+      description: |-
+        Introduced in Release v24.7, this API lets administrators delete an mTLS certificate that is uploaded in the EIC keystore.
+
+        Note: Ensure that you have specified the name of the alias in the request URL.
+      operationId: deleteKeyStore
+      parameters:
+      - explode: false
+        in: path
+        name: alias
+        required: true
+        schema:
+          type: string
+        style: simple
+      responses:
+        "200":
+          description: OK
+      summary: Delete KeyStore
+      tags:
+      - mTLS Authentication
+    parameters:
+    - explode: false
+      in: path
+      name: alias
+      required: true
+      schema:
+        type: string
+      style: simple
+components:
+  schemas:
+    CertificateThumbprint:
+      example:
+        thumbprint: thumbprint
+        expiry: expiry
+      properties:
+        expiry:
+          type: string
+        thumbprint:
+          type: string
+          x-stoplight:
+            id: k5fx1vt33fqfg
+      title: CertificateThumbprint
+    CertificateDetail:
+      example:
+        certificateIssuerName: certificateIssuerName
+        certificateStatus: certificateStatus
+        alias: alias
+        certificateSubjectName: certificateSubjectName
+        thumbprints:
+        - thumbprint: thumbprint
+          expiry: expiry
+        - thumbprint: thumbprint
+          expiry: expiry
+        certificateExpiry: certificateExpiry
+      properties:
+        alias:
+          type: string
+        certificateExpiry:
+          type: string
+        certificateIssuerName:
+          type: string
+        certificateStatus:
+          type: string
+        certificateSubjectName:
+          type: string
+        thumbprints:
+          items:
+            $ref: '#/components/schemas/CertificateThumbprint'
+          type: array
+      title: CertificateDetail
+      x-stoplight:
+        id: zjhn6dmnyyxla
+    UploadKeyStoreRequest:
+      description: ""
+      properties:
+        keyStoreFile:
+          format: binary
+          type: string
+        keyStorePassword:
+          type: string
+      title: UploadKeyStoreRequest
+    UploadKeyStoreResponse:
+      example:
+        errorCode: 0
+        message: message
+      properties:
+        errorCode:
+          type: integer
+        message:
+          type: string
+      title: UploadKeyStoreResponse
+      x-stoplight:
+        id: uoufvdzkvbo36
+    GetKeyStoreCertificateDetailsResponse:
+      example:
+        certificateDetails:
+        - certificateIssuerName: certificateIssuerName
+          certificateStatus: certificateStatus
+          alias: alias
+          certificateSubjectName: certificateSubjectName
+          thumbprints:
+          - thumbprint: thumbprint
+            expiry: expiry
+          - thumbprint: thumbprint
+            expiry: expiry
+          certificateExpiry: certificateExpiry
+        - certificateIssuerName: certificateIssuerName
+          certificateStatus: certificateStatus
+          alias: alias
+          certificateSubjectName: certificateSubjectName
+          thumbprints:
+          - thumbprint: thumbprint
+            expiry: expiry
+          - thumbprint: thumbprint
+            expiry: expiry
+          certificateExpiry: certificateExpiry
+        errorCode: 0
+        message: message
+      properties:
+        errorCode:
+          type: integer
+        message:
+          type: string
+        certificateDetails:
+          items:
+            $ref: '#/components/schemas/CertificateDetail'
+          type: array
+      title: GetKeyStoreCertificateDetailsResponse
+      x-stoplight:
+        id: dbw0szixh4s5f
+x-stoplight:
+  id: 329p7bi2qzwzy

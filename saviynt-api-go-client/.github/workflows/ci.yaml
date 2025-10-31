@@ -1,0 +1,36 @@
+# Copyright (c) Saviynt Inc.
+# SPDX-License-Identifier: MPL-2.0
+
+
+name: CI
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+  workflow_dispatch:
+jobs:
+  test:
+    strategy:
+      matrix:
+        go-version: [1.24.x, 1.22.x]
+        platform: [ubuntu-latest, macos-latest, windows-latest]
+    runs-on: ${{ matrix.platform }}
+    steps:
+    - name: Install Go
+      if: success()
+      uses: actions/setup-go@v5
+      with:
+        go-version: ${{ matrix.go-version }}
+    - name: Checkout code
+      uses: actions/checkout@v4
+    - name: Run tests
+      run: go test -v -covermode=count -coverprofile='coverage.txt' ./...
+    - name: Upload coverage reports to Codecov
+      if: matrix.platform != 'windows-latest'
+      uses: codecov/codecov-action@v5
+      with:
+        token: ${{ secrets.CODECOV_TOKEN }}
+        slug: grokify/saviynt-api-go-client

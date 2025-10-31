@@ -1,0 +1,24 @@
+{
+  "statusAndThresholdConfig": {
+    "accountThresholdValue": 50,
+    "correlateInactiveAccounts": true,
+    "inactivateAccountsNotInFile": false,
+    "statusColumn": "customproperty30",
+    "activeStatus": [
+      "ENABLE",
+      "PROVISIONED"
+    ],
+    "deleteLinks": true,
+    "inactivateEntsNotInFeed": true,
+    "entThresholdValue": {
+      "entType": {
+        "Group": {
+          "ent": 100
+        },
+        "Role": {
+          "ent": 100
+        }
+      }
+    }
+  }
+}
