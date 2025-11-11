@@ -1,0 +1,27 @@
+{
+  "accountIdPath": "call1.message.user.id",
+  "dateFormat": "yyyy-MM-dd'T'HH:mm:ssXXX",
+  "responseColsToPropsMap": {
+    "displayname": "call1.message.user.name~#~char"
+  },
+  "call": [
+    {
+      "name": "call1",
+      "connection": "acctAuth",
+      "url": "@HOSTNAME@/api/v2/users",
+      "httpMethod": "POST",
+      "httpParams": "{\"user\": {\"name\": \"${user.firstname} ${user.lastname}\", \"email\": \"${user.email}\", \"role\":\"agent\"}}",
+      "httpHeaders": {
+        "Authorization": "${access_token}",
+        "Accept": "application/json"
+      },
+      "httpContentType": "application/json",
+      "successResponses": {
+        "statusCode": [
+          200,
+          201
+        ]
+      }
+    }
+  ]
+}

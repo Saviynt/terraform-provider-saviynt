@@ -1,0 +1,30 @@
+{
+  "accountIdPath": "call1.message.id",
+  "dateFormat": "yyyy-MM-dd'T'HH:mm:ssXXX",
+  "responseColsToPropsMap": {
+    "comments": "call1.message.displayName~#~char",
+    "displayName": "call1.message.displayName~#~char",
+    "name": "call1.message.userPrincipalName~#~char"
+  },
+  "call": [
+    {
+      "name": "call1",
+      "connection": "userAuth",
+      "url": "https://graph.microsoft.com/v1.0/users",
+      "httpMethod": "POST",
+      "httpParams": "{\"accountEnabled\":\"true\",\"displayName\":\"${user.displayname}\",\"passwordProfile\":\r\n{\"password\":\"Passw0rd\",\"forceChangePasswordNextSignIn\":\"true\"},\"UsageLocation\":\"US\",\"userPrincipalName\":\"${user.email}\",\"mailNickname\":\"${user.firstname}\",\"givenName\":\"${user.firstname}\",\"surname\":\"${user.lastname}\"}",
+      "httpHeaders": {
+        "Authorization": "${access_token}"
+      },
+      "httpContentType": "application/json",
+      "successResponses": {
+        "statusCode": [
+          200,
+          201,
+          204,
+          205
+        ]
+      }
+    }
+  ]
+}

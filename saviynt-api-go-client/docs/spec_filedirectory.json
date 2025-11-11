@@ -1,0 +1,131 @@
+{
+  "openapi": "3.1.0",
+  "x-stoplight": {
+    "id": "zo5hu0xpg2e6f"
+  },
+  "info": {
+    "title": "Saviynt File Directory API",
+    "version": "1.0",
+    "description": "File Directory APIs",
+    "contact": {
+      "name": "Saviynt Developers Team",
+      "email": "https://github.com/saviynt"
+    }
+  },
+  "servers": [
+    {
+      "url": "http://localhost:3000"
+    }
+  ],
+  "tags": [
+    {
+      "name": "File Directory"
+    }
+  ],
+  "paths": {
+    "/ECM/api/v5/uploadSchemaFile": {
+      "post": {
+        "summary": "Upload File",
+        "operationId": "uploadNewFile",
+        "tags": [
+          "File Directory"
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UploadSchemaFileResponse"
+                }
+              }
+            }
+          }
+        },
+        "description": "This API call can be used to upload the file in a specific location based on the property `job.ecm.imp.file.path` or  `job.ecm.savfile.path` in `InternalConfig.groovy`.",
+        "requestBody": {
+          "content": {
+            "application/x-www-form-urlencoded": {
+              "schema": {
+                "$ref": "#/components/schemas/UploadSchemaFileRequest"
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "UploadSchemaFileRequest": {
+        "title": "UploadSchemaFileRequest",
+        "x-stoplight": {
+          "id": "e4sccz84nbpq4"
+        },
+        "type": "object",
+        "properties": {
+          "file": {
+            "type": "string",
+            "format": "binary",
+            "x-stoplight": {
+              "id": "mjy4e4r2rzhrm"
+            },
+            "description": "the file to upload"
+          },
+          "pathLocation": {
+            "type": "string",
+            "x-stoplight": {
+              "id": "pqex6epn1nyb3"
+            },
+            "description": "Should be set to `Datafiles` to upload to `job.ecm.imp.file.path` in `InternalConfig.groovy`, or `SAV` to upload to `job.ecm.savfile.path` in `InternalConfig.groovy`. "
+          }
+        },
+        "required": [
+          "file",
+          "pathLocation"
+        ],
+        "examples": [
+          {
+            "file": "string",
+            "pathLocation": "string"
+          }
+        ]
+      },
+      "UploadSchemaFileResponse": {
+        "title": "UploadSchemaFileResponse",
+        "x-stoplight": {
+          "id": "jvrbda21bzmt8"
+        },
+        "type": "object",
+        "properties": {
+          "msg": {
+            "type": "string",
+            "x-stoplight": {
+              "id": "831ozp44vzt0c"
+            }
+          },
+          "errorCode": {
+            "type": "string",
+            "x-stoplight": {
+              "id": "05nyb4pfsu45i"
+            }
+          }
+        },
+        "required": [
+          "msg",
+          "errorCode"
+        ],
+        "examples": [
+          {
+            "msg": "file Save Successfully",
+            "errorCode": "0"
+          },
+          {
+            "errorCode": "1",
+            "msg": "Unexpected error occurred"
+          }
+        ]
+      }
+    }
+  }
+}
