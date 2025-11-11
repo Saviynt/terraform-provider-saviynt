@@ -1,0 +1,627 @@
+# Copyright (c) Saviynt Inc.
+# SPDX-License-Identifier: MPL-2.0
+
+openapi: 3.1.0
+info:
+  description: |
+    API for managing privileges in Saviynt/SSM.
+    - **Create Privilege**: Creates a new privilege.
+    - **Update Privilege**: Updates an existing privilege.
+    - **Get Privilege List**: Returns a list of privileges based on search criteria.
+    - **Delete Privilege**: Delete a privilege
+  title: Privilege Management API
+  version: 1.0.0
+servers:
+- url: http://localhost:3000
+paths:
+  /ECM/api/v5/createPrivilege:
+    post:
+      operationId: createPrivilege
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateUpdatePrivilegeRequest"
+        description: Request payload for creating a privilege
+        required: true
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CreateUpdatePrivilegeResponse"
+          description: Create Privilege success
+          headers:
+            Access-Control-Allow-Credentials:
+              explode: false
+              schema:
+                example: "true"
+                type: string
+              style: simple
+            Access-Control-Allow-Origin:
+              explode: false
+              schema:
+                example: http://localhost
+                type: string
+              style: simple
+            Cache-Control:
+              explode: false
+              schema:
+                example: "no-store, no-cache, must-revalidate"
+                type: string
+              style: simple
+            Date:
+              explode: false
+              schema:
+                example: "Wed, 08 Aug 2018 00:33:37 GMT"
+                type: string
+              style: simple
+      summary: Create a privilege
+      tags:
+      - privilege
+  /ECM/api/v5/updatePrivilege:
+    put:
+      operationId: updatePrivilege
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateUpdatePrivilegeRequest"
+        description: Request payload for updating a privilege
+        required: true
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CreateUpdatePrivilegeResponse"
+          description: Update Privilege success
+          headers:
+            Access-Control-Allow-Credentials:
+              explode: false
+              schema:
+                example: "true"
+                type: string
+              style: simple
+            Access-Control-Allow-Origin:
+              explode: false
+              schema:
+                example: http://localhost
+                type: string
+              style: simple
+            Cache-Control:
+              explode: false
+              schema:
+                example: "no-store, no-cache, must-revalidate"
+                type: string
+              style: simple
+            Date:
+              explode: false
+              schema:
+                example: "Wed, 08 Aug 2018 00:33:37 GMT"
+                type: string
+              style: simple
+      summary: Update a privilege
+      tags:
+      - privilege
+  /ECM/api/v5/getListofPrivileges:
+    post:
+      operationId: getPrivilege
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/GetPrivilegeListRequest"
+        description: Request payload for getting the list of privileges
+        required: true
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/GetPrivilegeListResponse"
+          description: Get Privilege List success
+          headers:
+            Access-Control-Allow-Credentials:
+              explode: false
+              schema:
+                example: "true"
+                type: string
+              style: simple
+            Access-Control-Allow-Origin:
+              explode: false
+              schema:
+                example: http://localhost
+                type: string
+              style: simple
+            Cache-Control:
+              explode: false
+              schema:
+                example: "no-store, no-cache, must-revalidate"
+                type: string
+              style: simple
+            Date:
+              explode: false
+              schema:
+                example: "Wed, 08 Aug 2018 00:33:37 GMT"
+                type: string
+              style: simple
+      summary: Get a list of privileges
+      tags:
+      - privilege
+  /ECM/api/v5/deletePrivilege:
+    delete:
+      operationId: deletePrivilege
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/DeletePrivilegeRequest"
+        description: Request payload for deleting a privilege
+        required: true
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DeletePrivilegeResponse"
+          description: Delete Privilege success
+          headers:
+            Access-Control-Allow-Credentials:
+              explode: false
+              schema:
+                example: "true"
+                type: string
+              style: simple
+            Access-Control-Allow-Origin:
+              explode: false
+              schema:
+                example: http://localhost
+                type: string
+              style: simple
+            Cache-Control:
+              explode: false
+              schema:
+                example: "no-store, no-cache, must-revalidate"
+                type: string
+              style: simple
+            Date:
+              explode: false
+              schema:
+                example: "Wed, 08 Aug 2018 00:33:37 GMT"
+                type: string
+              style: simple
+      summary: Delete a privilege
+      tags:
+      - privilege
+components:
+  schemas:
+    CreateUpdatePrivilegeRequest:
+      example:
+        endpoint: sample_endpoint
+        securitysystem: sample_ss
+        privilege:
+          hideoncreate: true
+          orderindex: orderindex
+          attributegroup: attributegroup
+          childaction: childaction
+          defaultvalue: defaultvalue
+          description: description
+          hideonupd: true
+          attributename: attributename
+          label: label
+          required: true
+          attributeconfig: USER-BASED
+          parentattribute: parentattribute
+          attributetype: BOOLEAN
+          actionstring: actionstring
+          requestable: true
+        entitlementtype: sample_ent_type
+      properties:
+        securitysystem:
+          description: Name of the security system to which the endpoint belongs
+          example: sample_ss
+          type: string
+        endpoint:
+          description: Name of the endpoint to which the entitlement type belongs
+          example: sample_endpoint
+          type: string
+        entitlementtype:
+          description: Name of the entitlement type for the privilege
+          example: sample_ent_type
+          type: string
+        privilege:
+          $ref: "#/components/schemas/CreateUpdatePrivilegeRequest_privilege"
+      required:
+      - endpoint
+      - entitlementtype
+      - privilege
+      - securitysystem
+    GetPrivilegeListRequest:
+      example:
+        endpoint: endpoint
+        offset: offset
+        max: max
+        entitlementtype: entitlementtype
+      properties:
+        endpoint:
+          description: Endpoint name to search privilege
+          type: string
+        entitlementtype:
+          description: Entitlement type
+          type: string
+        max:
+          description: Max number of results to return
+          type: string
+        offset:
+          description: Offset for the returned results
+          type: string
+      required:
+      - endpoint
+    DeletePrivilegeRequest:
+      example:
+        endpoint: endpoint
+        securitysystem: securitysystem
+        privilege: privilege
+        entitlementtype: entitlementtype
+      properties:
+        securitysystem:
+          description: Security system name
+          type: string
+        endpoint:
+          description: Endpoint Name
+          type: string
+        entitlementtype:
+          description: Entitlement type
+          type: string
+        privilege:
+          description: Name of the privilege(attribute name) to be deleted
+          type: string
+      required:
+      - endpoint
+      - entitlementtype
+      - privilege
+      - securitysystem
+    PrivilegeDetailsError:
+      additionalProperties:
+        type: string
+    CreateUpdatePrivilegeResponse:
+      example:
+        msg: Success
+        endpoint: endpoint
+        securitysystem: securitysystem
+        entitlementtypeprivilegekey: 2
+        privilege: CreateUpdatePrivilegeResponse_privilege
+        errorcode: 0
+        entitlementtype: entitlementtype
+      properties:
+        msg:
+          description: A message indicating the outcome of the operation.
+          example: Success
+          type: string
+        errorcode:
+          description: An error code where '0' signifies success and '1' signifies
+            an unsuccessful operation.
+          example: 0
+          type: integer
+        entitlementtypeprivilegekey:
+          description: Privilege key for the entitlement type
+          example: 2
+          type: integer
+        securitysystem:
+          description: Name of the security system
+          type: string
+          nullable: true
+        endpoint:
+          description: Name of endpoint
+          type: string
+          nullable: true
+        entitlementtype:
+          description: Name of entitltment type
+          type: string
+          nullable: true
+        privilege:
+          $ref: "#/components/schemas/CreateUpdatePrivilegeResponse_privilege"
+    GetPrivilegeResponse:
+      type: object
+    GetPrivilegeListResponse:
+      example:
+        msg: msg
+        displayCount: 0
+        errorCode: errorCode
+        PrivilegeDetails:
+        - hideoncreate: true
+          actionString: actionString
+          attributegroup: attributegroup
+          childaction: childaction
+          orderindex: orderindex
+          requestablerequired: true
+          editable: true
+          entitlements_column: entitlements_column
+          defaultvalue: defaultvalue
+          hideonupd: true
+          attribute_type: attribute_type
+          label: label
+          attribute_config: USER-BASED
+          descriptionascsv: descriptionascsv
+          required: true
+          regex: regex
+          updatedate: updatedate
+          entitlement_types:
+            endpointkey: endpointkey
+            entitlementname: entitlementname
+          attribute_values: attribute_values
+          parentattribute: parentattribute
+          attribute: attribute
+          sqlquery: sqlquery
+          updateuser: updateuser
+        - hideoncreate: true
+          actionString: actionString
+          attributegroup: attributegroup
+          childaction: childaction
+          orderindex: orderindex
+          requestablerequired: true
+          editable: true
+          entitlements_column: entitlements_column
+          defaultvalue: defaultvalue
+          hideonupd: true
+          attribute_type: attribute_type
+          label: label
+          attribute_config: USER-BASED
+          descriptionascsv: descriptionascsv
+          required: true
+          regex: regex
+          updatedate: updatedate
+          entitlement_types:
+            endpointkey: endpointkey
+            entitlementname: entitlementname
+          attribute_values: attribute_values
+          parentattribute: parentattribute
+          attribute: attribute
+          sqlquery: sqlquery
+          updateuser: updateuser
+        totalCount: 6
+      properties:
+        msg:
+          description: Response message
+          type: string
+        errorCode:
+          description: Error code
+          type: string
+        displayCount:
+          description: Number of results returned
+          type: integer
+        totalCount:
+          description: Total number of privileges for the given filter
+          type: integer
+        PrivilegeDetails:
+          items:
+            $ref: "#/components/schemas/GetPrivilegeDetail"
+          type: array
+    GetPrivilegeDetail:
+      example:
+        hideoncreate: true
+        actionString: actionString
+        attributegroup: attributegroup
+        childaction: childaction
+        orderindex: orderindex
+        requestablerequired: true
+        editable: true
+        entitlements_column: entitlements_column
+        defaultvalue: defaultvalue
+        hideonupd: true
+        attribute_type: attribute_type
+        label: label
+        attribute_config: USER-BASED
+        descriptionascsv: descriptionascsv
+        required: true
+        regex: regex
+        updatedate: updatedate
+        entitlement_types:
+          endpointkey: endpointkey
+          entitlementname: entitlementname
+        attribute_values: attribute_values
+        parentattribute: parentattribute
+        attribute: attribute
+        sqlquery: sqlquery
+        updateuser: updateuser
+      properties:
+        hideoncreate:
+          type: boolean
+          nullable: true
+        actionString:
+          type: string
+          nullable: true
+        attributegroup:
+          type: string
+          nullable: true
+        childaction:
+          type: string
+          nullable: true
+        orderindex:
+          type: string
+          nullable: true
+        requestablerequired:
+          type: boolean
+          nullable: true
+        editable:
+          type: boolean
+        entitlements_column:
+          type: string
+          nullable: true
+        defaultvalue:
+          type: string
+          nullable: true
+        hideonupd:
+          type: boolean
+          nullable: true
+        attribute_type:
+          type: string
+        label:
+          type: string
+          nullable: true
+        attribute_config:
+          enum:
+          - USER-BASED
+          - ENTITLEMENT-BASED
+          type: string
+        descriptionascsv:
+          type: string
+          nullable: true
+        required:
+          type: boolean
+          nullable: true
+        regex:
+          type: string
+          nullable: true
+        updatedate:
+          type: string
+        entitlement_types:
+          $ref: "#/components/schemas/GetPrivilegeDetail_entitlement_types"
+        attribute_values:
+          type: string
+          nullable: true
+        parentattribute:
+          type: string
+          nullable: true
+        attribute:
+          type: string
+        sqlquery:
+          type: string
+          nullable: true
+        updateuser:
+          type: string
+    DeletePrivilegeResponse:
+      example:
+        msg: msg
+        endpoint: endpoint
+        securitysystem: securitysystem
+        privilege: DeletePrivilegeResponse_privilege
+        errorcode: 0
+        entitlementtype: entitlementtype
+      properties:
+        msg:
+          description: Response message
+          type: string
+        errorcode:
+          description: Error code
+          type: integer
+        securitysystem:
+          description: Security system validation error
+          type: string
+          nullable: true
+        endpoint:
+          description: Endpoint validation error
+          type: string
+          nullable: true
+        entitlementtype:
+          description: Entitlement type validation error
+          type: string
+          nullable: true
+        privilege:
+          $ref: "#/components/schemas/DeletePrivilegeResponse_privilege"
+    CreateUpdatePrivilegeRequest_privilege:
+      description: Privilege object defining the attributes for a privilege
+      example:
+        hideoncreate: true
+        orderindex: orderindex
+        attributegroup: attributegroup
+        childaction: childaction
+        defaultvalue: defaultvalue
+        description: description
+        hideonupd: true
+        attributename: attributename
+        label: label
+        required: true
+        attributeconfig: USER-BASED
+        parentattribute: parentattribute
+        attributetype: BOOLEAN
+        actionstring: actionstring
+        requestable: true
+      properties:
+        attributename:
+          description: Attribute name for the privilege
+          type: string
+        attributetype:
+          description: Type of the attribute/privilege
+          enum:
+          - BOOLEAN
+          - NUMBER
+          - STRING
+          - ENUM
+          - MULTIPLE SELECT FROM LIST
+          - MULTIPLE SELECT FROM SQL QUERY
+          - SINGLE SELECT FROM SQL QUERY
+          - PASSWORD
+          - LARGE TEXT
+          - CHECK BOX
+          - DATE
+          type: string
+        orderindex:
+          description: Order index
+          type: string
+        defaultvalue:
+          description: Default value for the privilege.
+          type: string
+        attributeconfig:
+          description: Configuration type for the attribute
+          enum:
+          - USER-BASED
+          - ENTITLEMENT-BASED
+          type: string
+        label:
+          description: Label for the privilege
+          type: string
+        attributegroup:
+          description: Attribute group
+          type: string
+        parentattribute:
+          description: Parent attribute for the given privilege
+          type: string
+        childaction:
+          description: Child action
+          type: string
+        description:
+          description: Description for the privilege
+          type: string
+        required:
+          description: Is required
+          type: boolean
+        requestable:
+          description: Is requestable
+          type: boolean
+        hideoncreate:
+          description: Hide on create
+          type: boolean
+        hideonupd:
+          description: Hide on update
+          type: boolean
+        actionstring:
+          description: Action string
+          type: string
+    CreateUpdatePrivilegeResponse_privilege:
+      description: "If present, either:\n  • a string (e.g. \"privilege are not provided\"\
+        ), or  \n  • an object of sub‐field errors (e.g. `{ \"attributename\": \"\
+        attributename cannot be null or blank\"\" }`)\n"
+      oneOf:
+      - type: string
+      - $ref: "#/components/schemas/PrivilegeDetailsError"
+      nullable: true
+    GetPrivilegeDetail_entitlement_types:
+      example:
+        endpointkey: endpointkey
+        entitlementname: entitlementname
+      properties:
+        entitlementname:
+          type: string
+        endpointkey:
+          type: string
+    DeletePrivilegeResponse_privilege_oneOf:
+      properties:
+        privilegename:
+          type: string
+    DeletePrivilegeResponse_privilege:
+      oneOf:
+      - type: string
+      - $ref: "#/components/schemas/DeletePrivilegeResponse_privilege_oneOf"
+      nullable: true

@@ -1,0 +1,14 @@
+// Copyright (c) 2025 Saviynt Inc.
+// SPDX-License-Identifier: MPL-2.0
+
+ephemeral "saviynt_file_connector_ephemeral_resource" "example" {
+  file_path = "creds.json"
+}
+
+# Can be used as below:
+resource "saviynt_ad_connection_resource" "example" {
+  connection_name = "Terraform_AD_Connector"
+  url             = format("%s://%s:%d", var.LDAP_PROTOCOL, var.IP_ADDRESS, var.LDAP_PORT)
+  password        = ephemeral.saviynt_file_connector_ephemeral_resource.example.password
+  username        = ephemeral.saviynt_file_connector_ephemeral_resource.example.username
+}

@@ -1,0 +1,206 @@
+{
+  "openapi": "3.1.0",
+  "x-stoplight": {
+    "id": "329p7bi2qzwzy"
+  },
+  "info": {
+    "title": "Saviynt mTLS Authentication API",
+    "version": "1.0",
+    "description": "mTLS Authentication",
+    "contact": {
+      "name": "Saviynt Developers Team",
+      "email": "https://github.com/saviynt"
+    }
+  },
+  "servers": [
+    {
+      "url": "http://localhost:3000"
+    }
+  ],
+  "tags": [
+    {
+      "name": "mTLS Authentication"
+    }
+  ],
+  "paths": {
+    "/ECM/api/v5/uploadKeyStore": {
+      "post": {
+        "summary": "Upload KeyStore",
+        "tags": [
+          "mTLS Authentication"
+        ],
+        "operationId": "uploadKeyStore",
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UploadKeyStoreResponse"
+                }
+              }
+            }
+          }
+        },
+        "requestBody": {
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "$ref": "#/components/schemas/UploadKeyStoreRequest"
+              }
+            }
+          }
+        },
+        "description": "Introduced in Release v24.7, this API lets administrators upload Mutual Transport Layer Security (mTLS) certificates in the EIC keystore."
+      },
+      "parameters": []
+    },
+    "/ECM/api/v5/getKeyStoreCertificateDetails": {
+      "get": {
+        "summary": "Get KeyStore Details",
+        "tags": [
+          "mTLS Authentication"
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/GetKeyStoreCertificateDetailsResponse"
+                }
+              }
+            }
+          }
+        },
+        "operationId": "getKeyStoreCertificateDetails",
+        "description": "Introduced in Release v24.7, this API enables administrators to view the details of mTLS certificates that are uploaded in the EIC keystore.\n\nA thumbprint is an unique identification of the certificate. The thumbprints attribute of this API provides a unique identification of the certificate. It displays expiry and thumbprint details in the following order:\n\n* Leaf certificate\n* Intermediate certificate\n* Root certificate"
+      },
+      "parameters": []
+    },
+    "/ECM/api/v5/deleteKeyStoreAlias/{alias}": {
+      "parameters": [
+        {
+          "schema": {
+            "type": "string"
+          },
+          "name": "alias",
+          "in": "path",
+          "required": true
+        }
+      ],
+      "delete": {
+        "summary": "Delete KeyStore",
+        "tags": [
+          "mTLS Authentication"
+        ],
+        "operationId": "deleteKeyStore",
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        },
+        "description": "Introduced in Release v24.7, this API lets administrators delete an mTLS certificate that is uploaded in the EIC keystore.\n\nNote: Ensure that you have specified the name of the alias in the request URL."
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "CertificateThumbprint": {
+        "title": "CertificateThumbprint",
+        "type": "object",
+        "properties": {
+          "expiry": {
+            "type": "string"
+          },
+          "thumbprint": {
+            "type": "string",
+            "x-stoplight": {
+              "id": "k5fx1vt33fqfg"
+            }
+          }
+        }
+      },
+      "CertificateDetail": {
+        "title": "CertificateDetail",
+        "x-stoplight": {
+          "id": "zjhn6dmnyyxla"
+        },
+        "type": "object",
+        "properties": {
+          "alias": {
+            "type": "string"
+          },
+          "certificateExpiry": {
+            "type": "string"
+          },
+          "certificateIssuerName": {
+            "type": "string"
+          },
+          "certificateStatus": {
+            "type": "string"
+          },
+          "certificateSubjectName": {
+            "type": "string"
+          },
+          "thumbprints": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/CertificateThumbprint"
+            }
+          }
+        }
+      },
+      "UploadKeyStoreRequest": {
+        "title": "UploadKeyStoreRequest",
+        "type": "object",
+        "properties": {
+          "keyStoreFile": {
+            "type": "string",
+            "format": "binary"
+          },
+          "keyStorePassword": {
+            "type": "string"
+          }
+        },
+        "description": ""
+      },
+      "UploadKeyStoreResponse": {
+        "title": "UploadKeyStoreResponse",
+        "x-stoplight": {
+          "id": "uoufvdzkvbo36"
+        },
+        "type": "object",
+        "properties": {
+          "errorCode": {
+            "type": "integer"
+          },
+          "message": {
+            "type": "string"
+          }
+        }
+      },
+      "GetKeyStoreCertificateDetailsResponse": {
+        "title": "GetKeyStoreCertificateDetailsResponse",
+        "x-stoplight": {
+          "id": "dbw0szixh4s5f"
+        },
+        "type": "object",
+        "properties": {
+          "errorCode": {
+            "type": "integer"
+          },
+          "message": {
+            "type": "string"
+          },
+          "certificateDetails": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/CertificateDetail"
+            }
+          }
+        }
+      }
+    }
+  }
+}
