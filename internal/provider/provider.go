@@ -175,6 +175,7 @@ func (p *SaviyntProvider) DataSources(ctx context.Context) []func() datasource.D
 		NewEntitlementDataSource,
 		NewPrivilegeDataSource,
 		NewWorkdaySOAPConnectionsDataSource,
+		NewSFTPConnectionsDataSource,
 	}
 }
 
@@ -211,6 +212,12 @@ func (p *SaviyntProvider) Resources(ctx context.Context) []func() resource.Resou
 		NewSchemaAccountJobResource,
 		NewSchemaRoleJobResource,
 		NewSchemaUserJobResource,
+		NewImportTransportPackageResource,
+		NewExportTransportPackageResource,
+		NewFileUploadResource,
+		NewSFTPConnectionResource,
+		NewJobControlResource,
+		NewFileTransferJobResource,
 	}
 }
 func (p *SaviyntProvider) EphemeralResources(ctx context.Context) []func() ephemeral.EphemeralResource {

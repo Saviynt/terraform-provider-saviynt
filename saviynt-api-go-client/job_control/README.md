@@ -115,6 +115,8 @@ Class | Method | HTTP request | Description
  - [EcmSapUserJob](docs/EcmSapUserJob.md)
  - [FetchJobMetadataRequest](docs/FetchJobMetadataRequest.md)
  - [FetchJobMetadataResponse](docs/FetchJobMetadataResponse.md)
+ - [FileTransferJob](docs/FileTransferJob.md)
+ - [FileTransferJobAllOfValueMap](docs/FileTransferJobAllOfValueMap.md)
  - [JobTriggerItem](docs/JobTriggerItem.md)
  - [JobTriggerRequest](docs/JobTriggerRequest.md)
  - [PauseResumeJobRequest](docs/PauseResumeJobRequest.md)

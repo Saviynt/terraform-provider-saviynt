@@ -29,6 +29,7 @@ func NewEnvCredentialsResource() ephemeral.EphemeralResource {
 type EnvCredentialsModel struct {
 	Svnt_Auth_Token               types.String `tfsdk:"svnt_auth_token"`
 	Svnt_Password                 types.String `tfsdk:"svnt_password"`
+	Svnt_AuthCredentialValue      types.String `tfsdk:"svnt_auth_credential_value"`
 	Svnt_Change_Pass_Json         types.String `tfsdk:"svnt_change_pass_json"`
 	Svnt_Windows_Connector_Json   types.String `tfsdk:"svnt_windows_connector_json"`
 	Svnt_Connection_Json          types.String `tfsdk:"svnt_connection_json"`
@@ -63,6 +64,11 @@ func (r *EnvCredentialsResource) Schema(ctx context.Context, _ ephemeral.SchemaR
 				Computed:            true,
 				Sensitive:           true,
 				MarkdownDescription: "Password read from the file.",
+			},
+			"svnt_auth_credential_value": schema.StringAttribute{
+				Computed:            true,
+				Sensitive:           true,
+				MarkdownDescription: "Authentication credential value read from environment variable.",
 			},
 			"svnt_change_pass_json": schema.StringAttribute{
 				Computed:            true,
@@ -141,6 +147,7 @@ func (r *EnvCredentialsResource) Open(ctx context.Context, req ephemeral.OpenReq
 	}
 	data.Svnt_Auth_Token = types.StringValue(os.Getenv("svnt_auth_token"))
 	data.Svnt_Password = types.StringValue(os.Getenv("svnt_password"))
+	data.Svnt_AuthCredentialValue = types.StringValue(os.Getenv("svnt_auth_credential_value"))
 	data.Svnt_Change_Pass_Json = types.StringValue(os.Getenv("svnt_change_pass_json"))
 	data.Svnt_Windows_Connector_Json = types.StringValue(os.Getenv("svnt_windows_connector_json"))
 	data.Svnt_Connection_Json = types.StringValue(os.Getenv("svnt_connection_json"))
