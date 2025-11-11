@@ -30,6 +30,7 @@ resource "saviynt_ad_connection_resource" "example" {
 ### Read-Only
 
 - `svnt_access_token` (String, Sensitive) access_token read from the file.
+- `svnt_auth_credential_value` (String, Sensitive) Authentication credential value read from environment variable.
 - `svnt_auth_token` (String, Sensitive) Authentication token read from the environment.
 - `svnt_azure_mgmt_access_token` (String, Sensitive) azure_mgmt_access_token read from the file.
 - `svnt_change_pass_json` (String, Sensitive) change_pass_json read from the environment. Can be used only with DB connection
