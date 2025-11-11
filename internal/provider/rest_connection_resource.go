@@ -425,9 +425,9 @@ func (r *RestConnectionResource) BuildRESTConnector(plan *RestConnectorResourceM
 			Connectiontype: "REST",
 			ConnectionName: plan.ConnectionName.ValueString(),
 			//optional fields
-			Description:     util.StringPointerOrEmpty(plan.Description),
-			Defaultsavroles: util.StringPointerOrEmpty(plan.DefaultSavRoles),
-			EmailTemplate:   util.StringPointerOrEmpty(plan.EmailTemplate),
+			ConnectionDescription: util.StringPointerOrEmpty(plan.Description),
+			Defaultsavroles:       util.StringPointerOrEmpty(plan.DefaultSavRoles),
+			EmailTemplate:         util.StringPointerOrEmpty(plan.EmailTemplate),
 		},
 		//optional fields
 		ConnectionJSON:          util.StringPointerOrEmpty(types.StringValue(connectionJson)),

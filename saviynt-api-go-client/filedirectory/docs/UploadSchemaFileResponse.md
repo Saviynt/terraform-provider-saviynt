@@ -4,14 +4,14 @@
 
 Name | Type | Description | Notes
 ------------ | ------------- | ------------- | -------------
-**Msg** | **string** |  | 
-**ErrorCode** | **string** |  | 
+**Msg** | Pointer to **string** |  | [optional] 
+**ErrorCode** | Pointer to **string** |  | [optional] 
 
 ## Methods
 
 ### NewUploadSchemaFileResponse
 
-`func NewUploadSchemaFileResponse(msg string, errorCode string, ) *UploadSchemaFileResponse`
+`func NewUploadSchemaFileResponse() *UploadSchemaFileResponse`
 
 NewUploadSchemaFileResponse instantiates a new UploadSchemaFileResponse object
 This constructor will assign default values to properties that have it defined,
@@ -45,6 +45,11 @@ and a boolean to check if the value has been set.
 
 SetMsg sets Msg field to given value.
 
+### HasMsg
+
+`func (o *UploadSchemaFileResponse) HasMsg() bool`
+
+HasMsg returns a boolean if a field has been set.
 
 ### GetErrorCode
 
@@ -65,6 +70,11 @@ and a boolean to check if the value has been set.
 
 SetErrorCode sets ErrorCode field to given value.
 
+### HasErrorCode
+
+`func (o *UploadSchemaFileResponse) HasErrorCode() bool`
+
+HasErrorCode returns a boolean if a field has been set.
 
 
 [[Back to Model list]](../README.md#documentation-for-models) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to README]](../README.md)
