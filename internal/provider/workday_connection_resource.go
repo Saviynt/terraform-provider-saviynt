@@ -521,9 +521,9 @@ func (r *WorkdayConnectionResource) BuildWorkdayConnector(plan *WorkdayConnector
 			Connectiontype: "Workday",
 			ConnectionName: plan.ConnectionName.ValueString(),
 			//optional fields
-			Description:     util.StringPointerOrEmpty(plan.Description),
-			Defaultsavroles: util.StringPointerOrEmpty(plan.DefaultSavRoles),
-			EmailTemplate:   util.StringPointerOrEmpty(plan.EmailTemplate),
+			ConnectionDescription: util.StringPointerOrEmpty(plan.Description),
+			Defaultsavroles:       util.StringPointerOrEmpty(plan.DefaultSavRoles),
+			EmailTemplate:         util.StringPointerOrEmpty(plan.EmailTemplate),
 		},
 		//required fields
 		USE_OAUTH: plan.UseOAuth.ValueString(),
