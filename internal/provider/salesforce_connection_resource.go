@@ -360,11 +360,11 @@ func (r *SalesforceConnectionResource) BuildSalesforceConnector(plan *Salesforce
 
 	salesforceConn := openapi.SalesforceConnector{
 		BaseConnector: openapi.BaseConnector{
-			Connectiontype:  "SalesForce",
-			ConnectionName:  plan.ConnectionName.ValueString(),
-			Description:     util.StringPointerOrEmpty(plan.Description),
-			Defaultsavroles: util.StringPointerOrEmpty(plan.DefaultSavRoles),
-			EmailTemplate:   util.StringPointerOrEmpty(plan.EmailTemplate),
+			Connectiontype:        "SalesForce",
+			ConnectionName:        plan.ConnectionName.ValueString(),
+			ConnectionDescription: util.StringPointerOrEmpty(plan.Description),
+			Defaultsavroles:       util.StringPointerOrEmpty(plan.DefaultSavRoles),
+			EmailTemplate:         util.StringPointerOrEmpty(plan.EmailTemplate),
 		},
 		CLIENT_ID:                util.StringPointerOrEmpty(plan.ClientId),
 		CLIENT_SECRET:            util.StringPointerOrEmpty(types.StringValue(clientSecret)),
