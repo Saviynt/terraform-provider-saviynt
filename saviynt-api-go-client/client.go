@@ -31,7 +31,7 @@ import (
 	"github.com/saviynt/saviynt-api-go-client/savroles"
 	"github.com/saviynt/saviynt-api-go-client/securitysystems"
 	"github.com/saviynt/saviynt-api-go-client/tasks"
-	"github.com/saviynt/saviynt-api-go-client/transport"
+	"github.com/saviynt/saviynt-api-go-client/transports"
 	"github.com/saviynt/saviynt-api-go-client/users"
 	"github.com/saviynt/saviynt-api-go-client/utility"
 	"golang.org/x/oauth2"
@@ -81,8 +81,8 @@ type Client struct {
 	securitySystemsClient         *securitysystems.APIClient
 	Tasks                         *tasks.TasksAPIService
 	tasksClient                   *tasks.APIClient
-	Transport                     *transport.TransportAPIService
-	transportClient               *transport.APIClient
+	Transports                    *transports.TransportsAPIService
+	transportsClient              *transports.APIClient
 	Users                         *users.UsersAPIService
 	usersClient                   *users.APIClient
 }
@@ -126,8 +126,8 @@ func newClientHTTPClient(serverURL string, username *string, httpClient *http.Cl
 	c.SecuritySystems = c.securitySystemsClient.SecuritySystemsAPI
 	c.tasksClient = newClientTasks(c.APIBaseURL(), c.httpClient)
 	c.Tasks = c.tasksClient.TasksAPI
-	c.transportClient = newClientTransport(c.APIBaseURL(), c.httpClient)
-	c.Transport = c.transportClient.TransportAPI
+	c.transportsClient = newClientTransports(c.APIBaseURL(), c.httpClient)
+	c.Transports = c.transportsClient.TransportsAPI
 	c.usersClient = newClientUsers(c.APIBaseURL(), c.httpClient)
 	c.Users = c.usersClient.UsersAPI
 	return c
@@ -290,11 +290,11 @@ func newClientTasks(apiBaseURL string, httpClient *http.Client) *tasks.APIClient
 	return tasks.NewAPIClient(cfg)
 }
 
-func newClientTransport(apiBaseURL string, httpClient *http.Client) *transport.APIClient {
-	cfg := transport.NewConfiguration()
+func newClientTransports(apiBaseURL string, httpClient *http.Client) *transports.APIClient {
+	cfg := transports.NewConfiguration()
 	cfg.HTTPClient = httpClient
-	cfg.Servers = transport.ServerConfigurations{{URL: apiBaseURL}}
-	return transport.NewAPIClient(cfg)
+	cfg.Servers = transports.ServerConfigurations{{URL: apiBaseURL}}
+	return transports.NewAPIClient(cfg)
 }
 
 func newClientUsers(apiBaseURL string, httpClient *http.Client) *users.APIClient {

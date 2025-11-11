@@ -10,8 +10,9 @@ import (
 
 // BaseConnector holds all fields common to every connector resource.
 type BaseConnectorResourceModel struct {
-	ConnectionKey      types.Int64  `tfsdk:"connection_key"`
-	ConnectionName     types.String `tfsdk:"connection_name"`
+	ConnectionKey  types.Int64  `tfsdk:"connection_key"`
+	ConnectionName types.String `tfsdk:"connection_name"`
+	// Description maps to connectionDescription in the API
 	Description        types.String `tfsdk:"description"`
 	DefaultSavRoles    types.String `tfsdk:"defaultsavroles"`
 	EmailTemplate      types.String `tfsdk:"email_template"`

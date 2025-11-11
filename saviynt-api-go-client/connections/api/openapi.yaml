@@ -125,7 +125,7 @@ components:
           description: "Connection type (e.g., 'AD' for Active Directory)."
           example: AD
           type: string
-        description:
+        connectionDescription:
           description: Description for the connection.
           example: ORG_AD
           type: string
@@ -2070,6 +2070,43 @@ components:
           USERNAME:
             description: Username for SOAP authentication
             type: string
+    SFTPConnector:
+      allOf:
+      - $ref: "#/components/schemas/BaseConnector"
+      - properties:
+          HOST_NAME:
+            description: SFTP server hostname or IP address
+            type: string
+          PORT_NUMBER:
+            description: SFTP server port number
+            type: string
+          USERNAME:
+            description: Username for SFTP authentication
+            type: string
+          AUTH_CREDENTIAL_TYPE:
+            description: "Type of authentication (password, key, etc.)"
+            type: string
+          AUTH_CREDENTIAL_VALUE:
+            description: Authentication credential (password or private key path)
+            type: string
+          PASSPHRASE:
+            description: Passphrase for encrypted private key
+            type: string
+          FILES_TO_GET:
+            description: Files to download from SFTP server
+            type: string
+          FILES_TO_PUT:
+            description: Files to upload to SFTP server
+            type: string
+          PAM_CONFIG:
+            description: PAM configuration for SFTP connection
+            type: string
+        required:
+        - AUTH_CREDENTIAL_TYPE
+        - AUTH_CREDENTIAL_VALUE
+        - HOST_NAME
+        - PORT_NUMBER
+        - USERNAME
     CreateOrUpdateResponse:
       example:
         msg: Connection Successful
@@ -2141,6 +2178,7 @@ components:
           GithubREST: "#/components/schemas/GithubRESTResponse"
           Okta: "#/components/schemas/OktaConnectionResponse"
           WorkdaySOAP: "#/components/schemas/WorkdaySOAPConnectionResponse"
+          SFTP: "#/components/schemas/SFTPConnectionResponse"
         propertyName: connectiontype
       oneOf:
       - $ref: "#/components/schemas/ADConnectionResponse"
@@ -2155,6 +2193,7 @@ components:
       - $ref: "#/components/schemas/GithubRESTConnectionResponse"
       - $ref: "#/components/schemas/OktaConnectionResponse"
       - $ref: "#/components/schemas/WorkdaySOAPConnectionResponse"
+      - $ref: "#/components/schemas/SFTPConnectionResponse"
     getConnectionDetails:
       properties:
         msg:
@@ -2411,6 +2450,12 @@ components:
       - properties:
           connectionattributes:
             $ref: "#/components/schemas/WorkdaySOAPConnectionAttributes"
+    SFTPConnectionResponse:
+      allOf:
+      - $ref: "#/components/schemas/getConnectionDetails"
+      - properties:
+          connectionattributes:
+            $ref: "#/components/schemas/SFTPConnectionAttributes"
     ConnectionTimeoutConfig:
       example:
         retryWait: 0
@@ -4208,6 +4253,42 @@ components:
           type: boolean
         isTimeoutSupported:
           type: boolean
+    SFTPConnectionAttributes:
+      properties:
+        HOST_NAME:
+          example: 107.20.19.78
+          type: string
+        PORT_NUMBER:
+          example: "22"
+          type: string
+        USERNAME:
+          example: scrumintgnsftpuser
+          type: string
+        AUTH_CREDENTIAL_TYPE:
+          example: PASSWORD
+          type: string
+        AUTH_CREDENTIAL_VALUE:
+          example: c6nOXxoO6ETfU8enegQXq6QZieFk+JW99isPx2wplsw=
+          type: string
+        PASSPHRASE:
+          type: string
+        FILES_TO_GET:
+          type: string
+        FILES_TO_PUT:
+          type: string
+        PAM_CONFIG:
+          type: string
+        connectionType:
+          example: MS_BASED_CONNECTOR
+          type: string
+        isTimeoutSupported:
+          example: true
+          type: boolean
+        isTimeoutConfigValidated:
+          example: true
+          type: boolean
+        connectionTimeoutConfig:
+          $ref: "#/components/schemas/ConnectionTimeoutConfig"
     createOrUpdate_request:
       discriminator:
         mapping:
@@ -4224,6 +4305,7 @@ components:
           GithubREST: "#/components/schemas/GithubRESTConnector"
           Okta: "#/components/schemas/OktaConnector"
           WorkdaySOAP: "#/components/schemas/WorkdaySOAPConnector"
+          SFTP: "#/components/schemas/SFTPConnector"
         propertyName: connectiontype
       oneOf:
       - $ref: "#/components/schemas/ADConnector"
@@ -4239,6 +4321,7 @@ components:
       - $ref: "#/components/schemas/GithubRESTConnector"
       - $ref: "#/components/schemas/OktaConnector"
       - $ref: "#/components/schemas/WorkdaySOAPConnector"
+      - $ref: "#/components/schemas/SFTPConnector"
     getConnections_request:
       properties:
         connectionname:
