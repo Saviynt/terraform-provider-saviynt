@@ -26,7 +26,7 @@ type BaseConnector struct {
 	// Connection type (e.g., 'AD' for Active Directory).
 	Connectiontype string `json:"connectiontype"`
 	// Description for the connection.
-	Description *string `json:"description,omitempty"`
+	ConnectionDescription *string `json:"connectionDescription,omitempty"`
 	// Default SAV roles for managing the connection.
 	Defaultsavroles *string `json:"defaultsavroles,omitempty"`
 	// Email template for notifications.
@@ -110,36 +110,36 @@ func (o *BaseConnector) SetConnectiontype(v string) {
 	o.Connectiontype = v
 }
 
-// GetDescription returns the Description field value if set, zero value otherwise.
-func (o *BaseConnector) GetDescription() string {
-	if o == nil || IsNil(o.Description) {
+// GetConnectionDescription returns the ConnectionDescription field value if set, zero value otherwise.
+func (o *BaseConnector) GetConnectionDescription() string {
+	if o == nil || IsNil(o.ConnectionDescription) {
 		var ret string
 		return ret
 	}
-	return *o.Description
+	return *o.ConnectionDescription
 }
 
-// GetDescriptionOk returns a tuple with the Description field value if set, nil otherwise
+// GetConnectionDescriptionOk returns a tuple with the ConnectionDescription field value if set, nil otherwise
 // and a boolean to check if the value has been set.
-func (o *BaseConnector) GetDescriptionOk() (*string, bool) {
-	if o == nil || IsNil(o.Description) {
+func (o *BaseConnector) GetConnectionDescriptionOk() (*string, bool) {
+	if o == nil || IsNil(o.ConnectionDescription) {
 		return nil, false
 	}
-	return o.Description, true
+	return o.ConnectionDescription, true
 }
 
-// HasDescription returns a boolean if a field has been set.
-func (o *BaseConnector) HasDescription() bool {
-	if o != nil && !IsNil(o.Description) {
+// HasConnectionDescription returns a boolean if a field has been set.
+func (o *BaseConnector) HasConnectionDescription() bool {
+	if o != nil && !IsNil(o.ConnectionDescription) {
 		return true
 	}
 
 	return false
 }
 
-// SetDescription gets a reference to the given string and assigns it to the Description field.
-func (o *BaseConnector) SetDescription(v string) {
-	o.Description = &v
+// SetConnectionDescription gets a reference to the given string and assigns it to the ConnectionDescription field.
+func (o *BaseConnector) SetConnectionDescription(v string) {
+	o.ConnectionDescription = &v
 }
 
 // GetDefaultsavroles returns the Defaultsavroles field value if set, zero value otherwise.
@@ -346,8 +346,8 @@ func (o BaseConnector) ToMap() (map[string]interface{}, error) {
 	toSerialize := map[string]interface{}{}
 	toSerialize["connectionName"] = o.ConnectionName
 	toSerialize["connectiontype"] = o.Connectiontype
-	if !IsNil(o.Description) {
-		toSerialize["description"] = o.Description
+	if !IsNil(o.ConnectionDescription) {
+		toSerialize["connectionDescription"] = o.ConnectionDescription
 	}
 	if !IsNil(o.Defaultsavroles) {
 		toSerialize["defaultsavroles"] = o.Defaultsavroles
