@@ -1,0 +1,247 @@
+# Copyright (c) Saviynt Inc.
+# SPDX-License-Identifier: MPL-2.0
+
+openapi: 3.1.0
+info:
+  description: API for managing transport package in Saviynt.
+  title: Saviynt API
+  version: 1.0.0
+servers:
+- url: http://localhost:3000
+paths:
+  /ECM/api/v5/exportTransportPackage:
+    post:
+      operationId: exportTransportPackage
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/exportTransportPackageRequest"
+        required: true
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/exportTransportPackageResponse"
+          description: Export transport package response
+      tags:
+      - transports
+  /ECM/api/v5/importTransportPackage:
+    post:
+      operationId: importTransportPackage
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/importTransportPackageRequest"
+        required: true
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/importTransportPackageResponse"
+          description: Import transport package response
+      tags:
+      - transports
+  /ECM/api/v5/transportPackageStatus:
+    get:
+      operationId: transportPackageStatus
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/transportPackageStatusRequest"
+        required: true
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/transportPackageStatusResponse"
+          description: Transport package status response
+      tags:
+      - transports
+components:
+  schemas:
+    exportTransportPackageRequest:
+      properties:
+        updateuser:
+          description: Username of the user exporting the package
+          type: string
+        transportowner:
+          description: Option to transport owners for selected objects
+          enum:
+          - "true"
+          - "false"
+          type: string
+        transportmembers:
+          description: Option to transport members for selected objects such as SAV
+            role
+          enum:
+          - "true"
+          - "false"
+          type: string
+        exportonline:
+          description: Determines if package needs to be exported online
+          enum:
+          - "true"
+          - "false"
+          type: string
+        exportpath:
+          description: Local path where export package will be generated (required
+            if exportonline is false)
+          type: string
+        environmentname:
+          description: Name of the environment (required if exportonline is true)
+          type: string
+        objectstoexport:
+          $ref: "#/components/schemas/exportTransportPackageRequest_objectstoexport"
+        businessjustification:
+          description: Business justification for the export
+          type: string
+      required:
+      - exportonline
+      - exportpath
+      - objectstoexport
+    exportTransportPackageResponse:
+      example:
+        msg: msg
+        fileName: fileName
+        msgDescription: msgDescription
+        errorcode: 0
+      properties:
+        msg:
+          description: Response message
+          type: string
+        fileName:
+          description: Name of the generated transport package file
+          type: string
+        msgDescription:
+          description: Detailed description of the response
+          type: string
+        errorcode:
+          description: Error code (0 for success)
+          type: integer
+    importTransportPackageRequest:
+      properties:
+        updateuser:
+          description: Username of the user importing the package
+          type: string
+        packagetoimport:
+          description: Complete path of the package that needs to be imported
+          type: string
+        businessjustification:
+          description: Business justification for the import
+          type: string
+      required:
+      - packagetoimport
+    importTransportPackageResponse:
+      example:
+        msg: msg
+        requestId: requestId
+        msgDescription: msgDescription
+        errorcode: 0
+      properties:
+        msg:
+          description: Response message
+          type: string
+        requestId:
+          description: Request ID for tracking the import
+          type: string
+        msgDescription:
+          description: Detailed description of the response
+          type: string
+        errorcode:
+          description: Error code (0 for success)
+          type: integer
+    transportPackageStatusRequest:
+      properties:
+        operation:
+          description: Type of transport request
+          enum:
+          - export
+          - import
+          - transfer
+          type: string
+        filename:
+          description: Transport package zip file name (including .zip extension)
+          type: string
+        requestid:
+          description: Request ID generated during import submission (required only
+            if operation is import)
+          type: string
+      required:
+      - filename
+      - operation
+    transportPackageStatusResponse:
+      example:
+        msg: msg
+        msgDescription: msgDescription
+        errorCode: 0
+      properties:
+        msg:
+          description: Response message
+          type: string
+        msgDescription:
+          description: Detailed description of the response
+          type: string
+        errorCode:
+          description: Error code (0 for success)
+          type: integer
+    exportTransportPackageRequest_objectstoexport:
+      description: Objects to export
+      properties:
+        savRoles:
+          items:
+            type: string
+          type: array
+        emailTemplate:
+          items:
+            type: string
+          type: array
+        roles:
+          items:
+            type: string
+          type: array
+        analyticsV1:
+          items:
+            type: string
+          type: array
+        analyticsV2:
+          items:
+            type: string
+          type: array
+        globalConfig:
+          items:
+            type: string
+          type: array
+        workflows:
+          items:
+            type: string
+          type: array
+        connection:
+          items:
+            type: string
+          type: array
+        appOnboarding:
+          items:
+            type: string
+          type: array
+        userGroups:
+          items:
+            type: string
+          type: array
+        scanRules:
+          items:
+            type: string
+          type: array
+        organizations:
+          items:
+            type: string
+          type: array
+        securitySystems:
+          items:
+            type: string
+          type: array

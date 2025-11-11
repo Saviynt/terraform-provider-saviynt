@@ -32,6 +32,7 @@ const (
 	ConnectorTypeUnix        ConnectorType = "UNIX"
 	ConnectorTypeGithubREST  ConnectorType = "GITHUBREST"
 	ConnectorTypeOkta        ConnectorType = "OKTA"
+	ConnectorTypeSFTP        ConnectorType = "SFTP"
 )
 
 // ErrorCategory represents different categories of errors
@@ -179,6 +180,8 @@ func GetErrorMessage(errorCode string) string {
 		connectorType = "GithubREST"
 	} else if strings.HasPrefix(errorCode, "OKTA_CONN_") {
 		connectorType = "Okta"
+	} else if strings.HasPrefix(errorCode, "SFTP_CONN_") {
+		connectorType = "SFTP"
 	}
 
 	// Then check if it's a connector-specific error code and map to specific message
