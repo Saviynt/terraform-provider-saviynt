@@ -16,7 +16,7 @@ Name | Type | Description | Notes
 **Errorcode** | Pointer to **int32** | Error code | [optional] 
 **Status** | Pointer to **int32** |  | [optional] 
 **Defaultsavroles** | Pointer to **string** |  | [optional] 
-**Connectionattributes** | Pointer to [**WorkdaySOAPConnectionAttributes**](WorkdaySOAPConnectionAttributes.md) |  | [optional] 
+**Connectionattributes** | Pointer to [**SFTPConnectionAttributes**](SFTPConnectionAttributes.md) |  | [optional] 
 
 ## Methods
 
@@ -339,20 +339,20 @@ HasDefaultsavroles returns a boolean if a field has been set.
 
 ### GetConnectionattributes
 
-`func (o *GetConnectionDetailsResponse) GetConnectionattributes() WorkdaySOAPConnectionAttributes`
+`func (o *GetConnectionDetailsResponse) GetConnectionattributes() SFTPConnectionAttributes`
 
 GetConnectionattributes returns the Connectionattributes field if non-nil, zero value otherwise.
 
 ### GetConnectionattributesOk
 
-`func (o *GetConnectionDetailsResponse) GetConnectionattributesOk() (*WorkdaySOAPConnectionAttributes, bool)`
+`func (o *GetConnectionDetailsResponse) GetConnectionattributesOk() (*SFTPConnectionAttributes, bool)`
 
 GetConnectionattributesOk returns a tuple with the Connectionattributes field if it's non-nil, zero value otherwise
 and a boolean to check if the value has been set.
 
 ### SetConnectionattributes
 
-`func (o *GetConnectionDetailsResponse) SetConnectionattributes(v WorkdaySOAPConnectionAttributes)`
+`func (o *GetConnectionDetailsResponse) SetConnectionattributes(v SFTPConnectionAttributes)`
 
 SetConnectionattributes sets Connectionattributes field to given value.
 

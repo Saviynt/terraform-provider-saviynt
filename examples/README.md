@@ -17,12 +17,15 @@ Below are example configurations to help guide you through your Terraform journe
 - [saviynt_rest_connection_resource](./resources/saviynt_rest_connection_resource) For managing REST connections.
 - [saviynt_salesforce_connection_resource](./resources/saviynt_salesforce_connection_resource) For managing Salesforce connections.
 - [saviynt_sap_connection_resource](./resources/saviynt_sap_connection_resource) For managing SAP connections.
+- [saviynt_sftp_connection_resource](./resources/saviynt_sftp_connection_resource) For managing SFTP connections.
 - [saviynt_unix_connection_resource](./resources/saviynt_unix_connection_resource) For managing Unix connections.
 - [saviynt_workday_connection_resource](./resources/saviynt_workday_connection_resource) For managing Workday connections.
 - [saviynt_workday_soap_connection_resource](./resources/saviynt_workday_soap_connection_resource) For managing Workday SOAP connections.
 - [saviynt_dynamic_attribute_resource](./resources/saviynt_dynamic_attribute_resource) Manages lifecycle (create, update, read, delete) of dynamic attribute
 - [saviynt_okta_connection_resource](./resources/saviynt_okta_connection_resource) For managing Okta connections.
 - [saviynt_entitlement_type_resource](./resources/saviynt_entitlement_type_resource) For managing entitlement types.
+- [saviynt_entitlement_resource](./resources/saviynt_entitlement_resource) For managing entitlements.
+- [saviynt_privilege_resource](./resources/saviynt_privilege_resource) For managing privileges.
 - [saviynt_enterprise_roles_resource](./resources/saviynt_enterprise_roles_resource) For managing enterprise roles.
 - [saviynt_application_data_import_job_resource](./resources/saviynt_application_data_import_job_resource) For managing Application Data Import Job triggers with bulk operations support.
 - [saviynt_ws_retry_job_resource](./resources/saviynt_ws_retry_job_resource) For managing WS Retry Job triggers with bulk operations support.
@@ -35,6 +38,11 @@ Below are example configurations to help guide you through your Terraform journe
 - [saviynt_schema_role_job_resource](./resources/saviynt_schema_role_job_resource) For managing Schema Role Job triggers with bulk operations support.
 - [saviynt_schema_account_job_resource](./resources/saviynt_schema_account_job_resource) For managing Schema Account Job triggers with bulk operations support.
 - [saviynt_schema_user_job_resource](./resources/saviynt_schema_user_job_resource) For managing Schema User Job triggers with bulk operations support.
+- [saviynt_file_transfer_job_resource](./resources/saviynt_file_transfer_job_resource) For managing File Transfer Job triggers with bulk operations support.
+- [saviynt_job_control_resource](./resources/saviynt_job_control_resource) For managing Job Control triggers with bulk operations support.
+- [saviynt_file_upload_resource](./resources/saviynt_file_upload_resource) For managing file uploads to Saviynt.
+- [saviynt_export_transport_package_resource](./resources/saviynt_export_transport_package_resource) For managing export transport packages.
+- [saviynt_import_transport_package_resource](./resources/saviynt_import_transport_package_resource) For managing import transport packages.
 
 ## Supported Data Sources
 
@@ -49,9 +57,13 @@ Below are example configurations to help guide you through your Terraform journe
 - [saviynt_rest_connection_datasource](./data-sources/saviynt_rest_connection_datasource) Retrieves an REST connection.
 - [saviynt_salesforce_connection_datasource](./data-sources/saviynt_salesforce_connection_datasource) Retrieves a Salesforce connection.
 - [saviynt_sap_connection_datasource](./data-sources/saviynt_sap_connection_datasource) Retrieves a SAP connection.
+- [saviynt_sftp_connection_datasource](./data-sources/saviynt_sftp_connection_datasource) Retrieves an SFTP connection.
 - [saviynt_unix_connection_datasource](./data-sources/saviynt_unix_connection_datasource) Retrieves a Unix connection.
 - [saviynt_workday_connection_datasource](./data-sources/saviynt_workday_connection_datasource) Retrieves a Workday connection.
+- [saviynt_workday_soap_connection_datasource](./data-sources/saviynt_workday_soap_connection_datasource) Retrieves a Workday SOAP connection.
 - [saviynt_dynamic_attribute_datasource](./data-sources/saviynt_dynamic_attribute_datasource) Retrieves Dynamic attribute.
 - [saviynt_okta_connection_datasource](./data-sources/saviynt_okta_connection_datasource) Retrieves a Okta connection.
 - [saviynt_entitlement_type_datasource](./data-sources/saviynt_entitlement_type_datasource) Retrieves entitlement types.
+- [saviynt_entitlement_datasource](./data-sources/saviynt_entitlement_datasource) Retrieves entitlements.
+- [saviynt_privilege_datasource](./data-sources/saviynt_privilege_datasource) Retrieves privileges.
 - [saviynt_roles_datasource](./data-sources/saviynt_role_datasource) Retrieves roles with filtering options.

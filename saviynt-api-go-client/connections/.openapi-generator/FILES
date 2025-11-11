@@ -42,6 +42,9 @@ docs/RESTConnector.md
 docs/SAPConnectionAttributes.md
 docs/SAPConnectionResponse.md
 docs/SAPConnector.md
+docs/SFTPConnectionAttributes.md
+docs/SFTPConnectionResponse.md
+docs/SFTPConnector.md
 docs/SalesforceConnectionAttributes.md
 docs/SalesforceConnectionResponse.md
 docs/SalesforceConnector.md
@@ -95,6 +98,9 @@ model_salesforce_connector.go
 model_sap_connection_attributes.go
 model_sap_connection_response.go
 model_sap_connector.go
+model_sftp_connection_attributes.go
+model_sftp_connection_response.go
+model_sftp_connector.go
 model_unix_connection_attributes.go
 model_unix_connection_response.go
 model_unix_connector.go

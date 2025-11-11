@@ -4,15 +4,13 @@ All URIs are relative to *http://localhost:3000*
 
 Method | HTTP request | Description
 ------------- | ------------- | -------------
-[**UploadNewFile**](FileDirectoryAPI.md#UploadNewFile) | **Post** /ECM/api/v5/uploadSchemaFile | Upload File
+[**UploadNewFile**](FileDirectoryAPI.md#UploadNewFile) | **Post** /ECM/api/v5/uploadSchemaFile | 
 
 
 
 ## UploadNewFile
 
 > UploadSchemaFileResponse UploadNewFile(ctx).File(file).PathLocation(pathLocation).Execute()
-
-Upload File
 
 
 
@@ -68,7 +66,7 @@ No authorization required
 
 ### HTTP request headers
 
-- **Content-Type**: application/x-www-form-urlencoded
+- **Content-Type**: multipart/form-data
 - **Accept**: application/json
 
 [[Back to top]](#) [[Back to API list]](../README.md#documentation-for-api-endpoints)

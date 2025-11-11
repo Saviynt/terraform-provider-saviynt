@@ -41,7 +41,13 @@ var UserImportJobDescription = "Create and manage User Import Job triggers in Sa
 var SchemaAccountJobDescription = "Create and manage Schema Account Job triggers in Saviynt"
 var SchemaRoleJobDescription = "Create and manage Schema Role Job triggers in Saviynt"
 var SchemaUserJobDescription = "Create and manage Schema User Job triggers in Saviynt"
+var FileTransferJobDescription = "Create and manage File Transfer Job triggers in Saviynt"
+var JobControlDescription = "Create and manage job control operations in Saviynt. Execute multiple jobs with version-based triggering and status tracking."
 var PrivilegeDescription = "Create and manage privileges in Saviynt"
+var ImportTransportPackageDescription = "Import transport packages in Saviynt"
+var ExportTransportPackageDescription = "Export transport packages from Saviynt"
+var FileUploadDescription = "File upload resource for uploading files to Saviynt"
+var SFTPConnDescription = "Create and manage SFTP connector in Saviynt"
 
 var ADConnDataSourceDescription = "Retrieve the details for a given AD connector by its name or key"
 var ADSIConnDataSourceDescription = "Retrieve the details for a given ADSI connector by its name or key"
@@ -59,6 +65,7 @@ var RoleDataSourceDescription = "Retrieves the details of a specific role or rol
 var EntitlementDataSourceDescription = "Retrieve the details for a given entitlement by its endpoint or other filters."
 var PrivilegeDataSourceDescription = "Retrieve privileges for a given endpoint and other filters"
 var WorkdaySOAPConnDataSourceDescription = "Retrieve the details for a given Workday-SOAP connector by its name or key"
+var SFTPConnDataSourceDescription = "Retrieve the details for a given SFTP connector by its name or key"
 
 var FileEphemeralResourceDescription = "Provides ephemeral credentials by reading them from a local json file for use by Connector resources."
 var EnvEphemeralResourceDescription = "Provides ephemeral credentials by reading them from a environment for use by Connector resources."

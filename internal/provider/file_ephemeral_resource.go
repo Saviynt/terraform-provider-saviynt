@@ -32,6 +32,7 @@ type FileCredentialsModel struct {
 	FilePath                 types.String `tfsdk:"file_path"`
 	AuthToken                types.String `tfsdk:"auth_token"`
 	Password                 types.String `tfsdk:"password"`
+	AuthCredentialValue      types.String `tfsdk:"auth_credential_value"`
 	Change_Pass_Json         types.String `tfsdk:"change_pass_json"`
 	Window_Connector_Json    types.String `tfsdk:"windows_connector_json"`
 	Azure_Mgmt_Access_Token  types.String `tfsdk:"azure_mgmt_access_token"`
@@ -70,6 +71,11 @@ func (r *FileCredentialsResource) Schema(ctx context.Context, _ ephemeral.Schema
 				Computed:            true,
 				Sensitive:           true,
 				MarkdownDescription: "Password read from the file.",
+			},
+			"auth_credential_value": schema.StringAttribute{
+				Computed:            true,
+				Sensitive:           true,
+				MarkdownDescription: "Authentication credential value read from the file.",
 			},
 			"change_pass_json": schema.StringAttribute{
 				Computed:            true,
@@ -160,6 +166,8 @@ func (r *FileCredentialsResource) Open(ctx context.Context, req ephemeral.OpenRe
 			data.AuthToken = types.StringValue(val)
 		case "PASSWORD":
 			data.Password = types.StringValue(val)
+		case "AUTH_CREDENTIAL_VALUE":
+			data.AuthCredentialValue = types.StringValue(val)
 		case "CHANGE_PASS_JSON":
 			data.Change_Pass_Json = types.StringValue(val)
 		case "WINDOWS_CONNECTOR_JSON":

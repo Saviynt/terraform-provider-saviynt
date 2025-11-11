@@ -635,11 +635,11 @@ func (r *SapConnectionResource) BuildSAPConnector(plan *SapConnectorResourceMode
 
 	sapConn := openapi.SAPConnector{
 		BaseConnector: openapi.BaseConnector{
-			Connectiontype:  "SAP",
-			ConnectionName:  plan.ConnectionName.ValueString(),
-			Description:     util.StringPointerOrEmpty(plan.Description),
-			Defaultsavroles: util.StringPointerOrEmpty(plan.DefaultSavRoles),
-			EmailTemplate:   util.StringPointerOrEmpty(plan.EmailTemplate),
+			Connectiontype:        "SAP",
+			ConnectionName:        plan.ConnectionName.ValueString(),
+			ConnectionDescription: util.StringPointerOrEmpty(plan.Description),
+			Defaultsavroles:       util.StringPointerOrEmpty(plan.DefaultSavRoles),
+			EmailTemplate:         util.StringPointerOrEmpty(plan.EmailTemplate),
 		},
 		MESSAGESERVER:                      util.StringPointerOrEmpty(plan.Messageserver),
 		JCO_ASHOST:                         util.StringPointerOrEmpty(plan.JcoAshost),
