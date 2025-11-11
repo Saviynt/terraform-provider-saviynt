@@ -348,11 +348,11 @@ func (r *GithubRestConnectionResource) BuildGithubRestConnector(plan *GithubRest
 
 	githubRestConn := openapi.GithubRESTConnector{
 		BaseConnector: openapi.BaseConnector{
-			Connectiontype:  "GithubRest",
-			ConnectionName:  plan.ConnectionName.ValueString(),
-			Description:     util.StringPointerOrEmpty(plan.Description),
-			Defaultsavroles: util.StringPointerOrEmpty(plan.DefaultSavRoles),
-			EmailTemplate:   util.StringPointerOrEmpty(plan.EmailTemplate),
+			Connectiontype:        "GithubRest",
+			ConnectionName:        plan.ConnectionName.ValueString(),
+			ConnectionDescription: util.StringPointerOrEmpty(plan.Description),
+			Defaultsavroles:       util.StringPointerOrEmpty(plan.DefaultSavRoles),
+			EmailTemplate:         util.StringPointerOrEmpty(plan.EmailTemplate),
 		},
 		ConnectionJSON:          util.StringPointerOrEmpty(types.StringValue(connectionJson)),
 		ImportAccountEntJSON:    util.StringPointerOrEmpty(plan.ImportAccountEntJSON),

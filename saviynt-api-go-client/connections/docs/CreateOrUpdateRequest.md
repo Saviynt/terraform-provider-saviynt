@@ -6,7 +6,7 @@ Name | Type | Description | Notes
 ------------ | ------------- | ------------- | -------------
 **ConnectionName** | **string** | Name of the connection | 
 **Connectiontype** | **string** | Connection type (e.g., &#39;AD&#39; for Active Directory). | 
-**Description** | Pointer to **string** | Description for the connection. | [optional] 
+**ConnectionDescription** | Pointer to **string** | Description for the connection. | [optional] 
 **Defaultsavroles** | Pointer to **string** | Default SAV roles for managing the connection. | [optional] 
 **EmailTemplate** | Pointer to **string** | Email template for notifications. | [optional] 
 **SslCertificate** | Pointer to **string** | SSL certificates to secure the connection. | [optional] 
@@ -14,7 +14,7 @@ Name | Type | Description | Notes
 **VaultConfiguration** | Pointer to **string** | JSON string specifying vault configuration | [optional] 
 **Saveinvault** | Pointer to **string** | Flag indicating whether the encrypted attribute should be saved in the configured vault. | [optional] 
 **URL** | **string** | Host Name for connection | 
-**USERNAME** | **string** | Username for SOAP authentication | 
+**USERNAME** | **string** | Username for SFTP authentication | 
 **ENABLEGROUPMANAGEMENT** | Pointer to **string** | True implies group management capability limited to AD only. | [optional] 
 **IMPORTDATACOOKIES** | Pointer to **string** |  | [optional] 
 **MOVEACCOUNTJSON** | Pointer to **string** | JSON to specify movement action logic explicitely. If you have defined &#39;moveObjectToOU&#39; parameter in your update/enable/disable actions implicitely, then no need to define this explicitely here | [optional] 
@@ -57,7 +57,7 @@ Name | Type | Description | Notes
 **CREATESERVICEACCOUNTJSON** | Pointer to **string** | Specify the Field Value which will be used to Create the New Service Account. | [optional] 
 **UPDATESERVICEACCOUNTJSON** | Pointer to **string** | Specify the Field Value which will be used to update the existing Service Account. | [optional] 
 **REMOVESERVICEACCOUNTJSON** | Pointer to **string** | Specify the actions to be performed while deleting a service account. | [optional] 
-**PAM_CONFIG** | Pointer to **string** | PAM configuration JSON | [optional] 
+**PAM_CONFIG** | Pointer to **string** | PAM configuration for SFTP connection | [optional] 
 **MODIFYUSERDATAJSON** | Pointer to **string** | JSON for modifying user data | [optional] 
 **MESSAGESERVER** | Pointer to **string** | set it to TRUE if the Message Server is going to be used for connecting to SAP | [optional] 
 **JCO_ASHOST** | Pointer to **string** | HostName for connection for Import | [optional] 
@@ -230,8 +230,8 @@ Name | Type | Description | Notes
 **CreateChannelJSON** | Pointer to **string** | Property for CreateChannelJSON | [optional] 
 **ACCOUNTS_FILTER** | Pointer to **string** | Property for ACCOUNTS_FILTER | [optional] 
 **ENHANCEDDIRECTORYROLES** | Pointer to **string** | Property for ENHANCEDDIRECTORYROLES | [optional] 
-**HOST_NAME** | **string** | Property for HOST_NAME | 
-**PORT_NUMBER** | **string** | Property for PORT_NUMBER | 
+**HOST_NAME** | **string** | SFTP server hostname or IP address | 
+**PORT_NUMBER** | **string** | SFTP server port number | 
 **GROUPS_FILE** | Pointer to **string** | Property for GROUPS_FILE | [optional] 
 **ACCOUNTS_FILE** | Pointer to **string** | Property for ACCOUNTS_FILE | [optional] 
 **SHADOW_FILE** | Pointer to **string** | Property for SHADOW_FILE | [optional] 
@@ -244,7 +244,7 @@ Name | Type | Description | Notes
 **ENABLE_ACCOUNT_COMMAND** | Pointer to **string** | Property for ENABLE_ACCOUNT_COMMAND | [optional] 
 **DISABLE_ACCOUNT_COMMAND** | Pointer to **string** | Property for DISABLE_ACCOUNT_COMMAND | [optional] 
 **ACCOUNT_ENTITLEMENT_MAPPING_COMMAND** | Pointer to **string** | Property for ACCOUNT_ENTITLEMENT_MAPPING_COMMAND | [optional] 
-**PASSPHRASE** | Pointer to **string** | Property for PASSPHRASE | [optional] 
+**PASSPHRASE** | Pointer to **string** | Passphrase for encrypted private key | [optional] 
 **UPDATE_ACCOUNT_COMMAND** | Pointer to **string** | Property for UPDATE_ACCOUNT_COMMAND | [optional] 
 **CREATE_GROUP_COMMAND** | Pointer to **string** | Property for CREATE_GROUP_COMMAND | [optional] 
 **DELETE_GROUP_COMMAND** | Pointer to **string** | Property for DELETE_GROUP_COMMAND | [optional] 
@@ -286,12 +286,16 @@ Name | Type | Description | Notes
 **RESPONSEPATH_TOTALRESULTS** | Pointer to **string** | Response path for total results count | [optional] 
 **RESPONSEPATH_USERLIST** | Pointer to **string** | Response path for user list | [optional] 
 **SOAP_ENDPOINT** | Pointer to **string** | SOAP endpoint URL for Workday | [optional] 
+**AUTH_CREDENTIAL_TYPE** | **string** | Type of authentication (password, key, etc.) | 
+**AUTH_CREDENTIAL_VALUE** | **string** | Authentication credential (password or private key path) | 
+**FILES_TO_GET** | Pointer to **string** | Files to download from SFTP server | [optional] 
+**FILES_TO_PUT** | Pointer to **string** | Files to upload to SFTP server | [optional] 
 
 ## Methods
 
 ### NewCreateOrUpdateRequest
 
-`func NewCreateOrUpdateRequest(connectionName string, connectiontype string, uRL string, uSERNAME string, pASSWORD string, cONNECTIONURL string, fORESTLIST string, cLIENTID string, cLIENTSECRET string, bASEURL string, tENANTID string, lOGINURL string, uSEOAUTH string, dRIVERNAME string, aADTENANTID string, hOSTNAME string, pORTNUMBER string, iMPORTURL string, aUTHTOKEN string, oKTAAPPLICATIONSECURITYSYSTEM string, ) *CreateOrUpdateRequest`
+`func NewCreateOrUpdateRequest(connectionName string, connectiontype string, uRL string, uSERNAME string, pASSWORD string, cONNECTIONURL string, fORESTLIST string, cLIENTID string, cLIENTSECRET string, bASEURL string, tENANTID string, lOGINURL string, uSEOAUTH string, dRIVERNAME string, aADTENANTID string, hOSTNAME string, pORTNUMBER string, iMPORTURL string, aUTHTOKEN string, oKTAAPPLICATIONSECURITYSYSTEM string, aUTHCREDENTIALTYPE string, aUTHCREDENTIALVALUE string, ) *CreateOrUpdateRequest`
 
 NewCreateOrUpdateRequest instantiates a new CreateOrUpdateRequest object
 This constructor will assign default values to properties that have it defined,
@@ -346,30 +350,30 @@ and a boolean to check if the value has been set.
 SetConnectiontype sets Connectiontype field to given value.
 
 
-### GetDescription
+### GetConnectionDescription
 
-`func (o *CreateOrUpdateRequest) GetDescription() string`
+`func (o *CreateOrUpdateRequest) GetConnectionDescription() string`
 
-GetDescription returns the Description field if non-nil, zero value otherwise.
+GetConnectionDescription returns the ConnectionDescription field if non-nil, zero value otherwise.
 
-### GetDescriptionOk
+### GetConnectionDescriptionOk
 
-`func (o *CreateOrUpdateRequest) GetDescriptionOk() (*string, bool)`
+`func (o *CreateOrUpdateRequest) GetConnectionDescriptionOk() (*string, bool)`
 
-GetDescriptionOk returns a tuple with the Description field if it's non-nil, zero value otherwise
+GetConnectionDescriptionOk returns a tuple with the ConnectionDescription field if it's non-nil, zero value otherwise
 and a boolean to check if the value has been set.
 
-### SetDescription
+### SetConnectionDescription
 
-`func (o *CreateOrUpdateRequest) SetDescription(v string)`
+`func (o *CreateOrUpdateRequest) SetConnectionDescription(v string)`
 
-SetDescription sets Description field to given value.
+SetConnectionDescription sets ConnectionDescription field to given value.
 
-### HasDescription
+### HasConnectionDescription
 
-`func (o *CreateOrUpdateRequest) HasDescription() bool`
+`func (o *CreateOrUpdateRequest) HasConnectionDescription() bool`
 
-HasDescription returns a boolean if a field has been set.
+HasConnectionDescription returns a boolean if a field has been set.
 
 ### GetDefaultsavroles
 
@@ -7255,6 +7259,96 @@ SetSOAP_ENDPOINT sets SOAP_ENDPOINT field to given value.
 `func (o *CreateOrUpdateRequest) HasSOAP_ENDPOINT() bool`
 
 HasSOAP_ENDPOINT returns a boolean if a field has been set.
+
+### GetAUTH_CREDENTIAL_TYPE
+
+`func (o *CreateOrUpdateRequest) GetAUTH_CREDENTIAL_TYPE() string`
+
+GetAUTH_CREDENTIAL_TYPE returns the AUTH_CREDENTIAL_TYPE field if non-nil, zero value otherwise.
+
+### GetAUTH_CREDENTIAL_TYPEOk
+
+`func (o *CreateOrUpdateRequest) GetAUTH_CREDENTIAL_TYPEOk() (*string, bool)`
+
+GetAUTH_CREDENTIAL_TYPEOk returns a tuple with the AUTH_CREDENTIAL_TYPE field if it's non-nil, zero value otherwise
+and a boolean to check if the value has been set.
+
+### SetAUTH_CREDENTIAL_TYPE
+
+`func (o *CreateOrUpdateRequest) SetAUTH_CREDENTIAL_TYPE(v string)`
+
+SetAUTH_CREDENTIAL_TYPE sets AUTH_CREDENTIAL_TYPE field to given value.
+
+
+### GetAUTH_CREDENTIAL_VALUE
+
+`func (o *CreateOrUpdateRequest) GetAUTH_CREDENTIAL_VALUE() string`
+
+GetAUTH_CREDENTIAL_VALUE returns the AUTH_CREDENTIAL_VALUE field if non-nil, zero value otherwise.
+
+### GetAUTH_CREDENTIAL_VALUEOk
+
+`func (o *CreateOrUpdateRequest) GetAUTH_CREDENTIAL_VALUEOk() (*string, bool)`
+
+GetAUTH_CREDENTIAL_VALUEOk returns a tuple with the AUTH_CREDENTIAL_VALUE field if it's non-nil, zero value otherwise
+and a boolean to check if the value has been set.
+
+### SetAUTH_CREDENTIAL_VALUE
+
+`func (o *CreateOrUpdateRequest) SetAUTH_CREDENTIAL_VALUE(v string)`
+
+SetAUTH_CREDENTIAL_VALUE sets AUTH_CREDENTIAL_VALUE field to given value.
+
+
+### GetFILES_TO_GET
+
+`func (o *CreateOrUpdateRequest) GetFILES_TO_GET() string`
+
+GetFILES_TO_GET returns the FILES_TO_GET field if non-nil, zero value otherwise.
+
+### GetFILES_TO_GETOk
+
+`func (o *CreateOrUpdateRequest) GetFILES_TO_GETOk() (*string, bool)`
+
+GetFILES_TO_GETOk returns a tuple with the FILES_TO_GET field if it's non-nil, zero value otherwise
+and a boolean to check if the value has been set.
+
+### SetFILES_TO_GET
+
+`func (o *CreateOrUpdateRequest) SetFILES_TO_GET(v string)`
+
+SetFILES_TO_GET sets FILES_TO_GET field to given value.
+
+### HasFILES_TO_GET
+
+`func (o *CreateOrUpdateRequest) HasFILES_TO_GET() bool`
+
+HasFILES_TO_GET returns a boolean if a field has been set.
+
+### GetFILES_TO_PUT
+
+`func (o *CreateOrUpdateRequest) GetFILES_TO_PUT() string`
+
+GetFILES_TO_PUT returns the FILES_TO_PUT field if non-nil, zero value otherwise.
+
+### GetFILES_TO_PUTOk
+
+`func (o *CreateOrUpdateRequest) GetFILES_TO_PUTOk() (*string, bool)`
+
+GetFILES_TO_PUTOk returns a tuple with the FILES_TO_PUT field if it's non-nil, zero value otherwise
+and a boolean to check if the value has been set.
+
+### SetFILES_TO_PUT
+
+`func (o *CreateOrUpdateRequest) SetFILES_TO_PUT(v string)`
+
+SetFILES_TO_PUT sets FILES_TO_PUT field to given value.
+
+### HasFILES_TO_PUT
+
+`func (o *CreateOrUpdateRequest) HasFILES_TO_PUT() bool`
+
+HasFILES_TO_PUT returns a boolean if a field has been set.
 
 
 [[Back to Model list]](../README.md#documentation-for-models) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to README]](../README.md)

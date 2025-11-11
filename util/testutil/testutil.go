@@ -11,6 +11,7 @@ import (
 	"runtime"
 	"strings"
 	"testing"
+	"time"
 )
 
 func LoadConnectorData(t *testing.T, filePath, scenario string) map[string]string {
@@ -73,6 +74,12 @@ func GetTestDataPath(t *testing.T, relativeFilename string) string {
 	return absPath
 }
 
+// GetTestIdentifier returns a timestamp-based identifier for test resources
+// in the format YYYYMMDDHHMMSS (e.g., "20251106050300")
+func GetTestIdentifier() string {
+	return time.Now().Format("20060102150405")
+}
+
 func PrepareTestDataWithEnv(t *testing.T, templatePath string) string {
 	t.Helper()
 
@@ -82,13 +89,12 @@ func PrepareTestDataWithEnv(t *testing.T, templatePath string) string {
 	}
 
 	content := string(data)
-	pipelineID := os.Getenv("CI_PIPELINE_ID")
-	if pipelineID == "" {
-		pipelineID = "local"
-	}
+
+	// Use timestamp for unique resource names
+	timestamp := GetTestIdentifier()
 
 	replacements := map[string]string{
-		"{{PIPELINE_ID}}": pipelineID,
+		"{{TEST_ID}}": timestamp,
 	}
 
 	for placeholder, value := range replacements {
