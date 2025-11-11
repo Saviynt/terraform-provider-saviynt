@@ -9,7 +9,7 @@ Name | Type | Description | Notes
 **JobGroup** | **string** | Name of the job group associated with the trigger | 
 **Group** | **string** | Group classification | 
 **CronExp** | **string** | Cron expression defining the schedule for the trigger | 
-**ValueMap** | Pointer to [**AccountsImportIncrementalJobAllOfValueMap**](AccountsImportIncrementalJobAllOfValueMap.md) |  | [optional] 
+**ValueMap** | Pointer to [**FileTransferJobAllOfValueMap**](FileTransferJobAllOfValueMap.md) |  | [optional] 
 
 ## Methods
 
@@ -132,20 +132,20 @@ SetCronExp sets CronExp field to given value.
 
 ### GetValueMap
 
-`func (o *JobTriggerItem) GetValueMap() AccountsImportIncrementalJobAllOfValueMap`
+`func (o *JobTriggerItem) GetValueMap() FileTransferJobAllOfValueMap`
 
 GetValueMap returns the ValueMap field if non-nil, zero value otherwise.
 
 ### GetValueMapOk
 
-`func (o *JobTriggerItem) GetValueMapOk() (*AccountsImportIncrementalJobAllOfValueMap, bool)`
+`func (o *JobTriggerItem) GetValueMapOk() (*FileTransferJobAllOfValueMap, bool)`
 
 GetValueMapOk returns a tuple with the ValueMap field if it's non-nil, zero value otherwise
 and a boolean to check if the value has been set.
 
 ### SetValueMap
 
-`func (o *JobTriggerItem) SetValueMap(v AccountsImportIncrementalJobAllOfValueMap)`
+`func (o *JobTriggerItem) SetValueMap(v FileTransferJobAllOfValueMap)`
 
 SetValueMap sets ValueMap field to given value.
 

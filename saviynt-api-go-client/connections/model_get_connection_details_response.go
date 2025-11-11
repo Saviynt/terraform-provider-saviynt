@@ -26,6 +26,7 @@ type GetConnectionDetailsResponse struct {
 	OktaConnectionResponse        *OktaConnectionResponse
 	RESTConnectionResponse        *RESTConnectionResponse
 	SAPConnectionResponse         *SAPConnectionResponse
+	SFTPConnectionResponse        *SFTPConnectionResponse
 	SalesforceConnectionResponse  *SalesforceConnectionResponse
 	UNIXConnectionResponse        *UNIXConnectionResponse
 	WorkdayConnectionResponse     *WorkdayConnectionResponse
@@ -85,6 +86,13 @@ func RESTConnectionResponseAsGetConnectionDetailsResponse(v *RESTConnectionRespo
 func SAPConnectionResponseAsGetConnectionDetailsResponse(v *SAPConnectionResponse) GetConnectionDetailsResponse {
 	return GetConnectionDetailsResponse{
 		SAPConnectionResponse: v,
+	}
+}
+
+// SFTPConnectionResponseAsGetConnectionDetailsResponse is a convenience function that returns SFTPConnectionResponse wrapped in GetConnectionDetailsResponse
+func SFTPConnectionResponseAsGetConnectionDetailsResponse(v *SFTPConnectionResponse) GetConnectionDetailsResponse {
+	return GetConnectionDetailsResponse{
+		SFTPConnectionResponse: v,
 	}
 }
 
@@ -256,6 +264,23 @@ func (dst *GetConnectionDetailsResponse) UnmarshalJSON(data []byte) error {
 		dst.SAPConnectionResponse = nil
 	}
 
+	// try to unmarshal data into SFTPConnectionResponse
+	err = newStrictDecoder(data).Decode(&dst.SFTPConnectionResponse)
+	if err == nil {
+		jsonSFTPConnectionResponse, _ := json.Marshal(dst.SFTPConnectionResponse)
+		if string(jsonSFTPConnectionResponse) == "{}" { // empty struct
+			dst.SFTPConnectionResponse = nil
+		} else {
+			if err = validator.Validate(dst.SFTPConnectionResponse); err != nil {
+				dst.SFTPConnectionResponse = nil
+			} else {
+				match++
+			}
+		}
+	} else {
+		dst.SFTPConnectionResponse = nil
+	}
+
 	// try to unmarshal data into SalesforceConnectionResponse
 	err = newStrictDecoder(data).Decode(&dst.SalesforceConnectionResponse)
 	if err == nil {
@@ -334,6 +359,7 @@ func (dst *GetConnectionDetailsResponse) UnmarshalJSON(data []byte) error {
 		dst.OktaConnectionResponse = nil
 		dst.RESTConnectionResponse = nil
 		dst.SAPConnectionResponse = nil
+		dst.SFTPConnectionResponse = nil
 		dst.SalesforceConnectionResponse = nil
 		dst.UNIXConnectionResponse = nil
 		dst.WorkdayConnectionResponse = nil
@@ -379,6 +405,10 @@ func (src GetConnectionDetailsResponse) MarshalJSON() ([]byte, error) {
 
 	if src.SAPConnectionResponse != nil {
 		return json.Marshal(&src.SAPConnectionResponse)
+	}
+
+	if src.SFTPConnectionResponse != nil {
+		return json.Marshal(&src.SFTPConnectionResponse)
 	}
 
 	if src.SalesforceConnectionResponse != nil {
@@ -437,6 +467,10 @@ func (obj *GetConnectionDetailsResponse) GetActualInstance() interface{} {
 		return obj.SAPConnectionResponse
 	}
 
+	if obj.SFTPConnectionResponse != nil {
+		return obj.SFTPConnectionResponse
+	}
+
 	if obj.SalesforceConnectionResponse != nil {
 		return obj.SalesforceConnectionResponse
 	}
@@ -489,6 +523,10 @@ func (obj GetConnectionDetailsResponse) GetActualInstanceValue() interface{} {
 
 	if obj.SAPConnectionResponse != nil {
 		return *obj.SAPConnectionResponse
+	}
+
+	if obj.SFTPConnectionResponse != nil {
+		return *obj.SFTPConnectionResponse
 	}
 
 	if obj.SalesforceConnectionResponse != nil {

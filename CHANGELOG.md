@@ -1,3 +1,50 @@
+## 0.3.0 (Unreleased)
+
+FEATURES:
+
+* **New Resource:** `saviynt_export_transport_package_resource` - Added support for exporting transport packages from Saviynt
+  - Export configurations, roles, and other Saviynt objects to transport packages
+  - Version-controlled exports with `export_package_version` trigger attribute
+  - Support for online/offline export modes and selective object export
+  
+* **New Resource:** `saviynt_import_transport_package_resource` - Added support for importing transport packages into Saviynt
+  - Import configurations and objects from transport package files
+  - Version-controlled imports with `import_package_version` trigger attribute
+  - Comprehensive import validation and error handling
+
+* **New Resource:** `saviynt_file_upload_resource` - Added support for uploading files to Saviynt
+  - Upload CSV/SAV files to Datafiles/SAV directory
+  - Version-controlled uploads with `file_version` trigger attribute for re-upload scenarios
+  - Support for various file types and upload locations
+
+* **New Resource:** `saviynt_sftp_connection_resource` - Added support for managing SFTP connectors
+  - Full CRUI lifecycle management (Create, Read, Update, Import)
+  - Write-only attribute support for sensitive credentials (`auth_credential_value_wo`, `passphrase_wo`)
+  - Support for key-based and password-based authentication methods
+  - **Note**: Requires manual configuration of "Select Connector version" field in Saviynt UI after creation (see [Troubleshooting Guide](README.md#9-sftp-connection-post-creation-configuration))
+  
+* **New Data Source:** `saviynt_sftp_connection_datasource` - Added support for reading SFTP connector configurations
+  - Authentication control with `authenticate` flag for sensitive data visibility
+  - Comprehensive attribute validation and state management
+
+* **New Resource:** `saviynt_file_transfer_job_resource` - Added support for managing file transfer jobs
+  - Configure automated file transfer operations between systems
+  - Support for upload and download operations with validation
+  - Integration with SFTP and other file transfer protocols
+
+* **New Resource:** `saviynt_job_control_resource` - Added support for executing Saviynt jobs
+  - Execute jobs on-demand through Terraform operations
+  - Version-controlled job execution with `run_job_version` trigger attribute
+  - Support for multiple job types and job groups
+  - Real-time job execution status and response messages
+
+ENHANCEMENTS:
+
+* **Connection Description Support** - Added support for setting connection descriptions through Terraform
+  - All connection resources now support the `description` attribute for documentation and management purposes
+  - Previously, connection descriptions could only be set through the Saviynt UI
+  - Enables better infrastructure-as-code practices with comprehensive resource documentation
+
 ## 0.2.13 (Released)
 
 FEATURES:
@@ -19,7 +66,7 @@ ENHANCEMENTS:
   - Supports REST, DB, Workday, GitHub REST, Security System, Entitlement Type, and Enterprise Role resources
   - Prevents deployment failures by catching version incompatibilities during planning phase
 
-* **New 25.Brisbane.1 Attributes Support** - Added support for new attributes available in Saviynt EIC 25.Brisbane.1
+* **New 25.Chicago.EA Attributes Support** - Added support for new attributes available in Saviynt EIC 25.Chicago.EA
   - **REST Connector**: Added `app_type` attribute for CUA configuration
   - **SAP Connector**: Added `role_default_date` attribute for default end date configuration
   - **Unix Connector**: Added `server_type` attribute for server type specification

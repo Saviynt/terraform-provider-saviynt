@@ -383,9 +383,9 @@ func (r *WorkdaySOAPConnectionResource) BuildWorkdaySOAPConnector(plan *WorkdayS
 			Connectiontype: "Workday-SOAP",
 			ConnectionName: plan.ConnectionName.ValueString(),
 			// Optional fields
-			Description:     util.StringPointerOrEmpty(plan.Description),
-			Defaultsavroles: util.StringPointerOrEmpty(plan.DefaultSavRoles),
-			EmailTemplate:   util.StringPointerOrEmpty(plan.EmailTemplate),
+			ConnectionDescription: util.StringPointerOrEmpty(plan.Description),
+			Defaultsavroles:       util.StringPointerOrEmpty(plan.DefaultSavRoles),
+			EmailTemplate:         util.StringPointerOrEmpty(plan.EmailTemplate),
 		},
 		// Authentication
 		USERNAME:      util.StringPointerOrEmpty(plan.Username),
