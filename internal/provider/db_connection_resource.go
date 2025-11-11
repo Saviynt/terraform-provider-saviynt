@@ -545,11 +545,11 @@ func (r *DBConnectionResource) BuildDBConnector(plan *DBConnectorResourceModel, 
 
 	connector := openapi.DBConnector{
 		BaseConnector: openapi.BaseConnector{
-			Connectiontype:  "DB",
-			ConnectionName:  plan.ConnectionName.ValueString(),
-			Description:     util.StringPointerOrEmpty(plan.Description),
-			Defaultsavroles: util.StringPointerOrEmpty(plan.DefaultSavRoles),
-			EmailTemplate:   util.StringPointerOrEmpty(plan.EmailTemplate),
+			Connectiontype:        "DB",
+			ConnectionName:        plan.ConnectionName.ValueString(),
+			ConnectionDescription: util.StringPointerOrEmpty(plan.Description),
+			Defaultsavroles:       util.StringPointerOrEmpty(plan.DefaultSavRoles),
+			EmailTemplate:         util.StringPointerOrEmpty(plan.EmailTemplate),
 		},
 		// Required fields
 		URL:        plan.URL.ValueString(),

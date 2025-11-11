@@ -19,6 +19,7 @@ import (
 // JobTriggerItem - struct for JobTriggerItem
 type JobTriggerItem struct {
 	AccountsImportIncrementalJob *AccountsImportIncrementalJob
+	FileTransferJob              *FileTransferJob
 	SchemaAccountJob             *SchemaAccountJob
 	SchemaRoleJob                *SchemaRoleJob
 	SchemaUserJob                *SchemaUserJob
@@ -28,6 +29,13 @@ type JobTriggerItem struct {
 func AccountsImportIncrementalJobAsJobTriggerItem(v *AccountsImportIncrementalJob) JobTriggerItem {
 	return JobTriggerItem{
 		AccountsImportIncrementalJob: v,
+	}
+}
+
+// FileTransferJobAsJobTriggerItem is a convenience function that returns FileTransferJob wrapped in JobTriggerItem
+func FileTransferJobAsJobTriggerItem(v *FileTransferJob) JobTriggerItem {
+	return JobTriggerItem{
+		FileTransferJob: v,
 	}
 }
 
@@ -71,6 +79,23 @@ func (dst *JobTriggerItem) UnmarshalJSON(data []byte) error {
 		}
 	} else {
 		dst.AccountsImportIncrementalJob = nil
+	}
+
+	// try to unmarshal data into FileTransferJob
+	err = newStrictDecoder(data).Decode(&dst.FileTransferJob)
+	if err == nil {
+		jsonFileTransferJob, _ := json.Marshal(dst.FileTransferJob)
+		if string(jsonFileTransferJob) == "{}" { // empty struct
+			dst.FileTransferJob = nil
+		} else {
+			if err = validator.Validate(dst.FileTransferJob); err != nil {
+				dst.FileTransferJob = nil
+			} else {
+				match++
+			}
+		}
+	} else {
+		dst.FileTransferJob = nil
 	}
 
 	// try to unmarshal data into SchemaAccountJob
@@ -127,6 +152,7 @@ func (dst *JobTriggerItem) UnmarshalJSON(data []byte) error {
 	if match > 1 { // more than 1 match
 		// reset to nil
 		dst.AccountsImportIncrementalJob = nil
+		dst.FileTransferJob = nil
 		dst.SchemaAccountJob = nil
 		dst.SchemaRoleJob = nil
 		dst.SchemaUserJob = nil
@@ -143,6 +169,10 @@ func (dst *JobTriggerItem) UnmarshalJSON(data []byte) error {
 func (src JobTriggerItem) MarshalJSON() ([]byte, error) {
 	if src.AccountsImportIncrementalJob != nil {
 		return json.Marshal(&src.AccountsImportIncrementalJob)
+	}
+
+	if src.FileTransferJob != nil {
+		return json.Marshal(&src.FileTransferJob)
 	}
 
 	if src.SchemaAccountJob != nil {
@@ -169,6 +199,10 @@ func (obj *JobTriggerItem) GetActualInstance() interface{} {
 		return obj.AccountsImportIncrementalJob
 	}
 
+	if obj.FileTransferJob != nil {
+		return obj.FileTransferJob
+	}
+
 	if obj.SchemaAccountJob != nil {
 		return obj.SchemaAccountJob
 	}
@@ -189,6 +223,10 @@ func (obj *JobTriggerItem) GetActualInstance() interface{} {
 func (obj JobTriggerItem) GetActualInstanceValue() interface{} {
 	if obj.AccountsImportIncrementalJob != nil {
 		return *obj.AccountsImportIncrementalJob
+	}
+
+	if obj.FileTransferJob != nil {
+		return *obj.FileTransferJob
 	}
 
 	if obj.SchemaAccountJob != nil {
