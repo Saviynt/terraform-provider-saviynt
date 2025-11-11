@@ -13,7 +13,7 @@ import (
 // AttributeVersionCompatibility defines which attributes are supported in which versions
 type AttributeVersionCompatibility struct {
 	AttributeName    string
-	Supported25B_1   bool
+	Supported25C_EA  bool
 	SupportedIn25B   bool
 	SupportedIn25A   bool
 	SupportedIn24_10 bool
@@ -69,7 +69,7 @@ func ValidateAttributeCompatibility(saviyntVersion, resourceType, attributeName 
 		diags.AddWarning(
 			"Unsupported Saviynt Version Detected",
 			fmt.Sprintf("Saviynt version '%s' is not officially supported. "+
-				"This provider supports versions: 25.Brisbane.1, 25.Brisbane (25.B), 25.Amsterdam (25.A), and 24.10. "+
+				"This provider supports versions: 25.Chicago.EA, 25.Brisbane (25.B), 25.Amsterdam (25.A), and 24.10. "+
 				"Some features may not work as expected. "+
 				"Please check compatibility at: "+
 				"https://registry.terraform.io/providers/saviynt/saviynt/latest/docs#supported-saviynt-versions-by-provider",
@@ -102,7 +102,7 @@ func isSupportedVersion(version string) bool {
 	version = strings.ToLower(strings.TrimSpace(version))
 
 	// Check for supported versions
-	supportedVersions := []string{"25.brisbane.1", "25.brisbane", "25.b", "25.amsterdam", "25.a", "24.10"}
+	supportedVersions := []string{"25.chicago.ea", "25.c", "25.brisbane", "25.b", "25.amsterdam", "25.a", "24.10"}
 
 	for _, supported := range supportedVersions {
 		if strings.Contains(version, supported) {
@@ -117,9 +117,9 @@ func isSupportedVersion(version string) bool {
 func isAttributeSupported(version string, compat AttributeVersionCompatibility) bool {
 	version = strings.ToLower(strings.TrimSpace(version))
 
-	// Check for 25.B.1 (most specific first)
-	if strings.Contains(version, "25.brisbane.1") {
-		return compat.Supported25B_1
+	// Check for 25.B.1 (most specific first) - includes 25.Chicago.EA and 25.C mapping
+	if strings.Contains(version, "25.chicago.ea") || strings.Contains(version, "25.c") {
+		return compat.Supported25C_EA
 	}
 
 	// Check for 25.Brisbane (25.B)

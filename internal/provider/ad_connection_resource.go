@@ -493,9 +493,9 @@ func (r *AdConnectionResource) BuildADConnector(plan *ADConnectorResourceModel, 
 			Connectiontype: "AD",
 			ConnectionName: plan.ConnectionName.ValueString(),
 			//optional field
-			Description:     util.StringPointerOrEmpty(plan.Description),
-			Defaultsavroles: util.StringPointerOrEmpty(plan.DefaultSavRoles),
-			EmailTemplate:   util.StringPointerOrEmpty(plan.EmailTemplate),
+			ConnectionDescription: util.StringPointerOrEmpty(plan.Description),
+			Defaultsavroles:       util.StringPointerOrEmpty(plan.DefaultSavRoles),
+			EmailTemplate:         util.StringPointerOrEmpty(plan.EmailTemplate),
 		},
 		//required field
 		PASSWORD: password,

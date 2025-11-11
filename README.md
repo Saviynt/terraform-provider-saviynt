@@ -39,6 +39,7 @@ Following resources are available for management:
 - [Enterprise Role](docs/resources/enterprise_roles_resource.md)
 - [Entitlements](docs/resources/entitlement_resource.md)
 - [Privileges](docs/resources/privilege_resource.md)
+- [File Upload](docs/resources/file_upload_resource.md)
 - Connections
   - [Active Directory(AD)](docs/resources/ad_connection_resource.md)
   - [REST](docs/resources/rest_connection_resource.md)
@@ -52,7 +53,9 @@ Following resources are available for management:
   - [Unix](docs/resources/unix_connection_resource.md)
   - [Github REST](docs/resources/github_rest_connection_resource.md)
   - [Okta](docs/resources/okta_connection_resource.md)
+  - [SFTP](docs/resources/sftp_connection_resource.md)
 - Jobs
+  - [Job Control](docs/resources/job_control_resource.md)
   - [Application Data Import Job](docs/resources/application_data_import_job_resource.md)
   - [WS Retry Job](docs/resources/ws_retry_job_resource.md)
   - [WS Retry Blocking Job](docs/resources/ws_retry_blocking_job_resource.md)
@@ -64,6 +67,10 @@ Following resources are available for management:
   - [Schema Role Job](docs/resources/schema_role_job_resource.md)
   - [Schema Account Job](docs/resources/schema_account_job_resource.md)
   - [Schema User Job](docs/resources/schema_user_job_resource.md)
+  - [File Transfer Job](docs/resources/file_transfer_job_resource.md)
+- Transport Packages
+  - [Export Transport Package](docs/resources/export_transport_package_resource.md)
+  - [Import Transport Package](docs/resources/import_transport_package_resource.md)
 - Ephemerals
   - [File ephemeral resource](docs/ephemeral-resources/file_connector_ephemeral_resource.md)
   - [Env ephemeral resource](docs/ephemeral-resources/env_ephemeral_resource.md)
@@ -80,10 +87,10 @@ Check out the [Latest Saviynt Provider Docs](https://registry.terraform.io/provi
 
 | Supported Saviynt EIC Versions | Terraform Provider Version |
 | -------------------------- | ------------------------------ |
-| `25.B.1` | Latest Version: `v0.2.13`<br> Supported Version(s): `v0.2.13`|
-| `25.B` | Latest Version: `v0.2.13`<br> Supported Version(s): `v0.2.8` - `v0.2.13`|
-| `25.A` | Latest Version: `v0.2.13`<br> Supported Version(s): `v0.2.8` - `v0.2.13`|
-| `24.10` | Latest Version: `v0.2.13`<br> Supported Version(s): `v0.2.8` - `v0.2.13`|
+| `25.C` | Latest Version: `v0.3.0`<br> Supported Version(s): `v0.2.13` - `v0.3.0`|
+| `25.B` | Latest Version: `v0.3.0`<br> Supported Version(s): `v0.2.8` - `v0.3.0`|
+| `25.A` | Latest Version: `v0.3.0`<br> Supported Version(s): `v0.2.8` - `v0.3.0`|
+| `24.10` | Latest Version: `v0.3.0`<br> Supported Version(s): `v0.2.8` - `v0.3.0`|
 
 --- 
 
@@ -91,7 +98,7 @@ Check out the [Latest Saviynt Provider Docs](https://registry.terraform.io/provi
 The table below shows attributes that are supported in newer versions of Saviynt EIC. If using an older version of Saviynt, some attributes may not work.
 Check the table to see which attributes are supported in your version before using them.
 
-| Connector                | Attribute(s) Added                                                                                                    | Present in 25.B.1 | Present in 25.B | Present in 25.A | Present in 24.10 |
+| Connector                | Attribute(s) Added                                                                                                    | Present in 25.C | Present in 25.B | Present in 25.A | Present in 24.10 |
 | ------------------------ | --------------------------------------------------------------------------------------------------------------------- | ------------------ | --------------- | --------------- | ---------------- |
 | **Workday Connector**    | `orgrole_import_payload`                                                                          | Yes                | Yes              | No             | No              |
 | **REST Connector**       | `application_discovery_json`, `create_entitlement_json`, `delete_entitlement_json`, `update_entitlement_json`         | Yes                | Yes             | No              | No               |
@@ -155,6 +162,7 @@ resource "saviynt_ad_connection_resource" "example" {
 | **REST/Github** | `connection_json`, `access_tokens` | `connection_json_wo`, `access_tokens_wo` |
 | **Salesforce** | `client_secret`, `refresh_token` | `client_secret_wo`, `refresh_token_wo` |
 | **SAP** | `password`, `prov_password` | `password_wo`, `prov_password_wo` |
+| **SFTP** | `auth_credential_value`, `passphrase` | `auth_credential_value_wo`, `passphrase_wo` |
 | **Unix** | `password`, `passphrase`, `ssh_key` | `password_wo`, `passphrase_wo`, `ssh_key_wo` |
 | **Workday** | `password`, `client_secret`, `refresh_token` | `password_wo`, `client_secret_wo`, `refresh_token_wo` |
 | **Workday SOAP** | `password`, `change_pass_json`, `connection_json` | `password_wo`, `change_pass_json_wo`, `connection_json_wo` |
@@ -784,6 +792,7 @@ The following connectors are supported and can consume credentials provided by t
 - **REST**: `connection_json`
 - **Salesforce**: `client_secret`, `refresh_token`
 - **SAP**: `password`, `prov_password`
+- **SFTP**: `auth_credential_value`, `passphrase`
 - **Unix**: `password`, `passphrase`, `ssh_key`, `ssh_pass_through_password`, `ssh_pass_through_sshkey`, `ssh_pass_through_passphrase`
 - **Workday**: `password`, `client_secret`, `refresh_token`
 - **Workday SOAP**: `password`, `change_pass_json`, `connection_json`
@@ -816,6 +825,7 @@ The following connectors are supported and can consume credentials provided by t
 - **REST**: `connection_json`
 - **Salesforce**: `client_secret`, `refresh_token`
 - **SAP**: `password`, `prov_password`
+- **SFTP**: `auth_credential_value`, `passphrase`
 - **Unix**: `password`, `passphrase`, `ssh_key`, `ssh_pass_through_password`, `ssh_pass_through_sshkey`, `ssh_pass_through_passphrase`
 - **Workday**: `password`, `client_secret`, `refresh_token`
 - **Workday SOAP**: `password`, `change_pass_json`, `connection_json`
@@ -881,6 +891,9 @@ The following limitations are present in the latest version of the provider. The
     - Enterprise Role
     - Entitlement
     - Entitlement Type
+    - Job Control
+    - Transport Packages (Export/Import)
+    - File Upload
 
 ### 2. Endpoints
 - **State management is not supported** for the following attributes:
@@ -907,7 +920,6 @@ The following limitations are present in the latest version of the provider. The
   - `Disable New Account Request if Account Exists`
 
 ### 3. Connections
-- `description` field can't be set from Terraform currently.
 - **State management** is not supported for the following attributes due to their sensitive nature:
   - **AD**: `password`
   - **ADSI**: `password`
@@ -917,10 +929,13 @@ The following limitations are present in the latest version of the provider. The
   - **REST**: `connection_json`
   - **Salesforce**: `client_secret`, `refresh_token`
   - **SAP**: `password`, `prov_password`
+  - **SFTP**: `auth_credential_value`, `passphrase`
   - **Unix**: `password`, `passphrase`, `ssh_key`, `ssh_pass_through_password`, `ssh_pass_through_sshkey`, `ssh_pass_through_passphrase`
   - **Workday**: `password`, `client_secret`, `refresh_token`
   - **Workday SOAP**: `password`, `change_pass_json`, `connection_json`
   - **Okta**: `auth_token`
+- **SFTP Connection**: Requires manual configuration of "Connector Version" field in Saviynt UI after creation (see [Troubleshooting Guide](#9-sftp-connection-post-creation-configuration))
+
 
 ### 4. Dynamic Attributes
 - For `saviynt_dynamic_attribute_resource.dynamic_attributes.attribute_type`, the supported values for proper state tracking are:
@@ -1029,6 +1044,9 @@ The following limitations are present in the latest version of the provider. The
 - **Import functionality is not available** for existing job triggers - jobs must be created through Terraform
 - **Manual job modifications** made in Saviynt UI will not be detected by Terraform 
 - Users can only **create**, **update**, and **delete** job triggers through Terraform for the time being
+
+### 9. Transport Packages
+- **Export and Import Transport Packages**: Exporting or importing transport packages to or from local storage is not supported. Packages are exported within the EIC environment, and the import path must reference a location in EIC rather than a local directory.
 
 ---
 
@@ -1188,6 +1206,139 @@ resource "saviynt_endpoint_resource" "EP1" {
 
 **Note**: For more information on meta-arguments available in Terraform, see the [official Terraform documentation on meta-arguments](https://developer.hashicorp.com/terraform/language/meta-arguments).
 
+### 6. Transport Package Version Attributes
+
+**Issue**: You need to force a transport package operation to run again even when there are no configuration changes.
+
+**Background**: Transport package resources include version attributes (`export_package_version` and `import_package_version`) that serve as triggers to force API calls when needed.
+
+**Use Cases**:
+- **Re-import for testing**: When you want to test the same package import multiple times
+- **Force refresh**: When you suspect the previous operation didn't complete successfully
+- **Scheduled operations**: When you want to trigger regular exports/imports as part of maintenance
+
+**Solution**:
+
+**For Export Transport Package:**
+```hcl
+resource "saviynt_export_transport_package_resource" "example" {
+  export_online          = "false"
+  export_path            = "/saviynt_shared/exports"
+  sav_roles              = ["ROLE_ADMIN"]
+  export_package_version = "1.1"  # Change this to force re-export
+}
+```
+
+**For Import Transport Package:**
+```hcl
+resource "saviynt_import_transport_package_resource" "example" {
+  package_path           = "/saviynt_shared/package.zip"
+  import_package_version = "2.0"  # Change this to force re-import
+}
+```
+
+**Best Practices**:
+- Use semantic versioning (1.0, 1.1, 2.0) for clarity
+- Document the reason for version changes in comments
+- Increment version when you want to force the operation to run again
+- Use meaningful version identifiers like "maintenance-jan-2024"
+
+### 7. File Upload Version Attributes
+
+**Issue**: You need to force file upload to run again even when there are no configuration changes.
+
+**Background**: File upload resources include version attributes (`file_version`) that serve as triggers to force file upload when needed.
+
+**Use Cases**:
+- **Re-upload for testing**: When you want to test the same file upload multiple times
+- **Force refresh**: When the file content has changed but the file path remains the same
+- **File updates**: When you need to upload a modified version of the same file
+
+**Solution**:
+
+**For File Upload Resource:**
+```hcl
+resource "saviynt_file_upload_resource" "example" {
+  file_path     = "/path/to/file.csv"
+  path_location = "Datafiles"
+  file_version  = "1.1"  # Change this to force re-upload
+}
+```
+
+**Best Practices**:
+- Use semantic versioning (1.0, 1.1, 2.0) for clarity
+- Document the reason for version changes in comments
+- Increment version when you want to force the upload to run again
+- Use meaningful version identifiers like "data-update-jan-2024"
+
+### 8. Job Control Version Attributes
+
+**Issue**: You need to force job execution to run again even when there are no configuration changes.
+
+**Background**: Job control resources include version attributes (`run_job_version`) that serve as triggers to force job execution when needed.
+
+**Use Cases**:
+- **Re-run for testing**: When you want to test the same job execution multiple times
+- **Force refresh**: When you suspect the previous job execution didn't complete successfully
+
+**Solution**:
+
+**For Job Control Resource:**
+```hcl
+resource "saviynt_job_control_resource" "example" {
+  run_jobs = [
+    {
+      job_name        = "WSRetryJob"
+      trigger_name    = "ws_retry_trigger_prod"
+      job_group       = "Utility"
+      run_job_version = "1.1"  # Change this to force re-run
+    },
+    {
+      job_name        = "UserImportJob"
+      trigger_name    = "user_import_trigger"
+      job_group       = "Import"
+      run_job_version = "2.0"  # Change this to force re-run
+    }
+  ]
+}
+```
+
+**Best Practices**:
+- Use semantic versioning (1.0, 1.1, 2.0) for clarity
+- Document the reason for version changes in comments
+- Increment version when you want to force the operation to run again
+- Use meaningful version identifiers like "maintenance-jan-2024"
+
+### 9. SFTP Connection Post-Creation Configuration
+
+**Issue**: SFTP connections require manual configuration of the `Select Connector version` field after creation via Terraform.
+
+**Background**: The SFTP connector has a mandatory field called "Connector Version" that cannot be set during the initial Terraform resource creation and must be configured manually in the Saviynt UI.
+
+**Required Action**:
+After successfully creating an SFTP connection resource with Terraform:
+
+1. **Navigate to Saviynt UI**: Go to **Admin** → **Identity Repository** → **Connections**
+2. **Find Your Connection**: Locate the SFTP connection created by Terraform
+3. **Edit Connection**: Click on the connection name to open the configuration
+4. **Set Connector Version**: Configure the "Select Connector version" field with the value `SFTPConnector::1.0`
+5. **Save Changes**: Save and test the connection configuration
+
+**Example Workflow**:
+```bash
+# 1. Create SFTP connection via Terraform
+terraform apply
+
+# 2. Manually configure Connector Version in Saviynt UI
+# 3. Connection is now fully functional
+```
+
+**Important Notes**:
+- This is a **one-time configuration** per SFTP connection resource
+- The connection will not function properly until the Connector Version is set
+- This manual step is required due to API limitations for the SFTP connector
+- Future updates to the connection via Terraform will not affect the Connector Version field
+
 ___
 
 ### Summary
@@ -1198,6 +1349,10 @@ ___
 | `readlabels` Settings    | Alters field naming in API response                | Keep values as `true`                                |
 | User Operation Failures  | Role creation succeeds but user assignment may fail | Validate users exist and are active before applying |
 | Resource Dependencies    | Errors when resources created in wrong order        | Use `depends_on` meta-argument for explicit dependencies |
+| Transport Package Versions | Version attributes force API calls when unchanged | Increment version to trigger re-export/re-import operations |
+| File Upload Versions    | Version attributes force file upload when unchanged | Increment `file_version` to trigger file re-upload |
+| Job Control Versions    | Version attributes force job execution when unchanged | Increment `run_job_version` to trigger job re-execution |
+| SFTP Connector Version  | Manual UI configuration required after creation     | Set `Select Connector version` field in Saviynt UI after Terraform creation |
 
 ---
 

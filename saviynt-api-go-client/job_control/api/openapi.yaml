@@ -691,12 +691,14 @@ components:
           SchemaAccountJob: "#/components/schemas/SchemaAccountJob"
           SchemaRoleJob: "#/components/schemas/SchemaRoleJob"
           AccountsImportIncrementalJob: "#/components/schemas/AccountsImportIncrementalJob"
+          FileTransferJob: "#/components/schemas/FileTransferJob"
         propertyName: jobName
       oneOf:
       - $ref: "#/components/schemas/SchemaUserJob"
       - $ref: "#/components/schemas/SchemaAccountJob"
       - $ref: "#/components/schemas/SchemaRoleJob"
       - $ref: "#/components/schemas/AccountsImportIncrementalJob"
+      - $ref: "#/components/schemas/FileTransferJob"
     CreateTriggersResponse:
       oneOf:
       - $ref: "#/components/schemas/CreateTriggersResponse_oneOf"
@@ -721,6 +723,21 @@ components:
       - properties:
           valueMap:
             $ref: "#/components/schemas/AccountsImportIncrementalJob_allOf_valueMap"
+    FileTransferJob:
+      allOf:
+      - $ref: "#/components/schemas/BaseJobTrigger"
+      - properties:
+          valueMap:
+            $ref: "#/components/schemas/FileTransferJob_allOf_valueMap"
+      example:
+        name: file_transfer_job
+        jobName: FileTransferJob
+        jobGroup: ECFConnector
+        group: GRAILS_JOBS
+        cronExp: 0 33 14 * * ? 2060
+        valueMap:
+          externalConnectionName: "5781"
+          fileTransferAction: DOWNLOAD
     ApplicationDataImportJob_allOf_valueMap:
       example:
         securitysystems:
@@ -851,3 +868,17 @@ components:
         CONNECTION:
           example: AAD_1109
           type: string
+    FileTransferJob_allOf_valueMap:
+      properties:
+        externalConnectionName:
+          example: "5781"
+          type: string
+        fileTransferAction:
+          enum:
+          - DOWNLOAD
+          - UPLOAD
+          example: DOWNLOAD
+          type: string
+      required:
+      - externalConnectionName
+      - fileTransferAction
