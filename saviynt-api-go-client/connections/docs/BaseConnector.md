@@ -6,7 +6,7 @@ Name | Type | Description | Notes
 ------------ | ------------- | ------------- | -------------
 **ConnectionName** | **string** | Name of the connection | 
 **Connectiontype** | **string** | Connection type (e.g., &#39;AD&#39; for Active Directory). | 
-**Description** | Pointer to **string** | Description for the connection. | [optional] 
+**ConnectionDescription** | Pointer to **string** | Description for the connection. | [optional] 
 **Defaultsavroles** | Pointer to **string** | Default SAV roles for managing the connection. | [optional] 
 **EmailTemplate** | Pointer to **string** | Email template for notifications. | [optional] 
 **SslCertificate** | Pointer to **string** | SSL certificates to secure the connection. | [optional] 
@@ -73,30 +73,30 @@ and a boolean to check if the value has been set.
 SetConnectiontype sets Connectiontype field to given value.
 
 
-### GetDescription
+### GetConnectionDescription
 
-`func (o *BaseConnector) GetDescription() string`
+`func (o *BaseConnector) GetConnectionDescription() string`
 
-GetDescription returns the Description field if non-nil, zero value otherwise.
+GetConnectionDescription returns the ConnectionDescription field if non-nil, zero value otherwise.
 
-### GetDescriptionOk
+### GetConnectionDescriptionOk
 
-`func (o *BaseConnector) GetDescriptionOk() (*string, bool)`
+`func (o *BaseConnector) GetConnectionDescriptionOk() (*string, bool)`
 
-GetDescriptionOk returns a tuple with the Description field if it's non-nil, zero value otherwise
+GetConnectionDescriptionOk returns a tuple with the ConnectionDescription field if it's non-nil, zero value otherwise
 and a boolean to check if the value has been set.
 
-### SetDescription
+### SetConnectionDescription
 
-`func (o *BaseConnector) SetDescription(v string)`
+`func (o *BaseConnector) SetConnectionDescription(v string)`
 
-SetDescription sets Description field to given value.
+SetConnectionDescription sets ConnectionDescription field to given value.
 
-### HasDescription
+### HasConnectionDescription
 
-`func (o *BaseConnector) HasDescription() bool`
+`func (o *BaseConnector) HasConnectionDescription() bool`
 
-HasDescription returns a boolean if a field has been set.
+HasConnectionDescription returns a boolean if a field has been set.
 
 ### GetDefaultsavroles
 

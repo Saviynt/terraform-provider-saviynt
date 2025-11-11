@@ -27,6 +27,7 @@ type CreateOrUpdateRequest struct {
 	OktaConnector        *OktaConnector
 	RESTConnector        *RESTConnector
 	SAPConnector         *SAPConnector
+	SFTPConnector        *SFTPConnector
 	SalesforceConnector  *SalesforceConnector
 	UNIXConnector        *UNIXConnector
 	WorkdayConnector     *WorkdayConnector
@@ -93,6 +94,13 @@ func RESTConnectorAsCreateOrUpdateRequest(v *RESTConnector) CreateOrUpdateReques
 func SAPConnectorAsCreateOrUpdateRequest(v *SAPConnector) CreateOrUpdateRequest {
 	return CreateOrUpdateRequest{
 		SAPConnector: v,
+	}
+}
+
+// SFTPConnectorAsCreateOrUpdateRequest is a convenience function that returns SFTPConnector wrapped in CreateOrUpdateRequest
+func SFTPConnectorAsCreateOrUpdateRequest(v *SFTPConnector) CreateOrUpdateRequest {
+	return CreateOrUpdateRequest{
+		SFTPConnector: v,
 	}
 }
 
@@ -281,6 +289,23 @@ func (dst *CreateOrUpdateRequest) UnmarshalJSON(data []byte) error {
 		dst.SAPConnector = nil
 	}
 
+	// try to unmarshal data into SFTPConnector
+	err = newStrictDecoder(data).Decode(&dst.SFTPConnector)
+	if err == nil {
+		jsonSFTPConnector, _ := json.Marshal(dst.SFTPConnector)
+		if string(jsonSFTPConnector) == "{}" { // empty struct
+			dst.SFTPConnector = nil
+		} else {
+			if err = validator.Validate(dst.SFTPConnector); err != nil {
+				dst.SFTPConnector = nil
+			} else {
+				match++
+			}
+		}
+	} else {
+		dst.SFTPConnector = nil
+	}
+
 	// try to unmarshal data into SalesforceConnector
 	err = newStrictDecoder(data).Decode(&dst.SalesforceConnector)
 	if err == nil {
@@ -360,6 +385,7 @@ func (dst *CreateOrUpdateRequest) UnmarshalJSON(data []byte) error {
 		dst.OktaConnector = nil
 		dst.RESTConnector = nil
 		dst.SAPConnector = nil
+		dst.SFTPConnector = nil
 		dst.SalesforceConnector = nil
 		dst.UNIXConnector = nil
 		dst.WorkdayConnector = nil
@@ -409,6 +435,10 @@ func (src CreateOrUpdateRequest) MarshalJSON() ([]byte, error) {
 
 	if src.SAPConnector != nil {
 		return json.Marshal(&src.SAPConnector)
+	}
+
+	if src.SFTPConnector != nil {
+		return json.Marshal(&src.SFTPConnector)
 	}
 
 	if src.SalesforceConnector != nil {
@@ -471,6 +501,10 @@ func (obj *CreateOrUpdateRequest) GetActualInstance() interface{} {
 		return obj.SAPConnector
 	}
 
+	if obj.SFTPConnector != nil {
+		return obj.SFTPConnector
+	}
+
 	if obj.SalesforceConnector != nil {
 		return obj.SalesforceConnector
 	}
@@ -527,6 +561,10 @@ func (obj CreateOrUpdateRequest) GetActualInstanceValue() interface{} {
 
 	if obj.SAPConnector != nil {
 		return *obj.SAPConnector
+	}
+
+	if obj.SFTPConnector != nil {
+		return *obj.SFTPConnector
 	}
 
 	if obj.SalesforceConnector != nil {
