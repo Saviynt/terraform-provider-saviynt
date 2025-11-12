@@ -1,0 +1,164 @@
+{
+  "entitlementAttribute": {
+    "AADGroup": {
+      "colsToPropsMap": {
+        "entitlementID": "id~#~char",
+        "entitlement_value": "displayName~#~char",
+        "customproperty1": "deletedDateTime~#~char",
+        "customproperty2": "description~#~char",
+        "customproperty5": "onPremisesSyncEnabled~#~char",
+        "customproperty6": "onPremisesLastSyncDateTime~#~char",
+        "customproperty7": "mail~#~char",
+        "customproperty8": "mailEnabled~#~char",
+        "customproperty9": "onPremisesSecurityIdentifier~#~char",
+        "customproperty10": "securityEnabled~#~char",
+        "customproperty11": "groupTypes~#~listAsString",
+        "customproperty12": "membershipRule~#~char",
+        "customproperty13": "membershipRuleProcessingState~#~char",
+        "customproperty16": "resourceProvisioningOptions~#~char"
+      }
+    },
+    "AADGroupOwners": {
+      "colsToPropsMap": {
+        "entitlementID": "id~#~char",
+        "entitlement_value": "displayName~#~char"
+      }
+    },
+    "Team": {
+      "colsToPropsMap": {
+        "entitlementID": "id~#~char",
+        "entitlement_value": "displayName~#~char",
+        "description": "description~#~char",
+        "customproperty1": "internalId~#~char",
+        "customproperty2": "webUrl~#~char",
+        "customproperty3": "discoverySettings~#~char",
+        "customproperty6": "isArchived~#~char"
+      }
+    },
+    "Channel": {
+      "colsToPropsMap": {
+        "entitlementID": "id~#~char",
+        "entitlement_value": "displayName~#~char",
+        "description": "description~#~char",
+        "customproperty1": "email~#~char",
+        "customproperty2": "webUrl~#~char"
+      }
+    },
+    "DirectoryRole": {
+      "colsToPropsMap": {
+        "entitlementID": "id~#~char",
+        "entitlement_value": "displayName~#~char",
+        "customproperty4": "description~#~char",
+        "customproperty6": "deletedDateTime~#~char",
+        "customproperty8": "roleTemplateId~#~char"
+      }
+    },
+    "Subscription": {
+      "colsToPropsMap": {
+        "entitlementID": "subscriptionId~#~char",
+        "entitlement_value": "displayName~#~char",
+        "displayname": "displayName~#~char",
+        "customproperty1": "state~#~char",
+        "customproperty2": "subscriptionPolicies.locationPlacementId~#~char",
+        "customproperty4": "subscriptionPolicies.quotaId~#~char",
+        "customproperty6": "subscriptionPolicies.spendingLimit~#~char",
+        "customproperty7": "authorizationSource~#~char"
+      }
+    },
+    "Application": {
+      "colsToPropsMap": {
+        "entitlementID": "id~#~char",
+        "entitlement_value": "displayName~#~char",
+        "customproperty1": "id~#~bool",
+        "customproperty2": "resourceAppId~#~bool",
+        "customproperty4": "orgRestrictions~#~boolListInverse",
+        "customproperty5": "oauth2AllowImplicitFlow~#~bool",
+        "customproperty6": "allowPublicClient~#~bool",
+        "customproperty7": "createdDateTime~#~char"
+      }
+    },
+    "ApplicationInstance": {
+      "colsToPropsMap": {
+        "entitlementID": "id~#~char",
+        "entitlement_value": "displayName~#~char",
+        "displayname": "appDisplayName~#~char",
+        "customproperty1": "appId~#~char",
+        "customproperty4": "appOwnerOrganizationId~#~char",
+        "customproperty5": "appRoleAssignmentRequired~#~char",
+        "customproperty6": "servicePrincipalNames~#~char",
+        "customproperty7": "accountEnabled~#~bool",
+        "customproperty9": "publisherName~#~char"
+      }
+    },
+    "SKU": {
+      "colsToPropsMap": {
+        "entitlementID": "skuId~#~char",
+        "entitlement_value": "skuPartNumber~#~char",
+        "customproperty1": "appliesTo~#~char",
+        "customproperty2": "capabilityStatus~#~char",
+        "customproperty5": "consumedUnits~#~char",
+        "customproperty7": "prepaidUnits~#~listAsString"
+      }
+    },
+    "updateApplications": {
+      "colsToPropsMap": {
+        "customproperty1": "id~#~char",
+        "customproperty11": "createdDateTime~#~char"
+      }
+    },
+    "AppRole": {
+      "colsToPropsMap": {
+        "entitlementID": "id~#~char",
+        "entitlement_value": "displayName~#~char",
+        "customproperty1": "isEnabled~#~char",
+        "customproperty2": "value~#~char",
+        "customproperty4": "id~#~char",
+        "customproperty5": "allowedMemberTypes~#~char"
+      }
+    },
+    "Oauth2Permission": {
+      "colsToPropsMap": {
+        "entitlementID": "id~#~char",
+        "entitlement_value": "userConsentDisplayName~#~char",
+        "customproperty1": "isEnabled~#~char",
+        "customproperty2": "adminConsentDisplayName~#~char",
+        "customproperty4": "id~#~char",
+        "customproperty5": "type~#~char",
+        "customproperty6": "userConsentDescription~#~char",
+        "customproperty7": "adminConsentDescription~#~char",
+        "customproperty8": "value~#~char"
+      }
+    },
+    "ApplicationInstanceAppRole": {
+      "colsToPropsMap": {
+        "entitlementID": "id~#~char",
+        "entitlement_value": "displayName~#~char",
+        "customproperty1": "isEnabled~#~char",
+        "customproperty2": "value~#~char",
+        "customproperty4": "id~#~char",
+        "customproperty5": "allowedMemberTypes~#~char"
+      }
+    },
+    "ApplicationInstanceOauth2Permission": {
+      "colsToPropsMap": {
+        "entitlementID": "id~#~char",
+        "entitlement_value": "userConsentDisplayName~#~char",
+        "customproperty1": "isEnabled~#~char",
+        "customproperty2": "adminConsentDescription~#~char",
+        "customproperty4": "id~#~char",
+        "customproperty6": "userConsentDescription~#~char",
+        "customproperty7": "adminConsentDisplayName~#~char",
+        "customproperty8": "value~#~char"
+      }
+    },
+    "SKUServicePlans": {
+      "colsToPropsMap": {
+        "entitlementID": "servicePlanId~#~char",
+        "entitlement_value": "servicePlanName~#~char",
+        "customproperty1": "provisioningStatus~#~char",
+        "customproperty2": "appliesTo~#~char",
+        "customproperty4": "servicePlanId~#~char"
+      }
+    }
+  }
+}
