@@ -124,10 +124,14 @@ type EntitlementResourceModel struct {
 }
 
 type EntitlementMapModel struct {
-	EntitlementValue types.String `tfsdk:"entitlement_value"` // Maps to Primary in API
-	EntitlementType  types.String `tfsdk:"entitlement_type"`  // Maps to PrimaryEntType in API
-	Endpoint         types.String `tfsdk:"endpoint"`          // Not returned in get api but required while createUpdate
-	EntitlementKey   types.String `tfsdk:"entitlement_key"`   // Maps to PrimaryEntKey in API (computed)
+	EntitlementValue       types.String `tfsdk:"entitlement_value"`         // Maps to Primary in API
+	EntitlementType        types.String `tfsdk:"entitlement_type"`          // Maps to PrimaryEntType in API
+	Endpoint               types.String `tfsdk:"endpoint"`                  // Not returned in get api but required while createUpdate
+	EntitlementKey         types.String `tfsdk:"entitlement_key"`           // Maps to PrimaryEntKey in API (computed)
+	RequestFilter          types.Bool   `tfsdk:"request_filter"`            // Maps to RequestFilter in API
+	ExcludeEntitlement     types.Bool   `tfsdk:"exclude_entitlement"`       // Maps to ExcludeEntitlement in API
+	AddDependentTask       types.Bool   `tfsdk:"add_dependent_task"`        // Maps to AddDependentTask in API
+	RemoveDependentEntTask types.Bool   `tfsdk:"remove_dependent_ent_task"` // Maps to RemoveDependentEntTask in API
 }
 
 // entitlementMapsEqual compares two slices of EntitlementMapModel for equality
@@ -173,12 +177,18 @@ func entitlementMapsEqual(a, b []EntitlementMapModel) bool {
 		// Compare all fields
 		if entMapA.EntitlementValue.ValueString() != entMapB.EntitlementValue.ValueString() ||
 			entMapA.EntitlementType.ValueString() != entMapB.EntitlementType.ValueString() ||
-			entMapA.Endpoint.ValueString() != entMapB.Endpoint.ValueString() {
+			entMapA.Endpoint.ValueString() != entMapB.Endpoint.ValueString() ||
+			entMapA.RequestFilter.ValueBool() != entMapB.RequestFilter.ValueBool() ||
+			entMapA.ExcludeEntitlement.ValueBool() != entMapB.ExcludeEntitlement.ValueBool() ||
+			entMapA.AddDependentTask.ValueBool() != entMapB.AddDependentTask.ValueBool() ||
+			entMapA.RemoveDependentEntTask.ValueBool() != entMapB.RemoveDependentEntTask.ValueBool() {
 			log.Printf("[DEBUG] entitlementMapsEqual - Field mismatch for key %s:", key)
-			log.Printf("[DEBUG]   A: EntitlementValue=%s, EntitlementType=%s, Endpoint=%s",
-				entMapA.EntitlementValue.ValueString(), entMapA.EntitlementType.ValueString(), entMapA.Endpoint.ValueString())
-			log.Printf("[DEBUG]   B: EntitlementValue=%s, EntitlementType=%s, Endpoint=%s",
-				entMapB.EntitlementValue.ValueString(), entMapB.EntitlementType.ValueString(), entMapB.Endpoint.ValueString())
+			log.Printf("[DEBUG]   A: EntitlementValue=%s, EntitlementType=%s, Endpoint=%s, RequestFilter=%t, ExcludeEntitlement=%t, AddDependentTask=%t, RemoveDependentEntTask=%t",
+				entMapA.EntitlementValue.ValueString(), entMapA.EntitlementType.ValueString(), entMapA.Endpoint.ValueString(),
+				entMapA.RequestFilter.ValueBool(), entMapA.ExcludeEntitlement.ValueBool(), entMapA.AddDependentTask.ValueBool(), entMapA.RemoveDependentEntTask.ValueBool())
+			log.Printf("[DEBUG]   B: EntitlementValue=%s, EntitlementType=%s, Endpoint=%s, RequestFilter=%t, ExcludeEntitlement=%t, AddDependentTask=%t, RemoveDependentEntTask=%t",
+				entMapB.EntitlementValue.ValueString(), entMapB.EntitlementType.ValueString(), entMapB.Endpoint.ValueString(),
+				entMapB.RequestFilter.ValueBool(), entMapB.ExcludeEntitlement.ValueBool(), entMapB.AddDependentTask.ValueBool(), entMapB.RemoveDependentEntTask.ValueBool())
 			return false
 		}
 	}
@@ -304,6 +314,26 @@ func (r *EntitlementResource) Schema(ctx context.Context, req resource.SchemaReq
 					"entitlement_key": schema.StringAttribute{
 						Computed:    true,
 						Description: "The entitlement key from API (computed)",
+					},
+					"request_filter": schema.BoolAttribute{
+						Optional:    true,
+						Computed:    true,
+						Description: "Request filter flag for the mapping",
+					},
+					"exclude_entitlement": schema.BoolAttribute{
+						Optional:    true,
+						Computed:    true,
+						Description: "Exclude entitlement flag",
+					},
+					"add_dependent_task": schema.BoolAttribute{
+						Optional:    true,
+						Computed:    true,
+						Description: "Add dependent task flag",
+					},
+					"remove_dependent_ent_task": schema.BoolAttribute{
+						Optional:    true,
+						Computed:    true,
+						Description: "Remove dependent entitlement task flag",
 					},
 				},
 			},
@@ -467,13 +497,7 @@ func (r *EntitlementResource) ProcessEntitlementMapForEntitlementCreate(ctx cont
 
 		var apiEntitlementMaps []openapi.CreateUpdateEntitlementRequestEntitlementmapInner
 		for _, entMap := range entitlementMaps {
-			apiMap := openapi.CreateUpdateEntitlementRequestEntitlementmapInner{
-				Entitlementvalue: util.StringPointerOrEmpty(entMap.EntitlementValue),
-				Entitlementtype:  util.StringPointerOrEmpty(entMap.EntitlementType),
-				Endpoint:         util.StringPointerOrEmpty(entMap.Endpoint),
-				UpdateType:       util.StringPtr("ADD"),
-			}
-			apiEntitlementMaps = append(apiEntitlementMaps, apiMap)
+			apiEntitlementMaps = append(apiEntitlementMaps, r.BuildEntitlementMapAPIObject(entMap, "ADD"))
 		}
 		createReq.Entitlementmap = apiEntitlementMaps
 	}
@@ -789,19 +813,27 @@ func (r *EntitlementResource) ProcessEntitlementMapForEntitlementRead(ctx contex
 				}
 
 				entMap := EntitlementMapModel{
-					EntitlementValue: util.SafeString(mapDetail.Primary),
-					EntitlementType:  util.SafeString(mapDetail.PrimaryEntType),
-					Endpoint:         types.StringValue(endpointValue),
-					EntitlementKey:   util.SafeString(mapDetail.PrimaryEntKey),
+					EntitlementValue:       util.SafeString(mapDetail.Primary),
+					EntitlementType:        util.SafeString(mapDetail.PrimaryEntType),
+					Endpoint:               types.StringValue(endpointValue),
+					EntitlementKey:         util.SafeString(mapDetail.PrimaryEntKey),
+					RequestFilter:          util.SafeBoolDatasource(mapDetail.RequestFilter),
+					ExcludeEntitlement:     util.SafeBoolDatasource(mapDetail.ExcludeEntitlement),
+					AddDependentTask:       util.SafeBoolDatasource(mapDetail.AddDependentTask),
+					RemoveDependentEntTask: util.SafeBoolDatasource(mapDetail.RemoveDependentEntTask),
 				}
 				entitlementMaps = append(entitlementMaps, entMap)
 			}
 			state.EntitlementMap, _ = types.SetValueFrom(ctx, types.ObjectType{
 				AttrTypes: map[string]attr.Type{
-					"entitlement_value": types.StringType,
-					"entitlement_type":  types.StringType,
-					"endpoint":          types.StringType,
-					"entitlement_key":   types.StringType,
+					"entitlement_value":         types.StringType,
+					"entitlement_type":          types.StringType,
+					"endpoint":                  types.StringType,
+					"entitlement_key":           types.StringType,
+					"request_filter":            types.BoolType,
+					"exclude_entitlement":       types.BoolType,
+					"add_dependent_task":        types.BoolType,
+					"remove_dependent_ent_task": types.BoolType,
 				},
 			}, entitlementMaps)
 		} else {
@@ -810,10 +842,14 @@ func (r *EntitlementResource) ProcessEntitlementMapForEntitlementRead(ctx contex
 				emptyMaps := []EntitlementMapModel{}
 				state.EntitlementMap, _ = types.SetValueFrom(ctx, types.ObjectType{
 					AttrTypes: map[string]attr.Type{
-						"entitlement_value": types.StringType,
-						"entitlement_type":  types.StringType,
-						"endpoint":          types.StringType,
-						"entitlement_key":   types.StringType,
+						"entitlement_value":         types.StringType,
+						"entitlement_type":          types.StringType,
+						"endpoint":                  types.StringType,
+						"entitlement_key":           types.StringType,
+						"request_filter":            types.BoolType,
+						"exclude_entitlement":       types.BoolType,
+						"add_dependent_task":        types.BoolType,
+						"remove_dependent_ent_task": types.BoolType,
 					},
 				}, emptyMaps)
 			}
@@ -860,10 +896,14 @@ func (r *EntitlementResource) ProcessEntitlementMapForEntitlementRead(ctx contex
 				}
 
 				entMap := EntitlementMapModel{
-					EntitlementValue: util.SafeString(mapDetail.Primary),
-					EntitlementType:  util.SafeString(mapDetail.PrimaryEntType),
-					Endpoint:         types.StringValue(endpointValue),
-					EntitlementKey:   util.SafeString(mapDetail.PrimaryEntKey),
+					EntitlementValue:       util.SafeString(mapDetail.Primary),
+					EntitlementType:        util.SafeString(mapDetail.PrimaryEntType),
+					Endpoint:               types.StringValue(endpointValue),
+					EntitlementKey:         util.SafeString(mapDetail.PrimaryEntKey),
+					RequestFilter:          util.SafeBoolDatasource(mapDetail.RequestFilter),
+					ExcludeEntitlement:     util.SafeBoolDatasource(mapDetail.ExcludeEntitlement),
+					AddDependentTask:       util.SafeBoolDatasource(mapDetail.AddDependentTask),
+					RemoveDependentEntTask: util.SafeBoolDatasource(mapDetail.RemoveDependentEntTask),
 				}
 				apiMaps = append(apiMaps, entMap)
 			}
@@ -885,10 +925,14 @@ func (r *EntitlementResource) ProcessEntitlementMapForEntitlementRead(ctx contex
 		if len(apiMaps) > 0 {
 			state.EntitlementMap, _ = types.SetValueFrom(ctx, types.ObjectType{
 				AttrTypes: map[string]attr.Type{
-					"entitlement_value": types.StringType,
-					"entitlement_type":  types.StringType,
-					"endpoint":          types.StringType,
-					"entitlement_key":   types.StringType,
+					"entitlement_value":         types.StringType,
+					"entitlement_type":          types.StringType,
+					"endpoint":                  types.StringType,
+					"entitlement_key":           types.StringType,
+					"request_filter":            types.BoolType,
+					"exclude_entitlement":       types.BoolType,
+					"add_dependent_task":        types.BoolType,
+					"remove_dependent_ent_task": types.BoolType,
 				},
 			}, apiMaps)
 		} else if !state.EntitlementMap.IsNull() {
@@ -896,10 +940,14 @@ func (r *EntitlementResource) ProcessEntitlementMapForEntitlementRead(ctx contex
 			emptyMaps := []EntitlementMapModel{}
 			state.EntitlementMap, _ = types.SetValueFrom(ctx, types.ObjectType{
 				AttrTypes: map[string]attr.Type{
-					"entitlement_value": types.StringType,
-					"entitlement_type":  types.StringType,
-					"endpoint":          types.StringType,
-					"entitlement_key":   types.StringType,
+					"entitlement_value":         types.StringType,
+					"entitlement_type":          types.StringType,
+					"endpoint":                  types.StringType,
+					"entitlement_key":           types.StringType,
+					"request_filter":            types.BoolType,
+					"exclude_entitlement":       types.BoolType,
+					"add_dependent_task":        types.BoolType,
+					"remove_dependent_ent_task": types.BoolType,
 				},
 			}, emptyMaps)
 		}
@@ -1060,32 +1108,48 @@ func (r *EntitlementResource) ProcessEntitlementMapForEntitlementUpdate(ctx cont
 		// Add new maps (in plan but not in state)
 		for key, entMap := range planMapKeys {
 			if _, exists := stateMapKeys[key]; !exists {
-				apiMap := openapi.CreateUpdateEntitlementRequestEntitlementmapInner{
-					Entitlementvalue: util.StringPointerOrEmpty(entMap.EntitlementValue),
-					Entitlementtype:  util.StringPointerOrEmpty(entMap.EntitlementType),
-					Endpoint:         util.StringPointerOrEmpty(entMap.Endpoint),
-					UpdateType:       util.StringPtr("ADD"),
-				}
-				apiEntitlementMaps = append(apiEntitlementMaps, apiMap)
+				apiEntitlementMaps = append(apiEntitlementMaps, r.BuildEntitlementMapAPIObject(entMap, "ADD"))
 			}
 		}
 
 		// Remove old maps (in state but not in plan)
 		for key, entMap := range stateMapKeys {
 			if _, exists := planMapKeys[key]; !exists {
-				apiMap := openapi.CreateUpdateEntitlementRequestEntitlementmapInner{
-					Entitlementvalue: util.StringPointerOrEmpty(entMap.EntitlementValue),
-					Entitlementtype:  util.StringPointerOrEmpty(entMap.EntitlementType),
-					Endpoint:         util.StringPointerOrEmpty(entMap.Endpoint),
-					UpdateType:       util.StringPtr("REMOVE"),
+				apiEntitlementMaps = append(apiEntitlementMaps, r.BuildEntitlementMapAPIObject(entMap, "REMOVE"))
+			}
+		}
+
+		// Update existing maps (in both plan and state but with different values)
+		for key, planMap := range planMapKeys {
+			if stateMap, exists := stateMapKeys[key]; exists {
+				// Check if any boolean fields have changed
+				if planMap.RequestFilter != stateMap.RequestFilter ||
+					planMap.ExcludeEntitlement != stateMap.ExcludeEntitlement ||
+					planMap.AddDependentTask != stateMap.AddDependentTask ||
+					planMap.RemoveDependentEntTask != stateMap.RemoveDependentEntTask {
+
+					apiEntitlementMaps = append(apiEntitlementMaps, r.BuildEntitlementMapAPIObject(planMap, "UPDATE"))
 				}
-				apiEntitlementMaps = append(apiEntitlementMaps, apiMap)
 			}
 		}
 
 		if len(apiEntitlementMaps) > 0 {
 			updateReq.Entitlementmap = apiEntitlementMaps
 		}
+	}
+}
+
+// BuildEntitlementMapAPIObject creates an API object from EntitlementMapModel
+func (r *EntitlementResource) BuildEntitlementMapAPIObject(entMap EntitlementMapModel, updateType string) openapi.CreateUpdateEntitlementRequestEntitlementmapInner {
+	return openapi.CreateUpdateEntitlementRequestEntitlementmapInner{
+		Entitlementvalue:       util.StringPointerOrEmpty(entMap.EntitlementValue),
+		Entitlementtype:        util.StringPointerOrEmpty(entMap.EntitlementType),
+		Endpoint:               util.StringPointerOrEmpty(entMap.Endpoint),
+		Requestfilter:          util.BoolToStringPointer(entMap.RequestFilter),
+		Excludeentitlement:     util.BoolToStringPointer(entMap.ExcludeEntitlement),
+		Adddependenttask:       util.BoolToStringPointer(entMap.AddDependentTask),
+		Removedependententtask: util.BoolToStringPointer(entMap.RemoveDependentEntTask),
+		UpdateType:             util.StringPtr(updateType),
 	}
 }
 
@@ -1255,14 +1319,31 @@ func (r *EntitlementResource) Create(ctx context.Context, req resource.CreateReq
 
 		for i := range entitlementMaps {
 			entitlementMaps[i].EntitlementKey = types.StringValue("")
+			// Set default values for boolean fields if they are unknown
+			if entitlementMaps[i].RequestFilter.IsUnknown() {
+				entitlementMaps[i].RequestFilter = types.BoolValue(false)
+			}
+			if entitlementMaps[i].ExcludeEntitlement.IsUnknown() {
+				entitlementMaps[i].ExcludeEntitlement = types.BoolValue(false)
+			}
+			if entitlementMaps[i].AddDependentTask.IsUnknown() {
+				entitlementMaps[i].AddDependentTask = types.BoolValue(false)
+			}
+			if entitlementMaps[i].RemoveDependentEntTask.IsUnknown() {
+				entitlementMaps[i].RemoveDependentEntTask = types.BoolValue(false)
+			}
 		}
 
 		plan.EntitlementMap, _ = types.SetValueFrom(ctx, types.ObjectType{
 			AttrTypes: map[string]attr.Type{
-				"entitlement_value": types.StringType,
-				"entitlement_type":  types.StringType,
-				"endpoint":          types.StringType,
-				"entitlement_key":   types.StringType,
+				"entitlement_value":         types.StringType,
+				"entitlement_type":          types.StringType,
+				"endpoint":                  types.StringType,
+				"entitlement_key":           types.StringType,
+				"request_filter":            types.BoolType,
+				"exclude_entitlement":       types.BoolType,
+				"add_dependent_task":        types.BoolType,
+				"remove_dependent_ent_task": types.BoolType,
 			},
 		}, entitlementMaps)
 	}
@@ -1332,6 +1413,9 @@ func (r *EntitlementResource) Update(ctx context.Context, req resource.UpdateReq
 		log.Printf("[ERROR] Failed to get state from request: %v", resp.Diagnostics)
 		return
 	}
+
+	log.Printf("[DEBUG] Update - Plan: %+v", plan)
+	log.Printf("[DEBUG] Update - State: %+v", state)
 
 	// Update the entitlement using helper function
 	updateResp, err := r.UpdateEntitlement(ctx, &plan, &state)
