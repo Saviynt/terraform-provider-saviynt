@@ -224,7 +224,7 @@ func (r *SftpConnectionResource) BuildSFTPConnector(plan *SFTPConnectorResourceM
 	sftpConn := openapi.SFTPConnector{
 		BaseConnector: openapi.BaseConnector{
 			//required field
-			Connectiontype: "SFTP",
+			Connectiontype: "SFTPFileTransfer",
 			ConnectionName: plan.ConnectionName.ValueString(),
 			//optional field
 			ConnectionDescription: plan.Description.ValueStringPointer(),
