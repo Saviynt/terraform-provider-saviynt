@@ -1,4 +1,22 @@
-## 0.3.0 (Unreleased)
+## 0.3.1 (released)
+
+BUG FIXES:
+
+* **resource/saviynt_entitlement_resource:** Fixed entitlement map update functionality
+  - Fixed issue where existing entitlement maps could not be updated
+  - Previously only supported add/remove operations, now correctly handles field-level updates
+
+ENHANCEMENTS:
+
+* **resource/saviynt_entitlement_resource:** Added support for additional entitlement map fields
+  - Added support for boolean fields: `request_filter`, `exclude_entitlement`, `add_dependent_task`, `remove_dependent_ent_task`
+
+* **resource/saviynt_sftp_connection_resource:** Updated connection type configuration
+  - Changed connection type from `SFTP` to `SFTPFileTransfer` to align with official Saviynt EIC documentation
+  - **Note:** Ensure your EIC instance has the `SFTPFileTransfer` connection type configured for this resource to work properly
+  - For setup instructions, see: [Saviynt Documentation](https://docs.saviyntcloud.com/bundle/SFTP-Certified-25/page/Content/Configuring-the-Integration-for-File-Transfer.htm#creating_a_connection_type)
+
+## 0.3.0 (released)
 
 FEATURES:
 
