@@ -123,3 +123,8 @@ func (p *SaviyntProvider) AuthenticatedAPICallWithRetry(ctx context.Context, ope
 
 	return p.makeAuthenticatedRequestWithRetry(ctx, apiCall)
 }
+
+// Is401Error exposes the is401Error function for testing
+func Is401Error(err error) bool {
+	return is401Error(err)
+}
