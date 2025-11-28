@@ -179,7 +179,7 @@ components:
         - entitlementowner10
         entitlementmap:
         - endpoint: endpoint
-          requestfilter: true
+          requestfilter: "1"
           excludeentitlement: excludeentitlement
           adddependenttask: adddependenttask
           removedependententtask: removedependententtask
@@ -187,7 +187,7 @@ components:
           entitlementvalue: entitlementvalue
           updateType: ADD
         - endpoint: endpoint
-          requestfilter: true
+          requestfilter: "1"
           excludeentitlement: excludeentitlement
           adddependenttask: adddependenttask
           removedependententtask: removedependententtask
@@ -968,7 +968,7 @@ components:
     CreateUpdateEntitlementRequest_entitlementmap_inner:
       example:
         endpoint: endpoint
-        requestfilter: true
+        requestfilter: "1"
         excludeentitlement: excludeentitlement
         adddependenttask: adddependenttask
         removedependententtask: removedependententtask
@@ -987,7 +987,7 @@ components:
           type: string
         requestfilter:
           description: Request filter flag
-          type: boolean
+          type: string
         excludeentitlement:
           description: Exclude entitlement flag
           type: string

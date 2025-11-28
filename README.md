@@ -934,7 +934,9 @@ The following limitations are present in the latest version of the provider. The
   - **Workday**: `password`, `client_secret`, `refresh_token`
   - **Workday SOAP**: `password`, `change_pass_json`, `connection_json`
   - **Okta**: `auth_token`
-- **SFTP Connection**: Requires manual configuration of "Connector Version" field in Saviynt UI after creation (see [Troubleshooting Guide](#9-sftp-connection-post-creation-configuration))
+- **SFTP Connection**: 
+  - Requires manual configuration of "Connector Version" field in Saviynt UI after creation (see [Troubleshooting Guide](#9-sftp-connection-post-creation-configuration))
+  - **Important**: Ensure your EIC instance has the `SFTPFileTransfer` connection type configured for this resource to work properly. Refer [docs](https://docs.saviyntcloud.com/bundle/SFTP-Certified-25/page/Content/Configuring-the-Integration-for-File-Transfer.htm#creating_a_connection_type) for more info.
 
 
 ### 4. Dynamic Attributes
