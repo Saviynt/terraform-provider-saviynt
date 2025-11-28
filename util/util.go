@@ -471,3 +471,13 @@ func StringSlicesEqual(a, b []string) bool {
 
 	return true
 }
+
+func BoolToStringPointer(tfBool types.Bool) *string {
+	if tfBool.IsNull() || tfBool.IsUnknown() {
+		return nil
+	}
+	if tfBool.ValueBool() {
+		return StringPtr("1")
+	}
+	return StringPtr("0")
+}
