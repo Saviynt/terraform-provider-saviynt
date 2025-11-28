@@ -7,7 +7,7 @@ Name | Type | Description | Notes
 **Entitlementvalue** | Pointer to **string** | Value of the entitlement | [optional] 
 **Entitlementtype** | Pointer to **string** | Type of the entitlement | [optional] 
 **Endpoint** | Pointer to **string** | Endpoint name | [optional] 
-**Requestfilter** | Pointer to **bool** | Request filter flag | [optional] 
+**Requestfilter** | Pointer to **string** | Request filter flag | [optional] 
 **Excludeentitlement** | Pointer to **string** | Exclude entitlement flag | [optional] 
 **Adddependenttask** | Pointer to **string** | Add dependent task flag | [optional] 
 **Removedependententtask** | Pointer to **string** | Remove dependent entitlement task flag | [optional] 
@@ -109,20 +109,20 @@ HasEndpoint returns a boolean if a field has been set.
 
 ### GetRequestfilter
 
-`func (o *CreateUpdateEntitlementRequestEntitlementmapInner) GetRequestfilter() bool`
+`func (o *CreateUpdateEntitlementRequestEntitlementmapInner) GetRequestfilter() string`
 
 GetRequestfilter returns the Requestfilter field if non-nil, zero value otherwise.
 
 ### GetRequestfilterOk
 
-`func (o *CreateUpdateEntitlementRequestEntitlementmapInner) GetRequestfilterOk() (*bool, bool)`
+`func (o *CreateUpdateEntitlementRequestEntitlementmapInner) GetRequestfilterOk() (*string, bool)`
 
 GetRequestfilterOk returns a tuple with the Requestfilter field if it's non-nil, zero value otherwise
 and a boolean to check if the value has been set.
 
 ### SetRequestfilter
 
-`func (o *CreateUpdateEntitlementRequestEntitlementmapInner) SetRequestfilter(v bool)`
+`func (o *CreateUpdateEntitlementRequestEntitlementmapInner) SetRequestfilter(v string)`
 
 SetRequestfilter sets Requestfilter field to given value.
 

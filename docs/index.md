@@ -531,7 +531,9 @@ The following limitations are present in the latest version of the provider. The
 - The following fields are **not currently configurable via Terraform**:
   - **Github REST**: `Status_Threshold_Config`, `Pam_Config`
   - **Workday**: `orgrole_import_payload`
-- **SFTP Connection**: Requires manual configuration of "Connector Version" field in Saviynt UI after creation (see [Troubleshooting Guide](#9-sftp-connection-post-creation-configuration))
+- **SFTP Connection**: 
+  - Requires manual configuration of "Connector Version" field in Saviynt UI after creation (see [Troubleshooting Guide](#9-sftp-connection-post-creation-configuration))
+  - **Important**: Ensure your EIC instance has the `SFTPFileTransfer` connection type configured for this resource to work properly. Refer [docs](https://docs.saviyntcloud.com/bundle/SFTP-Certified-25/page/Content/Configuring-the-Integration-for-File-Transfer.htm#creating_a_connection_type) for more info.
 
 ### 4. Dynamic Attributes
 - For `saviynt_dynamic_attribute_resource.dynamic_attributes.attribute_type`, the supported values for proper state tracking are:
