@@ -45,14 +45,22 @@ resource "saviynt_entitlement_resource" "test_entitlement" {
 
   entitlement_map = [
     {
-      entitlement_value = "sample_ent_1"
-      entitlement_type  = "sample_ent_type_2"
-      endpoint          = "sample_endpoint2"
+      entitlement_value         = "sample_ent_1"
+      entitlement_type          = "sample_ent_type_2"
+      endpoint                  = "sample_endpoint2"
+      request_filter            = false
+      exclude_entitlement       = true
+      add_dependent_task        = true
+      remove_dependent_ent_task = false
     },
     {
-      entitlement_value = "sample_ent_2"
-      entitlement_type  = "sample_ent_type_3"
-      endpoint          = "sample_endpoint3"
+      entitlement_value         = "sample_ent_2"
+      entitlement_type          = "sample_ent_type_3"
+      endpoint                  = "sample_endpoint3"
+      request_filter            = false
+      exclude_entitlement       = true
+      add_dependent_task        = true
+      remove_dependent_ent_task = false
     }
   ]
 
@@ -142,6 +150,13 @@ Required:
 - `endpoint` (String) The endpoint for this mapping
 - `entitlement_type` (String) The entitlement type to map
 - `entitlement_value` (String) The entitlement value to map
+
+Optional:
+
+- `add_dependent_task` (Boolean) Add dependent task flag
+- `exclude_entitlement` (Boolean) Exclude entitlement flag
+- `remove_dependent_ent_task` (Boolean) Remove dependent entitlement task flag
+- `request_filter` (Boolean) Request filter flag for the mapping
 
 Read-Only:
 

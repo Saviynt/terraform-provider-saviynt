@@ -30,14 +30,22 @@ resource "saviynt_entitlement_resource" "test_entitlement" {
 
   entitlement_map = [
     {
-      entitlement_value = "sample_ent_1"
-      entitlement_type  = "sample_ent_type_2"
-      endpoint          = "sample_endpoint2"
+      entitlement_value         = "sample_ent_1"
+      entitlement_type          = "sample_ent_type_2"
+      endpoint                  = "sample_endpoint2"
+      request_filter            = false
+      exclude_entitlement       = true
+      add_dependent_task        = true
+      remove_dependent_ent_task = false
     },
     {
-      entitlement_value = "sample_ent_2"
-      entitlement_type  = "sample_ent_type_3"
-      endpoint          = "sample_endpoint3"
+      entitlement_value         = "sample_ent_2"
+      entitlement_type          = "sample_ent_type_3"
+      endpoint                  = "sample_endpoint3"
+      request_filter            = false
+      exclude_entitlement       = true
+      add_dependent_task        = true
+      remove_dependent_ent_task = false
     }
   ]
 
