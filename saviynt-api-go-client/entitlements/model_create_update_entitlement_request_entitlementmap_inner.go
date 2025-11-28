@@ -26,7 +26,7 @@ type CreateUpdateEntitlementRequestEntitlementmapInner struct {
 	// Endpoint name
 	Endpoint *string `json:"endpoint,omitempty"`
 	// Request filter flag
-	Requestfilter *bool `json:"requestfilter,omitempty"`
+	Requestfilter *string `json:"requestfilter,omitempty"`
 	// Exclude entitlement flag
 	Excludeentitlement *string `json:"excludeentitlement,omitempty"`
 	// Add dependent task flag
@@ -151,9 +151,9 @@ func (o *CreateUpdateEntitlementRequestEntitlementmapInner) SetEndpoint(v string
 }
 
 // GetRequestfilter returns the Requestfilter field value if set, zero value otherwise.
-func (o *CreateUpdateEntitlementRequestEntitlementmapInner) GetRequestfilter() bool {
+func (o *CreateUpdateEntitlementRequestEntitlementmapInner) GetRequestfilter() string {
 	if o == nil || IsNil(o.Requestfilter) {
-		var ret bool
+		var ret string
 		return ret
 	}
 	return *o.Requestfilter
@@ -161,7 +161,7 @@ func (o *CreateUpdateEntitlementRequestEntitlementmapInner) GetRequestfilter() b
 
 // GetRequestfilterOk returns a tuple with the Requestfilter field value if set, nil otherwise
 // and a boolean to check if the value has been set.
-func (o *CreateUpdateEntitlementRequestEntitlementmapInner) GetRequestfilterOk() (*bool, bool) {
+func (o *CreateUpdateEntitlementRequestEntitlementmapInner) GetRequestfilterOk() (*string, bool) {
 	if o == nil || IsNil(o.Requestfilter) {
 		return nil, false
 	}
@@ -177,8 +177,8 @@ func (o *CreateUpdateEntitlementRequestEntitlementmapInner) HasRequestfilter() b
 	return false
 }
 
-// SetRequestfilter gets a reference to the given bool and assigns it to the Requestfilter field.
-func (o *CreateUpdateEntitlementRequestEntitlementmapInner) SetRequestfilter(v bool) {
+// SetRequestfilter gets a reference to the given string and assigns it to the Requestfilter field.
+func (o *CreateUpdateEntitlementRequestEntitlementmapInner) SetRequestfilter(v string) {
 	o.Requestfilter = &v
 }
 
