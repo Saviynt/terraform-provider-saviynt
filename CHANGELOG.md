@@ -1,3 +1,10 @@
+## 0.3.2 (released)
+
+DOCUMENTATION:
+
+* **README:** Updated "Supported Saviynt Versions by Provider" table to reflect current version support
+  - Added version 0.3.2 as the latest supported version across all EIC releases (24.10, 25.A, 25.B, 25.C)
+
 ## 0.3.1 (released)
 
 BUG FIXES:
