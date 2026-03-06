@@ -87,10 +87,10 @@ Check out the [Latest Saviynt Provider Docs](https://registry.terraform.io/provi
 
 | Supported Saviynt EIC Versions | Terraform Provider Version |
 | -------------------------- | ------------------------------ |
-| `25.C` | Latest Version: `v0.3.2`<br> Supported Version(s): `v0.2.13` - `v0.3.2`|
-| `25.B` | Latest Version: `v0.3.2`<br> Supported Version(s): `v0.2.8` - `v0.3.2`|
-| `25.A` | Latest Version: `v0.3.2`<br> Supported Version(s): `v0.2.8` - `v0.3.2`|
-| `24.10` | Latest Version: `v0.3.2`<br> Supported Version(s): `v0.2.8` - `v0.3.2`|
+| `25.C` | Latest Version: `v0.3.3`<br> Supported Version(s): `v0.2.13` - `v0.3.3`|
+| `25.B` | Latest Version: `v0.3.3`<br> Supported Version(s): `v0.2.8` - `v0.3.3`|
+| `25.A` | Latest Version: `v0.3.3`<br> Supported Version(s): `v0.2.8` - `v0.3.3`|
+| `24.10` | Latest Version: `v0.3.3`<br> Supported Version(s): `v0.2.8` - `v0.3.3`|
 
 --- 
 
@@ -1087,7 +1087,7 @@ If the **Restrict API access based on SAV Role** option is enabled (`Settings > 
 │  on generated.tf line 5, in resource "saviynt_endpoint_resource" "example":
 │   5: resource "saviynt_endpoint_resource" "example" {
 │
-│ Error: 412 Precondition Failed
+│ failed to check existing endpoint: 412 Precondition Failed
 ```
 Recommendation:
 Ensure that **Restrict API access based on SAV Role** is disabled for successful provisioning via Terraform.
