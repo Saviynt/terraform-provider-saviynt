@@ -32,6 +32,8 @@ type ConnectionTimeoutConfig struct {
 	ReadTimeout *int32 `json:"readTimeout,omitempty"`
 	// Connection timeout duration (in seconds).
 	ConnectionTimeout *int32 `json:"connectionTimeout,omitempty"`
+	// HTTP status code that indicates authentication error requiring retry.
+	AuthErrorWithStatusCode *int32 `json:"authErrorWithStatusCode,omitempty"`
 }
 
 // NewConnectionTimeoutConfig instantiates a new ConnectionTimeoutConfig object
@@ -275,6 +277,38 @@ func (o *ConnectionTimeoutConfig) SetConnectionTimeout(v int32) {
 	o.ConnectionTimeout = &v
 }
 
+// GetAuthErrorWithStatusCode returns the AuthErrorWithStatusCode field value if set, zero value otherwise.
+func (o *ConnectionTimeoutConfig) GetAuthErrorWithStatusCode() int32 {
+	if o == nil || IsNil(o.AuthErrorWithStatusCode) {
+		var ret int32
+		return ret
+	}
+	return *o.AuthErrorWithStatusCode
+}
+
+// GetAuthErrorWithStatusCodeOk returns a tuple with the AuthErrorWithStatusCode field value if set, nil otherwise
+// and a boolean to check if the value has been set.
+func (o *ConnectionTimeoutConfig) GetAuthErrorWithStatusCodeOk() (*int32, bool) {
+	if o == nil || IsNil(o.AuthErrorWithStatusCode) {
+		return nil, false
+	}
+	return o.AuthErrorWithStatusCode, true
+}
+
+// HasAuthErrorWithStatusCode returns a boolean if a field has been set.
+func (o *ConnectionTimeoutConfig) HasAuthErrorWithStatusCode() bool {
+	if o != nil && !IsNil(o.AuthErrorWithStatusCode) {
+		return true
+	}
+
+	return false
+}
+
+// SetAuthErrorWithStatusCode gets a reference to the given int32 and assigns it to the AuthErrorWithStatusCode field.
+func (o *ConnectionTimeoutConfig) SetAuthErrorWithStatusCode(v int32) {
+	o.AuthErrorWithStatusCode = &v
+}
+
 func (o ConnectionTimeoutConfig) MarshalJSON() ([]byte, error) {
 	toSerialize, err := o.ToMap()
 	if err != nil {
@@ -305,6 +339,9 @@ func (o ConnectionTimeoutConfig) ToMap() (map[string]interface{}, error) {
 	}
 	if !IsNil(o.ConnectionTimeout) {
 		toSerialize["connectionTimeout"] = o.ConnectionTimeout
+	}
+	if !IsNil(o.AuthErrorWithStatusCode) {
+		toSerialize["authErrorWithStatusCode"] = o.AuthErrorWithStatusCode
 	}
 	return toSerialize, nil
 }
