@@ -11,6 +11,7 @@ Name | Type | Description | Notes
 **RetryCount** | Pointer to **int32** | Number of retry attempts allowed. | [optional] 
 **ReadTimeout** | Pointer to **int32** | Read timeout duration (in seconds). | [optional] 
 **ConnectionTimeout** | Pointer to **int32** | Connection timeout duration (in seconds). | [optional] 
+**AuthErrorWithStatusCode** | Pointer to **int32** | HTTP status code that indicates authentication error requiring retry. | [optional] 
 
 ## Methods
 
@@ -205,6 +206,31 @@ SetConnectionTimeout sets ConnectionTimeout field to given value.
 `func (o *ConnectionTimeoutConfig) HasConnectionTimeout() bool`
 
 HasConnectionTimeout returns a boolean if a field has been set.
+
+### GetAuthErrorWithStatusCode
+
+`func (o *ConnectionTimeoutConfig) GetAuthErrorWithStatusCode() int32`
+
+GetAuthErrorWithStatusCode returns the AuthErrorWithStatusCode field if non-nil, zero value otherwise.
+
+### GetAuthErrorWithStatusCodeOk
+
+`func (o *ConnectionTimeoutConfig) GetAuthErrorWithStatusCodeOk() (*int32, bool)`
+
+GetAuthErrorWithStatusCodeOk returns a tuple with the AuthErrorWithStatusCode field if it's non-nil, zero value otherwise
+and a boolean to check if the value has been set.
+
+### SetAuthErrorWithStatusCode
+
+`func (o *ConnectionTimeoutConfig) SetAuthErrorWithStatusCode(v int32)`
+
+SetAuthErrorWithStatusCode sets AuthErrorWithStatusCode field to given value.
+
+### HasAuthErrorWithStatusCode
+
+`func (o *ConnectionTimeoutConfig) HasAuthErrorWithStatusCode() bool`
+
+HasAuthErrorWithStatusCode returns a boolean if a field has been set.
 
 
 [[Back to Model list]](../README.md#documentation-for-models) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to README]](../README.md)
