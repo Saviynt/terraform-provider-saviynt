@@ -1,3 +1,10 @@
+## 0.3.3 (released)
+
+BUG FIXES:
+
+* **All Connection Resources:** Fixed schema validation error during connection read operations
+  - Resolved "data failed to match schemas in oneOf(GetConnectionDetailsResponse)" error affecting all connection types
+
 ## 0.3.2 (released)
 
 DOCUMENTATION:
