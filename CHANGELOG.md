@@ -1,3 +1,10 @@
+## 0.3.4 (released)
+
+BUG FIXES:
+
+* **resource/saviynt_entitlement_resource:** Fixed entitlement type field storing display name instead of internal name during import
+  - Resolved issue where importing an entitlement would populate `entitlement_type` with the display name, causing subsequent updates to fail with "Entitlement Type Not Found"
+
 ## 0.3.3 (released)
 
 BUG FIXES:
