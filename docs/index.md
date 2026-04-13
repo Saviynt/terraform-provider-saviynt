@@ -110,10 +110,10 @@ Check out the [Latest Saviynt Provider Docs](https://registry.terraform.io/provi
 
 | Supported Saviynt EIC Versions | Terraform Provider Version |
 | -------------------------- | ------------------------------ |
-| `25.C` | Latest Version: `v0.3.3`<br> Supported Version(s): `v0.2.13` - `v0.3.3`|
-| `25.B` | Latest Version: `v0.3.3`<br> Supported Version(s): `v0.2.8` - `v0.3.3`|
-| `25.A` | Latest Version: `v0.3.3`<br> Supported Version(s): `v0.2.8` - `v0.3.3`|
-| `24.10` | Latest Version: `v0.3.3`<br> Supported Version(s): `v0.2.8` - `v0.3.3`|
+| `25.C` | Latest Version: `v0.3.4`<br> Supported Version(s): `v0.2.13` - `v0.3.4`|
+| `25.B` | Latest Version: `v0.3.4`<br> Supported Version(s): `v0.2.8` - `v0.3.4`|
+| `25.A` | Latest Version: `v0.3.4`<br> Supported Version(s): `v0.2.8` - `v0.3.4`|
+| `24.10` | Latest Version: `v0.3.4`<br> Supported Version(s): `v0.2.8` - `v0.3.4`|
 
 --- 
 
@@ -317,6 +317,8 @@ Each resource type requires a specific import ID format:
 | Enterprise Role     | `role_name` | `terraform import saviynt_enterprise_roles_resource.example role_name` |
 | Entitlement     | `endpoint:entitlement_type:entitlement_value` | `terraform import saviynt_entitlement_resource.example ENDPOINT1:ENTTYPE1:ENT1` |
 | Privilege     | `endpoint:entitlement_type` | `terraform import saviynt_privilege_resource.example ENDPOINT1:ENTTYPE1` |
+
+> **Note:** For Entitlement imports, use the entitlement type **name**, not the **display name**. Using the display name will cause "Entitlement Type Not Found" errors on subsequent updates.
 
 ### Example: Complete Import Workflow
 
