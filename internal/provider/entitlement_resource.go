@@ -658,7 +658,7 @@ func (r *EntitlementResource) PopulateStateFromAPI(ctx context.Context, state *E
 	// Set basic fields
 	state.ID = util.SafeString(entitlement.EntitlementValuekey)
 	state.Endpoint = util.SafeString(entitlement.Endpoint)
-	state.Entitlementtype = util.SafeString(entitlement.EntitlementType)
+	state.Entitlementtype = util.SafeString(entitlement.EntitlementTypeName)
 	state.EntitlementValue = util.SafeString(entitlement.EntitlementValue)
 	state.EntitlementValuekey = util.SafeString(entitlement.EntitlementValuekey)
 	state.Displayname = util.SafeString(entitlement.Displayname)
