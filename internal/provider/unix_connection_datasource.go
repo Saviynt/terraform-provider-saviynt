@@ -381,7 +381,7 @@ func (d *UnixConnectionsDataSource) MapBaseUnixConnectionFields(state *UnixConne
 	state.ConnectionName = util.SafeStringDatasource(apiResp.UNIXConnectionResponse.Connectionname)
 	state.ConnectionKey = util.SafeInt64(apiResp.UNIXConnectionResponse.Connectionkey)
 	state.Description = util.SafeStringDatasource(apiResp.UNIXConnectionResponse.Description)
-	state.DefaultSavRoles = util.SafeStringDatasource(apiResp.UNIXConnectionResponse.Defaultsavroles)
+	state.DefaultSavRoles = util.SortedCommaSeparated(util.SafeStringDatasource(apiResp.UNIXConnectionResponse.Defaultsavroles))
 	state.ConnectionType = util.SafeStringDatasource(apiResp.UNIXConnectionResponse.Connectiontype)
 	state.CreatedOn = util.SafeStringDatasource(apiResp.UNIXConnectionResponse.Createdon)
 	state.CreatedBy = util.SafeStringDatasource(apiResp.UNIXConnectionResponse.Createdby)

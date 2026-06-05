@@ -10,7 +10,7 @@ The Authorization header must have \"Bearer {token}\".
 
 **Optional Parameters:**
 - **description**: Provide a description for the connection.
-- **defaultsavroles**: Specify the SAV role(s) required for managing this connection along with its associated security systems, endpoints, accounts, and entitlements.
+- **defaultSavRole**: Specify the SAV role(s) required for managing this connection along with its associated security systems, endpoints, accounts, and entitlements.
 - **emailTemplate**: Specify the email template applicable for notifications.
 - **sslCertificate**: Specify the SSL certificate(s) to secure the connection between EIC and the target application.
 - **vaultConfiguration**: Specify the path of the vault to obtain secret data (suffix the connector name to make it unique).

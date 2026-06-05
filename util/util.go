@@ -40,6 +40,21 @@ func SafeStringDatasource(s *string) types.String {
 	return types.StringValue(*s)
 }
 
+// SortedCommaSeparated sorts a comma-separated string value alphabetically.
+// This normalizes fields like defaultsavroles so that plan and state always
+// match regardless of the order the user writes them or the API returns them.
+func SortedCommaSeparated(s types.String) types.String {
+	if s.IsNull() || s.IsUnknown() || s.ValueString() == "" {
+		return s
+	}
+	parts := strings.Split(s.ValueString(), ",")
+	for i, p := range parts {
+		parts[i] = strings.TrimSpace(p)
+	}
+	sort.Strings(parts)
+	return types.StringValue(strings.Join(parts, ","))
+}
+
 // SafeDeref safely dereferences a *string, returning an empty string if nil.
 func SafeDeref(s *string) string {
 	if s == nil {
