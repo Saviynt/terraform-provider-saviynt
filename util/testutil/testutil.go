@@ -97,6 +97,66 @@ func PrepareTestDataWithEnv(t *testing.T, templatePath string) string {
 		"{{TEST_ID}}": timestamp,
 	}
 
+	// Add fixture replacements from environment variables (set by TestMain)
+	fixtureEnvMappings := map[string]string{
+		"{{FIXTURE_SECURITY_SYSTEM}}":    "TF_FIXTURE_SECURITY_SYSTEM",
+		"{{FIXTURE_ENDPOINT_1}}":         "TF_FIXTURE_ENDPOINT_1",
+		"{{FIXTURE_ENDPOINT_2}}":         "TF_FIXTURE_ENDPOINT_2",
+		"{{FIXTURE_ENDPOINT_3}}":         "TF_FIXTURE_ENDPOINT_3",
+		"{{FIXTURE_ENDPOINT_4}}":         "TF_FIXTURE_ENDPOINT_4",
+		"{{FIXTURE_ENDPOINT_5}}":         "TF_FIXTURE_ENDPOINT_5",
+		"{{FIXTURE_ENTITLEMENT_TYPE}}":   "TF_FIXTURE_ENTITLEMENT_TYPE",
+		"{{FIXTURE_ENTITLEMENT_TYPE_2}}": "TF_FIXTURE_ENTITLEMENT_TYPE_2",
+		"{{FIXTURE_ENTITLEMENT}}":        "TF_FIXTURE_ENTITLEMENT",
+		"{{FIXTURE_ENTITLEMENT_2}}":      "TF_FIXTURE_ENTITLEMENT_2",
+		"{{FIXTURE_ROLE}}":               "TF_FIXTURE_ROLE",
+		"{{FIXTURE_REST_CONNECTION}}":    "TF_FIXTURE_REST_CONNECTION",
+		"{{FIXTURE_REST_CONNECTION_ID}}": "TF_FIXTURE_REST_CONNECTION_ID",
+	}
+	for placeholder, envVar := range fixtureEnvMappings {
+		if val := os.Getenv(envVar); val != "" {
+			replacements[placeholder] = val
+		}
+	}
+
+	for placeholder, value := range replacements {
+		content = strings.ReplaceAll(content, placeholder, value)
+	}
+
+	tmpFile := filepath.Join(t.TempDir(), filepath.Base(templatePath))
+	if err := os.WriteFile(tmpFile, []byte(content), 0644); err != nil {
+		t.Fatalf("failed to write processed test data: %v", err)
+	}
+
+	log.Printf("New file path: %v", tmpFile)
+	return tmpFile
+}
+
+// PrepareTestDataWithReplacements processes a test data template with custom replacements
+// in addition to the standard {{TEST_ID}} replacement.
+func PrepareTestDataWithReplacements(t *testing.T, templatePath string, extraReplacements map[string]string) string {
+	t.Helper()
+
+	data, err := os.ReadFile(templatePath)
+	if err != nil {
+		t.Fatalf("failed to read test data template: %v", err)
+	}
+
+	content := string(data)
+
+	// Use timestamp for unique resource names
+	timestamp := GetTestIdentifier()
+
+	// Start with standard replacements
+	replacements := map[string]string{
+		"{{TEST_ID}}": timestamp,
+	}
+
+	// Add extra replacements
+	for k, v := range extraReplacements {
+		replacements[k] = v
+	}
+
 	for placeholder, value := range replacements {
 		content = strings.ReplaceAll(content, placeholder, value)
 	}
