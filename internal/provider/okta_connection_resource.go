@@ -247,7 +247,7 @@ func (r *OktaConnectionResource) BuildOktaConnector(plan *OktaConnectorResourceM
 			ConnectionName: plan.ConnectionName.ValueString(),
 			//optional field
 			ConnectionDescription: util.StringPointerOrEmpty(plan.Description),
-			Defaultsavroles:       util.StringPointerOrEmpty(plan.DefaultSavRoles),
+			DefaultSavRole:        util.StringPointerOrEmpty(plan.DefaultSavRoles),
 			EmailTemplate:         util.StringPointerOrEmpty(plan.EmailTemplate),
 		},
 		//required field
@@ -282,7 +282,7 @@ func (r *OktaConnectionResource) UpdateModelFromCreateResponse(plan *OktaConnect
 	plan.ID = types.StringValue(fmt.Sprintf("%d", *apiResp.ConnectionKey))
 	plan.ConnectionKey = types.Int64Value(int64(*apiResp.ConnectionKey))
 	plan.Description = util.SafeStringDatasource(plan.Description.ValueStringPointer())
-	plan.DefaultSavRoles = util.SafeStringDatasource(plan.DefaultSavRoles.ValueStringPointer())
+	plan.DefaultSavRoles = util.SortedCommaSeparated(util.SafeStringDatasource(plan.DefaultSavRoles.ValueStringPointer()))
 	plan.EmailTemplate = util.SafeStringDatasource(plan.EmailTemplate.ValueStringPointer())
 	plan.ImportUrl = util.SafeStringDatasource(plan.ImportUrl.ValueStringPointer())
 	plan.OktaApplicationSecuritySystem = util.SafeStringDatasource(plan.OktaApplicationSecuritySystem.ValueStringPointer())
@@ -531,7 +531,7 @@ func (r *OktaConnectionResource) UpdateModelFromReadResponse(state *OktaConnecto
 	state.ID = types.StringValue(fmt.Sprintf("%d", *apiResp.OktaConnectionResponse.Connectionkey))
 	state.ConnectionName = util.SafeStringDatasource(apiResp.OktaConnectionResponse.Connectionname)
 	state.Description = util.SafeStringDatasource(apiResp.OktaConnectionResponse.Description)
-	state.DefaultSavRoles = util.SafeStringDatasource(apiResp.OktaConnectionResponse.Defaultsavroles)
+	state.DefaultSavRoles = util.SortedCommaSeparated(util.SafeStringDatasource(apiResp.OktaConnectionResponse.Defaultsavroles))
 	state.EmailTemplate = util.SafeStringDatasource(apiResp.OktaConnectionResponse.Emailtemplate)
 	state.ImportUrl = util.SafeStringDatasource(apiResp.OktaConnectionResponse.Connectionattributes.IMPORTURL)
 	state.OktaApplicationSecuritySystem = util.SafeStringDatasource(apiResp.OktaConnectionResponse.Connectionattributes.OKTA_APPLICATION_SECURITYSYSTEM)

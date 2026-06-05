@@ -426,7 +426,7 @@ func (r *RestConnectionResource) BuildRESTConnector(plan *RestConnectorResourceM
 			ConnectionName: plan.ConnectionName.ValueString(),
 			//optional fields
 			ConnectionDescription: util.StringPointerOrEmpty(plan.Description),
-			Defaultsavroles:       util.StringPointerOrEmpty(plan.DefaultSavRoles),
+			DefaultSavRole:        util.StringPointerOrEmpty(plan.DefaultSavRoles),
 			EmailTemplate:         util.StringPointerOrEmpty(plan.EmailTemplate),
 		},
 		//optional fields
@@ -478,7 +478,7 @@ func (r *RestConnectionResource) UpdateModelFromCreateResponse(plan *RestConnect
 
 	// Update all optional fields to maintain state
 	plan.Description = util.SafeStringDatasource(plan.Description.ValueStringPointer())
-	plan.DefaultSavRoles = util.SafeStringDatasource(plan.DefaultSavRoles.ValueStringPointer())
+	plan.DefaultSavRoles = util.SortedCommaSeparated(util.SafeStringDatasource(plan.DefaultSavRoles.ValueStringPointer()))
 	plan.EmailTemplate = util.SafeStringDatasource(plan.EmailTemplate.ValueStringPointer())
 	plan.ImportUserJson = util.SafeStringDatasource(plan.ImportUserJson.ValueStringPointer())
 	plan.ImportAccountEntJson = util.SafeStringDatasource(plan.ImportAccountEntJson.ValueStringPointer())
@@ -577,7 +577,7 @@ func (r *RestConnectionResource) UpdateModelFromReadResponse(state *RestConnecto
 	// Update all fields from API response
 	state.ConnectionName = util.SafeStringDatasource(apiResp.RESTConnectionResponse.Connectionname)
 	state.Description = util.SafeStringDatasource(apiResp.RESTConnectionResponse.Description)
-	state.DefaultSavRoles = util.SafeStringDatasource(apiResp.RESTConnectionResponse.Defaultsavroles)
+	state.DefaultSavRoles = util.SortedCommaSeparated(util.SafeStringDatasource(apiResp.RESTConnectionResponse.Defaultsavroles))
 	state.EmailTemplate = util.SafeStringDatasource(apiResp.RESTConnectionResponse.Emailtemplate)
 	state.ImportUserJson = util.SafeStringDatasource(apiResp.RESTConnectionResponse.Connectionattributes.ImportUserJSON)
 	state.ImportAccountEntJson = util.SafeStringDatasource(apiResp.RESTConnectionResponse.Connectionattributes.ImportAccountEntJSON)
