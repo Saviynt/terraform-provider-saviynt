@@ -288,7 +288,7 @@ func (d *SftpConnectionsDataSource) MapSFTPBaseAttributes(state *SFTPConnectionD
 	state.ConnectionKey = types.Int64Value(int64(*response.Connectionkey))
 	state.ID = types.StringValue(fmt.Sprintf("ds-sftp-%d", *response.Connectionkey))
 	state.ConnectionName = util.SafeStringDatasource(response.Connectionname)
-	state.DefaultSavRoles = util.SafeStringDatasource(response.Defaultsavroles)
+	state.DefaultSavRoles = util.SortedCommaSeparated(util.SafeStringDatasource(response.Defaultsavroles))
 	state.EmailTemplate = util.SafeStringDatasource(response.Emailtemplate)
 	state.Description = util.SafeStringDatasource(response.Description)
 	state.ConnectionType = util.SafeStringDatasource(response.Connectiontype)
