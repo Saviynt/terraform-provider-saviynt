@@ -46,6 +46,8 @@ data "saviynt_entitlement_datasource" "filtered_entitlements" {
 - `ent_query` (String) SQL-like query for filtering entitlements
 - `entitlement_value` (String) Filter by entitlement value
 - `entitlementtype` (String) Filter by entitlement type
+- `max` (Number) Maximum number of entitlements to return. Defaults to 50 on the backend when not set.
+- `offset` (Number) Number of entitlements to skip for pagination.
 
 ### Read-Only
 

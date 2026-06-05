@@ -499,7 +499,7 @@ func (r *AdsiConnectionResource) BuildADSIConnector(plan *ADSIConnectorResourceM
 			Connectiontype:        "ADSI",
 			ConnectionName:        plan.ConnectionName.ValueString(),
 			ConnectionDescription: util.StringPointerOrEmpty(plan.Description),
-			Defaultsavroles:       util.StringPointerOrEmpty(plan.DefaultSavRoles),
+			DefaultSavRole:        util.StringPointerOrEmpty(plan.DefaultSavRoles),
 			EmailTemplate:         util.StringPointerOrEmpty(plan.EmailTemplate),
 		},
 		URL:                         plan.URL.ValueString(),
@@ -560,7 +560,7 @@ func (r *AdsiConnectionResource) UpdateModelFromCreateResponse(plan *ADSIConnect
 
 	// Update all optional fields to maintain state
 	plan.Description = util.SafeStringDatasource(plan.Description.ValueStringPointer())
-	plan.DefaultSavRoles = util.SafeStringDatasource(plan.DefaultSavRoles.ValueStringPointer())
+	plan.DefaultSavRoles = util.SortedCommaSeparated(util.SafeStringDatasource(plan.DefaultSavRoles.ValueStringPointer()))
 	plan.EmailTemplate = util.SafeStringDatasource(plan.EmailTemplate.ValueStringPointer())
 	plan.ProvisioningUrl = util.SafeStringDatasource(plan.ProvisioningUrl.ValueStringPointer())
 	plan.DefaultUserRole = util.SafeStringDatasource(plan.DefaultUserRole.ValueStringPointer())
@@ -665,7 +665,7 @@ func (r *AdsiConnectionResource) UpdateModelFromReadResponse(state *ADSIConnecto
 	// Update all fields from API response
 	state.ConnectionName = util.SafeStringDatasource(apiResp.ADSIConnectionResponse.Connectionname)
 	state.Description = util.SafeStringDatasource(apiResp.ADSIConnectionResponse.Description)
-	state.DefaultSavRoles = util.SafeStringDatasource(apiResp.ADSIConnectionResponse.Defaultsavroles)
+	state.DefaultSavRoles = util.SortedCommaSeparated(util.SafeStringDatasource(apiResp.ADSIConnectionResponse.Defaultsavroles))
 	state.EmailTemplate = util.SafeStringDatasource(apiResp.ADSIConnectionResponse.Emailtemplate)
 	state.ImportNestedMembership = util.SafeStringDatasource(apiResp.ADSIConnectionResponse.Connectionattributes.ImportNestedMembership)
 	state.CreateAccountJson = util.SafeStringDatasource(apiResp.ADSIConnectionResponse.Connectionattributes.CREATEACCOUNTJSON)

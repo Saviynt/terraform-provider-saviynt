@@ -548,7 +548,7 @@ func (r *DBConnectionResource) BuildDBConnector(plan *DBConnectorResourceModel, 
 			Connectiontype:        "DB",
 			ConnectionName:        plan.ConnectionName.ValueString(),
 			ConnectionDescription: util.StringPointerOrEmpty(plan.Description),
-			Defaultsavroles:       util.StringPointerOrEmpty(plan.DefaultSavRoles),
+			DefaultSavRole:        util.StringPointerOrEmpty(plan.DefaultSavRoles),
 			EmailTemplate:         util.StringPointerOrEmpty(plan.EmailTemplate),
 		},
 		// Required fields
@@ -617,7 +617,7 @@ func (r *DBConnectionResource) UpdateModelFromCreateResponse(plan *DBConnectorRe
 
 	// Set computed values for optional fields
 	plan.Description = util.SafeStringDatasource(plan.Description.ValueStringPointer())
-	plan.DefaultSavRoles = util.SafeStringDatasource(plan.DefaultSavRoles.ValueStringPointer())
+	plan.DefaultSavRoles = util.SortedCommaSeparated(util.SafeStringDatasource(plan.DefaultSavRoles.ValueStringPointer()))
 	plan.EmailTemplate = util.SafeStringDatasource(plan.EmailTemplate.ValueStringPointer())
 	plan.ConnectionProperties = util.SafeStringDatasource(plan.ConnectionProperties.ValueStringPointer())
 	plan.PasswordMinLength = util.SafeStringDatasource(plan.PasswordMinLength.ValueStringPointer())
@@ -782,7 +782,7 @@ func (r *DBConnectionResource) UpdateModelFromReadResponse(state *DBConnectorRes
 	state.ConnectionKey = types.Int64Value(int64(*dbResp.Connectionkey))
 	state.ConnectionName = util.SafeStringDatasource(dbResp.Connectionname)
 	state.Description = util.SafeStringDatasource(dbResp.Description)
-	state.DefaultSavRoles = util.SafeStringDatasource(dbResp.Defaultsavroles)
+	state.DefaultSavRoles = util.SortedCommaSeparated(util.SafeStringDatasource(dbResp.Defaultsavroles))
 	state.EmailTemplate = util.SafeStringDatasource(dbResp.Emailtemplate)
 
 	// Update DB-specific fields from connection attributes

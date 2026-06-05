@@ -228,7 +228,7 @@ func (r *SftpConnectionResource) BuildSFTPConnector(plan *SFTPConnectorResourceM
 			ConnectionName: plan.ConnectionName.ValueString(),
 			//optional field
 			ConnectionDescription: plan.Description.ValueStringPointer(),
-			Defaultsavroles:       util.StringPointerOrEmpty(plan.DefaultSavRoles),
+			DefaultSavRole:        util.StringPointerOrEmpty(plan.DefaultSavRoles),
 			EmailTemplate:         util.StringPointerOrEmpty(plan.EmailTemplate),
 		},
 		//required fields
@@ -260,7 +260,7 @@ func (r *SftpConnectionResource) UpdateModelFromCreateResponse(plan *SFTPConnect
 	plan.ErrorCode = types.StringValue(util.SafeDeref(apiResp.ErrorCode))
 
 	plan.Description = util.SafeStringDatasource(plan.Description.ValueStringPointer())
-	plan.DefaultSavRoles = util.SafeStringDatasource(plan.DefaultSavRoles.ValueStringPointer())
+	plan.DefaultSavRoles = util.SortedCommaSeparated(util.SafeStringDatasource(plan.DefaultSavRoles.ValueStringPointer()))
 	plan.EmailTemplate = util.SafeStringDatasource(plan.EmailTemplate.ValueStringPointer())
 
 	plan.FilesToGet = util.SafeStringDatasource(plan.FilesToGet.ValueStringPointer())
@@ -484,7 +484,7 @@ func (r *SftpConnectionResource) UpdateModelFromReadResponse(state *SFTPConnecto
 	state.ConnectionName = util.SafeStringDatasource(apiResp.SFTPConnectionResponse.Connectionname)
 
 	state.Description = util.SafeStringDatasource(apiResp.SFTPConnectionResponse.Description)
-	state.DefaultSavRoles = util.SafeStringDatasource(apiResp.SFTPConnectionResponse.Defaultsavroles)
+	state.DefaultSavRoles = util.SortedCommaSeparated(util.SafeStringDatasource(apiResp.SFTPConnectionResponse.Defaultsavroles))
 	state.EmailTemplate = util.SafeStringDatasource(apiResp.SFTPConnectionResponse.Emailtemplate)
 
 	state.HostName = util.SafeStringDatasource(apiResp.SFTPConnectionResponse.Connectionattributes.HOST_NAME)

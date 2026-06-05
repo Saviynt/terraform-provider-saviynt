@@ -388,7 +388,7 @@ func (d *EntraIdConnectionDataSource) MapBaseEntraIDConnectionFields(state *Entr
 	state.ConnectionName = util.SafeStringDatasource(apiResp.EntraIDConnectionResponse.Connectionname)
 	state.ConnectionKey = util.SafeInt64(apiResp.EntraIDConnectionResponse.Connectionkey)
 	state.Description = util.SafeStringDatasource(apiResp.EntraIDConnectionResponse.Description)
-	state.DefaultSavRoles = util.SafeStringDatasource(apiResp.EntraIDConnectionResponse.Defaultsavroles)
+	state.DefaultSavRoles = util.SortedCommaSeparated(util.SafeStringDatasource(apiResp.EntraIDConnectionResponse.Defaultsavroles))
 	state.ConnectionType = util.SafeStringDatasource(apiResp.EntraIDConnectionResponse.Connectiontype)
 	state.CreatedOn = util.SafeStringDatasource(apiResp.EntraIDConnectionResponse.Createdon)
 	state.CreatedBy = util.SafeStringDatasource(apiResp.EntraIDConnectionResponse.Createdby)

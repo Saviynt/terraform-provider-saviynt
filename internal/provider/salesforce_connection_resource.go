@@ -363,7 +363,7 @@ func (r *SalesforceConnectionResource) BuildSalesforceConnector(plan *Salesforce
 			Connectiontype:        "SalesForce",
 			ConnectionName:        plan.ConnectionName.ValueString(),
 			ConnectionDescription: util.StringPointerOrEmpty(plan.Description),
-			Defaultsavroles:       util.StringPointerOrEmpty(plan.DefaultSavRoles),
+			DefaultSavRole:        util.StringPointerOrEmpty(plan.DefaultSavRoles),
 			EmailTemplate:         util.StringPointerOrEmpty(plan.EmailTemplate),
 		},
 		CLIENT_ID:                util.StringPointerOrEmpty(plan.ClientId),
@@ -399,7 +399,7 @@ func (r *SalesforceConnectionResource) UpdateModelFromCreateResponse(plan *Sales
 
 	// Update all optional fields to maintain state
 	plan.Description = util.SafeStringDatasource(plan.Description.ValueStringPointer())
-	plan.DefaultSavRoles = util.SafeStringDatasource(plan.DefaultSavRoles.ValueStringPointer())
+	plan.DefaultSavRoles = util.SortedCommaSeparated(util.SafeStringDatasource(plan.DefaultSavRoles.ValueStringPointer()))
 	plan.EmailTemplate = util.SafeStringDatasource(plan.EmailTemplate.ValueStringPointer())
 	plan.ClientId = util.SafeStringDatasource(plan.ClientId.ValueStringPointer())
 	plan.RedirectUri = util.SafeStringDatasource(plan.RedirectUri.ValueStringPointer())
@@ -481,7 +481,7 @@ func (r *SalesforceConnectionResource) UpdateModelFromReadResponse(state *Salesf
 	// Update all fields from API response
 	state.ConnectionName = util.SafeStringDatasource(apiResp.SalesforceConnectionResponse.Connectionname)
 	state.Description = util.SafeStringDatasource(apiResp.SalesforceConnectionResponse.Description)
-	state.DefaultSavRoles = util.SafeStringDatasource(apiResp.SalesforceConnectionResponse.Defaultsavroles)
+	state.DefaultSavRoles = util.SortedCommaSeparated(util.SafeStringDatasource(apiResp.SalesforceConnectionResponse.Defaultsavroles))
 	state.EmailTemplate = util.SafeStringDatasource(apiResp.SalesforceConnectionResponse.Emailtemplate)
 	state.ObjectToBeImported = util.SafeStringDatasource(apiResp.SalesforceConnectionResponse.Connectionattributes.OBJECT_TO_BE_IMPORTED)
 	state.FeatureLicenseJson = util.SafeStringDatasource(apiResp.SalesforceConnectionResponse.Connectionattributes.FEATURE_LICENSE_JSON)
