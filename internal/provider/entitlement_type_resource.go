@@ -755,7 +755,7 @@ func (r *EntitlementTypeResource) ReadEntitlementTypeState(ctx context.Context, 
 	plan.ArsRequestableEntitlementQuery = util.SafeString(readResp.EntitlementTypeDetails[0].ArsReqEntSqlquerey)
 	plan.ArsSelectedEntitlementQuery = util.SafeString(readResp.EntitlementTypeDetails[0].ArsSelectEntSqlquerey)
 	plan.RequestDatesConfJson = util.SafeString(readResp.EntitlementTypeDetails[0].RequestDatesConfJson)
-	plan.RequestOption = util.SafeString(entitlementtypeutil.TranslateValueWithDefault(*readResp.EntitlementTypeDetails[0].Requestoption))
+	plan.RequestOption = util.SafeString(entitlementtypeutil.TranslateValueWithDefault(readResp.EntitlementTypeDetails[0].GetRequestoption()))
 	plan.RequiredInRequest = util.SafeBoolDatasource(util.ParseBoolPointerFromStringPointer(readResp.EntitlementTypeDetails[0].Requiredinrequest))
 	plan.RequiredInServiceRequest = util.SafeBoolDatasource(util.ParseBoolPointerFromStringPointer(readResp.EntitlementTypeDetails[0].Requiredinservicerequest))
 	plan.HierarchyRequired = util.SafeStringDatasource(readResp.EntitlementTypeDetails[0].Hiearchyrequired)

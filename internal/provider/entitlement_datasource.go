@@ -73,6 +73,8 @@ type EntitlementDataSourceModel struct {
 	EntitlementValue      types.String         `tfsdk:"entitlement_value"`
 	EntQuery              types.String         `tfsdk:"ent_query"`
 	Authenticate          types.Bool           `tfsdk:"authenticate"`
+	Max                   types.Int32          `tfsdk:"max"`
+	Offset                types.Int32          `tfsdk:"offset"`
 }
 
 type EntitlementDetails struct {
@@ -192,6 +194,14 @@ func (d *entitlementDataSource) Schema(ctx context.Context, req datasource.Schem
 				Required:    true,
 				Description: "Whether to authenticate and return sensitive data",
 			},
+			"max": schema.Int32Attribute{
+				Optional:    true,
+				Description: "Maximum number of entitlements to return. Defaults to 50 on the backend when not set.",
+			},
+			"offset": schema.Int32Attribute{
+				Optional:    true,
+				Description: "Number of entitlements to skip for pagination.",
+			},
 		},
 	}
 }
@@ -305,6 +315,12 @@ func (d *entitlementDataSource) ReadEntitlementDetails(ctx context.Context, stat
 	}
 	if !state.EntQuery.IsNull() {
 		getReq.EntQuery = util.StringPointerOrEmpty(state.EntQuery)
+	}
+	if !state.Max.IsNull() {
+		getReq.Max = util.Int32PointerOrEmpty(state.Max)
+	}
+	if !state.Offset.IsNull() {
+		getReq.Offset = util.Int32PointerOrEmpty(state.Offset)
 	}
 	// Always include owner rank information
 	getReq.Entownerwithrank = util.StringPtr("true")
