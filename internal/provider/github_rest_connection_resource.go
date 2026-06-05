@@ -351,7 +351,7 @@ func (r *GithubRestConnectionResource) BuildGithubRestConnector(plan *GithubRest
 			Connectiontype:        "GithubRest",
 			ConnectionName:        plan.ConnectionName.ValueString(),
 			ConnectionDescription: util.StringPointerOrEmpty(plan.Description),
-			Defaultsavroles:       util.StringPointerOrEmpty(plan.DefaultSavRoles),
+			DefaultSavRole:        util.StringPointerOrEmpty(plan.DefaultSavRoles),
 			EmailTemplate:         util.StringPointerOrEmpty(plan.EmailTemplate),
 		},
 		ConnectionJSON:          util.StringPointerOrEmpty(types.StringValue(connectionJson)),
@@ -378,7 +378,7 @@ func (r *GithubRestConnectionResource) UpdateModelFromCreateResponse(plan *Githu
 
 	// Update all optional fields to maintain state
 	plan.Description = util.SafeStringDatasource(plan.Description.ValueStringPointer())
-	plan.DefaultSavRoles = util.SafeStringDatasource(plan.DefaultSavRoles.ValueStringPointer())
+	plan.DefaultSavRoles = util.SortedCommaSeparated(util.SafeStringDatasource(plan.DefaultSavRoles.ValueStringPointer()))
 	plan.EmailTemplate = util.SafeStringDatasource(plan.EmailTemplate.ValueStringPointer())
 	plan.ImportAccountEntJSON = util.SafeStringDatasource(plan.ImportAccountEntJSON.ValueStringPointer())
 	plan.Organization_List = util.SafeStringDatasource(plan.Organization_List.ValueStringPointer())
@@ -515,7 +515,7 @@ func (r *GithubRestConnectionResource) UpdateModelFromReadResponse(state *Github
 	// Update all fields from API response
 	state.ConnectionName = util.SafeStringDatasource(apiResp.GithubRESTConnectionResponse.Connectionname)
 	state.Description = util.SafeStringDatasource(apiResp.GithubRESTConnectionResponse.Description)
-	state.DefaultSavRoles = util.SafeStringDatasource(apiResp.GithubRESTConnectionResponse.Defaultsavroles)
+	state.DefaultSavRoles = util.SortedCommaSeparated(util.SafeStringDatasource(apiResp.GithubRESTConnectionResponse.Defaultsavroles))
 	state.EmailTemplate = util.SafeStringDatasource(apiResp.GithubRESTConnectionResponse.Emailtemplate)
 	state.ImportAccountEntJSON = util.SafeStringDatasource(apiResp.GithubRESTConnectionResponse.Connectionattributes.ImportAccountEntJSON)
 	state.Organization_List = util.SafeStringDatasource(apiResp.GithubRESTConnectionResponse.Connectionattributes.ORGANIZATION_LIST)

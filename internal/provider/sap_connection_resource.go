@@ -638,7 +638,7 @@ func (r *SapConnectionResource) BuildSAPConnector(plan *SapConnectorResourceMode
 			Connectiontype:        "SAP",
 			ConnectionName:        plan.ConnectionName.ValueString(),
 			ConnectionDescription: util.StringPointerOrEmpty(plan.Description),
-			Defaultsavroles:       util.StringPointerOrEmpty(plan.DefaultSavRoles),
+			DefaultSavRole:        util.StringPointerOrEmpty(plan.DefaultSavRoles),
 			EmailTemplate:         util.StringPointerOrEmpty(plan.EmailTemplate),
 		},
 		MESSAGESERVER:                      util.StringPointerOrEmpty(plan.Messageserver),
@@ -720,7 +720,7 @@ func (r *SapConnectionResource) UpdateModelFromCreateResponse(plan *SapConnector
 
 	// Update all optional fields to maintain state
 	plan.Description = util.SafeStringDatasource(plan.Description.ValueStringPointer())
-	plan.DefaultSavRoles = util.SafeStringDatasource(plan.DefaultSavRoles.ValueStringPointer())
+	plan.DefaultSavRoles = util.SortedCommaSeparated(util.SafeStringDatasource(plan.DefaultSavRoles.ValueStringPointer()))
 	plan.EmailTemplate = util.SafeStringDatasource(plan.EmailTemplate.ValueStringPointer())
 	plan.Messageserver = util.SafeStringDatasource(plan.Messageserver.ValueStringPointer())
 	plan.JcoAshost = util.SafeStringDatasource(plan.JcoAshost.ValueStringPointer())
@@ -849,7 +849,7 @@ func (r *SapConnectionResource) UpdateModelFromReadResponse(state *SapConnectorR
 	// Update all fields from API response
 	state.ConnectionName = util.SafeStringDatasource(apiResp.SAPConnectionResponse.Connectionname)
 	state.Description = util.SafeStringDatasource(apiResp.SAPConnectionResponse.Description)
-	state.DefaultSavRoles = util.SafeStringDatasource(apiResp.SAPConnectionResponse.Defaultsavroles)
+	state.DefaultSavRoles = util.SortedCommaSeparated(util.SafeStringDatasource(apiResp.SAPConnectionResponse.Defaultsavroles))
 	state.EmailTemplate = util.SafeStringDatasource(apiResp.SAPConnectionResponse.Emailtemplate)
 	state.Createaccountjson = util.SafeStringDatasource(apiResp.SAPConnectionResponse.Connectionattributes.CREATEACCOUNTJSON)
 	state.AuditLogJson = util.SafeStringDatasource(apiResp.SAPConnectionResponse.Connectionattributes.AUDIT_LOG_JSON)

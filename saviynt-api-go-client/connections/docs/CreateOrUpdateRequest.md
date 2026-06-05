@@ -7,7 +7,7 @@ Name | Type | Description | Notes
 **ConnectionName** | **string** | Name of the connection | 
 **Connectiontype** | **string** | Connection type (e.g., &#39;AD&#39; for Active Directory). | 
 **ConnectionDescription** | Pointer to **string** | Description for the connection. | [optional] 
-**Defaultsavroles** | Pointer to **string** | Default SAV roles for managing the connection. | [optional] 
+**DefaultSavRole** | Pointer to **string** | Default SAV roles for managing the connection. | [optional] 
 **EmailTemplate** | Pointer to **string** | Email template for notifications. | [optional] 
 **SslCertificate** | Pointer to **string** | SSL certificates to secure the connection. | [optional] 
 **VaultConnection** | Pointer to **string** | Specifies the type of vault connection being used (e.g., Hashicorp, AWS Secrets Manager). | [optional] 
@@ -375,30 +375,30 @@ SetConnectionDescription sets ConnectionDescription field to given value.
 
 HasConnectionDescription returns a boolean if a field has been set.
 
-### GetDefaultsavroles
+### GetDefaultSavRole
 
-`func (o *CreateOrUpdateRequest) GetDefaultsavroles() string`
+`func (o *CreateOrUpdateRequest) GetDefaultSavRole() string`
 
-GetDefaultsavroles returns the Defaultsavroles field if non-nil, zero value otherwise.
+GetDefaultSavRole returns the DefaultSavRole field if non-nil, zero value otherwise.
 
-### GetDefaultsavrolesOk
+### GetDefaultSavRoleOk
 
-`func (o *CreateOrUpdateRequest) GetDefaultsavrolesOk() (*string, bool)`
+`func (o *CreateOrUpdateRequest) GetDefaultSavRoleOk() (*string, bool)`
 
-GetDefaultsavrolesOk returns a tuple with the Defaultsavroles field if it's non-nil, zero value otherwise
+GetDefaultSavRoleOk returns a tuple with the DefaultSavRole field if it's non-nil, zero value otherwise
 and a boolean to check if the value has been set.
 
-### SetDefaultsavroles
+### SetDefaultSavRole
 
-`func (o *CreateOrUpdateRequest) SetDefaultsavroles(v string)`
+`func (o *CreateOrUpdateRequest) SetDefaultSavRole(v string)`
 
-SetDefaultsavroles sets Defaultsavroles field to given value.
+SetDefaultSavRole sets DefaultSavRole field to given value.
 
-### HasDefaultsavroles
+### HasDefaultSavRole
 
-`func (o *CreateOrUpdateRequest) HasDefaultsavroles() bool`
+`func (o *CreateOrUpdateRequest) HasDefaultSavRole() bool`
 
-HasDefaultsavroles returns a boolean if a field has been set.
+HasDefaultSavRole returns a boolean if a field has been set.
 
 ### GetEmailTemplate
 

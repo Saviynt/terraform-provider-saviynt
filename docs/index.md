@@ -110,10 +110,10 @@ Check out the [Latest Saviynt Provider Docs](https://registry.terraform.io/provi
 
 | Supported Saviynt EIC Versions | Terraform Provider Version |
 | -------------------------- | ------------------------------ |
-| `25.C` | Latest Version: `v0.3.4`<br> Supported Version(s): `v0.2.13` - `v0.3.4`|
-| `25.B` | Latest Version: `v0.3.4`<br> Supported Version(s): `v0.2.8` - `v0.3.4`|
-| `25.A` | Latest Version: `v0.3.4`<br> Supported Version(s): `v0.2.8` - `v0.3.4`|
-| `24.10` | Latest Version: `v0.3.4`<br> Supported Version(s): `v0.2.8` - `v0.3.4`|
+| `25.C` | Latest Version: `v0.3.5`<br> Supported Version(s): `v0.2.13` - `v0.3.5`|
+| `25.B` | Latest Version: `v0.3.5`<br> Supported Version(s): `v0.2.8` - `v0.3.5`|
+| `25.A` | Latest Version: `v0.3.5`<br> Supported Version(s): `v0.2.8` - `v0.3.5`|
+| `24.10` | Latest Version: `v0.3.5`<br> Supported Version(s): `v0.2.8` - `v0.3.5`|
 
 --- 
 
