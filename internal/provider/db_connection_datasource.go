@@ -391,7 +391,7 @@ func (d *DbConnectionsDataSource) MapBaseDBConnectionFields(state *DBConnectionD
 	state.ConnectionName = util.SafeStringDatasource(apiResp.DBConnectionResponse.Connectionname)
 	state.ConnectionKey = util.SafeInt64(apiResp.DBConnectionResponse.Connectionkey)
 	state.Description = util.SafeStringDatasource(apiResp.DBConnectionResponse.Description)
-	state.DefaultSavRoles = util.SafeStringDatasource(apiResp.DBConnectionResponse.Defaultsavroles)
+	state.DefaultSavRoles = util.SortedCommaSeparated(util.SafeStringDatasource(apiResp.DBConnectionResponse.Defaultsavroles))
 	state.ConnectionType = util.SafeStringDatasource(apiResp.DBConnectionResponse.Connectiontype)
 	state.CreatedOn = util.SafeStringDatasource(apiResp.DBConnectionResponse.Createdon)
 	state.CreatedBy = util.SafeStringDatasource(apiResp.DBConnectionResponse.Createdby)

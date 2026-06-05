@@ -522,7 +522,7 @@ func (r *WorkdayConnectionResource) BuildWorkdayConnector(plan *WorkdayConnector
 			ConnectionName: plan.ConnectionName.ValueString(),
 			//optional fields
 			ConnectionDescription: util.StringPointerOrEmpty(plan.Description),
-			Defaultsavroles:       util.StringPointerOrEmpty(plan.DefaultSavRoles),
+			DefaultSavRole:        util.StringPointerOrEmpty(plan.DefaultSavRoles),
 			EmailTemplate:         util.StringPointerOrEmpty(plan.EmailTemplate),
 		},
 		//required fields
@@ -581,7 +581,7 @@ func (r *WorkdayConnectionResource) UpdateModelFromCreateResponse(plan *WorkdayC
 	plan.ConnectionKey = types.Int64Value(int64(*apiResp.ConnectionKey))
 
 	plan.Description = util.SafeStringDatasource(plan.Description.ValueStringPointer())
-	plan.DefaultSavRoles = util.SafeStringDatasource(plan.DefaultSavRoles.ValueStringPointer())
+	plan.DefaultSavRoles = util.SortedCommaSeparated(util.SafeStringDatasource(plan.DefaultSavRoles.ValueStringPointer()))
 	plan.EmailTemplate = util.SafeStringDatasource(plan.EmailTemplate.ValueStringPointer())
 	plan.UsersLastImportTime = util.SafeStringDatasource(plan.UsersLastImportTime.ValueStringPointer())
 	plan.AccountsLastImportTime = util.SafeStringDatasource(plan.AccountsLastImportTime.ValueStringPointer())
@@ -686,7 +686,7 @@ func (r *WorkdayConnectionResource) UpdateModelFromReadResponse(state *WorkdayCo
 
 	state.ConnectionName = util.SafeStringDatasource(apiResp.WorkdayConnectionResponse.Connectionname)
 	state.Description = util.SafeStringDatasource(apiResp.WorkdayConnectionResponse.Description)
-	state.DefaultSavRoles = util.SafeStringDatasource(apiResp.WorkdayConnectionResponse.Defaultsavroles)
+	state.DefaultSavRoles = util.SortedCommaSeparated(util.SafeStringDatasource(apiResp.WorkdayConnectionResponse.Defaultsavroles))
 	state.EmailTemplate = util.SafeStringDatasource(apiResp.WorkdayConnectionResponse.Emailtemplate)
 	state.UseOAuth = util.SafeStringDatasource(apiResp.WorkdayConnectionResponse.Connectionattributes.USE_OAUTH)
 	state.UserImportMapping = util.SafeStringDatasource(apiResp.WorkdayConnectionResponse.Connectionattributes.USER_IMPORT_MAPPING)
