@@ -1,7 +1,7 @@
 /*
 Connection Management API
 
-Use this API to create a connection in Saviynt Identity Cloud.  The Authorization header must have \"Bearer {token}\".  **Mandatory Parameters:** - **connectionname**: Specify the name to identify the connection. - **connectiontype**: Specify a connection type. For example, if your target application is Active Directory, specify the connection type as \"AD\".  **Optional Parameters:** - **description**: Provide a description for the connection. - **defaultsavroles**: Specify the SAV role(s) required for managing this connection along with its associated security systems, endpoints, accounts, and entitlements. - **emailTemplate**: Specify the email template applicable for notifications. - **sslCertificate**: Specify the SSL certificate(s) to secure the connection between EIC and the target application. - **vaultConfiguration**: Specify the path of the vault to obtain secret data (suffix the connector name to make it unique). - **saveinvault**: Set to true to save the encrypted attribute in the configured vault.
+Use this API to create a connection in Saviynt Identity Cloud.  The Authorization header must have \"Bearer {token}\".  **Mandatory Parameters:** - **connectionname**: Specify the name to identify the connection. - **connectiontype**: Specify a connection type. For example, if your target application is Active Directory, specify the connection type as \"AD\".  **Optional Parameters:** - **description**: Provide a description for the connection. - **defaultSavRole**: Specify the SAV role(s) required for managing this connection along with its associated security systems, endpoints, accounts, and entitlements. - **emailTemplate**: Specify the email template applicable for notifications. - **sslCertificate**: Specify the SSL certificate(s) to secure the connection between EIC and the target application. - **vaultConfiguration**: Specify the path of the vault to obtain secret data (suffix the connector name to make it unique). - **saveinvault**: Set to true to save the encrypted attribute in the configured vault.
 
 API version: 1.0.0
 */
@@ -28,7 +28,7 @@ type BaseConnector struct {
 	// Description for the connection.
 	ConnectionDescription *string `json:"connectionDescription,omitempty"`
 	// Default SAV roles for managing the connection.
-	Defaultsavroles *string `json:"defaultsavroles,omitempty"`
+	DefaultSavRole *string `json:"defaultSavRole,omitempty"`
 	// Email template for notifications.
 	EmailTemplate *string `json:"emailTemplate,omitempty"`
 	// SSL certificates to secure the connection.
@@ -142,36 +142,36 @@ func (o *BaseConnector) SetConnectionDescription(v string) {
 	o.ConnectionDescription = &v
 }
 
-// GetDefaultsavroles returns the Defaultsavroles field value if set, zero value otherwise.
-func (o *BaseConnector) GetDefaultsavroles() string {
-	if o == nil || IsNil(o.Defaultsavroles) {
+// GetDefaultSavRole returns the DefaultSavRole field value if set, zero value otherwise.
+func (o *BaseConnector) GetDefaultSavRole() string {
+	if o == nil || IsNil(o.DefaultSavRole) {
 		var ret string
 		return ret
 	}
-	return *o.Defaultsavroles
+	return *o.DefaultSavRole
 }
 
-// GetDefaultsavrolesOk returns a tuple with the Defaultsavroles field value if set, nil otherwise
+// GetDefaultSavRoleOk returns a tuple with the DefaultSavRole field value if set, nil otherwise
 // and a boolean to check if the value has been set.
-func (o *BaseConnector) GetDefaultsavrolesOk() (*string, bool) {
-	if o == nil || IsNil(o.Defaultsavroles) {
+func (o *BaseConnector) GetDefaultSavRoleOk() (*string, bool) {
+	if o == nil || IsNil(o.DefaultSavRole) {
 		return nil, false
 	}
-	return o.Defaultsavroles, true
+	return o.DefaultSavRole, true
 }
 
-// HasDefaultsavroles returns a boolean if a field has been set.
-func (o *BaseConnector) HasDefaultsavroles() bool {
-	if o != nil && !IsNil(o.Defaultsavroles) {
+// HasDefaultSavRole returns a boolean if a field has been set.
+func (o *BaseConnector) HasDefaultSavRole() bool {
+	if o != nil && !IsNil(o.DefaultSavRole) {
 		return true
 	}
 
 	return false
 }
 
-// SetDefaultsavroles gets a reference to the given string and assigns it to the Defaultsavroles field.
-func (o *BaseConnector) SetDefaultsavroles(v string) {
-	o.Defaultsavroles = &v
+// SetDefaultSavRole gets a reference to the given string and assigns it to the DefaultSavRole field.
+func (o *BaseConnector) SetDefaultSavRole(v string) {
+	o.DefaultSavRole = &v
 }
 
 // GetEmailTemplate returns the EmailTemplate field value if set, zero value otherwise.
@@ -349,8 +349,8 @@ func (o BaseConnector) ToMap() (map[string]interface{}, error) {
 	if !IsNil(o.ConnectionDescription) {
 		toSerialize["connectionDescription"] = o.ConnectionDescription
 	}
-	if !IsNil(o.Defaultsavroles) {
-		toSerialize["defaultsavroles"] = o.Defaultsavroles
+	if !IsNil(o.DefaultSavRole) {
+		toSerialize["defaultSavRole"] = o.DefaultSavRole
 	}
 	if !IsNil(o.EmailTemplate) {
 		toSerialize["emailTemplate"] = o.EmailTemplate
