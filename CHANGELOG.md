@@ -1,3 +1,18 @@
+## 0.3.5 (released)
+
+ENHANCEMENTS:
+
+* **datasource/saviynt_entitlement_datasource:** Added `max` and `offset` pagination parameters
+  - `max` (optional, Int32): Maximum number of entitlements to return. When omitted, the backend defaults to 50.
+  - `offset` (optional, Int32): Number of entitlements to skip, enabling page-by-page retrieval.
+  - Without these parameters, entitlement types with more than 50 entitlements would silently return a truncated list.
+
+BUG FIXES:
+
+* **All Connection Resources:** `default_sav_roles` can now be set properly as a comma-separated value (e.g., `"ROLE_ADMIN,ROLE_USER"`)
+
+* **resource/saviynt_entitlement_type_resource:** Fixed provider crash when importing an entitlement type with `request_option` set to "None(Create Task)"
+
 ## 0.3.4 (released)
 
 BUG FIXES:

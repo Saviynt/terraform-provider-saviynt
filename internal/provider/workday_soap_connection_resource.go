@@ -384,7 +384,7 @@ func (r *WorkdaySOAPConnectionResource) BuildWorkdaySOAPConnector(plan *WorkdayS
 			ConnectionName: plan.ConnectionName.ValueString(),
 			// Optional fields
 			ConnectionDescription: util.StringPointerOrEmpty(plan.Description),
-			Defaultsavroles:       util.StringPointerOrEmpty(plan.DefaultSavRoles),
+			DefaultSavRole:        util.StringPointerOrEmpty(plan.DefaultSavRoles),
 			EmailTemplate:         util.StringPointerOrEmpty(plan.EmailTemplate),
 		},
 		// Authentication
@@ -442,7 +442,7 @@ func (r *WorkdaySOAPConnectionResource) UpdateModelFromCreateResponse(plan *Work
 	plan.ID = types.StringValue(fmt.Sprintf("%d", *apiResp.ConnectionKey))
 	plan.ConnectionKey = types.Int64Value(int64(*apiResp.ConnectionKey))
 	plan.Description = util.SafeStringDatasource(plan.Description.ValueStringPointer())
-	plan.DefaultSavRoles = util.SafeStringDatasource(plan.DefaultSavRoles.ValueStringPointer())
+	plan.DefaultSavRoles = util.SortedCommaSeparated(util.SafeStringDatasource(plan.DefaultSavRoles.ValueStringPointer()))
 	plan.EmailTemplate = util.SafeStringDatasource(plan.EmailTemplate.ValueStringPointer())
 	plan.Username = util.SafeStringDatasource(plan.Username.ValueStringPointer())
 	plan.SoapEndpoint = util.SafeStringDatasource(plan.SoapEndpoint.ValueStringPointer())
@@ -694,7 +694,7 @@ func (r *WorkdaySOAPConnectionResource) UpdateModelFromReadResponse(state *Workd
 	state.ID = types.StringValue(fmt.Sprintf("%d", *apiResp.WorkdaySOAPConnectionResponse.Connectionkey))
 	state.ConnectionName = util.SafeStringDatasource(apiResp.WorkdaySOAPConnectionResponse.Connectionname)
 	state.Description = util.SafeStringDatasource(apiResp.WorkdaySOAPConnectionResponse.Description)
-	state.DefaultSavRoles = util.SafeStringDatasource(apiResp.WorkdaySOAPConnectionResponse.Defaultsavroles)
+	state.DefaultSavRoles = util.SortedCommaSeparated(util.SafeStringDatasource(apiResp.WorkdaySOAPConnectionResponse.Defaultsavroles))
 	state.EmailTemplate = util.SafeStringDatasource(apiResp.WorkdaySOAPConnectionResponse.Emailtemplate)
 
 	if apiResp.WorkdaySOAPConnectionResponse.Connectionattributes != nil {
