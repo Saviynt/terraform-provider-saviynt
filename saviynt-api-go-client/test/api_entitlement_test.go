@@ -96,7 +96,7 @@ func Test_entitlements_EntitlementAPIService(t *testing.T) {
 					Entitlementtype:  saviyntapigoclient.Pointer("Group"),
 					Endpoint:         saviyntapigoclient.Pointer("AWS_IC_NewJar5"),
 					UpdateType:       saviyntapigoclient.Pointer("ADD"),
-					Requestfilter:    saviyntapigoclient.Pointer(true),
+					Requestfilter:    saviyntapigoclient.Pointer("true"),
 				},
 			},
 		}

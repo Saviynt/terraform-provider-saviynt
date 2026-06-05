@@ -494,7 +494,7 @@ func (r *AdConnectionResource) BuildADConnector(plan *ADConnectorResourceModel, 
 			ConnectionName: plan.ConnectionName.ValueString(),
 			//optional field
 			ConnectionDescription: util.StringPointerOrEmpty(plan.Description),
-			Defaultsavroles:       util.StringPointerOrEmpty(plan.DefaultSavRoles),
+			DefaultSavRole:        util.StringPointerOrEmpty(plan.DefaultSavRoles),
 			EmailTemplate:         util.StringPointerOrEmpty(plan.EmailTemplate),
 		},
 		//required field
@@ -570,7 +570,7 @@ func (r *AdConnectionResource) UpdateModelFromCreateResponse(plan *ADConnectorRe
 	plan.ID = types.StringValue(fmt.Sprintf("%d", *apiResp.ConnectionKey))
 	plan.ConnectionKey = types.Int64Value(int64(*apiResp.ConnectionKey))
 	plan.Description = util.SafeStringDatasource(plan.Description.ValueStringPointer())
-	plan.DefaultSavRoles = util.SafeStringDatasource(plan.DefaultSavRoles.ValueStringPointer())
+	plan.DefaultSavRoles = util.SortedCommaSeparated(util.SafeStringDatasource(plan.DefaultSavRoles.ValueStringPointer()))
 	plan.EmailTemplate = util.SafeStringDatasource(plan.EmailTemplate.ValueStringPointer())
 	plan.URL = util.SafeStringDatasource(plan.URL.ValueStringPointer())
 	plan.Username = util.SafeStringDatasource(plan.Username.ValueStringPointer())
@@ -850,7 +850,7 @@ func (r *AdConnectionResource) UpdateModelFromReadResponse(state *ADConnectorRes
 	state.ID = types.StringValue(fmt.Sprintf("%d", *apiResp.ADConnectionResponse.Connectionkey))
 	state.ConnectionName = util.SafeStringDatasource(apiResp.ADConnectionResponse.Connectionname)
 	state.Description = util.SafeStringDatasource(apiResp.ADConnectionResponse.Description)
-	state.DefaultSavRoles = util.SafeStringDatasource(apiResp.ADConnectionResponse.Defaultsavroles)
+	state.DefaultSavRoles = util.SortedCommaSeparated(util.SafeStringDatasource(apiResp.ADConnectionResponse.Defaultsavroles))
 	state.EmailTemplate = util.SafeStringDatasource(apiResp.ADConnectionResponse.Emailtemplate)
 	state.URL = util.SafeStringDatasource(apiResp.ADConnectionResponse.Connectionattributes.URL)
 	state.Advsearch = util.SafeStringDatasource(apiResp.ADConnectionResponse.Connectionattributes.ADVSEARCH)
