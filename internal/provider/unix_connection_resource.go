@@ -464,7 +464,7 @@ func (r *UnixConnectionResource) BuildUnixConnector(plan *UnixConnectorResourceM
 			ConnectionName: plan.ConnectionName.ValueString(),
 			//optional field
 			ConnectionDescription: util.StringPointerOrEmpty(plan.Description),
-			Defaultsavroles:       util.StringPointerOrEmpty(plan.DefaultSavRoles),
+			DefaultSavRole:        util.StringPointerOrEmpty(plan.DefaultSavRoles),
 			EmailTemplate:         util.StringPointerOrEmpty(plan.EmailTemplate),
 		},
 		//required field
@@ -521,7 +521,7 @@ func (r *UnixConnectionResource) UpdateModelFromCreateResponse(plan *UnixConnect
 	plan.ID = types.StringValue(fmt.Sprintf("%d", *apiResp.ConnectionKey))
 	plan.ConnectionKey = types.Int64Value(int64(*apiResp.ConnectionKey))
 	plan.Description = util.SafeStringDatasource(plan.Description.ValueStringPointer())
-	plan.DefaultSavRoles = util.SafeStringDatasource(plan.DefaultSavRoles.ValueStringPointer())
+	plan.DefaultSavRoles = util.SortedCommaSeparated(util.SafeStringDatasource(plan.DefaultSavRoles.ValueStringPointer()))
 	plan.EmailTemplate = util.SafeStringDatasource(plan.EmailTemplate.ValueStringPointer())
 	plan.HostName = util.SafeStringDatasource(plan.HostName.ValueStringPointer())
 	plan.PortNumber = util.SafeStringDatasource(plan.PortNumber.ValueStringPointer())
@@ -711,7 +711,7 @@ func (r *UnixConnectionResource) UpdateModelFromReadResponse(state *UnixConnecto
 	state.ID = types.StringValue(fmt.Sprintf("%d", *apiResp.UNIXConnectionResponse.Connectionkey))
 	state.ConnectionName = util.SafeStringDatasource(apiResp.UNIXConnectionResponse.Connectionname)
 	state.Description = util.SafeStringDatasource(apiResp.UNIXConnectionResponse.Description)
-	state.DefaultSavRoles = util.SafeStringDatasource(apiResp.UNIXConnectionResponse.Defaultsavroles)
+	state.DefaultSavRoles = util.SortedCommaSeparated(util.SafeStringDatasource(apiResp.UNIXConnectionResponse.Defaultsavroles))
 	state.EmailTemplate = util.SafeStringDatasource(apiResp.UNIXConnectionResponse.Emailtemplate)
 
 	// Map Unix-specific connection attributes

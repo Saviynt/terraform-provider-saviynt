@@ -271,7 +271,7 @@ func (d *OktaConnectionsDataSource) MapBaseOktaConnectionFields(state *OktaConne
 	state.ConnectionName = util.SafeStringDatasource(apiResp.OktaConnectionResponse.Connectionname)
 	state.ConnectionKey = util.SafeInt64(apiResp.OktaConnectionResponse.Connectionkey)
 	state.Description = util.SafeStringDatasource(apiResp.OktaConnectionResponse.Description)
-	state.DefaultSavRoles = util.SafeStringDatasource(apiResp.OktaConnectionResponse.Defaultsavroles)
+	state.DefaultSavRoles = util.SortedCommaSeparated(util.SafeStringDatasource(apiResp.OktaConnectionResponse.Defaultsavroles))
 	state.ConnectionType = util.SafeStringDatasource(apiResp.OktaConnectionResponse.Connectiontype)
 	state.CreatedOn = util.SafeStringDatasource(apiResp.OktaConnectionResponse.Createdon)
 	state.CreatedBy = util.SafeStringDatasource(apiResp.OktaConnectionResponse.Createdby)

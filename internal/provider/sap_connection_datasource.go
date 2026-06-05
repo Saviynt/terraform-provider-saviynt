@@ -445,7 +445,7 @@ func (d *SapConnectionDataSource) MapBaseSAPConnectionFields(state *SapConnectio
 	state.ConnectionName = util.SafeStringDatasource(apiResp.SAPConnectionResponse.Connectionname)
 	state.ConnectionKey = util.SafeInt64(apiResp.SAPConnectionResponse.Connectionkey)
 	state.Description = util.SafeStringDatasource(apiResp.SAPConnectionResponse.Description)
-	state.DefaultSavRoles = util.SafeStringDatasource(apiResp.SAPConnectionResponse.Defaultsavroles)
+	state.DefaultSavRoles = util.SortedCommaSeparated(util.SafeStringDatasource(apiResp.SAPConnectionResponse.Defaultsavroles))
 	state.ConnectionType = util.SafeStringDatasource(apiResp.SAPConnectionResponse.Connectiontype)
 	state.CreatedOn = util.SafeStringDatasource(apiResp.SAPConnectionResponse.Createdon)
 	state.CreatedBy = util.SafeStringDatasource(apiResp.SAPConnectionResponse.Createdby)

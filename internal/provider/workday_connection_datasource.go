@@ -389,7 +389,7 @@ func (d *WorkdayConnectionDataSource) MapBaseWorkdayConnectionFields(state *Work
 	state.ConnectionName = util.SafeStringDatasource(apiResp.WorkdayConnectionResponse.Connectionname)
 	state.ConnectionKey = util.SafeInt64(apiResp.WorkdayConnectionResponse.Connectionkey)
 	state.Description = util.SafeStringDatasource(apiResp.WorkdayConnectionResponse.Description)
-	state.DefaultSavRoles = util.SafeStringDatasource(apiResp.WorkdayConnectionResponse.Defaultsavroles)
+	state.DefaultSavRoles = util.SortedCommaSeparated(util.SafeStringDatasource(apiResp.WorkdayConnectionResponse.Defaultsavroles))
 	state.ConnectionType = util.SafeStringDatasource(apiResp.WorkdayConnectionResponse.Connectiontype)
 	state.CreatedOn = util.SafeStringDatasource(apiResp.WorkdayConnectionResponse.Createdon)
 	state.CreatedBy = util.SafeStringDatasource(apiResp.WorkdayConnectionResponse.Createdby)
