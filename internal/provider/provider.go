@@ -11,6 +11,7 @@ package provider
 import (
 	"context"
 	"log"
+	"os"
 	"strings"
 	"sync"
 	"terraform-provider-Saviynt/util"
@@ -28,6 +29,12 @@ import (
 
 var _ provider.Provider = &SaviyntProvider{}
 var _ provider.ProviderWithEphemeralResources = &SaviyntProvider{}
+
+const (
+	envSaviyntServerURL = "SAVIYNT_SERVER_URL"
+	envSaviyntUsername  = "SAVIYNT_USERNAME"
+	envSaviyntPassword  = "SAVIYNT_PASSWORD"
+)
 
 func New(version string) func() provider.Provider {
 	return func() provider.Provider {
@@ -64,17 +71,17 @@ func (p *SaviyntProvider) Schema(_ context.Context, _ provider.SchemaRequest, re
 		Description: util.ProviderDescription,
 		Attributes: map[string]schema.Attribute{
 			"server_url": schema.StringAttribute{
-				Required:    true,
-				Description: "URL of Saviynt server.",
+				Optional:    true,
+				Description: "URL of Saviynt server. Can also be set with environment variable SAVIYNT_SERVER_URL.",
 			},
 			"username": schema.StringAttribute{
-				Required:    true,
-				Description: "Username for authentication.",
+				Optional:    true,
+				Description: "Username for authentication. Can also be set with environment variable SAVIYNT_USERNAME.",
 			},
 			"password": schema.StringAttribute{
-				Required:    true,
+				Optional:    true,
 				Sensitive:   true,
-				Description: "Password for user authentication.",
+				Description: "Password for user authentication. Can also be set with environment variable SAVIYNT_PASSWORD.",
 			},
 		},
 	}
@@ -92,25 +99,40 @@ func (p *SaviyntProvider) Configure(ctx context.Context, req provider.ConfigureR
 		return
 	}
 
-	if config.ServerURL.IsUnknown() || config.ServerURL.IsNull() ||
-		config.Username.IsUnknown() || config.Username.IsNull() ||
-		config.Password.IsUnknown() || config.Password.IsNull() {
+	serverURL, ok := resolveProviderConfigValue(config.ServerURL, envSaviyntServerURL)
+	if !ok {
 		resp.Diagnostics.AddError(
 			"Missing Configuration",
-			"server_url, username, and password must be set.",
+			"server_url must be set in the provider configuration or with environment variable SAVIYNT_SERVER_URL.",
+		)
+		return
+	}
+
+	username, ok := resolveProviderConfigValue(config.Username, envSaviyntUsername)
+	if !ok {
+		resp.Diagnostics.AddError(
+			"Missing Configuration",
+			"username must be set in the provider configuration or with environment variable SAVIYNT_USERNAME.",
+		)
+		return
+	}
+
+	password, ok := resolveProviderConfigValue(config.Password, envSaviyntPassword)
+	if !ok {
+		resp.Diagnostics.AddError(
+			"Missing Configuration",
+			"password must be set in the provider configuration or with environment variable SAVIYNT_PASSWORD.",
 		)
 		return
 	}
 	ctx = context.Background()
 
-	serverURL := config.ServerURL.ValueString()
-
 	serverURL = strings.TrimPrefix(strings.TrimPrefix(serverURL, "https://"), "http://")
 
 	client, err := s.NewClient(ctx, s.Credentials{
 		ServerURL: "https://" + serverURL,
-		Username:  config.Username.ValueString(),
-		Password:  config.Password.ValueString(),
+		Username:  username,
+		Password:  password,
 	})
 	if err != nil {
 		log.Printf("Failed to create Saviynt client: %v", err)
@@ -150,6 +172,22 @@ func (p *SaviyntProvider) Configure(ctx context.Context, req provider.ConfigureR
 	resp.ResourceData = p
 	resp.DataSourceData = p
 
+}
+
+func resolveProviderConfigValue(configValue types.String, envVarName string) (string, bool) {
+	if !configValue.IsNull() && !configValue.IsUnknown() {
+		value := strings.TrimSpace(configValue.ValueString())
+		if value != "" {
+			return value, true
+		}
+	}
+
+	envValue := strings.TrimSpace(os.Getenv(envVarName))
+	if envValue != "" {
+		return envValue, true
+	}
+
+	return "", false
 }
 
 // DataSources defines the data sources implemented in the provider.
