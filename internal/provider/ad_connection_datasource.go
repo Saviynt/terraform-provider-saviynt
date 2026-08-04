@@ -439,7 +439,7 @@ func (d *AdConnectionsDataSource) MapBaseADConnectionFields(state *ADConnectionD
 	state.ConnectionName = util.SafeStringDatasource(apiResp.ADConnectionResponse.Connectionname)
 	state.ConnectionKey = util.SafeInt64(apiResp.ADConnectionResponse.Connectionkey)
 	state.Description = util.SafeStringDatasource(apiResp.ADConnectionResponse.Description)
-	state.DefaultSavRoles = util.SortedCommaSeparated(util.SafeStringDatasource(apiResp.ADConnectionResponse.Defaultsavroles))
+	state.DefaultSavRoles = PreserveOrderIfSemanticallyEqual(state.DefaultSavRoles, util.SafeStringDatasource(apiResp.ADConnectionResponse.Defaultsavroles))
 	state.ConnectionType = util.SafeStringDatasource(apiResp.ADConnectionResponse.Connectiontype)
 	state.CreatedOn = util.SafeStringDatasource(apiResp.ADConnectionResponse.Createdon)
 	state.CreatedBy = util.SafeStringDatasource(apiResp.ADConnectionResponse.Createdby)

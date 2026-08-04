@@ -1,3 +1,13 @@
+## 0.3.6 (released)
+
+BUG FIXES:
+
+* **All Connection Resources:** Fixed "Provider produced inconsistent result after apply" error for `defaultsavroles` when multiple comma-separated SAV roles are specified.
+
+* **resource/saviynt_endpoint_resource:** Fixed "Provider produced inconsistent result after apply" for `custom_property1`–`custom_property30` and their labels when the Saviynt API returns lowercase JSON keys.
+
+* **resource/saviynt_endpoint_resource:** Setting `custom_property1`–`custom_property45` or any label field to a whitespace-only value (e.g. `" "`) now returns a validation error at plan time. Use `""` to set a field to empty.
+
 ## 0.3.5 (released)
 
 ENHANCEMENTS:
