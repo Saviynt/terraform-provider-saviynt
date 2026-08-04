@@ -328,7 +328,7 @@ func (d *GithubRestConnectionDataSource) MapBaseGithubRestConnectionFields(state
 	state.ConnectionName = util.SafeStringDatasource(apiResp.GithubRESTConnectionResponse.Connectionname)
 	state.ConnectionKey = util.SafeInt64(apiResp.GithubRESTConnectionResponse.Connectionkey)
 	state.Description = util.SafeStringDatasource(apiResp.GithubRESTConnectionResponse.Description)
-	state.DefaultSavRoles = util.SortedCommaSeparated(util.SafeStringDatasource(apiResp.GithubRESTConnectionResponse.Defaultsavroles))
+	state.DefaultSavRoles = PreserveOrderIfSemanticallyEqual(state.DefaultSavRoles, util.SafeStringDatasource(apiResp.GithubRESTConnectionResponse.Defaultsavroles))
 	state.ConnectionType = util.SafeStringDatasource(apiResp.GithubRESTConnectionResponse.Connectiontype)
 	state.CreatedOn = util.SafeStringDatasource(apiResp.GithubRESTConnectionResponse.Createdon)
 	state.CreatedBy = util.SafeStringDatasource(apiResp.GithubRESTConnectionResponse.Createdby)

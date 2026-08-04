@@ -481,7 +481,7 @@ func (r *SalesforceConnectionResource) UpdateModelFromReadResponse(state *Salesf
 	// Update all fields from API response
 	state.ConnectionName = util.SafeStringDatasource(apiResp.SalesforceConnectionResponse.Connectionname)
 	state.Description = util.SafeStringDatasource(apiResp.SalesforceConnectionResponse.Description)
-	state.DefaultSavRoles = util.SortedCommaSeparated(util.SafeStringDatasource(apiResp.SalesforceConnectionResponse.Defaultsavroles))
+	state.DefaultSavRoles = PreserveOrderIfSemanticallyEqual(state.DefaultSavRoles, util.SafeStringDatasource(apiResp.SalesforceConnectionResponse.Defaultsavroles))
 	state.EmailTemplate = util.SafeStringDatasource(apiResp.SalesforceConnectionResponse.Emailtemplate)
 	state.ObjectToBeImported = util.SafeStringDatasource(apiResp.SalesforceConnectionResponse.Connectionattributes.OBJECT_TO_BE_IMPORTED)
 	state.FeatureLicenseJson = util.SafeStringDatasource(apiResp.SalesforceConnectionResponse.Connectionattributes.FEATURE_LICENSE_JSON)

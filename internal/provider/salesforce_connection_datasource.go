@@ -350,7 +350,7 @@ func (d *SalesforceConnectionDataSource) MapBaseSalesforceConnectionFields(state
 	state.ConnectionName = util.SafeStringDatasource(apiResp.SalesforceConnectionResponse.Connectionname)
 	state.ConnectionKey = util.SafeInt64(apiResp.SalesforceConnectionResponse.Connectionkey)
 	state.Description = util.SafeStringDatasource(apiResp.SalesforceConnectionResponse.Description)
-	state.DefaultSavRoles = util.SortedCommaSeparated(util.SafeStringDatasource(apiResp.SalesforceConnectionResponse.Defaultsavroles))
+	state.DefaultSavRoles = PreserveOrderIfSemanticallyEqual(state.DefaultSavRoles, util.SafeStringDatasource(apiResp.SalesforceConnectionResponse.Defaultsavroles))
 	state.ConnectionType = util.SafeStringDatasource(apiResp.SalesforceConnectionResponse.Connectiontype)
 	state.CreatedOn = util.SafeStringDatasource(apiResp.SalesforceConnectionResponse.Createdon)
 	state.CreatedBy = util.SafeStringDatasource(apiResp.SalesforceConnectionResponse.Createdby)
