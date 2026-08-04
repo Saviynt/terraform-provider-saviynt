@@ -849,7 +849,7 @@ func (r *SapConnectionResource) UpdateModelFromReadResponse(state *SapConnectorR
 	// Update all fields from API response
 	state.ConnectionName = util.SafeStringDatasource(apiResp.SAPConnectionResponse.Connectionname)
 	state.Description = util.SafeStringDatasource(apiResp.SAPConnectionResponse.Description)
-	state.DefaultSavRoles = util.SortedCommaSeparated(util.SafeStringDatasource(apiResp.SAPConnectionResponse.Defaultsavroles))
+	state.DefaultSavRoles = PreserveOrderIfSemanticallyEqual(state.DefaultSavRoles, util.SafeStringDatasource(apiResp.SAPConnectionResponse.Defaultsavroles))
 	state.EmailTemplate = util.SafeStringDatasource(apiResp.SAPConnectionResponse.Emailtemplate)
 	state.Createaccountjson = util.SafeStringDatasource(apiResp.SAPConnectionResponse.Connectionattributes.CREATEACCOUNTJSON)
 	state.AuditLogJson = util.SafeStringDatasource(apiResp.SAPConnectionResponse.Connectionattributes.AUDIT_LOG_JSON)
