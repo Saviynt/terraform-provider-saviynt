@@ -415,7 +415,7 @@ func (d *AdsiConnectionsDataSource) MapBaseADSIConnectionFields(state *ADSIConne
 	state.ConnectionName = util.SafeStringDatasource(apiResp.ADSIConnectionResponse.Connectionname)
 	state.ConnectionKey = util.SafeInt64(apiResp.ADSIConnectionResponse.Connectionkey)
 	state.Description = util.SafeStringDatasource(apiResp.ADSIConnectionResponse.Description)
-	state.DefaultSavRoles = util.SortedCommaSeparated(util.SafeStringDatasource(apiResp.ADSIConnectionResponse.Defaultsavroles))
+	state.DefaultSavRoles = PreserveOrderIfSemanticallyEqual(state.DefaultSavRoles, util.SafeStringDatasource(apiResp.ADSIConnectionResponse.Defaultsavroles))
 	state.ConnectionType = util.SafeStringDatasource(apiResp.ADSIConnectionResponse.Connectiontype)
 	state.CreatedOn = util.SafeStringDatasource(apiResp.ADSIConnectionResponse.Createdon)
 	state.CreatedBy = util.SafeStringDatasource(apiResp.ADSIConnectionResponse.Createdby)
