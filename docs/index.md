@@ -110,10 +110,10 @@ Check out the [Latest Saviynt Provider Docs](https://registry.terraform.io/provi
 
 | Supported Saviynt EIC Versions | Terraform Provider Version |
 | -------------------------- | ------------------------------ |
-| `25.C` | Latest Version: `v0.3.5`<br> Supported Version(s): `v0.2.13` - `v0.3.5`|
-| `25.B` | Latest Version: `v0.3.5`<br> Supported Version(s): `v0.2.8` - `v0.3.5`|
-| `25.A` | Latest Version: `v0.3.5`<br> Supported Version(s): `v0.2.8` - `v0.3.5`|
-| `24.10` | Latest Version: `v0.3.5`<br> Supported Version(s): `v0.2.8` - `v0.3.5`|
+| `25.C` | Latest Version: `v0.3.6`<br> Supported Version(s): `v0.2.13` - `v0.3.6`|
+| `25.B` | Latest Version: `v0.3.6`<br> Supported Version(s): `v0.2.8` - `v0.3.6`|
+| `25.A` | Latest Version: `v0.3.6`<br> Supported Version(s): `v0.2.8` - `v0.3.6`|
+| `24.10` | Latest Version: `v0.3.6`<br> Supported Version(s): `v0.2.8` - `v0.3.6`|
 
 --- 
 
@@ -707,7 +707,7 @@ roles.readlabels=true
 ```
 
 **Recommendation**:
-Keep all `readlabels` settings set to `true` to ensure compatibility with Terraform provider expectations and avoid field mapping issues.
+The Terraform provider supports both key formats for endpoint custom properties and labels. However, keeping `readlabels` set to `true` is still recommended for other resource types to ensure compatibility.
 
 ---
 
