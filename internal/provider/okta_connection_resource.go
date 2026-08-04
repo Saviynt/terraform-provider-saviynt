@@ -531,7 +531,7 @@ func (r *OktaConnectionResource) UpdateModelFromReadResponse(state *OktaConnecto
 	state.ID = types.StringValue(fmt.Sprintf("%d", *apiResp.OktaConnectionResponse.Connectionkey))
 	state.ConnectionName = util.SafeStringDatasource(apiResp.OktaConnectionResponse.Connectionname)
 	state.Description = util.SafeStringDatasource(apiResp.OktaConnectionResponse.Description)
-	state.DefaultSavRoles = util.SortedCommaSeparated(util.SafeStringDatasource(apiResp.OktaConnectionResponse.Defaultsavroles))
+	state.DefaultSavRoles = PreserveOrderIfSemanticallyEqual(state.DefaultSavRoles, util.SafeStringDatasource(apiResp.OktaConnectionResponse.Defaultsavroles))
 	state.EmailTemplate = util.SafeStringDatasource(apiResp.OktaConnectionResponse.Emailtemplate)
 	state.ImportUrl = util.SafeStringDatasource(apiResp.OktaConnectionResponse.Connectionattributes.IMPORTURL)
 	state.OktaApplicationSecuritySystem = util.SafeStringDatasource(apiResp.OktaConnectionResponse.Connectionattributes.OKTA_APPLICATION_SECURITYSYSTEM)
