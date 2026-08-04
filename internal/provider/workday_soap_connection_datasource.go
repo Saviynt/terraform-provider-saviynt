@@ -387,7 +387,7 @@ func (d *WorkdaySOAPConnectionDataSource) MapBaseWorkdaySOAPConnectionFields(sta
 	state.ConnectionName = util.SafeStringDatasource(apiResp.WorkdaySOAPConnectionResponse.Connectionname)
 	state.ConnectionKey = util.SafeInt64(apiResp.WorkdaySOAPConnectionResponse.Connectionkey)
 	state.Description = util.SafeStringDatasource(apiResp.WorkdaySOAPConnectionResponse.Description)
-	state.DefaultSavRoles = util.SortedCommaSeparated(util.SafeStringDatasource(apiResp.WorkdaySOAPConnectionResponse.Defaultsavroles))
+	state.DefaultSavRoles = PreserveOrderIfSemanticallyEqual(state.DefaultSavRoles, util.SafeStringDatasource(apiResp.WorkdaySOAPConnectionResponse.Defaultsavroles))
 	state.ConnectionType = util.SafeStringDatasource(apiResp.WorkdaySOAPConnectionResponse.Connectiontype)
 	state.CreatedOn = util.SafeStringDatasource(apiResp.WorkdaySOAPConnectionResponse.Createdon)
 	state.CreatedBy = util.SafeStringDatasource(apiResp.WorkdaySOAPConnectionResponse.Createdby)
