@@ -782,7 +782,7 @@ func (r *DBConnectionResource) UpdateModelFromReadResponse(state *DBConnectorRes
 	state.ConnectionKey = types.Int64Value(int64(*dbResp.Connectionkey))
 	state.ConnectionName = util.SafeStringDatasource(dbResp.Connectionname)
 	state.Description = util.SafeStringDatasource(dbResp.Description)
-	state.DefaultSavRoles = util.SortedCommaSeparated(util.SafeStringDatasource(dbResp.Defaultsavroles))
+	state.DefaultSavRoles = PreserveOrderIfSemanticallyEqual(state.DefaultSavRoles, util.SafeStringDatasource(dbResp.Defaultsavroles))
 	state.EmailTemplate = util.SafeStringDatasource(dbResp.Emailtemplate)
 
 	// Update DB-specific fields from connection attributes
