@@ -384,7 +384,7 @@ func (d *restConnectionDatasource) MapBaseRESTConnectionFields(state *RESTConnec
 	state.ConnectionName = util.SafeStringDatasource(apiResp.RESTConnectionResponse.Connectionname)
 	state.ConnectionKey = util.SafeInt64(apiResp.RESTConnectionResponse.Connectionkey)
 	state.Description = util.SafeStringDatasource(apiResp.RESTConnectionResponse.Description)
-	state.DefaultSavRoles = util.SortedCommaSeparated(util.SafeStringDatasource(apiResp.RESTConnectionResponse.Defaultsavroles))
+	state.DefaultSavRoles = PreserveOrderIfSemanticallyEqual(state.DefaultSavRoles, util.SafeStringDatasource(apiResp.RESTConnectionResponse.Defaultsavroles))
 	state.ConnectionType = util.SafeStringDatasource(apiResp.RESTConnectionResponse.Connectiontype)
 	state.CreatedOn = util.SafeStringDatasource(apiResp.RESTConnectionResponse.Createdon)
 	state.CreatedBy = util.SafeStringDatasource(apiResp.RESTConnectionResponse.Createdby)
