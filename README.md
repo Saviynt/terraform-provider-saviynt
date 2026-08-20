@@ -87,10 +87,10 @@ Check out the [Latest Saviynt Provider Docs](https://registry.terraform.io/provi
 
 | Supported Saviynt EIC Versions | Terraform Provider Version |
 | -------------------------- | ------------------------------ |
-| `25.C` | Latest Version: `v0.3.6`<br> Supported Version(s): `v0.2.13` - `v0.3.6`|
-| `25.B` | Latest Version: `v0.3.6`<br> Supported Version(s): `v0.2.8` - `v0.3.6`|
-| `25.A` | Latest Version: `v0.3.6`<br> Supported Version(s): `v0.2.8` - `v0.3.6`|
-| `24.10` | Latest Version: `v0.3.6`<br> Supported Version(s): `v0.2.8` - `v0.3.6`|
+| `25.C` | Latest Version: `v0.3.7`<br> Supported Version(s): `v0.2.13` - `v0.3.7`|
+| `25.B` | Latest Version: `v0.3.7`<br> Supported Version(s): `v0.2.8` - `v0.3.7`|
+| `25.A` | Latest Version: `v0.3.7`<br> Supported Version(s): `v0.2.8` - `v0.3.7`|
+| `24.10` | Latest Version: `v0.3.7`<br> Supported Version(s): `v0.2.8` - `v0.3.7`|
 
 --- 
 
@@ -110,6 +110,189 @@ Check the table to see which attributes are supported in your version before usi
 | **Security System** | `instant_provisioning`                                                                           | Yes                | Yes              | No              | No               |
 | **Entitlement Type** | `enable_entitlement_to_role_sync`                                                                           | Yes                | Yes              | Yes              | No               |
 | **Enterprise Role** | `child_roles`                                                                           | Yes                | Yes              | No              | No               |
+
+---
+
+## Authentication Methods
+
+The provider supports three authentication methods evaluated in priority order. Only one method is used per session — the first one that matches.
+
+### Priority 1: OAuth2 Token Exchange (External Identity Provider like Entra ID, Okta or PingOne)
+
+Recommended for machine-to-machine integrations. Exchanges an External Identity Provider(IdP) access token (e.g. Entra ID, Okta, PingOne) for a Saviynt session token using [RFC 8693 Token Exchange](https://datatracker.ietf.org/doc/html/rfc8693).
+
+
+```hcl
+provider "saviynt" {
+  server_url    = "https://example.saviyntcloud.com"
+  subject_token = var.entra_access_token  # Entra ID access token
+  scope         = "terraformtesting"      # Name of the Oauth_token_exchange ExternalConnection configured in Saviynt
+
+  # Optional overrides (defaults shown):
+  # subject_token_type = "urn:ietf:params:oauth:token-type:access_token"
+  # grant_type         = "urn:ietf:params:oauth:grant-type:token-exchange"
+}
+```
+
+> For one-time Saviynt setup and step-by-step instructions, see [Setting Up OAuth2 Token Exchange (Entra ID)](#setting-up-oauth2-token-exchange-entra-id--step-by-step).
+
+---
+
+### Priority 2: Direct Bearer Token
+
+Use when you already have a valid Saviynt Bearer access token. No re-authentication is performed — the token is used as-is.
+
+```hcl
+provider "saviynt" {
+  server_url    = "https://example.saviyntcloud.com"
+  access_token  = var.saviynt_access_token   # Existing Saviynt Bearer token
+  refresh_token = var.saviynt_refresh_token  # Optional: enables auto-refresh on expiry
+}
+```
+
+> **Note:** If `refresh_token` is omitted and the access token expires (~30 min), Terraform will return 401 errors. Provide `refresh_token` to enable automatic refresh, or use token exchange (Priority 1) for long-running applies.
+
+---
+
+### Priority 3: Username + Password (Default)
+
+The standard credential-based login. The provider calls `/ECM/api/login` and exchanges credentials for a Saviynt session token with automatic refresh on expiry.
+
+```hcl
+provider "saviynt" {
+  server_url = "https://example.saviyntcloud.com"
+  username   = "admin"
+  password   = var.saviynt_password
+}
+```
+
+---
+
+### Authentication Priority Summary
+
+| Priority | Method | Fields Required | Token Refresh |
+|---|---|---|---|
+| 1 | OAuth2 Token Exchange (Entra ID / Okta / PingOne) | `subject_token` + `scope` | Yes |
+| 2 | Direct Bearer Token | `access_token` (+ optional `refresh_token`) | Yes (if `refresh_token` provided) |
+| 3 | Username + Password | `username` + `password` | Yes |
+
+---
+
+### Setting Up OAuth2 Token Exchange (Entra ID) — Step-by-Step
+
+This section walks through the one-time Saviynt configuration required before you can use `subject_token` authentication with the provider.
+
+#### Prerequisites
+
+- A Microsoft Entra ID (Azure AD) App Registration with `client_credentials` grant enabled
+- Access to your Saviynt EIC instance
+- The Azure App's **Client ID**, **Client Secret**, and **Tenant ID**
+
+---
+
+#### Step 1: Create an ExternalConnection in Saviynt
+
+1. Navigate to **Admin → Identity Repository → Connections**
+2. Click **Add/Update Connection**
+3. Fill in the fields:
+
+| Field | Value |
+|---|---|
+| **Connection Name** | Any name — this becomes the `scope` in your provider config (e.g. `terraformTesting`) |
+| **Connection Type** | `Oauth_token_exchange` |
+| `MSOPENID.CLIENTID` | Your Azure App's Client ID |
+| `MSOPENID.CLIENTSECRET` | Your Azure App's Client Secret |
+| `MSOPENID.USERNAMEINJSON` | `sub` |
+| `MSOPENID.WELLKNOWN.URL` | `https://login.microsoftonline.com/<tenant-id>/v2.0/.well-known/openid-configuration` |
+| `MSOPENID.SAVIYNT_USER_LOOKUP_ATTRIBUTE` | `customproperty1` |
+
+4. Click **Save Connection**
+
+> **Note:** The `MSOPENID.SAVIYNT_USER_LOOKUP_ATTRIBUTE` tells Saviynt which user attribute to match against the `sub` claim from the Entra ID token. `customproperty1` is the recommended field for storing the Azure App's object/principal ID.
+
+---
+
+#### Step 2: Link the Azure App to a Saviynt Service Account
+
+1. Navigate to **Admin → Identity Repository → Users**
+2. Open the service account that Terraform should run as
+3. Click **Other Attributes**
+4. Set **Custom Property 1** to the **`sub` claim value from a `client_credentials` token** for your Azure App
+
+   In a `client_credentials` token, `sub` = the service principal's Object ID. You can find it by:
+   - Fetching a token via `curl` (see Step 3 below) and decoding it: `echo <token> | cut -d'.' -f2 | base64 -d | python3 -m json.tool | grep sub`
+   - Or in the Azure portal: **App Registrations → your app → Overview → Object ID**
+   - Or pasting the token into [jwt.ms](https://jwt.ms) and reading the `sub` field
+
+5. Save the user
+
+> **Critical:** Do NOT use a token obtained via `authorization_code` (interactive login) to find this value. In interactive flows, `sub` is a pairwise user identifier — a completely different value. Only the `client_credentials` token has `sub` = the service principal's Object ID.
+
+> **Why this is needed:** When Saviynt receives the token exchange request, it decodes the Entra ID token, extracts the `sub` claim, and looks up a user whose `customproperty1` matches. That user becomes the authenticated identity for the Terraform session.
+
+---
+
+#### Step 3: Fetch the Entra ID Access Token
+
+Before running `terraform apply`, fetch an Entra ID access token and export it as a Terraform environment variable:
+
+```bash
+TOKEN=$(curl -s -X POST \
+  "https://login.microsoftonline.com/<tenant-id>/oauth2/v2.0/token" \
+  -H "Content-Type: application/x-www-form-urlencoded" \
+  -d "grant_type=client_credentials" \
+  -d "client_id=<azure-app-client-id>" \
+  -d "client_secret=<azure-app-client-secret>" \
+  -d "scope=api://<azure-app-client-id>/.default" \
+  | jq -r '.access_token')
+
+export TF_VAR_SAVIYNT_SUBJECT_TOKEN="$TOKEN"
+```
+
+> **Note:** Entra ID access tokens expire in ~1 hour. Re-run the above if you get 401 errors during a long apply.
+
+---
+
+#### Step 4: Configure the Provider
+
+```hcl
+provider "saviynt" {
+  server_url    = "https://example.saviyntcloud.com"
+  subject_token = var.SAVIYNT_SUBJECT_TOKEN  # populated via TF_VAR_SAVIYNT_SUBJECT_TOKEN
+  scope         = "terraformTesting"         # the Connection Name from Step 1
+}
+```
+
+Declare the variable in your `variables.tf`:
+
+```hcl
+variable "SAVIYNT_SUBJECT_TOKEN" {
+  type      = string
+  sensitive = true
+  default   = null
+}
+```
+
+---
+
+#### Step 5: Run Terraform
+
+```bash
+terraform init
+terraform plan  -var-file=dev.tfvars
+terraform apply -var-file=dev.tfvars
+```
+
+The provider will POST the Entra ID token to Saviynt's `/ECM/oauth2/token` endpoint, receive a Saviynt Bearer token, and use it for all subsequent API calls in the session.
+
+---
+
+#### Troubleshooting
+
+| Error | Cause | Fix |
+|---|---|---|
+| `401` during apply | Entra ID token expired | Re-fetch a fresh token using the `curl` command in Step 3 and re-apply |
+| No user matched | `customproperty1` mismatch | Confirm the value in **Custom Property 1** on the service account matches the `sub` claim in the Entra ID token (use [jwt.ms](https://jwt.ms) to inspect the token) |
 
 ---
 
@@ -595,9 +778,9 @@ terraform {
 }
 
 provider "saviynt" {
-  server_url  = "https://example.saviyntcloud.com"
-  username   = "username"
-  password   = "password"
+  server_url = "https://example.saviyntcloud.com"
+  username   = var.username
+  password   = var.password
 }
 ````
 <!-- 
@@ -636,9 +819,9 @@ variable "password" {
 This file contains the actual values for the declared variables:
 
 ```hcl
-server_url   = "https://example.saviyntcloud.com"
-username = "username"
-password = "password"
+server_url = "https://example.saviyntcloud.com"
+username   = "your-saviynt-username"
+password   = "your-saviynt-password"
 ```
 
 > This file is automatically used by Terraform during plan and apply.

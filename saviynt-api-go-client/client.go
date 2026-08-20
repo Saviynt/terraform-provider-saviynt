@@ -11,6 +11,7 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"net/url"
 	"os"
 	"strconv"
 	"strings"
@@ -39,6 +40,7 @@ import (
 
 const (
 	apiLoginPath         = "/ECM/api/login"
+	oauth2TokenPath      = "/ECM/oauth2/token"
 	headerAuthorization  = "Authorization"
 	tokenTypeBasic       = "Basic"
 	paramOAuth2ExpiresIn = "expires_in"
@@ -168,6 +170,36 @@ func NewClientToken(ctx context.Context, serverURL string, username *string, tok
 	c := newClientHTTPClient(serverURL, username, newClientToken(ctx, token))
 	c.token = token
 	return c
+}
+
+// NewClientTokenExchange creates a client via OAuth2 Token Exchange (RFC 8693).
+// subjectToken is typically an Entra ID access token; scope is the Saviynt ExternalConnection name.
+// subjectTokenType defaults to urn:ietf:params:oauth:token-type:access_token if empty.
+// grantType defaults to urn:ietf:params:oauth:grant-type:token-exchange if empty.
+func NewClientTokenExchange(ctx context.Context, serverURL, subjectToken, subjectTokenType, grantType, scope string) (*Client, error) {
+	if subjectTokenType == "" {
+		subjectTokenType = "urn:ietf:params:oauth:token-type:access_token"
+	}
+	if grantType == "" {
+		grantType = "urn:ietf:params:oauth:grant-type:token-exchange"
+	}
+	tok, err := newOAuth2TokenExchange(ctx, tokenExchangeURL(serverURL), subjectToken, subjectTokenType, grantType, scope)
+	if err != nil {
+		return nil, err
+	}
+	var username *string
+	if u, ok := tok.Extra("username").(string); ok && u != "" {
+		username = Pointer(u)
+	}
+	return NewClientToken(ctx, serverURL, username, tok), nil
+}
+
+// NewClientAccessToken creates a client from an existing Saviynt Bearer access token.
+// No re-authentication is performed; the token is used as-is.
+// Pass a non-empty refreshToken to enable automatic token refresh when the access token expires.
+func NewClientAccessToken(ctx context.Context, serverURL, accessToken, refreshToken string) *Client {
+	tok := &oauth2.Token{AccessToken: accessToken, RefreshToken: refreshToken}
+	return NewClientToken(ctx, serverURL, nil, tok)
 }
 
 func (c *Client) APIBaseURL() string {
@@ -329,6 +361,42 @@ func newOAuth2TokenBasicAuth(tokenURL, username, password string) (*oauth2.Token
 
 func loginURL(serverURL string) string {
 	return strings.TrimSuffix(strings.TrimSpace(serverURL), "/") + apiLoginPath
+}
+
+func tokenExchangeURL(serverURL string) string {
+	return strings.TrimSuffix(strings.TrimSpace(serverURL), "/") + oauth2TokenPath
+}
+
+func newOAuth2TokenExchange(ctx context.Context, tokenURL, subjectToken, subjectTokenType, grantType, scope string) (*oauth2.Token, error) {
+	form := url.Values{}
+	form.Set("grant_type", grantType)
+	form.Set("subject_token", subjectToken)
+	form.Set("subject_token_type", subjectTokenType)
+	form.Set("scope", scope)
+
+	client := &http.Client{Timeout: 30 * time.Second}
+	req, err := http.NewRequestWithContext(ctx, http.MethodPost, tokenURL, strings.NewReader(form.Encode()))
+	if err != nil {
+		return nil, err
+	}
+	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
+
+	resp, err := client.Do(req)
+	if err != nil {
+		return nil, err
+	}
+	defer resp.Body.Close()
+	if resp.StatusCode >= 300 {
+		body, _ := io.ReadAll(resp.Body)
+		return nil, fmt.Errorf("saviynt token exchange response status (%d): %s", resp.StatusCode, string(body))
+	}
+	b, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return nil, err
+	} else if len(b) == 0 {
+		return nil, errors.New("saviynt token exchange response body is empty")
+	}
+	return parseToken(b)
 }
 
 func parseToken(rawToken []byte) (*oauth2.Token, error) {
