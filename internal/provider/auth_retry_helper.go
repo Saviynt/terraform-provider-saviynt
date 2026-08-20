@@ -72,6 +72,12 @@ func (p *SaviyntProvider) callRefreshTokenAPI(ctx context.Context) error {
 	p.tokenMutex.Lock()
 	defer p.tokenMutex.Unlock()
 
+	if p.refreshToken == "" {
+		return fmt.Errorf("token expired and cannot be refreshed: no refresh token available. " +
+			"When using access_token or token exchange authentication, ensure the token TTL " +
+			"exceeds the duration of your Terraform operations")
+	}
+
 	log.Printf("[DEBUG] Calling refresh token API...")
 
 	// Create API configuration
