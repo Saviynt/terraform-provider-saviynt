@@ -1,3 +1,12 @@
+## 0.3.7 (released)
+
+FEATURES:
+
+* **Provider:** Added two new authentication methods alongside the existing username/password. Auth is now priority-based:
+  - **Priority 1 — OAuth2 Token Exchange:** Supply `subject_token` + `scope` to exchange an Entra ID (or other IdP) access token for a Saviynt Bearer token via `/ECM/oauth2/token`. New fields: `subject_token`, `scope`, `subject_token_type`, `grant_type`.
+  - **Priority 2 — Direct Bearer Token:** Supply `access_token` to use an existing Saviynt Bearer token as-is. Optionally pair with `refresh_token` to enable auto-refresh on expiry. New fields: `access_token`, `refresh_token`.
+  - **Priority 3 — Username + Password:** Existing behaviour, now the fallback. `username` and `password` are no longer required when using Priority 1 or 2.
+
 ## 0.3.6 (released)
 
 BUG FIXES:
