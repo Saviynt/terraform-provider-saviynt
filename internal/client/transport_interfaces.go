@@ -6,7 +6,6 @@ package client
 import (
 	"context"
 	"net/http"
-	"strings"
 
 	openapi "github.com/saviynt/saviynt-api-go-client/transports"
 )
@@ -45,9 +44,7 @@ type DefaultTransportFactory struct{}
 
 func (f *DefaultTransportFactory) CreateTransportOperations(baseURL, token string) TransportOperationsInterface {
 	cfg := openapi.NewConfiguration()
-	apiBaseURL := strings.TrimPrefix(strings.TrimPrefix(baseURL, "https://"), "http://")
-	cfg.Host = apiBaseURL
-	cfg.Scheme = "https"
+	cfg.Servers = openapi.ServerConfigurations{{URL: baseURL}}
 	cfg.AddDefaultHeader("Authorization", "Bearer "+token)
 	cfg.HTTPClient = http.DefaultClient
 	apiClient := openapi.NewAPIClient(cfg)

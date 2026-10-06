@@ -30,7 +30,9 @@ type GetEndpointsRequest struct {
 	// Description for the endpoint.
 	Max *string `json:"max,omitempty"`
 	// Owner of the endpoint. If ownerType is User, specify the username of the owner. If ownerType is Usergroup, sepecify the name of the User group
-	Owner          *string                `json:"owner,omitempty"`
+	Owner *string `json:"owner,omitempty"`
+	// Controls whether the API returns human-readable label names (e.g. 'Custom Property 1') or backend field names (e.g. 'customproperty1'). Pass 'false' to always receive backend field names regardless of the server-side readlabels configuration.
+	Readlabels     *string                `json:"readlabels,omitempty"`
 	FilterCriteria map[string]interface{} `json:"filterCriteria,omitempty"`
 }
 
@@ -243,6 +245,38 @@ func (o *GetEndpointsRequest) SetOwner(v string) {
 	o.Owner = &v
 }
 
+// GetReadlabels returns the Readlabels field value if set, zero value otherwise.
+func (o *GetEndpointsRequest) GetReadlabels() string {
+	if o == nil || IsNil(o.Readlabels) {
+		var ret string
+		return ret
+	}
+	return *o.Readlabels
+}
+
+// GetReadlabelsOk returns a tuple with the Readlabels field value if set, nil otherwise
+// and a boolean to check if the value has been set.
+func (o *GetEndpointsRequest) GetReadlabelsOk() (*string, bool) {
+	if o == nil || IsNil(o.Readlabels) {
+		return nil, false
+	}
+	return o.Readlabels, true
+}
+
+// HasReadlabels returns a boolean if a field has been set.
+func (o *GetEndpointsRequest) HasReadlabels() bool {
+	if o != nil && !IsNil(o.Readlabels) {
+		return true
+	}
+
+	return false
+}
+
+// SetReadlabels gets a reference to the given string and assigns it to the Readlabels field.
+func (o *GetEndpointsRequest) SetReadlabels(v string) {
+	o.Readlabels = &v
+}
+
 // GetFilterCriteria returns the FilterCriteria field value if set, zero value otherwise.
 func (o *GetEndpointsRequest) GetFilterCriteria() map[string]interface{} {
 	if o == nil || IsNil(o.FilterCriteria) {
@@ -302,6 +336,9 @@ func (o GetEndpointsRequest) ToMap() (map[string]interface{}, error) {
 	}
 	if !IsNil(o.Owner) {
 		toSerialize["owner"] = o.Owner
+	}
+	if !IsNil(o.Readlabels) {
+		toSerialize["readlabels"] = o.Readlabels
 	}
 	if !IsNil(o.FilterCriteria) {
 		toSerialize["filterCriteria"] = o.FilterCriteria

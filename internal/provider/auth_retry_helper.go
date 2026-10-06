@@ -80,11 +80,13 @@ func (p *SaviyntProvider) callRefreshTokenAPI(ctx context.Context) error {
 
 	log.Printf("[DEBUG] Calling refresh token API...")
 
-	// Create API configuration
+	// Create API configuration.
+	// Note: ServerURLWithContext resolves the base URL from cfg.Servers (not cfg.Host/cfg.Scheme),
+	// so we must set Servers to the actual Saviynt base URL. Otherwise the SDK falls back to its
+	// default server (http://localhost:3000) and the refresh call silently hits the wrong host.
 	cfg := openapi.NewConfiguration()
-	apiBaseURL := strings.TrimPrefix(strings.TrimPrefix(p.client.APIBaseURL(), "https://"), "http://")
-	cfg.Host = apiBaseURL
-	cfg.Scheme = "https"
+	apiBaseURL := p.client.APIBaseURL()
+	cfg.Servers = openapi.ServerConfigurations{{URL: apiBaseURL}}
 	cfg.HTTPClient = &http.Client{}
 
 	apiClient := openapi.NewAPIClient(cfg)
