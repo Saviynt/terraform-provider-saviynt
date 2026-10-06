@@ -6,7 +6,6 @@ package client
 import (
 	"context"
 	"net/http"
-	"strings"
 
 	openapi "github.com/saviynt/saviynt-api-go-client/job_control"
 )
@@ -87,9 +86,7 @@ type DefaultJobControlFactory struct{}
 
 func (f *DefaultJobControlFactory) CreateJobControlOperations(baseURL, token string) JobControlOperationsInterface {
 	cfg := openapi.NewConfiguration()
-	apiBaseURL := strings.TrimPrefix(strings.TrimPrefix(baseURL, "https://"), "http://")
-	cfg.Host = apiBaseURL
-	cfg.Scheme = "https"
+	cfg.Servers = openapi.ServerConfigurations{{URL: baseURL}}
 	cfg.AddDefaultHeader("Authorization", "Bearer "+token)
 	cfg.HTTPClient = http.DefaultClient
 	apiClient := openapi.NewAPIClient(cfg)

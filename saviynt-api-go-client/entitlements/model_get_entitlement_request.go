@@ -33,6 +33,8 @@ type GetEntitlementRequest struct {
 	Max *int32 `json:"max,omitempty"`
 	// Number of results to skip
 	Offset *int32 `json:"offset,omitempty"`
+	// Controls whether the API returns human-readable label names or backend field names. Pass 'false' to always receive backend field names (e.g. 'entitlement_value') regardless of server-side readlabels configuration.
+	Readlabels *string `json:"readlabels,omitempty"`
 	// Comma-separated list of entitlement fields to return
 	EntitlementResponseFields *string `json:"entitlementResponseFields,omitempty"`
 	// Comma-separated list of user fields to return
@@ -292,6 +294,38 @@ func (o *GetEntitlementRequest) HasOffset() bool {
 // SetOffset gets a reference to the given int32 and assigns it to the Offset field.
 func (o *GetEntitlementRequest) SetOffset(v int32) {
 	o.Offset = &v
+}
+
+// GetReadlabels returns the Readlabels field value if set, zero value otherwise.
+func (o *GetEntitlementRequest) GetReadlabels() string {
+	if o == nil || IsNil(o.Readlabels) {
+		var ret string
+		return ret
+	}
+	return *o.Readlabels
+}
+
+// GetReadlabelsOk returns a tuple with the Readlabels field value if set, nil otherwise
+// and a boolean to check if the value has been set.
+func (o *GetEntitlementRequest) GetReadlabelsOk() (*string, bool) {
+	if o == nil || IsNil(o.Readlabels) {
+		return nil, false
+	}
+	return o.Readlabels, true
+}
+
+// HasReadlabels returns a boolean if a field has been set.
+func (o *GetEntitlementRequest) HasReadlabels() bool {
+	if o != nil && !IsNil(o.Readlabels) {
+		return true
+	}
+
+	return false
+}
+
+// SetReadlabels gets a reference to the given string and assigns it to the Readlabels field.
+func (o *GetEntitlementRequest) SetReadlabels(v string) {
+	o.Readlabels = &v
 }
 
 // GetEntitlementResponseFields returns the EntitlementResponseFields field value if set, zero value otherwise.
@@ -612,6 +646,9 @@ func (o GetEntitlementRequest) ToMap() (map[string]interface{}, error) {
 	}
 	if !IsNil(o.Offset) {
 		toSerialize["offset"] = o.Offset
+	}
+	if !IsNil(o.Readlabels) {
+		toSerialize["readlabels"] = o.Readlabels
 	}
 	if !IsNil(o.EntitlementResponseFields) {
 		toSerialize["entitlementResponseFields"] = o.EntitlementResponseFields

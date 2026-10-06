@@ -24,6 +24,7 @@ Name | Type | Description | Notes
 **Confidentiality** | Pointer to **string** | Confidentiality status (e.g., true or false) | [optional] 
 **Max** | Pointer to **string** | Maximum number of records to return | [optional] 
 **Offset** | Pointer to **string** | Offset for pagination | [optional] 
+**Readlabels** | Pointer to **string** | Controls whether the API returns human-readable label names or backend field names. Pass &#39;false&#39; to always receive backend field names (e.g. &#39;role_name&#39;) regardless of server-side readlabels configuration. | [optional] 
 **RoleQuery** | Pointer to **string** | SQL-like query to filter roles (e.g., &#x60;r.role_name &#x3D; &#39;Admin&#39;&#x60;) | [optional] 
 **Hideblankvalues** | Pointer to **string** | Hide blank values (e.g., true or false) | [optional] 
 **Customproperty1** | Pointer to **string** | Custom property 1 for additional metadata | [optional] 
@@ -605,6 +606,31 @@ SetOffset sets Offset field to given value.
 `func (o *GetRolesRequest) HasOffset() bool`
 
 HasOffset returns a boolean if a field has been set.
+
+### GetReadlabels
+
+`func (o *GetRolesRequest) GetReadlabels() string`
+
+GetReadlabels returns the Readlabels field if non-nil, zero value otherwise.
+
+### GetReadlabelsOk
+
+`func (o *GetRolesRequest) GetReadlabelsOk() (*string, bool)`
+
+GetReadlabelsOk returns a tuple with the Readlabels field if it's non-nil, zero value otherwise
+and a boolean to check if the value has been set.
+
+### SetReadlabels
+
+`func (o *GetRolesRequest) SetReadlabels(v string)`
+
+SetReadlabels sets Readlabels field to given value.
+
+### HasReadlabels
+
+`func (o *GetRolesRequest) HasReadlabels() bool`
+
+HasReadlabels returns a boolean if a field has been set.
 
 ### GetRoleQuery
 
