@@ -28,7 +28,7 @@ resource "saviynt_dynamic_attribute_resource" "example" {
       attribute_type                                  = "BOOLEAN"
       attribute_group                                 = "Performance"
       order_index                                     = "1"
-      attribute_lable                                 = "API Timeout (ms)"
+      attribute_label                                 = "API Timeout (ms)"
       accounts_column                                 = "false"
       hide_on_create                                  = "false"
       action_string                                   = "action_string"
@@ -90,7 +90,7 @@ Optional:
 - `action_string` (String) Action string value.
 - `action_to_perform_when_parent_attribute_changes` (String) Action to perform when the parent attribute changes.
 - `attribute_group` (String) Group or categorize the attribute in the request form.
-- `attribute_lable` (String) Name to be shown in the Access Requests form.
+- `attribute_label` (String) Name to be shown in the Access Requests form. Previously named `attribute_lable` (typo) in provider versions ≤ 0.3.7 — existing state is migrated automatically.
 - `attribute_type` (String) Attribute type used for filtering and display.
 - `attribute_value` (String) Value options or query for the attribute.
 - `default_value` (String) Default value for the attribute(Currently not configurable for BOOLEAN attribute type from Terraform).

@@ -67,7 +67,7 @@ Read-Only:
 - `action_string` (String)
 - `action_to_perform_when_parent_attribute_changes` (String)
 - `attribute_group` (String)
-- `attribute_lable` (String)
+- `attribute_label` (String)
 - `attribute_name` (String)
 - `attribute_type` (String)
 - `attribute_value` (String)

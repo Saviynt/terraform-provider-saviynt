@@ -1,3 +1,4 @@
+
 # Copyright (c) 2025 Saviynt Inc.
 # SPDX-License-Identifier: MPL-2.0
 
@@ -62,7 +63,7 @@ paths:
                   customproperty1: custom-value-1
                   custompropertyLabel1: custom-label-1
             schema:
-              $ref: '#/components/schemas/updateEndpoint_request'
+              $ref: "#/components/schemas/updateEndpoint_request"
         description: Request payload for updating an endpoint.
         required: true
       responses:
@@ -70,7 +71,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/updateEndpoint_200_response'
+                $ref: "#/components/schemas/updateEndpoint_200_response"
           description: Update Endpoint Success
           headers:
             Access-Control-Allow-Credentials:
@@ -144,7 +145,7 @@ paths:
                   serviceAccountAccessQuery: tetssrvquery
                   allowChangePassword_sqlquery: testQuery
             schema:
-              $ref: '#/components/schemas/createEndpoint_request'
+              $ref: "#/components/schemas/createEndpoint_request"
         description: Request payload for creating an endpoint.
         required: true
       responses:
@@ -152,7 +153,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/updateEndpoint_200_response'
+                $ref: "#/components/schemas/updateEndpoint_200_response"
           description: Create Endpoint Success
           headers:
             Access-Control-Allow-Credentials:
@@ -190,7 +191,7 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/getEndpoints_request'
+              $ref: "#/components/schemas/getEndpoints_request"
         description: Request payload for listing enpoints.
         required: true
       responses:
@@ -198,7 +199,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/getEndpoints_200_response'
+                $ref: "#/components/schemas/getEndpoints_200_response"
           description: Get Endpoint Success
           headers:
             Access-Control-Allow-Credentials:
@@ -286,6 +287,7 @@ components:
           items:
             type: string
           type: array
+          default: null
         max:
           description: Description for the endpoint.
           type: string
@@ -293,6 +295,13 @@ components:
           description: "Owner of the endpoint. If ownerType is User, specify the username\
             \ of the owner. If ownerType is Usergroup, sepecify the name of the User\
             \ group"
+          type: string
+        readlabels:
+          description: Controls whether the API returns human-readable label names
+            (e.g. 'Custom Property 1') or backend field names (e.g. 'customproperty1').
+            Pass 'false' to always receive backend field names regardless of the server-side
+            readlabels configuration. 
+          example: "false"
           type: string
         filterCriteria:
           items:
@@ -469,7 +478,7 @@ components:
           type: string
         required:
           description: ""
-          example: "true"
+          example: true
           type: boolean
         requestedQuery:
           description: ""
@@ -530,7 +539,7 @@ components:
         requestownertype: "0"
         Custom Property 45: value45
         status: "1"
-        updateDate: 2025-03-13 09:00:12.0
+        updateDate: 2025-03-13T09:00:12.000+00:00
         Account Custom Property 8 Label: Account Custom Property 8 Label
         customproperty44Label: customproperty44Label
         displayName: new-endpoint
@@ -549,7 +558,7 @@ components:
         accountNameValidatorRegex: accountNameValidatorRegextest
         Custom Property 12: value12
         Custom Property 13: value13
-        createDate: 2024-01-18 05:34:22.0
+        createDate: 2024-01-18T05:34:22.000+00:00
         Custom Property 14: value14
         Custom Property 4: value4
         Custom Property 15: value15
@@ -717,7 +726,7 @@ components:
           type: string
         updateDate:
           description: ""
-          example: 2025-03-13 09:00:12.0
+          example: 2025-03-13T09:00:12.000+00:00
           type: string
         allowRemoveAllRoleOnRequest:
           description: Specify true to displays the Remove All Roles option in the
@@ -783,7 +792,7 @@ components:
           type: string
         createDate:
           description: ""
-          example: 2024-01-18 05:34:22.0
+          example: 2024-01-18T05:34:22.000+00:00
           type: string
         parentEndpoint:
           description: ""
@@ -1220,8 +1229,9 @@ components:
           type: string
         taskemailtemplates:
           items:
-            $ref: '#/components/schemas/createEndpoint_request_emailTemplate_inner'
+            $ref: "#/components/schemas/createEndpoint_request_emailTemplate_inner"
           type: array
+          default: null
         displayName:
           description: Enter a user-friendly display name for the endpoint that will
             be displayed in the user interface. Display Name can be different from
@@ -1839,7 +1849,7 @@ components:
           requestownertype: "0"
           Custom Property 45: value45
           status: "1"
-          updateDate: 2025-03-13 09:00:12.0
+          updateDate: 2025-03-13T09:00:12.000+00:00
           Account Custom Property 8 Label: Account Custom Property 8 Label
           customproperty44Label: customproperty44Label
           displayName: new-endpoint
@@ -1858,7 +1868,7 @@ components:
           accountNameValidatorRegex: accountNameValidatorRegextest
           Custom Property 12: value12
           Custom Property 13: value13
-          createDate: 2024-01-18 05:34:22.0
+          createDate: 2024-01-18T05:34:22.000+00:00
           Custom Property 14: value14
           Custom Property 4: value4
           Custom Property 15: value15
@@ -1998,7 +2008,7 @@ components:
           requestownertype: "0"
           Custom Property 45: value45
           status: "1"
-          updateDate: 2025-03-13 09:00:12.0
+          updateDate: 2025-03-13T09:00:12.000+00:00
           Account Custom Property 8 Label: Account Custom Property 8 Label
           customproperty44Label: customproperty44Label
           displayName: new-endpoint
@@ -2017,7 +2027,7 @@ components:
           accountNameValidatorRegex: accountNameValidatorRegextest
           Custom Property 12: value12
           Custom Property 13: value13
-          createDate: 2024-01-18 05:34:22.0
+          createDate: 2024-01-18T05:34:22.000+00:00
           Custom Property 14: value14
           Custom Property 4: value4
           Custom Property 15: value15
@@ -2129,18 +2139,19 @@ components:
         displayCount:
           description: "The number of items currently displayed (e.g., on the current\
             \ page or view)."
-          example: "2"
+          example: 2
           type: integer
         totalCount:
           description: "The total number of items available in the dataset, irrespective\
             \ of the current display settings."
-          example: "3"
+          example: 3
           type: integer
         endpoints:
           description: A collection of endpoints.
           items:
-            $ref: '#/components/schemas/getEndpoints_200_response_endpoints_inner'
+            $ref: "#/components/schemas/getEndpoints_200_response_endpoints_inner"
           type: array
+          default: null
     updateEndpoint_request:
       properties:
         endpointname:
@@ -2252,16 +2263,19 @@ components:
           type: string
         requestableRoleType:
           items:
-            $ref: '#/components/schemas/updateEndpoint_request_requestableRoleType_inner'
+            $ref: "#/components/schemas/updateEndpoint_request_requestableRoleType_inner"
           type: array
+          default: null
         taskemailtemplates:
           items:
-            $ref: '#/components/schemas/createEndpoint_request_emailTemplate_inner'
+            $ref: "#/components/schemas/createEndpoint_request_emailTemplate_inner"
           type: array
+          default: null
         mappedEndpoints:
           items:
-            $ref: '#/components/schemas/updateEndpoint_request_mappedEndpoints_inner'
+            $ref: "#/components/schemas/updateEndpoint_request_mappedEndpoints_inner"
           type: array
+          default: null
         accountNameRule:
           description: Specify rule to generate an account name for this endpoint
             while creating a new account.

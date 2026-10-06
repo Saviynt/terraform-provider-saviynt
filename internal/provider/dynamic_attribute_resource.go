@@ -51,7 +51,7 @@ type Dynamicattribute struct {
 	Attributetype                                   types.String `tfsdk:"attribute_type"`
 	Attributegroup                                  types.String `tfsdk:"attribute_group"`
 	Orderindex                                      types.String `tfsdk:"order_index"`
-	Attributelable                                  types.String `tfsdk:"attribute_lable"`
+	Attributelable                                  types.String `tfsdk:"attribute_label"`
 	Accountscolumn                                  types.String `tfsdk:"accounts_column"`
 	Hideoncreate                                    types.String `tfsdk:"hide_on_create"`
 	Actionstring                                    types.String `tfsdk:"action_string"`
@@ -80,6 +80,7 @@ type DynamicAttributeResource struct {
 // Ensure provider defined types fully satisfy framework interfaces
 var _ resource.Resource = &DynamicAttributeResource{}
 var _ resource.ResourceWithImportState = &DynamicAttributeResource{}
+var _ resource.ResourceWithUpgradeState = &DynamicAttributeResource{}
 
 func NewDynamicAttributeResource() resource.Resource {
 	return &DynamicAttributeResource{
@@ -99,6 +100,7 @@ func (r *DynamicAttributeResource) Metadata(ctx context.Context, req resource.Me
 
 func (r *DynamicAttributeResource) Schema(ctx context.Context, req resource.SchemaRequest, resp *resource.SchemaResponse) {
 	resp.Schema = schema.Schema{
+		Version:     1,
 		Description: util.DynamicAttrDescription,
 		Attributes: map[string]schema.Attribute{
 			"id": schema.StringAttribute{
@@ -154,7 +156,7 @@ func (r *DynamicAttributeResource) Schema(ctx context.Context, req resource.Sche
 							Computed:    true,
 							Description: "Sequence for display of the dynamic attribute.",
 						},
-						"attribute_lable": schema.StringAttribute{
+						"attribute_label": schema.StringAttribute{
 							Optional:    true,
 							Computed:    true,
 							Description: "Name to be shown in the Access Requests form.",
@@ -603,7 +605,7 @@ func (r *DynamicAttributeResource) ConvertAttributesToTerraformMap(updatedAttrs 
 			"attribute_type":  types.StringType,
 			"attribute_group": types.StringType,
 			"order_index":     types.StringType,
-			"attribute_lable": types.StringType,
+			"attribute_label": types.StringType,
 			"accounts_column": types.StringType,
 			"hide_on_create":  types.StringType,
 			"action_string":   types.StringType,
@@ -621,7 +623,7 @@ func (r *DynamicAttributeResource) ConvertAttributesToTerraformMap(updatedAttrs 
 
 	return dynamicAttributesMap, diags
 }
-func (r *DynamicAttributeResource) BuildUpdatedAttributeFromAPI(attrName string, apiAttr openapi.FetchDynamicAttributeResponseInner, isImport bool) Dynamicattribute {
+func (r *DynamicAttributeResource) BuildUpdatedAttributeFromAPI(attrName string, apiAttr openapi.FetchDynamicAttributeResponseInner) Dynamicattribute {
 	updatedAttr := Dynamicattribute{
 		Attributename:  types.StringValue(attrName),
 		Requesttype:    util.SafeStringDatasource(apiAttr.Requesttype),
@@ -642,12 +644,14 @@ func (r *DynamicAttributeResource) BuildUpdatedAttributeFromAPI(attrName string,
 		Descriptionascsv: util.SafeStringDatasource(apiAttr.Descriptionascsv),
 	}
 
-	// Handle attribute type differently for import vs regular read
-	if isImport {
-		updatedAttr.Attributetype = util.SafeStringDatasource(apiAttr.Attributetype)
-	} else {
-		updatedAttr.Attributetype = types.StringValue(dynamicattributeutil.TranslateValue(*apiAttr.Attributetype, dynamicattributeutil.AttributeTypeMap))
-	}
+	// Always translate the raw API short-form to the long-form expected by create/update.
+	// The fetch API returns short forms (e.g. "CHECKBOX", "MULTIPLE", "SQL MULTISELECT")
+	// while create/update validate against long forms ("CHECK BOX", "MULTIPLE SELECT FROM LIST", etc.).
+	// Previously the import path skipped this translation, causing the next apply after an
+	// import to send raw short-form values to the update API and fail validation.
+	updatedAttr.Attributetype = types.StringValue(
+		dynamicattributeutil.TranslateValue(util.SafeDeref(apiAttr.Attributetype), dynamicattributeutil.AttributeTypeMap),
+	)
 
 	return updatedAttr
 }
@@ -656,7 +660,7 @@ func (r *DynamicAttributeResource) BuildUpdatedAttributeFromAPI(attrName string,
 func (r *DynamicAttributeResource) BuildUpdatedAttributesForImport(apiAttrs map[string]openapi.FetchDynamicAttributeResponseInner) map[string]Dynamicattribute {
 	updatedAttrs := make(map[string]Dynamicattribute)
 	for attrName, apiAttr := range apiAttrs {
-		updatedAttrs[attrName] = r.BuildUpdatedAttributeFromAPI(attrName, apiAttr, true)
+		updatedAttrs[attrName] = r.BuildUpdatedAttributeFromAPI(attrName, apiAttr)
 	}
 	log.Printf("[IMPORT] Importing all %d dynamic attributes from API", len(apiAttrs))
 	return updatedAttrs
@@ -670,7 +674,7 @@ func (r *DynamicAttributeResource) BuildUpdatedAttributesForRead(currentAttrs ma
 	for attrName := range currentAttrs {
 		if apiAttr, exists := apiAttrs[attrName]; exists {
 			// Attribute exists in API response - update with API values
-			updatedAttrs[attrName] = r.BuildUpdatedAttributeFromAPI(attrName, apiAttr, false)
+			updatedAttrs[attrName] = r.BuildUpdatedAttributeFromAPI(attrName, apiAttr)
 		} else {
 			// Attribute doesn't exist in API response - mark for removal
 			removedAttributes = append(removedAttributes, attrName)
@@ -924,7 +928,7 @@ func (r *DynamicAttributeResource) UpdateModelFromUpdateResponse(plan *DynamicAt
 	for attrName := range planAttrs {
 		if apiAttr, exists := postUpdateApiAttrs[attrName]; exists {
 			// Reuse the existing helper function
-			updatedAttrs[attrName] = r.BuildUpdatedAttributeFromAPI(attrName, apiAttr, false)
+			updatedAttrs[attrName] = r.BuildUpdatedAttributeFromAPI(attrName, apiAttr)
 		}
 	}
 
@@ -1176,6 +1180,174 @@ func (r *DynamicAttributeResource) Delete(ctx context.Context, req resource.Dele
 		log.Printf("[ERROR] DynamicAttribute: API Delete Failed: %v", err)
 		resp.Diagnostics.AddError("API Delete Failed", err.Error())
 		return
+	}
+}
+
+// DynamicattributeV0 is the schema version 0 representation of a dynamic attribute,
+// where the tfsdk tag was "attribute_lable" (typo). This is used by the state upgrader
+// to deserialize existing state written by provider versions <= 0.3.7.
+type DynamicattributeV0 struct {
+	Attributename                                   types.String `tfsdk:"attribute_name"`
+	Requesttype                                     types.String `tfsdk:"request_type"`
+	Attributetype                                   types.String `tfsdk:"attribute_type"`
+	Attributegroup                                  types.String `tfsdk:"attribute_group"`
+	Orderindex                                      types.String `tfsdk:"order_index"`
+	Attributelable                                  types.String `tfsdk:"attribute_lable"` // intentional typo — matches old state key
+	Accountscolumn                                  types.String `tfsdk:"accounts_column"`
+	Hideoncreate                                    types.String `tfsdk:"hide_on_create"`
+	Actionstring                                    types.String `tfsdk:"action_string"`
+	Editable                                        types.String `tfsdk:"editable"`
+	Hideonupdate                                    types.String `tfsdk:"hide_on_update"`
+	Action_to_perform_when_parent_attribute_changes types.String `tfsdk:"action_to_perform_when_parent_attribute_changes"`
+	Required                                        types.String `tfsdk:"required"`
+	Attributevalue                                  types.String `tfsdk:"attribute_value"`
+	Showonchild                                     types.String `tfsdk:"showonchild"`
+	Descriptionascsv                                types.String `tfsdk:"description_as_csv"`
+	Parentattribute                                 types.String `tfsdk:"parent_attribute"`
+	Defaultvalue                                    types.String `tfsdk:"default_value"`
+}
+
+// UpgradeState handles migration from schema version 0 to version 1.
+// The only change between v0 and v1 is the rename of the tfsdk tag
+// "attribute_lable" → "attribute_label" inside every entry of the
+// dynamic_attributes map.  We use the PriorSchema approach so the
+// framework deserialises the old state for us.
+func (r *DynamicAttributeResource) UpgradeState(ctx context.Context) map[int64]resource.StateUpgrader {
+	return map[int64]resource.StateUpgrader{
+		// Upgrade from schema version 0 (attribute_lable) to version 1 (attribute_label)
+		0: {
+			PriorSchema: &schema.Schema{
+				Attributes: map[string]schema.Attribute{
+					"id":              schema.StringAttribute{Computed: true},
+					"security_system": schema.StringAttribute{Required: true},
+					"endpoint":        schema.StringAttribute{Required: true},
+					"update_user":     schema.StringAttribute{Optional: true, Computed: true},
+					"msg":             schema.StringAttribute{Computed: true},
+					"error_code":      schema.StringAttribute{Computed: true},
+					"dynamic_attribute_errors": schema.StringAttribute{
+						Computed: true,
+						Optional: true,
+					},
+					"dynamic_attributes": schema.MapNestedAttribute{
+						Required: true,
+						NestedObject: schema.NestedAttributeObject{
+							Attributes: map[string]schema.Attribute{
+								"attribute_name":  schema.StringAttribute{Required: true},
+								"request_type":    schema.StringAttribute{Required: true},
+								"attribute_type":  schema.StringAttribute{Optional: true, Computed: true},
+								"attribute_group": schema.StringAttribute{Optional: true, Computed: true},
+								"order_index":     schema.StringAttribute{Optional: true, Computed: true},
+								"attribute_lable": schema.StringAttribute{Optional: true, Computed: true}, // old key
+								"accounts_column": schema.StringAttribute{Optional: true, Computed: true},
+								"hide_on_create":  schema.StringAttribute{Optional: true, Computed: true},
+								"action_string":   schema.StringAttribute{Optional: true, Computed: true},
+								"editable":        schema.StringAttribute{Optional: true, Computed: true},
+								"hide_on_update":  schema.StringAttribute{Optional: true, Computed: true},
+								"action_to_perform_when_parent_attribute_changes": schema.StringAttribute{Optional: true, Computed: true},
+								"default_value":      schema.StringAttribute{Optional: true, Computed: true},
+								"required":           schema.StringAttribute{Optional: true, Computed: true},
+								"attribute_value":    schema.StringAttribute{Optional: true, Computed: true},
+								"showonchild":        schema.StringAttribute{Optional: true, Computed: true},
+								"description_as_csv": schema.StringAttribute{Optional: true, Computed: true},
+								"parent_attribute":   schema.StringAttribute{Optional: true, Computed: true},
+							},
+						},
+					},
+				},
+			},
+			StateUpgrader: func(ctx context.Context, req resource.UpgradeStateRequest, resp *resource.UpgradeStateResponse) {
+				// Step 1: deserialise the old state using PriorSchema
+				type DynamicAttributeResourceModelV0 struct {
+					ID                     types.String `tfsdk:"id"`
+					Securitysystem         types.String `tfsdk:"security_system"`
+					Endpoint               types.String `tfsdk:"endpoint"`
+					Updateuser             types.String `tfsdk:"update_user"`
+					DynamicAttributes      types.Map    `tfsdk:"dynamic_attributes"`
+					DynamicAttributesError types.String `tfsdk:"dynamic_attribute_errors"`
+					Msg                    types.String `tfsdk:"msg"`
+					ErrorCode              types.String `tfsdk:"error_code"`
+				}
+
+				var oldState DynamicAttributeResourceModelV0
+				resp.Diagnostics.Append(req.State.Get(ctx, &oldState)...)
+				if resp.Diagnostics.HasError() {
+					return
+				}
+
+				// Step 2: convert each map entry from V0 (attribute_lable) to V1 (attribute_label)
+				oldAttrs := make(map[string]DynamicattributeV0)
+				resp.Diagnostics.Append(oldState.DynamicAttributes.ElementsAs(ctx, &oldAttrs, false)...)
+				if resp.Diagnostics.HasError() {
+					return
+				}
+
+				newAttrs := make(map[string]Dynamicattribute, len(oldAttrs))
+				for key, old := range oldAttrs {
+					newAttrs[key] = Dynamicattribute{
+						Attributename:  old.Attributename,
+						Requesttype:    old.Requesttype,
+						Attributetype:  old.Attributetype,
+						Attributegroup: old.Attributegroup,
+						Orderindex:     old.Orderindex,
+						Attributelable: old.Attributelable, // value is preserved; only the tfsdk key name changed
+						Accountscolumn: old.Accountscolumn,
+						Hideoncreate:   old.Hideoncreate,
+						Actionstring:   old.Actionstring,
+						Editable:       old.Editable,
+						Hideonupdate:   old.Hideonupdate,
+						Action_to_perform_when_parent_attribute_changes: old.Action_to_perform_when_parent_attribute_changes,
+						Required:         old.Required,
+						Attributevalue:   old.Attributevalue,
+						Showonchild:      old.Showonchild,
+						Descriptionascsv: old.Descriptionascsv,
+						Parentattribute:  old.Parentattribute,
+						Defaultvalue:     old.Defaultvalue,
+					}
+				}
+
+				// Step 3: convert to types.Map using the V1 object type
+				upgradedMap, diags := types.MapValueFrom(ctx, types.ObjectType{
+					AttrTypes: map[string]attr.Type{
+						"attribute_name":  types.StringType,
+						"request_type":    types.StringType,
+						"attribute_type":  types.StringType,
+						"attribute_group": types.StringType,
+						"order_index":     types.StringType,
+						"attribute_label": types.StringType, // new key
+						"accounts_column": types.StringType,
+						"hide_on_create":  types.StringType,
+						"action_string":   types.StringType,
+						"editable":        types.StringType,
+						"hide_on_update":  types.StringType,
+						"action_to_perform_when_parent_attribute_changes": types.StringType,
+						"default_value":      types.StringType,
+						"required":           types.StringType,
+						"attribute_value":    types.StringType,
+						"showonchild":        types.StringType,
+						"parent_attribute":   types.StringType,
+						"description_as_csv": types.StringType,
+					},
+				}, newAttrs)
+				resp.Diagnostics.Append(diags...)
+				if resp.Diagnostics.HasError() {
+					return
+				}
+
+				// Step 4: write the upgraded state using the V1 model
+				upgradedState := DynamicAttributeResourceModel{
+					ID:                     oldState.ID,
+					Securitysystem:         oldState.Securitysystem,
+					Endpoint:               oldState.Endpoint,
+					Updateuser:             oldState.Updateuser,
+					DynamicAttributes:      upgradedMap,
+					DynamicAttributesError: oldState.DynamicAttributesError,
+					Msg:                    oldState.Msg,
+					ErrorCode:              oldState.ErrorCode,
+				}
+
+				resp.Diagnostics.Append(resp.State.Set(ctx, upgradedState)...)
+			},
+		},
 	}
 }
 

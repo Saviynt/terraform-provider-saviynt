@@ -6,7 +6,6 @@ package client
 import (
 	"context"
 	"net/http"
-	"strings"
 
 	endpoint "github.com/saviynt/saviynt-api-go-client/endpoints"
 	openapi "github.com/saviynt/saviynt-api-go-client/roles"
@@ -27,11 +26,19 @@ type RoleOperationsWrapper struct {
 	client *openapi.APIClient
 }
 
+// NewRoleOperationsWrapper creates a wrapper from an already-configured APIClient.
+// Primarily used in tests to point the real injection logic at a test HTTP server.
+func NewRoleOperationsWrapper(apiClient *openapi.APIClient) *RoleOperationsWrapper {
+	return &RoleOperationsWrapper{client: apiClient}
+}
+
 func (w *RoleOperationsWrapper) CreateEnterpriseRole(ctx context.Context, req openapi.CreateEnterpriseRoleRequest) (*openapi.CreateEnterpriseRoleResponse, *http.Response, error) {
 	return w.client.RolesAPI.CreateEnterpriseRoleRequest(ctx).CreateEnterpriseRoleRequest(req).Execute()
 }
 
 func (w *RoleOperationsWrapper) GetRoles(ctx context.Context, req openapi.GetRolesRequest) (*openapi.GetRolesResponse, *http.Response, error) {
+	// Always request backend field names regardless of server-side readlabels config.
+	req.SetReadlabels("false")
 	return w.client.RolesAPI.GetRoles(ctx).GetRolesRequest(req).Execute()
 }
 
@@ -67,9 +74,7 @@ type DefaultRoleFactory struct{}
 
 func (f *DefaultRoleFactory) CreateRoleOperations(baseURL, token string) RoleOperationsInterface {
 	cfg := openapi.NewConfiguration()
-	apiBaseURL := strings.TrimPrefix(strings.TrimPrefix(baseURL, "https://"), "http://")
-	cfg.Host = apiBaseURL
-	cfg.Scheme = "https"
+	cfg.Servers = openapi.ServerConfigurations{{URL: baseURL}}
 	cfg.AddDefaultHeader("Authorization", "Bearer "+token)
 	cfg.HTTPClient = http.DefaultClient
 	apiClient := openapi.NewAPIClient(cfg)
@@ -78,9 +83,7 @@ func (f *DefaultRoleFactory) CreateRoleOperations(baseURL, token string) RoleOpe
 
 func (f *DefaultRoleFactory) CreateEndpointOperations(baseURL, token string) EndpointOperationsInterface {
 	cfg := endpoint.NewConfiguration()
-	apiBaseURL := strings.TrimPrefix(strings.TrimPrefix(baseURL, "https://"), "http://")
-	cfg.Host = apiBaseURL
-	cfg.Scheme = "https"
+	cfg.Servers = endpoint.ServerConfigurations{{URL: baseURL}}
 	cfg.AddDefaultHeader("Authorization", "Bearer "+token)
 	cfg.HTTPClient = http.DefaultClient
 	apiClient := endpoint.NewAPIClient(cfg)
