@@ -6,7 +6,6 @@ package client
 import (
 	"context"
 	"net/http"
-	"strings"
 
 	openapi "github.com/saviynt/saviynt-api-go-client/connections"
 )
@@ -54,9 +53,7 @@ type DefaultConnectionFactory struct{}
 
 func (f *DefaultConnectionFactory) CreateConnectionOperations(baseURL, token string) ConnectionOperationsInterface {
 	cfg := openapi.NewConfiguration()
-	apiBaseURL := strings.TrimPrefix(strings.TrimPrefix(baseURL, "https://"), "http://")
-	cfg.Host = apiBaseURL
-	cfg.Scheme = "https"
+	cfg.Servers = openapi.ServerConfigurations{{URL: baseURL}}
 	cfg.AddDefaultHeader("Authorization", "Bearer "+token)
 	cfg.HTTPClient = http.DefaultClient
 	apiClient := openapi.NewAPIClient(cfg)

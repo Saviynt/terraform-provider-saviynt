@@ -56,7 +56,7 @@ type DynamicAttributes struct {
 	Attributetype                                   types.String `tfsdk:"attribute_type"`
 	Attributegroup                                  types.String `tfsdk:"attribute_group"`
 	Orderindex                                      types.String `tfsdk:"order_index"`
-	Attributelable                                  types.String `tfsdk:"attribute_lable"`
+	Attributelable                                  types.String `tfsdk:"attribute_label"`
 	Accountscolumn                                  types.String `tfsdk:"accounts_column"`
 	Hideoncreate                                    types.String `tfsdk:"hide_on_create"`
 	Actionstring                                    types.String `tfsdk:"action_string"`
@@ -172,7 +172,7 @@ func (d *DynamicAttributeDataSource) Schema(ctx context.Context, req datasource.
 						"attribute_type":  schema.StringAttribute{Computed: true},
 						"attribute_group": schema.StringAttribute{Computed: true},
 						"order_index":     schema.StringAttribute{Computed: true},
-						"attribute_lable": schema.StringAttribute{Computed: true},
+						"attribute_label": schema.StringAttribute{Computed: true},
 						"accounts_column": schema.StringAttribute{Computed: true},
 						"hide_on_create":  schema.StringAttribute{Computed: true},
 						"action_string":   schema.StringAttribute{Computed: true},

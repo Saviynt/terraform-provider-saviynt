@@ -87,29 +87,36 @@ Check out the [Latest Saviynt Provider Docs](https://registry.terraform.io/provi
 
 | Supported Saviynt EIC Versions | Terraform Provider Version |
 | -------------------------- | ------------------------------ |
-| `25.C` | Latest Version: `v0.3.7`<br> Supported Version(s): `v0.2.13` - `v0.3.7`|
-| `25.B` | Latest Version: `v0.3.7`<br> Supported Version(s): `v0.2.8` - `v0.3.7`|
-| `25.A` | Latest Version: `v0.3.7`<br> Supported Version(s): `v0.2.8` - `v0.3.7`|
-| `24.10` | Latest Version: `v0.3.7`<br> Supported Version(s): `v0.2.8` - `v0.3.7`|
+| `25.C` | Latest Version: `v0.3.8`<br> Supported Version(s): `v0.2.13` - `v0.3.8`|
+| `25.B` | Latest Version: `v0.3.8`<br> Supported Version(s): `v0.2.8` - `v0.3.8`|
+| `25.A` | Latest Version: `v0.3.8`<br> Supported Version(s): `v0.2.8` - `v0.3.8`|
 
 --- 
+
+### Archived Provider Versions
+
+| Saviynt EIC Version | Terraform Provider Version |
+| -------------------------- | ------------------------------ |
+| `24.10` | Latest Version: `v0.3.7`<br> Supported Version(s): `v0.2.8` - `v0.3.7`|
+
+---
 
 ### Attribute Compatibility by EIC Version
 The table below shows attributes that are supported in newer versions of Saviynt EIC. If using an older version of Saviynt, some attributes may not work.
 Check the table to see which attributes are supported in your version before using them.
 
-| Connector                | Attribute(s) Added                                                                                                    | Present in 25.C | Present in 25.B | Present in 25.A | Present in 24.10 |
-| ------------------------ | --------------------------------------------------------------------------------------------------------------------- | ------------------ | --------------- | --------------- | ---------------- |
-| **Workday Connector**    | `orgrole_import_payload`                                                                          | Yes                | Yes              | No             | No              |
-| **REST Connector**       | `application_discovery_json`, `create_entitlement_json`, `delete_entitlement_json`, `update_entitlement_json`         | Yes                | Yes             | No              | No               |
-| **REST Connector**       | `app_type`                                                                                         | Yes                | No              | No              | No               |
-| **DB Connector**         | `create_entitlement_json`, `delete_entitlement_json`, `entitlement_exist_json`, `update_entitlement_json`             | Yes                | Yes             | No              | No               |
-| **SAP Connector**        | `role_default_date`                                                                                 | Yes                | No              | No              | No               |
-| **Unix Connector**       | `server_type`                                                                                      | Yes                | No              | No              | No               |
-| **GithubREST Connector** | `status_threshold_config`                                                                           | Yes                | Yes              | Yes              | No               |
-| **Security System** | `instant_provisioning`                                                                           | Yes                | Yes              | No              | No               |
-| **Entitlement Type** | `enable_entitlement_to_role_sync`                                                                           | Yes                | Yes              | Yes              | No               |
-| **Enterprise Role** | `child_roles`                                                                           | Yes                | Yes              | No              | No               |
+| Connector                | Attribute(s) Added                                                                                                    | Present in 25.C | Present in 25.B | Present in 25.A |
+| ------------------------ | --------------------------------------------------------------------------------------------------------------------- | ------------------ | --------------- | --------------- |
+| **Workday Connector**    | `orgrole_import_payload`                                                                          | Yes                | Yes              | No             |
+| **REST Connector**       | `application_discovery_json`, `create_entitlement_json`, `delete_entitlement_json`, `update_entitlement_json`         | Yes                | Yes             | No              |
+| **REST Connector**       | `app_type`                                                                                         | Yes                | No              | No              |
+| **DB Connector**         | `create_entitlement_json`, `delete_entitlement_json`, `entitlement_exist_json`, `update_entitlement_json`             | Yes                | Yes             | No              |
+| **SAP Connector**        | `role_default_date`                                                                                 | Yes                | No              | No              |
+| **Unix Connector**       | `server_type`                                                                                      | Yes                | No              | No              |
+| **GithubREST Connector** | `status_threshold_config`                                                                           | Yes                | Yes              | Yes              |
+| **Security System** | `instant_provisioning`                                                                           | Yes                | Yes              | No              |
+| **Entitlement Type** | `enable_entitlement_to_role_sync`                                                                           | Yes                | Yes              | Yes              |
+| **Enterprise Role** | `child_roles`                                                                           | Yes                | Yes              | No              |
 
 ---
 
@@ -117,7 +124,7 @@ Check the table to see which attributes are supported in your version before usi
 
 The provider supports three authentication methods evaluated in priority order. Only one method is used per session — the first one that matches.
 
-### Priority 1: OAuth2 Token Exchange (External Identity Provider like Entra ID, Okta or PingOne)
+### Option 1: OAuth2 Token Exchange (External Identity Provider like Entra ID, Okta or PingOne)
 
 Recommended for machine-to-machine integrations. Exchanges an External Identity Provider(IdP) access token (e.g. Entra ID, Okta, PingOne) for a Saviynt session token using [RFC 8693 Token Exchange](https://datatracker.ietf.org/doc/html/rfc8693).
 
@@ -138,7 +145,7 @@ provider "saviynt" {
 
 ---
 
-### Priority 2: Direct Bearer Token
+### Option 2: Direct Bearer Token
 
 Use when you already have a valid Saviynt Bearer access token. No re-authentication is performed — the token is used as-is.
 
@@ -150,11 +157,11 @@ provider "saviynt" {
 }
 ```
 
-> **Note:** If `refresh_token` is omitted and the access token expires (~30 min), Terraform will return 401 errors. Provide `refresh_token` to enable automatic refresh, or use token exchange (Priority 1) for long-running applies.
+> **Note:** If `refresh_token` is omitted and the access token expires (~30 min), Terraform will return 401 errors. Provide `refresh_token` to enable automatic refresh, or use token exchange (Option 1) for long-running applies.
 
 ---
 
-### Priority 3: Username + Password (Default)
+### Option 3: Username + Password (Default)
 
 The standard credential-based login. The provider calls `/ECM/api/login` and exchanges credentials for a Saviynt session token with automatic refresh on expiry.
 
@@ -168,9 +175,9 @@ provider "saviynt" {
 
 ---
 
-### Authentication Priority Summary
+### Authentication Summary
 
-| Priority | Method | Fields Required | Token Refresh |
+| Option | Method | Fields Required | Token Refresh |
 |---|---|---|---|
 | 1 | OAuth2 Token Exchange (Entra ID / Okta / PingOne) | `subject_token` + `scope` | Yes |
 | 2 | Direct Bearer Token | `access_token` (+ optional `refresh_token`) | Yes (if `refresh_token` provided) |
@@ -491,10 +498,6 @@ import {
 EOF
 ```
 
-**2. Generate configuration:**
-```bash
-terraform plan -var-file=prod.tfvars -generate-config-out=generated.tf
-```
 **2. Generate configuration:**
 ```bash
 terraform plan -var-file=prod.tfvars -generate-config-out=generated.tf
@@ -1138,6 +1141,8 @@ The following limitations are present in the latest version of the provider. The
   - `CHECK BOX`
   - `DATE`
 
+- **`attribute_lable` renamed to `attribute_label`** (typo fix, provider `v0.3.8`+): If you are upgrading from `v0.3.7` or earlier, rename `attribute_lable` to `attribute_label` in your `.tf` files. Your existing Terraform state is **automatically migrated** — no manual state changes required.
+
 ### 5. Entitlement Types
 
 - **State management is not supported** for the following attributes:
@@ -1277,28 +1282,13 @@ If the **Restrict API access based on SAV Role** option is enabled (`Settings > 
 Recommendation:
 Ensure that **Restrict API access based on SAV Role** is disabled for successful provisioning via Terraform.
 
-### 3. API Compatibility Warning: `readlabels` Settings
-Changes to the following settings under `Settings > Configuration Files>externalconfig.properties` can affect the structure of API responses:
-```properties
-users.readlabels=true
-endpoints.readlabels=true
-entitlements.readlabels=true
-roles.readlabels=true
-```
-**Impact**:
-- When these properties are set to `false`, API responses return machine-friendly field names like:
-```json
-"customproperty10": "Project",
-"customproperty12": "Role"
-```
-- When set to `true` (default and recommended), responses return human-readable keys:
-```json
-"Custom Property 10": "Project",
-"Custom Property 11": "Team"
-```
+### 3. API Compatibility: `readlabels` Settings
 
-**Recommendation**:
-The Terraform provider supports both key formats for endpoint custom properties and labels. However, keeping `readlabels` set to `true` is still recommended for other resource types to ensure compatibility.
+From **v0.3.8**, the provider automatically requests backend field names from the `getEndpoints`, `getRoles`, and `getEntitlements` APIs, regardless of your `readlabels` configuration. This means the provider behaves consistently whether `readlabels` is `true` or `false` on your EIC instance.
+
+> **Note:** This automatic handling requires EIC 25.Chicago.GA.Patch39 or later. On earlier versions, the server-side `readlabels` setting still applies.
+
+If you are on an EIC version older than 25.Chicago.GA.Patch39 and have `readlabels=true` set, the API may return human-readable keys (e.g. `"Custom Property 10"`) instead of backend names (e.g. `"customproperty10"`). The provider handles both formats for endpoint custom properties for backward compatibility.
 
 ---
 
@@ -1533,7 +1523,7 @@ ___
 |--------------------------|------------------------------------------------------|------------------------------------------------------|
 | `connection_type` Removal| Deprecated from connector resources                 | Remove from your resource configuration              |
 | SAV Role Restriction     | May result in 412 errors if enabled                | Adjust SAV role or disable restriction               |
-| `readlabels` Settings    | Alters field naming in API response                | Keep values as `true`                                |
+| `readlabels` Settings    | Provider now handles automatically from v0.3.8     | No action required (EIC 25.Chicago.GA.Patch39+)                 |
 | User Operation Failures  | Role creation succeeds but user assignment may fail | Validate users exist and are active before applying |
 | Resource Dependencies    | Errors when resources created in wrong order        | Use `depends_on` meta-argument for explicit dependencies |
 | Transport Package Versions | Version attributes force API calls when unchanged | Increment version to trigger re-export/re-import operations |
