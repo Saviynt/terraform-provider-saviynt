@@ -10,6 +10,7 @@ Name | Type | Description | Notes
 **Endpointkey** | Pointer to **[]string** | Endpoint key. Specify the key(s) as an array of strings. | [optional] 
 **Max** | Pointer to **string** | Description for the endpoint. | [optional] 
 **Owner** | Pointer to **string** | Owner of the endpoint. If ownerType is User, specify the username of the owner. If ownerType is Usergroup, sepecify the name of the User group | [optional] 
+**Readlabels** | Pointer to **string** | Controls whether the API returns human-readable label names (e.g. &#39;Custom Property 1&#39;) or backend field names (e.g. &#39;customproperty1&#39;). Pass &#39;false&#39; to always receive backend field names regardless of the server-side readlabels configuration. | [optional] 
 **FilterCriteria** | Pointer to **map[string]interface{}** |  | [optional] 
 
 ## Methods
@@ -180,6 +181,31 @@ SetOwner sets Owner field to given value.
 `func (o *GetEndpointsRequest) HasOwner() bool`
 
 HasOwner returns a boolean if a field has been set.
+
+### GetReadlabels
+
+`func (o *GetEndpointsRequest) GetReadlabels() string`
+
+GetReadlabels returns the Readlabels field if non-nil, zero value otherwise.
+
+### GetReadlabelsOk
+
+`func (o *GetEndpointsRequest) GetReadlabelsOk() (*string, bool)`
+
+GetReadlabelsOk returns a tuple with the Readlabels field if it's non-nil, zero value otherwise
+and a boolean to check if the value has been set.
+
+### SetReadlabels
+
+`func (o *GetEndpointsRequest) SetReadlabels(v string)`
+
+SetReadlabels sets Readlabels field to given value.
+
+### HasReadlabels
+
+`func (o *GetEndpointsRequest) HasReadlabels() bool`
+
+HasReadlabels returns a boolean if a field has been set.
 
 ### GetFilterCriteria
 
