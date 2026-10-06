@@ -1,3 +1,23 @@
+## 0.3.8 (released)
+
+ENHANCEMENTS:
+
+* **resource/saviynt_dynamic_attribute_resource:** The provider now fetches all dynamic attributes for an endpoint regardless of how many exist. Previously, endpoints with more than 100 attributes would silently have attributes dropped from state after create or refresh.
+
+* **resource/saviynt_endpoint_resource, datasource/saviynt_endpoints_datasource, resource/saviynt_roles_enterprise_resource, datasource/saviynt_roles_datasource, resource/saviynt_entitlement_resource, datasource/saviynt_entitlement_datasource:** The provider now consistently uses backend field names (e.g. `customproperty1`) regardless of how the `readlabels` setting is configured on your EIC instance. This eliminates plan drift and inconsistencies for customers who have `readlabels=true` set globally. Requires EIC 25.Chicago.GA.Patch39 or later; on older versions the server-side `readlabels` setting still applies.
+
+BUG FIXES:
+
+* **provider:** Fixed token refresh for `access_token` + `refresh_token` authentication introduced in v0.3.7. When an access token expired during a long-running apply, the refresh could fail in certain environments, causing subsequent API calls to error.
+
+* **resource/saviynt_dynamic_attribute_resource:** Fixed `terraform import` followed by `terraform apply` failing for attributes with types `CHECK BOX`, `MULTIPLE SELECT FROM LIST`, `MULTIPLE SELECT FROM SQL QUERY`, or `SINGLE SELECT FROM SQL QUERY`. After importing, the next apply would fail with an `attributetype is not valid` error.
+
+* **resource/saviynt_dynamic_attribute_resource:** Renamed the `attribute_lable` attribute to `attribute_label` (typo fix). Update your `.tf` files to use `attribute_label`. Your existing Terraform state is migrated automatically on the next `terraform plan`.
+
+NOTES:
+
+* **`attribute_lable` → `attribute_label`:** Rename `attribute_lable` to `attribute_label` in your `.tf` files after upgrading. Your existing Terraform state is then migrated automatically on the next `terraform plan`.
+
 ## 0.3.7 (released)
 
 FEATURES:

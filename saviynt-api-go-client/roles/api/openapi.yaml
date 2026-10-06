@@ -79,6 +79,7 @@ paths:
                 items:
                   $ref: "#/components/schemas/GetFireFighterRole"
                 type: array
+                default: null
           description: List of FireFighter roles
       summary: Get FireFighter Roles
       tags:
@@ -241,6 +242,7 @@ components:
           items:
             $ref: "#/components/schemas/CreateRoleOwnerPayload"
           type: array
+          default: null
         customproperty1:
           type: string
         customproperty2:
@@ -584,16 +586,19 @@ components:
           items:
             $ref: "#/components/schemas/UpdateRoleOwnerPayload"
           type: array
+          default: null
         childRoles:
           items:
             $ref: "#/components/schemas/UpdateChildRolePayload"
           type: array
+          default: null
         endpointname:
           type: string
         entitlements:
           items:
             $ref: "#/components/schemas/UpdateEntitlementPayload"
           type: array
+          default: null
         defaulttimeframe:
           type: string
         description:
@@ -889,6 +894,12 @@ components:
           type: string
         offset:
           description: Offset for pagination
+          type: string
+        readlabels:
+          description: Controls whether the API returns human-readable label names
+            or backend field names. Pass 'false' to always receive backend field names
+            (e.g. 'role_name') regardless of server-side readlabels configuration.
+          example: "false"
           type: string
         roleQuery:
           description: "SQL-like query to filter roles (e.g., `r.role_name = 'Admin'`)"
@@ -1253,11 +1264,13 @@ components:
             $ref: "#/components/schemas/GetRoleDetailsResponse_UserDetails_inner"
           type: array
           nullable: true
+          default: null
         EntitlementDetails:
           items:
             $ref: "#/components/schemas/GetEntitlementDetailsResponse"
           type: array
           nullable: true
+          default: null
         Custom Property 1:
           type: string
         Custom Property 2:
@@ -1586,6 +1599,7 @@ components:
           items:
             $ref: "#/components/schemas/GetRoleDetailsResponse"
           type: array
+          default: null
     RoleUserAccount:
       example:
         id: 1
@@ -1786,6 +1800,7 @@ components:
           items:
             $ref: "#/components/schemas/RoleUserAccount"
           type: array
+          default: null
         customproperty1:
           type: string
           nullable: true
@@ -1996,6 +2011,7 @@ components:
       - items:
           $ref: "#/components/schemas/GetRoleOwnersResponse"
         type: array
+        default: null
       nullable: true
     GetRoleDetailsResponse_UserDetails_inner:
       oneOf:
