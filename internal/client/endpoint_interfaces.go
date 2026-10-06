@@ -6,7 +6,6 @@ package client
 import (
 	"context"
 	"net/http"
-	"strings"
 
 	openapi "github.com/saviynt/saviynt-api-go-client/endpoints"
 )
@@ -23,6 +22,12 @@ type EndpointOperationsWrapper struct {
 	client *openapi.APIClient
 }
 
+// NewEndpointOperationsWrapper creates a wrapper from an already-configured APIClient.
+// Primarily used in tests to point the real injection logic at a test HTTP server.
+func NewEndpointOperationsWrapper(apiClient *openapi.APIClient) *EndpointOperationsWrapper {
+	return &EndpointOperationsWrapper{client: apiClient}
+}
+
 func (w *EndpointOperationsWrapper) CreateEndpoint(ctx context.Context, req openapi.CreateEndpointRequest) (*openapi.UpdateEndpoint200Response, *http.Response, error) {
 	return w.client.EndpointsAPI.CreateEndpoint(ctx).CreateEndpointRequest(req).Execute()
 }
@@ -32,6 +37,9 @@ func (w *EndpointOperationsWrapper) UpdateEndpoint(ctx context.Context, req open
 }
 
 func (w *EndpointOperationsWrapper) GetEndpoints(ctx context.Context, req openapi.GetEndpointsRequest) (*openapi.GetEndpoints200Response, *http.Response, error) {
+	// Always request backend field names (e.g. "customproperty1") regardless of the
+	// server-side endpoints.readlabels configuration.
+	req.SetReadlabels("false")
 	return w.client.EndpointsAPI.GetEndpoints(ctx).GetEndpointsRequest(req).Execute()
 }
 
@@ -45,9 +53,7 @@ type DefaultEndpointFactory struct{}
 
 func (f *DefaultEndpointFactory) CreateEndpointOperations(baseURL, token string) EndpointOperationsInterface {
 	cfg := openapi.NewConfiguration()
-	apiBaseURL := strings.TrimPrefix(strings.TrimPrefix(baseURL, "https://"), "http://")
-	cfg.Host = apiBaseURL
-	cfg.Scheme = "https"
+	cfg.Servers = openapi.ServerConfigurations{{URL: baseURL}}
 	cfg.AddDefaultHeader("Authorization", "Bearer "+token)
 	cfg.HTTPClient = http.DefaultClient
 	apiClient := openapi.NewAPIClient(cfg)

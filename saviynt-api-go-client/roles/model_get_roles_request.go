@@ -59,6 +59,8 @@ type GetRolesRequest struct {
 	Max *string `json:"max,omitempty"`
 	// Offset for pagination
 	Offset *string `json:"offset,omitempty"`
+	// Controls whether the API returns human-readable label names or backend field names. Pass 'false' to always receive backend field names (e.g. 'role_name') regardless of server-side readlabels configuration.
+	Readlabels *string `json:"readlabels,omitempty"`
 	// SQL-like query to filter roles (e.g., `r.role_name = 'Admin'`)
 	RoleQuery *string `json:"roleQuery,omitempty"`
 	// Hide blank values (e.g., true or false)
@@ -840,6 +842,38 @@ func (o *GetRolesRequest) HasOffset() bool {
 // SetOffset gets a reference to the given string and assigns it to the Offset field.
 func (o *GetRolesRequest) SetOffset(v string) {
 	o.Offset = &v
+}
+
+// GetReadlabels returns the Readlabels field value if set, zero value otherwise.
+func (o *GetRolesRequest) GetReadlabels() string {
+	if o == nil || IsNil(o.Readlabels) {
+		var ret string
+		return ret
+	}
+	return *o.Readlabels
+}
+
+// GetReadlabelsOk returns a tuple with the Readlabels field value if set, nil otherwise
+// and a boolean to check if the value has been set.
+func (o *GetRolesRequest) GetReadlabelsOk() (*string, bool) {
+	if o == nil || IsNil(o.Readlabels) {
+		return nil, false
+	}
+	return o.Readlabels, true
+}
+
+// HasReadlabels returns a boolean if a field has been set.
+func (o *GetRolesRequest) HasReadlabels() bool {
+	if o != nil && !IsNil(o.Readlabels) {
+		return true
+	}
+
+	return false
+}
+
+// SetReadlabels gets a reference to the given string and assigns it to the Readlabels field.
+func (o *GetRolesRequest) SetReadlabels(v string) {
+	o.Readlabels = &v
 }
 
 // GetRoleQuery returns the RoleQuery field value if set, zero value otherwise.
@@ -2895,6 +2929,9 @@ func (o GetRolesRequest) ToMap() (map[string]interface{}, error) {
 	}
 	if !IsNil(o.Offset) {
 		toSerialize["offset"] = o.Offset
+	}
+	if !IsNil(o.Readlabels) {
+		toSerialize["readlabels"] = o.Readlabels
 	}
 	if !IsNil(o.RoleQuery) {
 		toSerialize["roleQuery"] = o.RoleQuery

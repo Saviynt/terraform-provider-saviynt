@@ -13,7 +13,7 @@ resource "saviynt_dynamic_attribute_resource" "example" {
       attribute_type                                  = "BOOLEAN"
       attribute_group                                 = "Performance"
       order_index                                     = "1"
-      attribute_lable                                 = "API Timeout (ms)"
+      attribute_label                                 = "API Timeout (ms)"
       accounts_column                                 = "false"
       hide_on_create                                  = "false"
       action_string                                   = "action_string"
