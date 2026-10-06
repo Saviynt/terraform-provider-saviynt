@@ -11,6 +11,7 @@ Name | Type | Description | Notes
 **RequestedObject** | Pointer to **string** | Type of object requested | [optional] 
 **Max** | Pointer to **int32** | Maximum number of results to return | [optional] 
 **Offset** | Pointer to **int32** | Number of results to skip | [optional] 
+**Readlabels** | Pointer to **string** | Controls whether the API returns human-readable label names or backend field names. Pass &#39;false&#39; to always receive backend field names (e.g. &#39;entitlement_value&#39;) regardless of server-side readlabels configuration. | [optional] 
 **EntitlementResponseFields** | Pointer to **string** | Comma-separated list of entitlement fields to return | [optional] 
 **UserResponseFields** | Pointer to **string** | Comma-separated list of user fields to return | [optional] 
 **Userfiltercriteria** | Pointer to **string** | Filter criteria for users | [optional] 
@@ -214,6 +215,31 @@ SetOffset sets Offset field to given value.
 `func (o *GetEntitlementRequest) HasOffset() bool`
 
 HasOffset returns a boolean if a field has been set.
+
+### GetReadlabels
+
+`func (o *GetEntitlementRequest) GetReadlabels() string`
+
+GetReadlabels returns the Readlabels field if non-nil, zero value otherwise.
+
+### GetReadlabelsOk
+
+`func (o *GetEntitlementRequest) GetReadlabelsOk() (*string, bool)`
+
+GetReadlabelsOk returns a tuple with the Readlabels field if it's non-nil, zero value otherwise
+and a boolean to check if the value has been set.
+
+### SetReadlabels
+
+`func (o *GetEntitlementRequest) SetReadlabels(v string)`
+
+SetReadlabels sets Readlabels field to given value.
+
+### HasReadlabels
+
+`func (o *GetEntitlementRequest) HasReadlabels() bool`
+
+HasReadlabels returns a boolean if a field has been set.
 
 ### GetEntitlementResponseFields
 

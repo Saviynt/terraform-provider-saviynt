@@ -6,7 +6,6 @@ package client
 import (
 	"context"
 	"net/http"
-	"strings"
 
 	endpoint "github.com/saviynt/saviynt-api-go-client/endpoints"
 	openapi "github.com/saviynt/saviynt-api-go-client/privileges"
@@ -48,9 +47,7 @@ type DefaultPrivilegeFactory struct{}
 
 func (f *DefaultPrivilegeFactory) CreatePrivilegeOperations(baseURL, token string) PrivilegeOperationInterface {
 	cfg := openapi.NewConfiguration()
-	apiBaseURL := strings.TrimPrefix(strings.TrimPrefix(baseURL, "https://"), "http://")
-	cfg.Host = apiBaseURL
-	cfg.Scheme = "https"
+	cfg.Servers = openapi.ServerConfigurations{{URL: baseURL}}
 	cfg.AddDefaultHeader("Authorization", "Bearer "+token)
 	cfg.HTTPClient = http.DefaultClient
 	apiClient := openapi.NewAPIClient(cfg)
@@ -59,9 +56,7 @@ func (f *DefaultPrivilegeFactory) CreatePrivilegeOperations(baseURL, token strin
 
 func (f *DefaultPrivilegeFactory) CreateEndpointOperations(baseURL, token string) EndpointOperationsInterface {
 	cfg := endpoint.NewConfiguration()
-	apiBaseURL := strings.TrimPrefix(strings.TrimPrefix(baseURL, "https://"), "http://")
-	cfg.Host = apiBaseURL
-	cfg.Scheme = "https"
+	cfg.Servers = endpoint.ServerConfigurations{{URL: baseURL}}
 	cfg.AddDefaultHeader("Authorization", "Bearer "+token)
 	cfg.HTTPClient = http.DefaultClient
 	apiClient := endpoint.NewAPIClient(cfg)

@@ -60,9 +60,7 @@ type DefaultFileFactory struct {
 
 func (f *DefaultFileFactory) CreateFileOperations(baseURL, token string) FileOperationsInterface {
 	cfg := openapi.NewConfiguration()
-	apiBaseURL := strings.TrimPrefix(strings.TrimPrefix(baseURL, "https://"), "http://")
-	cfg.Host = apiBaseURL
-	cfg.Scheme = "https"
+	cfg.Servers = openapi.ServerConfigurations{{URL: baseURL}}
 	cfg.AddDefaultHeader("Authorization", "Bearer "+token)
 	cfg.HTTPClient = http.DefaultClient
 	apiClient := openapi.NewAPIClient(cfg)
