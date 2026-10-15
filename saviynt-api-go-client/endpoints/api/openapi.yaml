@@ -62,6 +62,7 @@ paths:
                     operation: ADD
                   customproperty1: custom-value-1
                   custompropertyLabel1: custom-label-1
+                  statusForUniqueAccount: "1,Manually Provisioned"
             schema:
               $ref: "#/components/schemas/updateEndpoint_request"
         description: Request payload for updating an endpoint.
@@ -144,6 +145,7 @@ paths:
                   serviceAccountNameRule: testserviceaccountnamerue
                   serviceAccountAccessQuery: tetssrvquery
                   allowChangePassword_sqlquery: testQuery
+                  statusForUniqueAccount: "1,Manually Provisioned"
             schema:
               $ref: "#/components/schemas/createEndpoint_request"
         description: Request payload for creating an endpoint.
@@ -1797,6 +1799,13 @@ components:
             page
           example: true
           type: boolean
+        statusForUniqueAccount:
+          description: "Comma-separated list of account statuses used for the 'Check\
+            \ Unique Account' feature in account name rules. Valid values: All, 1,\
+            \ 2, 3, 4, Manually Suspended, Manually Provisioned, SUSPENDED FROM IMPORT\
+            \ SERVICE"
+          example: "1,Manually Provisioned"
+          type: string
       required:
       - displayName
       - endpointname
@@ -2755,5 +2764,12 @@ components:
             Request page that can be used to remove all the roles.
           example: true
           type: boolean
+        statusForUniqueAccount:
+          description: "Comma-separated list of account statuses used for the 'Check\
+            \ Unique Account' feature in account name rules. Valid values: All, 1,\
+            \ 2, 3, 4, Manually Suspended, Manually Provisioned, SUSPENDED FROM IMPORT\
+            \ SERVICE"
+          example: "1,Manually Provisioned"
+          type: string
       required:
       - endpointname
