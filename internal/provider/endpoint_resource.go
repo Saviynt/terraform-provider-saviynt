@@ -68,6 +68,7 @@ type EndpointResourceModel struct {
 	AccountTypeNoPasswordChange             types.String `tfsdk:"account_type_no_password_change"`
 	EndpointConfig                          types.String `tfsdk:"endpoint_config"`
 	AllowRemoveAllRoleOnRequest             types.Bool   `tfsdk:"allow_remove_all_role_on_request"`
+	StatusForUniqueAccount                  types.String `tfsdk:"status_for_unique_account"`
 
 	CustomProperty1              types.String `tfsdk:"custom_property1"`
 	CustomProperty2              types.String `tfsdk:"custom_property2"`
@@ -377,6 +378,11 @@ func (r *EndpointResource) Schema(ctx context.Context, req resource.SchemaReques
 				Optional:    true,
 				Computed:    true,
 				Description: "Account type no password change",
+			},
+			"status_for_unique_account": schema.StringAttribute{
+				Optional:    true,
+				Computed:    true,
+				Description: "Comma-separated list of account statuses used for the 'Check Unique Account' feature in account name rules. Valid values: All, 1, 2, 3, 4, Manually Suspended, Manually Provisioned, SUSPENDED FROM IMPORT SERVICE",
 			},
 			"mapped_endpoints": schema.ListAttribute{
 				ElementType: types.ObjectType{
@@ -716,6 +722,9 @@ func (r *EndpointResource) BuildEndpointRequest(ctx context.Context, plan *Endpo
 			// Boolean fields - CREATE uses util.BoolPointerOrEmpty()
 			Requestable:                 util.BoolPointerOrEmpty(plan.Requestable),
 			AllowRemoveAllRoleOnRequest: util.BoolPointerOrEmpty(plan.AllowRemoveAllRoleOnRequest),
+
+			// Status for Unique Account field
+			StatusForUniqueAccount: util.StringPointerOrEmpty(plan.StatusForUniqueAccount),
 		}
 
 		// Add custom properties and labels for CREATE
@@ -768,6 +777,9 @@ func (r *EndpointResource) BuildEndpointRequest(ctx context.Context, plan *Endpo
 			// Boolean fields - UPDATE uses ValueBoolPointer()
 			Requestable:                 plan.Requestable.ValueBoolPointer(),
 			AllowRemoveAllRoleOnRequest: plan.AllowRemoveAllRoleOnRequest.ValueBoolPointer(),
+
+			// Status for Unique Account field
+			StatusForUniqueAccount: plan.StatusForUniqueAccount.ValueStringPointer(),
 		}
 
 		// Add custom properties and labels for UPDATE
@@ -1113,6 +1125,7 @@ func (r *EndpointResource) SetEndpointFields(target *EndpointResourceModel, read
 	target.ServiceAccountAccessQuery = util.SafeString(endpoint.ServiceAccountAccessQuery)
 	target.UserAccountCorrelationRule = util.SafeString(endpoint.UserAccountCorrelationRule)
 	target.StatusConfig = util.SafeString(endpoint.StatusConfig)
+	target.StatusForUniqueAccount = util.SafeString(endpoint.StatusForUniqueAccount)
 	if endpoint.Disableaccountrequest != nil {
 		disableAccountRequestStr := *endpoint.Disableaccountrequest
 
