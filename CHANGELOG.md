@@ -1,3 +1,35 @@
+## 0.3.9 (released)
+
+ENHANCEMENTS:
+
+* **resource/saviynt_endpoint_resource:** Added `status_for_unique_account` field to configure which account statuses are considered for unique account checking in account name rules. This field determines which account statuses are included when checking for unique accounts during account creation or management.
+
+  **Valid Values:**
+  - **Numeric Codes:** `1` (Active), `2` (Inactive), `3` (Decommission Active), `4` (Decommission Inactive)
+  - **Text Values:** `All` (selects all statuses), `Manually Suspended`, `Manually Provisioned`, `SUSPENDED FROM IMPORT SERVICE`
+  - **Combinations:** Supports comma-separated combinations (e.g., `"1,2,Manually Provisioned"`, `"All,3,4"`, `"1,2,3,4,Manually Suspended"`)
+
+  **Examples:**
+  ```hcl
+  # Check all account statuses
+  status_for_unique_account = "All"
+  
+  # Check active and inactive accounts only
+  status_for_unique_account = "1,2"
+  
+  # Check active, inactive, and manually provisioned accounts
+  status_for_unique_account = "1,2,Manually Provisioned"
+  
+  # Check all decommission statuses and manual statuses
+  status_for_unique_account = "3,4,Manually Suspended,Manually Provisioned"
+  ```
+
+  **Key Features:**
+  - Values are case-sensitive and order-preserving
+  - Supports in-place updates without resource recreation
+  - Empty string (`""`) clears all status checking
+  - Multi-word values must be specified exactly (e.g., `"SUSPENDED FROM IMPORT SERVICE"`)
+
 ## 0.3.8 (released)
 
 ENHANCEMENTS:
