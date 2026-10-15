@@ -22,6 +22,10 @@ resource "saviynt_endpoint_resource" "endpoint" {
   allow_change_password_sql_query               = "SELECT 1 FROM dual"
   account_name_validator_regex                  = "^[a-zA-Z0-9_.-]{5,15}$"
 
+  # Configure which account statuses to consider for unique account checking
+  # Valid values: All, 1, 2, 3, 4, Manually Suspended, Manually Provisioned, SUSPENDED FROM IMPORT SERVICE
+  status_for_unique_account = "1,2,3,Manually Provisioned"
+
   status_config   = "{\"enabled\":true, \"checkInterval\":10}"
   plugin_configs  = "{\"pluginVersion\":\"1.2.3\"}"
   endpoint_config = "{\"audit\":true}"

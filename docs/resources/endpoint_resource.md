@@ -37,6 +37,13 @@ resource "saviynt_endpoint_resource" "endpoint" {
   allow_change_password_sql_query               = "SELECT 1 FROM dual"
   account_name_validator_regex                  = "^[a-zA-Z0-9_.-]{5,15}$"
 
+  # Configure which account statuses to consider for unique account checking
+  # This controls the 'Check Unique Account' feature in account name rules
+  # Valid values: All, 1=Active, 2=Inactive, 3=Decommission Active, 4=Decommission Inactive,
+  #              Manually Suspended, Manually Provisioned, SUSPENDED FROM IMPORT SERVICE
+  # Examples: "All", "1,2,3,4", "1,2,Manually Provisioned", "All,Manually Suspended"
+  status_for_unique_account = "1,2,3,Manually Provisioned"
+
   status_config   = "{\"enabled\":true, \"checkInterval\":10}"
   plugin_configs  = "{\"pluginVersion\":\"1.2.3\"}"
   endpoint_config = "{\"audit\":true}"
@@ -212,6 +219,46 @@ resource "saviynt_endpoint_resource" "endpoint" {
 - `service_account_access_query` (String) Specify the query to filter the access and display of the endpoint for specific users while managing service accounts.
 - `service_account_name_rule` (String) Rule to generate a name for this endpoint while creating a new service account.
 - `status_config` (String) Enable the State and Status options (Enable, Disable, Lock, Unlock) that would be available to request for a user and service accounts.
+- `status_for_unique_account` (String) Comma-separated list of account statuses used for the 'Check Unique Account' feature in account name rules. This field determines which account statuses are considered when checking for unique accounts during account creation or management.
+
+  **Valid Values and Code Mapping:**
+  
+  | Code | UI Label | Description |
+  |------|----------|-------------|
+  | `1` | Active | Include active accounts |
+  | `2` | Inactive | Include inactive accounts |
+  | `3` | Decommission Active | Include decommission active accounts |
+  | `4` | Decommission Inactive | Include decommission inactive accounts |
+  | `All` | (selects all statuses) | Include all account statuses in uniqueness checking |
+  | `Manually Suspended` | Manually Suspended | Include manually suspended accounts |
+  | `Manually Provisioned` | Manually Provisioned | Include manually provisioned accounts |
+  | `SUSPENDED FROM IMPORT SERVICE` | Suspended From Import Service | Include accounts suspended from import service |
+
+  **Examples:**
+  ```hcl
+  # Check all account statuses
+  status_for_unique_account = "All"
+  
+  # Check specific numeric statuses (Active, Inactive, Decommission Active, Decommission Inactive)
+  status_for_unique_account = "1,2,3,4"
+  
+  # Check mixed numeric and text statuses (Active, Inactive, Manually Suspended, Manually Provisioned)
+  status_for_unique_account = "1,2,Manually Suspended,Manually Provisioned"
+  
+  # Check specific text statuses only
+  status_for_unique_account = "Manually Provisioned,SUSPENDED FROM IMPORT SERVICE"
+  
+  # Check comprehensive combination
+  status_for_unique_account = "All,1,2,3,4,Manually Suspended,SUSPENDED FROM IMPORT SERVICE"
+  ```
+
+  **Important Notes:**
+  - **Numeric Codes**: `1=Active`, `2=Inactive`, `3=Decommission Active`, `4=Decommission Inactive`
+  - **Order of values matters** - the field preserves the exact order specified
+  - **Values are case-sensitive** - use exact text as shown in the table
+  - **Multi-word values** (like "SUSPENDED FROM IMPORT SERVICE") must be specified exactly as shown
+  - **Empty string** (`""`) clears all status checking (equivalent to null)
+  - **Field supports in-place updates** without resource recreation
 - `user_account_correlation_rule` (String) Specify rule to map users in EIC with the accounts during account import.
 
 ### Read-Only
