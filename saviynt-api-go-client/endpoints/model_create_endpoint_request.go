@@ -294,6 +294,8 @@ type CreateEndpointRequest struct {
 	Customproperty60Label *string `json:"customproperty60Label,omitempty"`
 	// Whether to display 'Remove All Roles' option in the Request page
 	AllowRemoveAllRoleOnRequest *bool `json:"allowRemoveAllRoleOnRequest,omitempty"`
+	// Comma-separated list of account statuses used for the 'Check Unique Account' feature in account name rules. Valid values: All, 1, 2, 3, 4, Manually Suspended, Manually Provisioned, SUSPENDED FROM IMPORT SERVICE
+	StatusForUniqueAccount *string `json:"statusForUniqueAccount,omitempty"`
 }
 
 type _CreateEndpointRequest CreateEndpointRequest
@@ -4710,6 +4712,38 @@ func (o *CreateEndpointRequest) SetAllowRemoveAllRoleOnRequest(v bool) {
 	o.AllowRemoveAllRoleOnRequest = &v
 }
 
+// GetStatusForUniqueAccount returns the StatusForUniqueAccount field value if set, zero value otherwise.
+func (o *CreateEndpointRequest) GetStatusForUniqueAccount() string {
+	if o == nil || IsNil(o.StatusForUniqueAccount) {
+		var ret string
+		return ret
+	}
+	return *o.StatusForUniqueAccount
+}
+
+// GetStatusForUniqueAccountOk returns a tuple with the StatusForUniqueAccount field value if set, nil otherwise
+// and a boolean to check if the value has been set.
+func (o *CreateEndpointRequest) GetStatusForUniqueAccountOk() (*string, bool) {
+	if o == nil || IsNil(o.StatusForUniqueAccount) {
+		return nil, false
+	}
+	return o.StatusForUniqueAccount, true
+}
+
+// HasStatusForUniqueAccount returns a boolean if a field has been set.
+func (o *CreateEndpointRequest) HasStatusForUniqueAccount() bool {
+	if o != nil && !IsNil(o.StatusForUniqueAccount) {
+		return true
+	}
+
+	return false
+}
+
+// SetStatusForUniqueAccount gets a reference to the given string and assigns it to the StatusForUniqueAccount field.
+func (o *CreateEndpointRequest) SetStatusForUniqueAccount(v string) {
+	o.StatusForUniqueAccount = &v
+}
+
 func (o CreateEndpointRequest) MarshalJSON() ([]byte, error) {
 	toSerialize, err := o.ToMap()
 	if err != nil {
@@ -5127,6 +5161,9 @@ func (o CreateEndpointRequest) ToMap() (map[string]interface{}, error) {
 	}
 	if !IsNil(o.AllowRemoveAllRoleOnRequest) {
 		toSerialize["allowRemoveAllRoleOnRequest"] = o.AllowRemoveAllRoleOnRequest
+	}
+	if !IsNil(o.StatusForUniqueAccount) {
+		toSerialize["statusForUniqueAccount"] = o.StatusForUniqueAccount
 	}
 	return toSerialize, nil
 }

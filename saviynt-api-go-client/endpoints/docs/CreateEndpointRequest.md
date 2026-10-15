@@ -142,6 +142,7 @@ Name | Type | Description | Notes
 **Customproperty59Label** | Pointer to **string** | Label for the custom property 59 of accounts of this endpoint | [optional] 
 **Customproperty60Label** | Pointer to **string** | Label for the custom property 60 of accounts of this endpoint | [optional] 
 **AllowRemoveAllRoleOnRequest** | Pointer to **bool** | Whether to display &#39;Remove All Roles&#39; option in the Request page | [optional] 
+**StatusForUniqueAccount** | Pointer to **string** | Comma-separated list of account statuses used for the &#39;Check Unique Account&#39; feature in account name rules. Valid values: All, 1, 2, 3, 4, Manually Suspended, Manually Provisioned, SUSPENDED FROM IMPORT SERVICE | [optional] 
 
 ## Methods
 
@@ -3596,6 +3597,31 @@ SetAllowRemoveAllRoleOnRequest sets AllowRemoveAllRoleOnRequest field to given v
 `func (o *CreateEndpointRequest) HasAllowRemoveAllRoleOnRequest() bool`
 
 HasAllowRemoveAllRoleOnRequest returns a boolean if a field has been set.
+
+### GetStatusForUniqueAccount
+
+`func (o *CreateEndpointRequest) GetStatusForUniqueAccount() string`
+
+GetStatusForUniqueAccount returns the StatusForUniqueAccount field if non-nil, zero value otherwise.
+
+### GetStatusForUniqueAccountOk
+
+`func (o *CreateEndpointRequest) GetStatusForUniqueAccountOk() (*string, bool)`
+
+GetStatusForUniqueAccountOk returns a tuple with the StatusForUniqueAccount field if it's non-nil, zero value otherwise
+and a boolean to check if the value has been set.
+
+### SetStatusForUniqueAccount
+
+`func (o *CreateEndpointRequest) SetStatusForUniqueAccount(v string)`
+
+SetStatusForUniqueAccount sets StatusForUniqueAccount field to given value.
+
+### HasStatusForUniqueAccount
+
+`func (o *CreateEndpointRequest) HasStatusForUniqueAccount() bool`
+
+HasStatusForUniqueAccount returns a boolean if a field has been set.
 
 
 [[Back to Model list]](../README.md#documentation-for-models) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to README]](../README.md)
