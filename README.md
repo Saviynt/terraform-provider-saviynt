@@ -87,9 +87,9 @@ Check out the [Latest Saviynt Provider Docs](https://registry.terraform.io/provi
 
 | Supported Saviynt EIC Versions | Terraform Provider Version |
 | -------------------------- | ------------------------------ |
-| `25.C` | Latest Version: `v0.3.9`<br> Supported Version(s): `v0.2.13` - `v0.3.9`|
-| `25.B` | Latest Version: `v0.3.9`<br> Supported Version(s): `v0.2.8` - `v0.3.9`|
-| `25.A` | Latest Version: `v0.3.9`<br> Supported Version(s): `v0.2.8` - `v0.3.9`|
+| `25.C` | Latest Version: `v0.3.10`<br> Supported Version(s): `v0.2.13` - `v0.3.10`|
+| `25.B` | Latest Version: `v0.3.10`<br> Supported Version(s): `v0.2.8` - `v0.3.10`|
+| `25.A` | Latest Version: `v0.3.10`<br> Supported Version(s): `v0.2.8` - `v0.3.10`|
 
 --- 
 
@@ -117,6 +117,7 @@ Check the table to see which attributes are supported in your version before usi
 | **Security System** | `instant_provisioning`                                                                           | Yes                | Yes              | No              |
 | **Entitlement Type** | `enable_entitlement_to_role_sync`                                                                           | Yes                | Yes              | Yes              |
 | **Enterprise Role** | `child_roles`                                                                           | Yes                | Yes              | No              |
+| **Dynamic Attribute** | `regex`                                                                               | Yes                | Yes              | Yes             |
 
 ---
 
@@ -1143,6 +1144,24 @@ The following limitations are present in the latest version of the provider. The
 
 - **`attribute_lable` renamed to `attribute_label`** (typo fix, provider `v0.3.8`+): If you are upgrading from `v0.3.7` or earlier, rename `attribute_lable` to `attribute_label` in your `.tf` files. Your existing Terraform state is **automatically migrated** — no manual state changes required.
 
+- **`regex` field** (provider `v0.3.10`): The `regex` field is now fully supported for `NUMBER`, `STRING`, `PASSWORD`, and `LARGE TEXT` attribute types across create, update, read, import, and the datasource. Setting `regex` on any other type (e.g. `BOOLEAN`, `ENUM`, `DATE`, `CHECK BOX`, `MULTIPLE SELECT FROM LIST`, `MULTIPLE SELECT FROM SQL QUERY`, `SINGLE SELECT FROM SQL QUERY`) produces a plan-time error with a clear message.
+
+  ```hcl
+  dynamic_attributes = {
+    employee_id = {
+      attribute_name  = "employee_id"
+      request_type    = "ACCOUNT"
+      attribute_type  = "STRING"
+      attribute_label = "Employee ID"
+      regex           = "^EMP-\\d{6}$"   # supported on NUMBER, STRING, PASSWORD, LARGE TEXT
+    }
+  }
+  ```
+
+  **Clearing regex**: To remove an existing regex, set `regex = ""`. The provider and the API both treat `""` and `null` as equivalent (no regex), so subsequent `terraform plan` runs report no drift.
+
+  **State migration**: Existing state is automatically migrated from schema version 1 to version 2 on the next `terraform plan`. The `regex` field is added as `null` for all existing attributes — no manual action is required.
+
 ### 5. Entitlement Types
 
 - **State management is not supported** for the following attributes:
@@ -1202,6 +1221,8 @@ The following limitations are present in the latest version of the provider. The
   - `"Inactive"`
 
 ### 7. Entitlement
+- `entitlement_map` and `entitlement_owners` are fully Terraform-managed fields. Any changes made outside of Terraform (via EIC UI or API) will be detected on the next `terraform plan` and overwritten on the next `terraform apply`. To suppress this behavior for specific resources, use `lifecycle { ignore_changes = [entitlement_map, entitlement_owners] }`.
+
 - `confidentiality` is the attribute to set the field for `Financial` on the UI.
 
 - **6 types of criticality levels** use the following values for `sox_critical`, `sys_critical`, `privileged`, `confidentiality`, `risk`:
@@ -1530,6 +1551,7 @@ ___
 | File Upload Versions    | Version attributes force file upload when unchanged | Increment `file_version` to trigger file re-upload |
 | Job Control Versions    | Version attributes force job execution when unchanged | Increment `run_job_version` to trigger job re-execution |
 | SFTP Connector Version  | Manual UI configuration required after creation     | Set `Select Connector version` field in Saviynt UI after Terraform creation |
+| Dynamic Attribute `regex` | `regex` now enforced on create/update/read (v0.3.10) | Set `regex = ""` to clear; state migrates automatically from schema v1→v2 |
 
 ---
 

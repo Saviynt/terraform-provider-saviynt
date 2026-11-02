@@ -1,3 +1,19 @@
+## 0.3.10 (released)
+
+BUG FIXES:
+
+* **resource/saviynt_entitlement_resource:** Fixed false "Map Drift Detected" errors blocking entitlement updates when `entitlement_map` or `entitlement_owners` were modified outside of Terraform.
+  - Previously, the Read function compared remote state against Terraform state and raised an error if they differed, preventing `terraform apply` from overriding external changes.
+  - Terraform is declarative — the Read function now always syncs the remote state into Terraform state so the Plan phase can compute the correct diff and apply the override, consistent with all other resources in this provider.
+
+* **resource/saviynt_entitlement_resource:** Fixed `terraform import` failing when `entitlement_value` contains a colon character (e.g. AWS ARNs such as `arn:aws:iam::123456789012:role/MyRole`, Azure resource IDs, or any namespaced identifier using `:` as a separator). The import ID parser now correctly preserves the full `entitlement_value` including any colons. All other operations (create, read, update, plan) are unaffected.
+
+* **resource/saviynt_dynamic_attribute_resource, datasource/saviynt_dynamic_attribute_datasource:** Added support for the `regex` field on dynamic attributes. The field was previously unavailable in the Terraform provider pending backend Read API support. It is now fully supported across create, update, read, import, and the datasource. Regex validation is only applicable for `NUMBER`, `STRING`, `PASSWORD`, and `LARGE TEXT` attribute types — setting it on any other type produces a plan-time error with a clear message.
+
+NOTES:
+
+* **State migration:** Existing `saviynt_dynamic_attribute_resource` state is automatically migrated from schema version 1 to version 2 on the next `terraform plan`. No manual action is required. The `regex` field will appear as `null` for attributes that did not previously have it configured.
+
 ## 0.3.9 (released)
 
 ENHANCEMENTS:

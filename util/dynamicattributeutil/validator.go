@@ -179,3 +179,58 @@ func (v defaultValueDisallowedForAttributeTypesValidator) ValidateString(ctx con
 func DefaultValueDisallowedForCertainAttributeTypes() validator.String {
 	return &defaultValueDisallowedForAttributeTypesValidator{}
 }
+
+// --------------------------------------------------------------
+var _ validator.String = &regexDisallowedForAttributeTypesValidator{}
+
+type regexDisallowedForAttributeTypesValidator struct{}
+
+func (v regexDisallowedForAttributeTypesValidator) Description(ctx context.Context) string {
+	return "Ensures regex is only set for attribute types that support it: NUMBER, STRING, PASSWORD, LARGE TEXT"
+}
+
+func (v regexDisallowedForAttributeTypesValidator) MarkdownDescription(ctx context.Context) string {
+	return v.Description(ctx)
+}
+
+func (v regexDisallowedForAttributeTypesValidator) ValidateString(ctx context.Context, req validator.StringRequest, resp *validator.StringResponse) {
+	if req.ConfigValue.IsNull() || req.ConfigValue.IsUnknown() {
+		return
+	}
+
+	siblingPath := req.Path.ParentPath().AtName("attribute_type")
+
+	var attrTypeVal attr.Value
+	diags := req.Config.GetAttribute(ctx, siblingPath, &attrTypeVal)
+	resp.Diagnostics.Append(diags...)
+	if diags.HasError() || attrTypeVal.IsNull() || attrTypeVal.IsUnknown() {
+		return
+	}
+
+	var attrType string
+	diags = tfsdk.ValueAs(ctx, attrTypeVal, &attrType)
+	resp.Diagnostics.Append(diags...)
+	if diags.HasError() {
+		return
+	}
+
+	// Exclusion list: block types known not to support regex in the Saviynt backend.
+	// Supported types (not listed here): NUMBER, STRING, PASSWORD, LARGE TEXT.
+	// Note: LARGE TEXT only persists regex on update, not on create (backend limitation).
+	// If Saviynt adds a new unsupported type in the future, add it to this list.
+	switch strings.ToUpper(attrType) {
+	case "BOOLEAN", "ENUM", "MULTIPLE SELECT FROM LIST", "MULTIPLE SELECT FROM SQL QUERY",
+		"SINGLE SELECT FROM SQL QUERY", "CHECK BOX", "DATE":
+		resp.Diagnostics.AddAttributeError(
+			req.Path,
+			"Invalid regex",
+			fmt.Sprintf("regex is not supported when attribute_type is '%s'. Supported types: NUMBER, STRING, PASSWORD, LARGE TEXT", attrType),
+		)
+	}
+}
+
+// RegexDisallowedForCertainAttributeTypes returns a validator that prevents setting regex
+// on attribute types that do not support it in the Saviynt backend.
+func RegexDisallowedForCertainAttributeTypes() validator.String {
+	return &regexDisallowedForAttributeTypesValidator{}
+}

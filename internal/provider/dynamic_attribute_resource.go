@@ -64,9 +64,7 @@ type Dynamicattribute struct {
 	Descriptionascsv                                types.String `tfsdk:"description_as_csv"`
 	Parentattribute                                 types.String `tfsdk:"parent_attribute"`
 	Defaultvalue                                    types.String `tfsdk:"default_value"`
-
-	// Removed due to lack support Read API
-	// Regex                                           types.String `tfsdk:"regex"`
+	Regex                                           types.String `tfsdk:"regex"`
 }
 
 type DynamicAttributeResource struct {
@@ -100,7 +98,7 @@ func (r *DynamicAttributeResource) Metadata(ctx context.Context, req resource.Me
 
 func (r *DynamicAttributeResource) Schema(ctx context.Context, req resource.SchemaRequest, resp *resource.SchemaResponse) {
 	resp.Schema = schema.Schema{
-		Version:     1,
+		Version:     2,
 		Description: util.DynamicAttrDescription,
 		Attributes: map[string]schema.Attribute{
 			"id": schema.StringAttribute{
@@ -225,13 +223,14 @@ func (r *DynamicAttributeResource) Schema(ctx context.Context, req resource.Sche
 								dynamicattributeutil.DescriptionDisallowedForCertainAttributeTypes(),
 							},
 						},
-						// "regex": schema.StringAttribute{
-						// 	Optional:    true,
-						// 	Description: "Regex for validation.",
-						// 	Validators: []validator.String{
-						// 		dynamicattributeutil.RegexDisallowedForCertainAttributeTypes(),
-						// 	},
-						// },
+						"regex": schema.StringAttribute{
+							Optional:    true,
+							Computed:    true,
+							Description: "Regex pattern for input validation. Supported for NUMBER, STRING, PASSWORD, and LARGE TEXT attribute types. Note: for LARGE TEXT, regex is only persisted on update — it is silently ignored by the backend on initial create.",
+							Validators: []validator.String{
+								dynamicattributeutil.RegexDisallowedForCertainAttributeTypes(),
+							},
+						},
 						"parent_attribute": schema.StringAttribute{
 							Optional:    true,
 							Computed:    true,
@@ -316,7 +315,10 @@ func (r *DynamicAttributeResource) BuildCreateDynamicAttributes(dynamicAttrMap m
 		dynamicAttr.Actiontoperformwhenparentattributechanges = util.StringPointerOrEmpty(attr.Action_to_perform_when_parent_attribute_changes)
 		dynamicAttr.Defaultvalue = util.StringPointerOrEmpty(attr.Defaultvalue)
 		dynamicAttr.Required = util.StringPointerOrEmpty(attr.Required)
-		// dynamicAttr.Regex = util.StringPointerOrEmpty(attr.Regex)
+		// Regex intentionally uses ValueStringPointer() instead of StringPointerOrEmpty():
+		// sending "" to the API clears an existing regex, whereas null means "not set".
+		// StringPointerOrEmpty() would coerce null→"" and always send an empty string.
+		dynamicAttr.Regex = attr.Regex.ValueStringPointer()
 		dynamicAttr.Attributevalue = util.StringPointerOrEmpty(attr.Attributevalue)
 		dynamicAttr.Showonchild = util.StringPointerOrEmpty(attr.Showonchild)
 		dynamicAttr.Parentattribute = util.StringPointerOrEmpty(attr.Parentattribute)
@@ -455,40 +457,49 @@ func (r *DynamicAttributeResource) ProcessDynamicAttributeErrorResponse(plan *Dy
 	return nil
 }
 
-// UpdateModelFromCreateResponse updates the model from create response
+// UpdateModelFromCreateResponse updates the model from create response.
+// It performs a post-create read so that state reflects what the API actually
+// stored — not what the plan requested. This is necessary because some fields
+// (e.g. regex on LARGE TEXT) are silently dropped by the backend on create,
+// and echoing the plan value would cause a Terraform consistency error.
 func (r *DynamicAttributeResource) UpdateModelFromCreateResponse(plan *DynamicAttributeResourceModel, createResp *openapi.CreateOrUpdateOrDeleteDynamicAttributeResponse, dynamicAttrMap map[string]Dynamicattribute, ctx context.Context) error {
-	// Update the dynamic attributes in state with SafeString handling
-	updatedAttrs := make(map[string]Dynamicattribute)
-	for attrName, attr := range dynamicAttrMap {
-		updatedAttr := Dynamicattribute{
-			Attributename:  util.SafeString(attr.Attributename.ValueStringPointer()),
-			Requesttype:    util.SafeString(attr.Requesttype.ValueStringPointer()),
-			Attributetype:  util.SafeString(attr.Attributetype.ValueStringPointer()),
-			Attributegroup: util.SafeString(attr.Attributegroup.ValueStringPointer()),
-			Orderindex:     util.SafeStringAlt(attr.Orderindex.ValueStringPointer(), "0"),
-			Attributelable: util.SafeString(attr.Attributelable.ValueStringPointer()),
-			Accountscolumn: util.SafeString(attr.Accountscolumn.ValueStringPointer()),
-			Hideoncreate:   util.SafeStringAlt(attr.Hideoncreate.ValueStringPointer(), "false"),
-			Actionstring:   util.SafeString(attr.Actionstring.ValueStringPointer()),
-			Editable:       util.SafeStringAlt(attr.Editable.ValueStringPointer(), "false"),
-			Hideonupdate:   util.SafeStringAlt(attr.Hideonupdate.ValueStringPointer(), "false"),
-			Action_to_perform_when_parent_attribute_changes: util.SafeString(attr.Action_to_perform_when_parent_attribute_changes.ValueStringPointer()),
-			Defaultvalue:     util.SafeString(attr.Defaultvalue.ValueStringPointer()),
-			Required:         util.SafeStringAlt(attr.Required.ValueStringPointer(), "false"),
-			Showonchild:      util.SafeStringAlt(attr.Showonchild.ValueStringPointer(), "false"),
-			Parentattribute:  util.SafeString(attr.Parentattribute.ValueStringPointer()),
-			Descriptionascsv: util.SafeString(attr.Descriptionascsv.ValueStringPointer()),
-		}
-		if attr.Attributevalue.IsNull() || attr.Attributevalue.IsUnknown() {
-			updatedAttr.Attributevalue = types.StringNull()
-		} else {
-			updatedAttr.Attributevalue = types.StringValue(attr.Attributevalue.ValueString())
-		}
-		updatedAttrs[attrName] = updatedAttr
-		log.Printf("%s: %+v", attrName, updatedAttr)
+	// Fetch the actual stored state from the API.
+	postCreateFetchResp, err := r.ReadDynamicAttribute(ctx, plan.Endpoint.ValueString())
+	if err != nil {
+		return fmt.Errorf("failed to fetch dynamic attributes after create: %w", err)
 	}
 
-	// Convert the updated map back to types.Map
+	postCreateApiAttrs := make(map[string]openapi.FetchDynamicAttributeResponseInner)
+	if postCreateFetchResp != nil && postCreateFetchResp.Dynamicattributes != nil && postCreateFetchResp.Dynamicattributes.ArrayOfFetchDynamicAttributeResponseInner != nil {
+		for _, item := range *postCreateFetchResp.Dynamicattributes.ArrayOfFetchDynamicAttributeResponseInner {
+			attrName := util.SafeDeref(item.Attributename)
+			if attrName != "" {
+				postCreateApiAttrs[attrName] = item
+			}
+		}
+	}
+
+	// Reconcile plan against what the API actually stored, reusing the same
+	// logic as the update path (handles "" vs null preservation for regex, etc.).
+	updatedAttrs := make(map[string]Dynamicattribute)
+	for attrName := range dynamicAttrMap {
+		if apiAttr, exists := postCreateApiAttrs[attrName]; exists {
+			updatedAttr := r.BuildUpdatedAttributeFromAPI(attrName, apiAttr)
+			// Preserve the plan's regex when the API returns null:
+			//   - "" explicitly cleared: keep "" so config `regex = ""` produces no drift.
+			//   - non-empty value: the backend silently dropped it (e.g. LARGE TEXT on create);
+			//     preserve the plan value so Terraform's consistency check passes and the
+			//     next plan shows a diff that will be fixed by the subsequent update call.
+			planAttr := dynamicAttrMap[attrName]
+			if !planAttr.Regex.IsNull() && !planAttr.Regex.IsUnknown() && updatedAttr.Regex.IsNull() {
+				updatedAttr.Regex = planAttr.Regex
+			}
+			updatedAttrs[attrName] = updatedAttr
+		} else {
+			log.Printf("[WARN] DynamicAttribute: attribute %q not found in post-create API response", attrName)
+		}
+	}
+
 	updatedMap, diags := r.ConvertAttributesToTerraformMap(updatedAttrs, ctx)
 	if diags.HasError() {
 		return fmt.Errorf("failed to convert updated attributes to map: %v", diags.Errors())
@@ -618,6 +629,7 @@ func (r *DynamicAttributeResource) ConvertAttributesToTerraformMap(updatedAttrs 
 			"showonchild":        types.StringType,
 			"parent_attribute":   types.StringType,
 			"description_as_csv": types.StringType,
+			"regex":              types.StringType,
 		},
 	}, updatedAttrs)
 
@@ -642,6 +654,7 @@ func (r *DynamicAttributeResource) BuildUpdatedAttributeFromAPI(attrName string,
 		Showonchild:      util.SafeStringDatasource(apiAttr.Showonchild),
 		Parentattribute:  util.SafeStringDatasource(apiAttr.Parentattribute),
 		Descriptionascsv: util.SafeStringDatasource(apiAttr.Descriptionascsv),
+		Regex:            util.SafeStringDatasource(apiAttr.Regex),
 	}
 
 	// Always translate the raw API short-form to the long-form expected by create/update.
@@ -674,7 +687,16 @@ func (r *DynamicAttributeResource) BuildUpdatedAttributesForRead(currentAttrs ma
 	for attrName := range currentAttrs {
 		if apiAttr, exists := apiAttrs[attrName]; exists {
 			// Attribute exists in API response - update with API values
-			updatedAttrs[attrName] = r.BuildUpdatedAttributeFromAPI(attrName, apiAttr)
+			updatedAttr := r.BuildUpdatedAttributeFromAPI(attrName, apiAttr)
+			// Preserve the plan's regex when the API returns null:
+			//   - "" explicitly cleared: keep "" so config `regex = ""` produces no drift.
+			//   - non-empty value: the backend silently dropped it (e.g. LARGE TEXT on create);
+			//     preserve so the next plan shows a diff that triggers a corrective update.
+			currentAttr := currentAttrs[attrName]
+			if !currentAttr.Regex.IsNull() && !currentAttr.Regex.IsUnknown() && updatedAttr.Regex.IsNull() {
+				updatedAttr.Regex = currentAttr.Regex
+			}
+			updatedAttrs[attrName] = updatedAttr
 		} else {
 			// Attribute doesn't exist in API response - mark for removal
 			removedAttributes = append(removedAttributes, attrName)
@@ -770,6 +792,9 @@ func (r *DynamicAttributeResource) BuildUpdateDynamicAttributes(attr Dynamicattr
 	updateAttr.Showonchild = util.StringPointerOrEmpty(attr.Showonchild)
 	updateAttr.Parentattribute = util.StringPointerOrEmpty(attr.Parentattribute)
 	updateAttr.Descriptionascsv = util.StringPointerOrEmpty(attr.Descriptionascsv)
+	// Regex intentionally uses ValueStringPointer() instead of StringPointerOrEmpty():
+	// sending "" to the API clears an existing regex, whereas null means "not set".
+	updateAttr.Regex = attr.Regex.ValueStringPointer()
 
 	return *updateAttr
 }
@@ -927,8 +952,17 @@ func (r *DynamicAttributeResource) UpdateModelFromUpdateResponse(plan *DynamicAt
 
 	for attrName := range planAttrs {
 		if apiAttr, exists := postUpdateApiAttrs[attrName]; exists {
-			// Reuse the existing helper function
-			updatedAttrs[attrName] = r.BuildUpdatedAttributeFromAPI(attrName, apiAttr)
+			updatedAttr := r.BuildUpdatedAttributeFromAPI(attrName, apiAttr)
+			// Preserve the plan's regex when the API returns null:
+			//   - "" explicitly cleared: keep "" so config `regex = ""` produces no drift.
+			//   - non-empty value: the backend silently dropped it (e.g. LARGE TEXT on create
+			//     when this update path is reached on a re-apply of a previously failed create);
+			//     preserve the plan value so Terraform's consistency check passes.
+			planAttr := planAttrs[attrName]
+			if !planAttr.Regex.IsNull() && !planAttr.Regex.IsUnknown() && updatedAttr.Regex.IsNull() {
+				updatedAttr.Regex = planAttr.Regex
+			}
+			updatedAttrs[attrName] = updatedAttr
 		}
 	}
 
@@ -1183,6 +1217,29 @@ func (r *DynamicAttributeResource) Delete(ctx context.Context, req resource.Dele
 	}
 }
 
+// DynamicattributeV1 is the schema version 1 representation of a dynamic attribute,
+// without the regex field. Used by the v1→v2 state upgrader.
+type DynamicattributeV1 struct {
+	Attributename                                   types.String `tfsdk:"attribute_name"`
+	Requesttype                                     types.String `tfsdk:"request_type"`
+	Attributetype                                   types.String `tfsdk:"attribute_type"`
+	Attributegroup                                  types.String `tfsdk:"attribute_group"`
+	Orderindex                                      types.String `tfsdk:"order_index"`
+	Attributelable                                  types.String `tfsdk:"attribute_label"`
+	Accountscolumn                                  types.String `tfsdk:"accounts_column"`
+	Hideoncreate                                    types.String `tfsdk:"hide_on_create"`
+	Actionstring                                    types.String `tfsdk:"action_string"`
+	Editable                                        types.String `tfsdk:"editable"`
+	Hideonupdate                                    types.String `tfsdk:"hide_on_update"`
+	Action_to_perform_when_parent_attribute_changes types.String `tfsdk:"action_to_perform_when_parent_attribute_changes"`
+	Required                                        types.String `tfsdk:"required"`
+	Attributevalue                                  types.String `tfsdk:"attribute_value"`
+	Showonchild                                     types.String `tfsdk:"showonchild"`
+	Descriptionascsv                                types.String `tfsdk:"description_as_csv"`
+	Parentattribute                                 types.String `tfsdk:"parent_attribute"`
+	Defaultvalue                                    types.String `tfsdk:"default_value"`
+}
+
 // DynamicattributeV0 is the schema version 0 representation of a dynamic attribute,
 // where the tfsdk tag was "attribute_lable" (typo). This is used by the state upgrader
 // to deserialize existing state written by provider versions <= 0.3.7.
@@ -1302,10 +1359,11 @@ func (r *DynamicAttributeResource) UpgradeState(ctx context.Context) map[int64]r
 						Descriptionascsv: old.Descriptionascsv,
 						Parentattribute:  old.Parentattribute,
 						Defaultvalue:     old.Defaultvalue,
+						Regex:            types.StringNull(),
 					}
 				}
 
-				// Step 3: convert to types.Map using the V1 object type
+				// Step 3: convert to types.Map using the V2 object type (includes regex added in v2)
 				upgradedMap, diags := types.MapValueFrom(ctx, types.ObjectType{
 					AttrTypes: map[string]attr.Type{
 						"attribute_name":  types.StringType,
@@ -1313,7 +1371,7 @@ func (r *DynamicAttributeResource) UpgradeState(ctx context.Context) map[int64]r
 						"attribute_type":  types.StringType,
 						"attribute_group": types.StringType,
 						"order_index":     types.StringType,
-						"attribute_label": types.StringType, // new key
+						"attribute_label": types.StringType, // new key (was attribute_lable in v0)
 						"accounts_column": types.StringType,
 						"hide_on_create":  types.StringType,
 						"action_string":   types.StringType,
@@ -1326,6 +1384,7 @@ func (r *DynamicAttributeResource) UpgradeState(ctx context.Context) map[int64]r
 						"showonchild":        types.StringType,
 						"parent_attribute":   types.StringType,
 						"description_as_csv": types.StringType,
+						"regex":              types.StringType,
 					},
 				}, newAttrs)
 				resp.Diagnostics.Append(diags...)
@@ -1334,6 +1393,139 @@ func (r *DynamicAttributeResource) UpgradeState(ctx context.Context) map[int64]r
 				}
 
 				// Step 4: write the upgraded state using the V1 model
+				upgradedState := DynamicAttributeResourceModel{
+					ID:                     oldState.ID,
+					Securitysystem:         oldState.Securitysystem,
+					Endpoint:               oldState.Endpoint,
+					Updateuser:             oldState.Updateuser,
+					DynamicAttributes:      upgradedMap,
+					DynamicAttributesError: oldState.DynamicAttributesError,
+					Msg:                    oldState.Msg,
+					ErrorCode:              oldState.ErrorCode,
+				}
+
+				resp.Diagnostics.Append(resp.State.Set(ctx, upgradedState)...)
+			},
+		},
+
+		// Upgrade from schema version 1 (no regex) to version 2 (adds regex field)
+		1: {
+			PriorSchema: &schema.Schema{
+				Attributes: map[string]schema.Attribute{
+					"id":              schema.StringAttribute{Computed: true},
+					"security_system": schema.StringAttribute{Required: true},
+					"endpoint":        schema.StringAttribute{Required: true},
+					"update_user":     schema.StringAttribute{Optional: true, Computed: true},
+					"msg":             schema.StringAttribute{Computed: true},
+					"error_code":      schema.StringAttribute{Computed: true},
+					"dynamic_attribute_errors": schema.StringAttribute{
+						Computed: true,
+						Optional: true,
+					},
+					"dynamic_attributes": schema.MapNestedAttribute{
+						Required: true,
+						NestedObject: schema.NestedAttributeObject{
+							Attributes: map[string]schema.Attribute{
+								"attribute_name":  schema.StringAttribute{Required: true},
+								"request_type":    schema.StringAttribute{Required: true},
+								"attribute_type":  schema.StringAttribute{Optional: true, Computed: true},
+								"attribute_group": schema.StringAttribute{Optional: true, Computed: true},
+								"order_index":     schema.StringAttribute{Optional: true, Computed: true},
+								"attribute_label": schema.StringAttribute{Optional: true, Computed: true},
+								"accounts_column": schema.StringAttribute{Optional: true, Computed: true},
+								"hide_on_create":  schema.StringAttribute{Optional: true, Computed: true},
+								"action_string":   schema.StringAttribute{Optional: true, Computed: true},
+								"editable":        schema.StringAttribute{Optional: true, Computed: true},
+								"hide_on_update":  schema.StringAttribute{Optional: true, Computed: true},
+								"action_to_perform_when_parent_attribute_changes": schema.StringAttribute{Optional: true, Computed: true},
+								"default_value":      schema.StringAttribute{Optional: true, Computed: true},
+								"required":           schema.StringAttribute{Optional: true, Computed: true},
+								"attribute_value":    schema.StringAttribute{Optional: true, Computed: true},
+								"showonchild":        schema.StringAttribute{Optional: true, Computed: true},
+								"description_as_csv": schema.StringAttribute{Optional: true, Computed: true},
+								"parent_attribute":   schema.StringAttribute{Optional: true, Computed: true},
+							},
+						},
+					},
+				},
+			},
+			StateUpgrader: func(ctx context.Context, req resource.UpgradeStateRequest, resp *resource.UpgradeStateResponse) {
+				type DynamicAttributeResourceModelV1 struct {
+					ID                     types.String `tfsdk:"id"`
+					Securitysystem         types.String `tfsdk:"security_system"`
+					Endpoint               types.String `tfsdk:"endpoint"`
+					Updateuser             types.String `tfsdk:"update_user"`
+					DynamicAttributes      types.Map    `tfsdk:"dynamic_attributes"`
+					DynamicAttributesError types.String `tfsdk:"dynamic_attribute_errors"`
+					Msg                    types.String `tfsdk:"msg"`
+					ErrorCode              types.String `tfsdk:"error_code"`
+				}
+
+				var oldState DynamicAttributeResourceModelV1
+				resp.Diagnostics.Append(req.State.Get(ctx, &oldState)...)
+				if resp.Diagnostics.HasError() {
+					return
+				}
+
+				oldAttrs := make(map[string]DynamicattributeV1)
+				resp.Diagnostics.Append(oldState.DynamicAttributes.ElementsAs(ctx, &oldAttrs, false)...)
+				if resp.Diagnostics.HasError() {
+					return
+				}
+
+				newAttrs := make(map[string]Dynamicattribute, len(oldAttrs))
+				for key, old := range oldAttrs {
+					newAttrs[key] = Dynamicattribute{
+						Attributename:  old.Attributename,
+						Requesttype:    old.Requesttype,
+						Attributetype:  old.Attributetype,
+						Attributegroup: old.Attributegroup,
+						Orderindex:     old.Orderindex,
+						Attributelable: old.Attributelable,
+						Accountscolumn: old.Accountscolumn,
+						Hideoncreate:   old.Hideoncreate,
+						Actionstring:   old.Actionstring,
+						Editable:       old.Editable,
+						Hideonupdate:   old.Hideonupdate,
+						Action_to_perform_when_parent_attribute_changes: old.Action_to_perform_when_parent_attribute_changes,
+						Required:         old.Required,
+						Attributevalue:   old.Attributevalue,
+						Showonchild:      old.Showonchild,
+						Descriptionascsv: old.Descriptionascsv,
+						Parentattribute:  old.Parentattribute,
+						Defaultvalue:     old.Defaultvalue,
+						Regex:            types.StringNull(),
+					}
+				}
+
+				upgradedMap, diags := types.MapValueFrom(ctx, types.ObjectType{
+					AttrTypes: map[string]attr.Type{
+						"attribute_name":  types.StringType,
+						"request_type":    types.StringType,
+						"attribute_type":  types.StringType,
+						"attribute_group": types.StringType,
+						"order_index":     types.StringType,
+						"attribute_label": types.StringType,
+						"accounts_column": types.StringType,
+						"hide_on_create":  types.StringType,
+						"action_string":   types.StringType,
+						"editable":        types.StringType,
+						"hide_on_update":  types.StringType,
+						"action_to_perform_when_parent_attribute_changes": types.StringType,
+						"default_value":      types.StringType,
+						"required":           types.StringType,
+						"attribute_value":    types.StringType,
+						"showonchild":        types.StringType,
+						"parent_attribute":   types.StringType,
+						"description_as_csv": types.StringType,
+						"regex":              types.StringType,
+					},
+				}, newAttrs)
+				resp.Diagnostics.Append(diags...)
+				if resp.Diagnostics.HasError() {
+					return
+				}
+
 				upgradedState := DynamicAttributeResourceModel{
 					ID:                     oldState.ID,
 					Securitysystem:         oldState.Securitysystem,
