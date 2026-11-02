@@ -161,3 +161,17 @@ Optional:
 Read-Only:
 
 - `entitlement_key` (String) The entitlement key from API (computed)
+
+## Import
+
+Entitlements can be imported using the format `endpoint_name:entitlement_type:entitlement_value`.
+
+> **Note:** `endpoint_name` and `entitlement_type` must not contain colons. Only `entitlement_value` supports colons (e.g. AWS ARNs, Azure resource IDs).
+
+```shell
+# Plain entitlement value
+terraform import saviynt_entitlement_resource.example my-endpoint:my-type:my-value
+
+# Entitlement value containing colons (e.g. an AWS ARN)
+terraform import saviynt_entitlement_resource.example my-endpoint:my-type:arn:aws:iam::123456789012:role/MyRole
+```

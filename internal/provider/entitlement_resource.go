@@ -31,6 +31,8 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/path"
 	"github.com/hashicorp/terraform-plugin-framework/resource"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema"
+	"github.com/hashicorp/terraform-plugin-framework/resource/schema/planmodifier"
+	"github.com/hashicorp/terraform-plugin-framework/resource/schema/stringplanmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/schema/validator"
 	"github.com/hashicorp/terraform-plugin-framework/types"
 
@@ -123,6 +125,16 @@ type EntitlementResourceModel struct {
 	EntitlementMap    types.Set `tfsdk:"entitlement_map"`
 }
 
+// entMapBool converts a *bool API field to types.Bool, defaulting nil to false.
+// Using null for optional+computed bools inside a set breaks Terraform's post-apply
+// consistency check when the user supplied an explicit false in config.
+func entMapBool(b *bool) types.Bool {
+	if b == nil {
+		return types.BoolValue(false)
+	}
+	return types.BoolValue(*b)
+}
+
 type EntitlementMapModel struct {
 	EntitlementValue       types.String `tfsdk:"entitlement_value"`         // Maps to Primary in API
 	EntitlementType        types.String `tfsdk:"entitlement_type"`          // Maps to PrimaryEntType in API
@@ -132,69 +144,6 @@ type EntitlementMapModel struct {
 	ExcludeEntitlement     types.Bool   `tfsdk:"exclude_entitlement"`       // Maps to ExcludeEntitlement in API
 	AddDependentTask       types.Bool   `tfsdk:"add_dependent_task"`        // Maps to AddDependentTask in API
 	RemoveDependentEntTask types.Bool   `tfsdk:"remove_dependent_ent_task"` // Maps to RemoveDependentEntTask in API
-}
-
-// entitlementMapsEqual compares two slices of EntitlementMapModel for equality
-func entitlementMapsEqual(a, b []EntitlementMapModel) bool {
-	log.Printf("[DEBUG] entitlementMapsEqual - Comparing slice A (len=%d): %+v", len(a), a)
-	log.Printf("[DEBUG] entitlementMapsEqual - Comparing slice B (len=%d): %+v", len(b), b)
-
-	if len(a) != len(b) {
-		log.Printf("[DEBUG] entitlementMapsEqual - Length mismatch: %d != %d", len(a), len(b))
-		return false
-	}
-
-	// If both are empty, they are equal
-	if len(a) == 0 && len(b) == 0 {
-		log.Printf("[DEBUG] entitlementMapsEqual - Both slices are empty, returning true")
-		return true
-	}
-
-	// Create maps for comparison using entitlement_key as unique identifier
-	mapA := make(map[string]EntitlementMapModel)
-	mapB := make(map[string]EntitlementMapModel)
-
-	for _, entMap := range a {
-		// Always use composite key for consistent comparison
-		key := entMap.Endpoint.ValueString() + "|" + entMap.EntitlementType.ValueString() + "|" + entMap.EntitlementValue.ValueString()
-		mapA[key] = entMap
-	}
-
-	for _, entMap := range b {
-		// Always use composite key for consistent comparison
-		key := entMap.Endpoint.ValueString() + "|" + entMap.EntitlementType.ValueString() + "|" + entMap.EntitlementValue.ValueString()
-		mapB[key] = entMap
-	}
-
-	// Compare maps
-	for key, entMapA := range mapA {
-		entMapB, exists := mapB[key]
-		if !exists {
-			log.Printf("[DEBUG] entitlementMapsEqual - Key %s exists in A but not in B", key)
-			return false
-		}
-
-		// Compare all fields
-		if entMapA.EntitlementValue.ValueString() != entMapB.EntitlementValue.ValueString() ||
-			entMapA.EntitlementType.ValueString() != entMapB.EntitlementType.ValueString() ||
-			entMapA.Endpoint.ValueString() != entMapB.Endpoint.ValueString() ||
-			entMapA.RequestFilter.ValueBool() != entMapB.RequestFilter.ValueBool() ||
-			entMapA.ExcludeEntitlement.ValueBool() != entMapB.ExcludeEntitlement.ValueBool() ||
-			entMapA.AddDependentTask.ValueBool() != entMapB.AddDependentTask.ValueBool() ||
-			entMapA.RemoveDependentEntTask.ValueBool() != entMapB.RemoveDependentEntTask.ValueBool() {
-			log.Printf("[DEBUG] entitlementMapsEqual - Field mismatch for key %s:", key)
-			log.Printf("[DEBUG]   A: EntitlementValue=%s, EntitlementType=%s, Endpoint=%s, RequestFilter=%t, ExcludeEntitlement=%t, AddDependentTask=%t, RemoveDependentEntTask=%t",
-				entMapA.EntitlementValue.ValueString(), entMapA.EntitlementType.ValueString(), entMapA.Endpoint.ValueString(),
-				entMapA.RequestFilter.ValueBool(), entMapA.ExcludeEntitlement.ValueBool(), entMapA.AddDependentTask.ValueBool(), entMapA.RemoveDependentEntTask.ValueBool())
-			log.Printf("[DEBUG]   B: EntitlementValue=%s, EntitlementType=%s, Endpoint=%s, RequestFilter=%t, ExcludeEntitlement=%t, AddDependentTask=%t, RemoveDependentEntTask=%t",
-				entMapB.EntitlementValue.ValueString(), entMapB.EntitlementType.ValueString(), entMapB.Endpoint.ValueString(),
-				entMapB.RequestFilter.ValueBool(), entMapB.ExcludeEntitlement.ValueBool(), entMapB.AddDependentTask.ValueBool(), entMapB.RemoveDependentEntTask.ValueBool())
-			return false
-		}
-	}
-
-	log.Printf("[DEBUG] entitlementMapsEqual - All comparisons passed, returning true")
-	return true
 }
 
 func (r *EntitlementResource) Metadata(ctx context.Context, req resource.MetadataRequest, resp *resource.MetadataResponse) {
@@ -314,6 +263,9 @@ func (r *EntitlementResource) Schema(ctx context.Context, req resource.SchemaReq
 					"entitlement_key": schema.StringAttribute{
 						Computed:    true,
 						Description: "The entitlement key from API (computed)",
+						PlanModifiers: []planmodifier.String{
+							stringplanmodifier.UseStateForUnknown(),
+						},
 					},
 					"request_filter": schema.BoolAttribute{
 						Optional:    true,
@@ -702,256 +654,83 @@ func (r *EntitlementResource) PopulateStateFromAPI(ctx context.Context, state *E
 }
 
 // ProcessEntitlementOwnersForEntitlementRead processes entitlement owners during read operations
-func (r *EntitlementResource) ProcessEntitlementOwnersForEntitlementRead(ctx context.Context, state *EntitlementResourceModel, entitlement openapi.GetEntitlementResponseEntitlementdetailsInner, isImportOrPostUpdate bool) error {
-	if isImportOrPostUpdate {
-		// True import: Import all owners from API
-		if entitlement.EntitlementOwner != nil && entitlement.EntitlementOwner.MapmapOfStringarrayOfString != nil {
-			ownersMap := make(map[string][]string)
-			for rank, users := range *entitlement.EntitlementOwner.MapmapOfStringarrayOfString {
-				rankKey := strings.ToLower(strings.Replace(rank, " ", "_", -1))
-				ownersMap[rankKey] = users
-			}
-			state.EntitlementOwners, _ = types.MapValueFrom(ctx, types.SetType{ElemType: types.StringType}, ownersMap)
-		} else {
-			// No owners in API - only set empty map if it was previously configured, otherwise keep null
-			if !state.EntitlementOwners.IsNull() {
-				state.EntitlementOwners, _ = types.MapValueFrom(ctx, types.SetType{ElemType: types.StringType}, make(map[string][]string))
-			}
-			// If it was null, leave it null
+func (r *EntitlementResource) ProcessEntitlementOwnersForEntitlementRead(ctx context.Context, state *EntitlementResourceModel, entitlement openapi.GetEntitlementResponseEntitlementdetailsInner) error {
+	apiOwners := make(map[string][]string)
+	if entitlement.EntitlementOwner != nil && entitlement.EntitlementOwner.MapmapOfStringarrayOfString != nil {
+		for rank, users := range *entitlement.EntitlementOwner.MapmapOfStringarrayOfString {
+			rankKey := strings.ToLower(strings.Replace(rank, " ", "_", -1))
+			apiOwners[rankKey] = users
 		}
-	} else {
-		// Regular operation: Always validate counts per rank
-		// Get state owners (treat null as empty map)
-		var stateOwners map[string][]string
-		if !state.EntitlementOwners.IsNull() {
-			state.EntitlementOwners.ElementsAs(ctx, &stateOwners, false)
-		} else {
-			stateOwners = make(map[string][]string)
-		}
-
-		// Get API owners
-		apiOwners := make(map[string][]string)
-		if entitlement.EntitlementOwner != nil && entitlement.EntitlementOwner.MapmapOfStringarrayOfString != nil {
-			for rank, users := range *entitlement.EntitlementOwner.MapmapOfStringarrayOfString {
-				rankKey := strings.ToLower(strings.Replace(rank, " ", "_", -1))
-				apiOwners[rankKey] = users
-			}
-		}
-
-		// Compare each rank individually
-		allRanks := make(map[string]bool)
-		for rank := range stateOwners {
-			allRanks[rank] = true
-		}
-		for rank := range apiOwners {
-			allRanks[rank] = true
-		}
-
-		// Check for drift in any rank
-		driftDetected := false
-		var driftDetails []string
-		for rank := range allRanks {
-			stateUsers := stateOwners[rank]
-			apiUsers := apiOwners[rank]
-
-			// Compare user lists (order-independent)
-			if !util.StringSlicesEqual(stateUsers, apiUsers) {
-				driftDetected = true
-				driftDetails = append(driftDetails, fmt.Sprintf("rank %s: state has %v, API has %v", rank, stateUsers, apiUsers))
-			}
-		}
-
-		if driftDetected {
-			log.Printf("[DEBUG] Entitlements: Drift detected in entitlement owners: %+v", driftDetails)
-			return fmt.Errorf("Entitlement Owner Drift Detected: Entitlement owners have been modified outside of Terraform. Please run 'terraform import' to sync the current state, or manually revert the changes in the UI")
-		}
-
-		// If no drift, sync the current API state to Terraform state
-		if len(apiOwners) > 0 {
-			state.EntitlementOwners, _ = types.MapValueFrom(ctx, types.SetType{ElemType: types.StringType}, apiOwners)
-		} else if !state.EntitlementOwners.IsNull() {
-			// API has no owners but state exists - set to empty
-			state.EntitlementOwners, _ = types.MapValueFrom(ctx, types.SetType{ElemType: types.StringType}, make(map[string][]string))
-		}
+	}
+	if len(apiOwners) > 0 {
+		state.EntitlementOwners, _ = types.MapValueFrom(ctx, types.SetType{ElemType: types.StringType}, apiOwners)
+	} else if !state.EntitlementOwners.IsNull() {
+		state.EntitlementOwners, _ = types.MapValueFrom(ctx, types.SetType{ElemType: types.StringType}, make(map[string][]string))
 	}
 	return nil
 }
 
 // ProcessEntitlementMapForEntitlementRead processes entitlement map during read operations
-func (r *EntitlementResource) ProcessEntitlementMapForEntitlementRead(ctx context.Context, state *EntitlementResourceModel, entitlement openapi.GetEntitlementResponseEntitlementdetailsInner, isImportOrPostUpdate bool) error {
-	if isImportOrPostUpdate {
-		// True import: Import all maps from API
-		if len(entitlement.EntitlementMapDetails) > 0 {
-			var entitlementMaps []EntitlementMapModel
-			for _, mapDetail := range entitlement.EntitlementMapDetails {
-				// Get endpoint from primaryEntKey
-				endpointValue := ""
-				if mapDetail.PrimaryEntKey != nil {
-					entQuery := fmt.Sprintf("ent.id like '%s'", *mapDetail.PrimaryEntKey)
-					entReq := openapi.GetEntitlementRequest{
-						EntQuery: &entQuery,
-					}
-
-					// Execute validation call with retry logic
-					err := r.provider.AuthenticatedAPICallWithRetry(ctx, "validate_entitlement_map", func(token string) error {
-						entitlementOps := r.entitlementFactory.CreateEntitlementOperations(r.client.APIBaseURL(), token)
-						entResp, httpResp, err := entitlementOps.GetEntitlements(ctx, entReq)
-						if httpResp != nil && httpResp.StatusCode == 401 {
-							return fmt.Errorf("401 unauthorized")
-						}
-						if err == nil && entResp != nil && len(entResp.Entitlementdetails) > 0 {
-							if entResp.Entitlementdetails[0].Endpoint != nil {
-								endpointValue = *entResp.Entitlementdetails[0].Endpoint
-							}
-						}
-						return err
-					})
-
-					if err != nil {
-						log.Printf("[WARNING] Failed to validate entitlement map: %v", err)
-					}
-				}
-
-				entMap := EntitlementMapModel{
-					EntitlementValue:       util.SafeString(mapDetail.Primary),
-					EntitlementType:        util.SafeString(mapDetail.PrimaryEntType),
-					Endpoint:               types.StringValue(endpointValue),
-					EntitlementKey:         util.SafeString(mapDetail.PrimaryEntKey),
-					RequestFilter:          util.SafeBoolDatasource(mapDetail.RequestFilter),
-					ExcludeEntitlement:     util.SafeBoolDatasource(mapDetail.ExcludeEntitlement),
-					AddDependentTask:       util.SafeBoolDatasource(mapDetail.AddDependentTask),
-					RemoveDependentEntTask: util.SafeBoolDatasource(mapDetail.RemoveDependentEntTask),
-				}
-				entitlementMaps = append(entitlementMaps, entMap)
+func (r *EntitlementResource) ProcessEntitlementMapForEntitlementRead(ctx context.Context, state *EntitlementResourceModel, entitlement openapi.GetEntitlementResponseEntitlementdetailsInner) error {
+	var apiMaps []EntitlementMapModel
+	for _, mapDetail := range entitlement.EntitlementMapDetails {
+		endpointValue := ""
+		entTypeInternal := util.SafeDeref(mapDetail.PrimaryEntType)
+		if mapDetail.PrimaryEntKey != nil {
+			entQuery := fmt.Sprintf("ent.id like '%s'", *mapDetail.PrimaryEntKey)
+			entReq := openapi.GetEntitlementRequest{
+				EntQuery: &entQuery,
 			}
-			state.EntitlementMap, _ = types.SetValueFrom(ctx, types.ObjectType{
-				AttrTypes: map[string]attr.Type{
-					"entitlement_value":         types.StringType,
-					"entitlement_type":          types.StringType,
-					"endpoint":                  types.StringType,
-					"entitlement_key":           types.StringType,
-					"request_filter":            types.BoolType,
-					"exclude_entitlement":       types.BoolType,
-					"add_dependent_task":        types.BoolType,
-					"remove_dependent_ent_task": types.BoolType,
-				},
-			}, entitlementMaps)
-		} else {
-			// No maps in API - only set empty set if state previously had maps
-			if !state.EntitlementMap.IsNull() {
-				emptyMaps := []EntitlementMapModel{}
-				state.EntitlementMap, _ = types.SetValueFrom(ctx, types.ObjectType{
-					AttrTypes: map[string]attr.Type{
-						"entitlement_value":         types.StringType,
-						"entitlement_type":          types.StringType,
-						"endpoint":                  types.StringType,
-						"entitlement_key":           types.StringType,
-						"request_filter":            types.BoolType,
-						"exclude_entitlement":       types.BoolType,
-						"add_dependent_task":        types.BoolType,
-						"remove_dependent_ent_task": types.BoolType,
-					},
-				}, emptyMaps)
-			}
-			// If state was null, leave it null
-		}
-	} else {
-		// Regular operation: Always validate counts per entitlement map
-		// Get state maps (treat null as empty)
-		var stateMaps []EntitlementMapModel
-		if !state.EntitlementMap.IsNull() {
-			state.EntitlementMap.ElementsAs(ctx, &stateMaps, false)
-		}
-
-		// Get API maps
-		var apiMaps []EntitlementMapModel
-		if len(entitlement.EntitlementMapDetails) > 0 {
-			for _, mapDetail := range entitlement.EntitlementMapDetails {
-				// Get endpoint from primaryEntKey
-				endpointValue := ""
-				if mapDetail.PrimaryEntKey != nil {
-					entQuery := fmt.Sprintf("ent.id like '%s'", *mapDetail.PrimaryEntKey)
-					entReq := openapi.GetEntitlementRequest{
-						EntQuery: &entQuery,
+			err := r.provider.AuthenticatedAPICallWithRetry(ctx, "validate_entitlement_map", func(token string) error {
+				entitlementOps := r.entitlementFactory.CreateEntitlementOperations(r.client.APIBaseURL(), token)
+				entResp, httpResp, err := entitlementOps.GetEntitlements(ctx, entReq)
+				if httpResp != nil && httpResp.StatusCode == 401 {
+					return fmt.Errorf("401 unauthorized")
+				}
+				if err == nil && entResp != nil && len(entResp.Entitlementdetails) > 0 {
+					if entResp.Entitlementdetails[0].Endpoint != nil {
+						endpointValue = *entResp.Entitlementdetails[0].Endpoint
 					}
-
-					// Execute validation call with retry logic
-					err := r.provider.AuthenticatedAPICallWithRetry(ctx, "validate_entitlement_map_2", func(token string) error {
-						entitlementOps := r.entitlementFactory.CreateEntitlementOperations(r.client.APIBaseURL(), token)
-						entResp, httpResp, err := entitlementOps.GetEntitlements(ctx, entReq)
-						if httpResp != nil && httpResp.StatusCode == 401 {
-							return fmt.Errorf("401 unauthorized")
-						}
-						if err == nil && entResp != nil && len(entResp.Entitlementdetails) > 0 {
-							if entResp.Entitlementdetails[0].Endpoint != nil {
-								endpointValue = *entResp.Entitlementdetails[0].Endpoint
-							}
-						}
-						return err
-					})
-
-					if err != nil {
-						log.Printf("[WARNING] Failed to validate entitlement map: %v", err)
+					if entResp.Entitlementdetails[0].EntitlementTypeName != nil {
+						entTypeInternal = *entResp.Entitlementdetails[0].EntitlementTypeName
+					} else if entResp.Entitlementdetails[0].EntitlementType != nil {
+						entTypeInternal = *entResp.Entitlementdetails[0].EntitlementType
 					}
 				}
-
-				entMap := EntitlementMapModel{
-					EntitlementValue:       util.SafeString(mapDetail.Primary),
-					EntitlementType:        util.SafeString(mapDetail.PrimaryEntType),
-					Endpoint:               types.StringValue(endpointValue),
-					EntitlementKey:         util.SafeString(mapDetail.PrimaryEntKey),
-					RequestFilter:          util.SafeBoolDatasource(mapDetail.RequestFilter),
-					ExcludeEntitlement:     util.SafeBoolDatasource(mapDetail.ExcludeEntitlement),
-					AddDependentTask:       util.SafeBoolDatasource(mapDetail.AddDependentTask),
-					RemoveDependentEntTask: util.SafeBoolDatasource(mapDetail.RemoveDependentEntTask),
-				}
-				apiMaps = append(apiMaps, entMap)
+				return err
+			})
+			if err != nil {
+				log.Printf("[WARNING] Failed to validate entitlement map: %v", err)
 			}
 		}
+		apiMaps = append(apiMaps, EntitlementMapModel{
+			EntitlementValue:       util.SafeString(mapDetail.Primary),
+			EntitlementType:        types.StringValue(entTypeInternal),
+			Endpoint:               types.StringValue(endpointValue),
+			EntitlementKey:         util.SafeString(mapDetail.PrimaryEntKey),
+			RequestFilter:          entMapBool(mapDetail.RequestFilter),
+			ExcludeEntitlement:     entMapBool(mapDetail.ExcludeEntitlement),
+			AddDependentTask:       entMapBool(mapDetail.AddDependentTask),
+			RemoveDependentEntTask: entMapBool(mapDetail.RemoveDependentEntTask),
+		})
+	}
 
-		// Compare actual values instead of just counts
-		log.Printf("[DEBUG] Entitlement Map Comparison - State maps: %+v", stateMaps)
-		log.Printf("[DEBUG] Entitlement Map Comparison - API maps: %+v", apiMaps)
-		log.Printf("[DEBUG] Entitlement Map Comparison - State count: %d, API count: %d", len(stateMaps), len(apiMaps))
-
-		if !entitlementMapsEqual(stateMaps, apiMaps) {
-			log.Printf("[ERROR] Entitlement Map Drift - Maps are not equal")
-			return fmt.Errorf("Entitlement Map Drift Detected: Entitlement map has been modified outside of Terraform. Please run 'terraform import' to sync the current state, or manually revert the changes in the UI")
-		}
-
-		log.Printf("[DEBUG] Entitlement Map Comparison - Maps are equal, no drift detected")
-
-		// If no drift, sync the current API state
-		if len(apiMaps) > 0 {
-			state.EntitlementMap, _ = types.SetValueFrom(ctx, types.ObjectType{
-				AttrTypes: map[string]attr.Type{
-					"entitlement_value":         types.StringType,
-					"entitlement_type":          types.StringType,
-					"endpoint":                  types.StringType,
-					"entitlement_key":           types.StringType,
-					"request_filter":            types.BoolType,
-					"exclude_entitlement":       types.BoolType,
-					"add_dependent_task":        types.BoolType,
-					"remove_dependent_ent_task": types.BoolType,
-				},
-			}, apiMaps)
-		} else if !state.EntitlementMap.IsNull() {
-			// API has no maps but state exists - set to empty only if state was not null
-			emptyMaps := []EntitlementMapModel{}
-			state.EntitlementMap, _ = types.SetValueFrom(ctx, types.ObjectType{
-				AttrTypes: map[string]attr.Type{
-					"entitlement_value":         types.StringType,
-					"entitlement_type":          types.StringType,
-					"endpoint":                  types.StringType,
-					"entitlement_key":           types.StringType,
-					"request_filter":            types.BoolType,
-					"exclude_entitlement":       types.BoolType,
-					"add_dependent_task":        types.BoolType,
-					"remove_dependent_ent_task": types.BoolType,
-				},
-			}, emptyMaps)
-		}
-		// If state was null and API has no maps, leave it null
+	entMapObjType := types.ObjectType{
+		AttrTypes: map[string]attr.Type{
+			"entitlement_value":         types.StringType,
+			"entitlement_type":          types.StringType,
+			"endpoint":                  types.StringType,
+			"entitlement_key":           types.StringType,
+			"request_filter":            types.BoolType,
+			"exclude_entitlement":       types.BoolType,
+			"add_dependent_task":        types.BoolType,
+			"remove_dependent_ent_task": types.BoolType,
+		},
+	}
+	if len(apiMaps) > 0 {
+		state.EntitlementMap, _ = types.SetValueFrom(ctx, entMapObjType, apiMaps)
+	} else if !state.EntitlementMap.IsNull() {
+		state.EntitlementMap, _ = types.SetValueFrom(ctx, entMapObjType, []EntitlementMapModel{})
 	}
 	return nil
 }
@@ -1089,17 +868,20 @@ func (r *EntitlementResource) ProcessEntitlementMapForEntitlementUpdate(ctx cont
 			state.EntitlementMap.ElementsAs(ctx, &stateMaps, false)
 		}
 
-		// Create unique keys for comparison (entitlement_value + entitlement_type)
+		// Create unique keys for comparison using endpoint + entitlement_value.
+		// Intentionally excludes entitlement_type to avoid spurious REMOVE+ADD when the API
+		// returns a display name (e.g. "My Ent Type") for the type field while Terraform config
+		// stores the internal/technical name (e.g. "my-ent-type").
 		planMapKeys := make(map[string]EntitlementMapModel)
 		stateMapKeys := make(map[string]EntitlementMapModel)
 
 		for _, entMap := range planMaps {
-			key := entMap.EntitlementValue.ValueString() + "|" + entMap.EntitlementType.ValueString()
+			key := entMap.Endpoint.ValueString() + "|" + entMap.EntitlementValue.ValueString()
 			planMapKeys[key] = entMap
 		}
 
 		for _, entMap := range stateMaps {
-			key := entMap.EntitlementValue.ValueString() + "|" + entMap.EntitlementType.ValueString()
+			key := entMap.Endpoint.ValueString() + "|" + entMap.EntitlementValue.ValueString()
 			stateMapKeys[key] = entMap
 		}
 
@@ -1212,15 +994,12 @@ func (r *EntitlementResource) ReadEntitlementState(ctx context.Context, plan *En
 		// Populate basic fields from API response
 		r.PopulateStateFromAPI(ctx, plan, entitlement)
 
-		// Handle entitlement owners (post-update, so treat as import)
-		err := r.ProcessEntitlementOwnersForEntitlementRead(ctx, plan, entitlement, true)
+		err := r.ProcessEntitlementOwnersForEntitlementRead(ctx, plan, entitlement)
 		if err != nil {
-			// Handle failures when processing entitlement owners during post-update read
 			return fmt.Errorf("error processing entitlement owners: %v", err)
 		}
 
-		// Handle entitlement map (post-update, so treat as import)
-		err = r.ProcessEntitlementMapForEntitlementRead(ctx, plan, entitlement, true)
+		err = r.ProcessEntitlementMapForEntitlementRead(ctx, plan, entitlement)
 		if err != nil {
 			// Handle failures when processing entitlement map during post-update read
 			return fmt.Errorf("error processing entitlement map: %v", err)
@@ -1362,8 +1141,6 @@ func (r *EntitlementResource) Read(ctx context.Context, req resource.ReadRequest
 		return
 	}
 
-	// Check if this is an import before we modify state
-	isImport := state.ID.IsNull()
 	log.Printf("State: %+v", state)
 
 	// Read entitlement from API using helper function
@@ -1380,17 +1157,15 @@ func (r *EntitlementResource) Read(ctx context.Context, req resource.ReadRequest
 		// Populate basic fields from API response
 		r.PopulateStateFromAPI(ctx, &state, entitlement)
 
-		// Handle entitlement owners
-		err := r.ProcessEntitlementOwnersForEntitlementRead(ctx, &state, entitlement, isImport)
+		err := r.ProcessEntitlementOwnersForEntitlementRead(ctx, &state, entitlement)
 		if err != nil {
-			resp.Diagnostics.AddError("Entitlement Owner Drift Detected", err.Error())
+			resp.Diagnostics.AddError("Error processing entitlement owners", err.Error())
 			return
 		}
 
-		// Handle entitlement map
-		err = r.ProcessEntitlementMapForEntitlementRead(ctx, &state, entitlement, isImport)
+		err = r.ProcessEntitlementMapForEntitlementRead(ctx, &state, entitlement)
 		if err != nil {
-			resp.Diagnostics.AddError("Entitlement Map Drift Detected", err.Error())
+			resp.Diagnostics.AddError("Error processing entitlement map", err.Error())
 			return
 		}
 	}
@@ -1460,7 +1235,7 @@ func (r *EntitlementResource) Delete(ctx context.Context, req resource.DeleteReq
 
 func (r *EntitlementResource) ImportState(ctx context.Context, req resource.ImportStateRequest, resp *resource.ImportStateResponse) {
 	log.Printf("Import key received: %s", req.ID)
-	idParts := strings.Split(req.ID, ":")
+	idParts := strings.SplitN(req.ID, ":", 3)
 	if len(idParts) != 3 {
 		resp.Diagnostics.AddError(
 			"Invalid Import ID Format",

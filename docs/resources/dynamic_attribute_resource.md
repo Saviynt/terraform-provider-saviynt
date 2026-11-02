@@ -100,5 +100,6 @@ Optional:
 - `hide_on_update` (String) Whether to hide this attribute on update.
 - `order_index` (String) Sequence for display of the dynamic attribute.
 - `parent_attribute` (String) Parent attribute this one depends on.
+- `regex` (String) Regular expression for validating the attribute value. Supported for `NUMBER`, `STRING`, `PASSWORD`, and `LARGE TEXT` attribute types. Setting this on any other type produces a plan-time error. **Note:** Due to a backend limitation, regex is silently ignored on create for `LARGE TEXT` — it is applied on the first subsequent update.
 - `required` (String) Whether this attribute is required.
 - `showonchild` (String) Whether to show this on child requests.
