@@ -142,9 +142,9 @@ Check out the [Latest Saviynt Provider Docs](https://registry.terraform.io/provi
 
 | Supported Saviynt EIC Versions | Terraform Provider Version |
 | -------------------------- | ------------------------------ |
-| `25.C` | Latest Version: `v0.3.9`<br> Supported Version(s): `v0.2.13` - `v0.3.9`|
-| `25.B` | Latest Version: `v0.3.9`<br> Supported Version(s): `v0.2.8` - `v0.3.9`|
-| `25.A` | Latest Version: `v0.3.9`<br> Supported Version(s): `v0.2.8` - `v0.3.9`|
+| `25.C` | Latest Version: `v0.3.10`<br> Supported Version(s): `v0.2.13` - `v0.3.10`|
+| `25.B` | Latest Version: `v0.3.10`<br> Supported Version(s): `v0.2.8` - `v0.3.10`|
+| `25.A` | Latest Version: `v0.3.10`<br> Supported Version(s): `v0.2.8` - `v0.3.10`|
 
 --- 
 
@@ -172,6 +172,7 @@ Check the table to see which attributes are supported in your version before usi
 | **Security System** | `instant_provisioning`                                                                           | Yes                | Yes              | No              |
 | **Entitlement Type** | `enable_entitlement_to_role_sync`                                                                           | Yes                | Yes              | Yes              |
 | **Enterprise Role** | `child_roles`                                                                           | Yes                | Yes              | No              |
+| **Dynamic Attribute** | `regex`                                                                               | Yes                | Yes              | Yes             |
 
 ---
 
@@ -772,6 +773,8 @@ The following limitations are present in the latest version of the provider. The
   - `CHECK BOX`
   - `DATE`
 
+- **`regex` field**: Supported for `NUMBER`, `STRING`, `PASSWORD`, and `LARGE TEXT` attribute types. Setting `regex` on any other type produces a plan-time validation error. **Note:** Due to a backend limitation, `regex` is silently ignored on create for `LARGE TEXT` — it is applied on the first subsequent update.
+
 - **`attribute_lable` renamed to `attribute_label`** (typo fix, provider `v0.3.8`+): If you are upgrading from `v0.3.7` or earlier, rename `attribute_lable` to `attribute_label` in your `.tf` files. Your existing Terraform state is **automatically migrated** — no manual state changes required.
 ### 5. Entitlement Types
 - **State management is not supported** for the following attributes:
@@ -830,6 +833,8 @@ The following limitations are present in the latest version of the provider. The
   - `"Inactive"`
 
 ### 7. Entitlement
+- `entitlement_map` and `entitlement_owners` are fully Terraform-managed fields. Any changes made outside of Terraform (via EIC UI or API) will be detected on the next `terraform plan` and overwritten on the next `terraform apply`. To suppress this behavior for specific resources, use `lifecycle { ignore_changes = [entitlement_map, entitlement_owners] }`.
+
 - `confidentiality` is the attribute to set the field for `Financial` on the UI.
 
 - **6 types of criticality levels** use the following values for `sox_critical`, `sys_critical`, `privileged`, `confidentiality`, `risk`:

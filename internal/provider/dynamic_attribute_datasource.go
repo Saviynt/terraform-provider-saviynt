@@ -69,9 +69,7 @@ type DynamicAttributes struct {
 	Showonchild                                     types.String `tfsdk:"showonchild"`
 	Parentattribute                                 types.String `tfsdk:"parentattribute"`
 	Descriptionascsv                                types.String `tfsdk:"descriptionascsv"`
-
-	// Not supported by Read API
-	// Regex                                     types.String `tfsdk:"regex"`
+	Regex                                           types.String `tfsdk:"regex"`
 }
 
 // NewDynamicAttributeDataSource creates a new dynamic attribute data source with default factory
@@ -179,9 +177,9 @@ func (d *DynamicAttributeDataSource) Schema(ctx context.Context, req datasource.
 						"editable":        schema.StringAttribute{Computed: true},
 						"hide_on_update":  schema.StringAttribute{Computed: true},
 						"action_to_perform_when_parent_attribute_changes": schema.StringAttribute{Computed: true},
-						"default_value": schema.StringAttribute{Computed: true},
-						"required":      schema.StringAttribute{Computed: true},
-						// "regex":                                     schema.StringAttribute{Computed: true},
+						"default_value":    schema.StringAttribute{Computed: true},
+						"required":         schema.StringAttribute{Computed: true},
+						"regex":            schema.StringAttribute{Computed: true},
 						"attribute_value":  schema.StringAttribute{Computed: true},
 						"showonchild":      schema.StringAttribute{Computed: true},
 						"parentattribute":  schema.StringAttribute{Computed: true},
@@ -350,6 +348,7 @@ func (d *DynamicAttributeDataSource) UpdateModelFromDynamicAttributeResponse(sta
 				Showonchild:      util.SafeStringDatasource(attr.Showonchild),
 				Parentattribute:  util.SafeStringDatasource(attr.Parentattribute),
 				Descriptionascsv: util.SafeStringDatasource(attr.Descriptionascsv),
+				Regex:            util.SafeStringDatasource(attr.Regex),
 			}
 		}
 		state.Dynamicattributes = dynamicAttributesList

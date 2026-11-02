@@ -4,6 +4,7 @@
 package testutil
 
 import (
+	"context"
 	"encoding/json"
 	"log"
 	"os"
@@ -12,6 +13,11 @@ import (
 	"strings"
 	"testing"
 	"time"
+
+	"github.com/hashicorp/terraform-plugin-framework/path"
+	"github.com/hashicorp/terraform-plugin-framework/resource"
+	"github.com/hashicorp/terraform-plugin-framework/tfsdk"
+	"github.com/hashicorp/terraform-plugin-go/tftypes"
 )
 
 func LoadConnectorData(t *testing.T, filePath, scenario string) map[string]string {
@@ -132,8 +138,22 @@ func PrepareTestDataWithEnv(t *testing.T, templatePath string) string {
 	return tmpFile
 }
 
+// BuildBlankState constructs an empty tfsdk.State backed by the resource schema.
+// Required by ImportStateResponse before SetAttribute can be called on it.
+func BuildBlankState(t *testing.T, schemaResp *resource.SchemaResponse) tfsdk.State {
+	t.Helper()
+	return tfsdk.State{
+		Schema: schemaResp.Schema,
+		Raw:    tftypes.NewValue(schemaResp.Schema.Type().TerraformType(context.Background()), nil),
+	}
+}
+
+// AttrPath returns a root-level terraform-plugin-framework attribute path.
+func AttrPath(attr string) path.Path {
+	return path.Root(attr)
+}
+
 // PrepareTestDataWithReplacements processes a test data template with custom replacements
-// in addition to the standard {{TEST_ID}} replacement.
 func PrepareTestDataWithReplacements(t *testing.T, templatePath string, extraReplacements map[string]string) string {
 	t.Helper()
 

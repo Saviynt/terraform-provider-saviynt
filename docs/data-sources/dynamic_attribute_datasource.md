@@ -79,6 +79,7 @@ Read-Only:
 - `hide_on_update` (String)
 - `order_index` (String)
 - `parentattribute` (String)
+- `regex` (String) Regular expression for the attribute, if configured.
 - `request_type` (String)
 - `required` (String)
 - `security_system` (String)
