@@ -1,6 +1,17 @@
 // Copyright (c) 2025 Saviynt Inc.
 // SPDX-License-Identifier: MPL-2.0
 
+# Import an entitlement using the format: endpoint_name:entitlement_type:entitlement_value
+#
+# Note: endpoint_name and entitlement_type must not contain colons.
+#       Only entitlement_value supports colons (e.g. AWS ARNs, Azure resource IDs).
+#
+# Plain value:
+#   terraform import saviynt_entitlement_resource.test_entitlement sample-endpoint:sample-ent-type:sample-ent
+#
+# Value containing colons (e.g. an AWS ARN):
+#   terraform import saviynt_entitlement_resource.test_entitlement sample-endpoint:sample-ent-type:arn:aws:iam::123456789012:role/MyRole
+
 resource "saviynt_entitlement_resource" "test_entitlement" {
   # Required attributes
   endpoint          = "sample-endpoint"

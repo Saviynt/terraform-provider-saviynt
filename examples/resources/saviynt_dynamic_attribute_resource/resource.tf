@@ -37,5 +37,17 @@ resource "saviynt_dynamic_attribute_resource" "example" {
       # hide_on_create  = "false"
       # hide_on_update  = "false"
     }
+    # regex is supported for NUMBER, STRING, PASSWORD, and LARGE TEXT attribute types.
+    # Setting regex on any other type (e.g. BOOLEAN, ENUM, DATE) produces a plan-time error.
+    dynamic_attr_3 = {
+      attribute_name  = "dynamic_attr_3"
+      request_type    = "ACCOUNT"
+      attribute_type  = "STRING"
+      attribute_label = "Employee ID"
+      order_index     = "2"
+      required        = "true"
+      editable        = "true"
+      regex           = "^EMP-\\d{6}$"
+    }
   }
 }
