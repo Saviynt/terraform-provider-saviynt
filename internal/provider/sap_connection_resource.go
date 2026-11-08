@@ -470,7 +470,7 @@ func SapConnectorResourceSchema() map[string]schema.Attribute {
 func (r *SapConnectionResource) Schema(ctx context.Context, req resource.SchemaRequest, resp *resource.SchemaResponse) {
 	resp.Schema = schema.Schema{
 		Description: util.SAPConnDescription,
-		Attributes:  connectionsutil.MergeResourceAttributes(BaseConnectorResourceSchema(), SapConnectorResourceSchema()),
+		Attributes:  WithPriorStateForUnset(connectionsutil.MergeResourceAttributes(BaseConnectorResourceSchema(), SapConnectorResourceSchema())),
 	}
 }
 

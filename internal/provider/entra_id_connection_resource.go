@@ -417,7 +417,7 @@ func EntraIdConnectorResourceSchema() map[string]schema.Attribute {
 func (r *EntraIdConnectionResource) Schema(ctx context.Context, req resource.SchemaRequest, resp *resource.SchemaResponse) {
 	resp.Schema = schema.Schema{
 		Description: util.EntraIDConnDescription,
-		Attributes:  connectionsutil.MergeResourceAttributes(BaseConnectorResourceSchema(), EntraIdConnectorResourceSchema()),
+		Attributes:  WithPriorStateForUnset(connectionsutil.MergeResourceAttributes(BaseConnectorResourceSchema(), EntraIdConnectorResourceSchema())),
 	}
 }
 

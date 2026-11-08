@@ -345,7 +345,7 @@ func WorkdayConnectorResourceSchema() map[string]schema.Attribute {
 func (r *WorkdayConnectionResource) Schema(ctx context.Context, req resource.SchemaRequest, resp *resource.SchemaResponse) {
 	resp.Schema = schema.Schema{
 		Description: util.WorkdayConnDescription,
-		Attributes:  connectionsutil.MergeResourceAttributes(BaseConnectorResourceSchema(), WorkdayConnectorResourceSchema()),
+		Attributes:  WithPriorStateForUnset(connectionsutil.MergeResourceAttributes(BaseConnectorResourceSchema(), WorkdayConnectorResourceSchema())),
 	}
 }
 

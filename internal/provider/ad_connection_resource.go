@@ -425,7 +425,7 @@ func ADConnectorResourceSchema() map[string]schema.Attribute {
 func (r *AdConnectionResource) Schema(ctx context.Context, req resource.SchemaRequest, resp *resource.SchemaResponse) {
 	resp.Schema = schema.Schema{
 		Description: util.ADConnDescription,
-		Attributes:  connectionsutil.MergeResourceAttributes(BaseConnectorResourceSchema(), ADConnectorResourceSchema()),
+		Attributes:  WithPriorStateForUnset(connectionsutil.MergeResourceAttributes(BaseConnectorResourceSchema(), ADConnectorResourceSchema())),
 	}
 }
 

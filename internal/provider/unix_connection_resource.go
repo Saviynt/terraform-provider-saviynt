@@ -358,7 +358,7 @@ func UnixConnectorResourceSchema() map[string]schema.Attribute {
 func (r *UnixConnectionResource) Schema(ctx context.Context, req resource.SchemaRequest, resp *resource.SchemaResponse) {
 	resp.Schema = schema.Schema{
 		Description: util.UnixConnDescription,
-		Attributes:  connectionsutil.MergeResourceAttributes(BaseConnectorResourceSchema(), UnixConnectorResourceSchema()),
+		Attributes:  WithPriorStateForUnset(connectionsutil.MergeResourceAttributes(BaseConnectorResourceSchema(), UnixConnectorResourceSchema())),
 	}
 }
 
