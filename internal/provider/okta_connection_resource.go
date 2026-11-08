@@ -177,7 +177,7 @@ func OktaConnectorSchema() map[string]schema.Attribute {
 func (r *OktaConnectionResource) Schema(ctx context.Context, req resource.SchemaRequest, resp *resource.SchemaResponse) {
 	resp.Schema = schema.Schema{
 		Description: util.OktaConnDescription,
-		Attributes:  connectionsutil.MergeResourceAttributes(BaseConnectorResourceSchema(), OktaConnectorSchema()),
+		Attributes:  WithPriorStateForUnset(connectionsutil.MergeResourceAttributes(BaseConnectorResourceSchema(), OktaConnectorSchema())),
 	}
 }
 

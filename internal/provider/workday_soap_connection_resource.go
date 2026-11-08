@@ -300,7 +300,7 @@ func WorkdaySOAPConnectorResourceSchema() map[string]schema.Attribute {
 func (r *WorkdaySOAPConnectionResource) Schema(ctx context.Context, req resource.SchemaRequest, resp *resource.SchemaResponse) {
 	resp.Schema = schema.Schema{
 		Description: util.WorkdaySOAPConnDescription,
-		Attributes:  connectionsutil.MergeResourceAttributes(BaseConnectorResourceSchema(), WorkdaySOAPConnectorResourceSchema()),
+		Attributes:  WithPriorStateForUnset(connectionsutil.MergeResourceAttributes(BaseConnectorResourceSchema(), WorkdaySOAPConnectorResourceSchema())),
 	}
 }
 

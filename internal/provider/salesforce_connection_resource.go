@@ -196,7 +196,7 @@ func SalesforceConnectorResourceSchema() map[string]schema.Attribute {
 func (r *SalesforceConnectionResource) Schema(ctx context.Context, req resource.SchemaRequest, resp *resource.SchemaResponse) {
 	resp.Schema = schema.Schema{
 		Description: util.SalesforceConnDescription,
-		Attributes:  connectionsutil.MergeResourceAttributes(BaseConnectorResourceSchema(), SalesforceConnectorResourceSchema()),
+		Attributes:  WithPriorStateForUnset(connectionsutil.MergeResourceAttributes(BaseConnectorResourceSchema(), SalesforceConnectorResourceSchema())),
 	}
 }
 

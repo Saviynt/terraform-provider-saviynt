@@ -332,7 +332,7 @@ func ADSIConnectorResourceSchema() map[string]schema.Attribute {
 func (r *AdsiConnectionResource) Schema(ctx context.Context, req resource.SchemaRequest, resp *resource.SchemaResponse) {
 	resp.Schema = schema.Schema{
 		Description: util.ADSIConnDescription,
-		Attributes:  connectionsutil.MergeResourceAttributes(BaseConnectorResourceSchema(), ADSIConnectorResourceSchema()),
+		Attributes:  WithPriorStateForUnset(connectionsutil.MergeResourceAttributes(BaseConnectorResourceSchema(), ADSIConnectorResourceSchema())),
 	}
 }
 

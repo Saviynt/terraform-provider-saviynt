@@ -1,3 +1,12 @@
+## Unreleased
+
+ENHANCEMENTS:
+
+* **All connection resources (AD, ADSI, DB, Entra ID, GitHub REST, Okta, REST, Salesforce, SAP, SFTP, Unix, Workday, Workday SOAP):** `terraform plan` now shows only the attributes that actually change when a connection is updated ([#17](https://github.com/Saviynt/terraform-provider-saviynt/issues/17)).
+  - Previously, changing one attribute marked every optional attribute not set in the configuration, plus `id` and `connection_key`, as `(known after apply)`, so the plan printed the old value of each one (often large JSON documents such as `update_account_json`) next to the real change.
+  - Attributes that the configuration does not set now keep their current value in the plan. Only `msg` and `error_code`, which are returned by each operation, are still unknown.
+  - Sensitive attributes (for example `x509_key` on Workday) are unchanged by this release.
+
 ## 0.3.10 (released)
 
 BUG FIXES:
