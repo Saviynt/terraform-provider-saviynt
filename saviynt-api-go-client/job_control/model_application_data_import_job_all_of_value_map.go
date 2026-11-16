@@ -25,6 +25,7 @@ type ApplicationDataImportJobAllOfValueMap struct {
 	Accountsoraccess  *string  `json:"accountsoraccess,omitempty"`
 	Externalconn      *string  `json:"externalconn,omitempty"`
 	Fullorincremental *string  `json:"fullorincremental,omitempty"`
+	ImportTables      *string  `json:"importTables,omitempty"`
 }
 
 type _ApplicationDataImportJobAllOfValueMap ApplicationDataImportJobAllOfValueMap
@@ -167,6 +168,38 @@ func (o *ApplicationDataImportJobAllOfValueMap) SetFullorincremental(v string) {
 	o.Fullorincremental = &v
 }
 
+// GetImportTables returns the ImportTables field value if set, zero value otherwise.
+func (o *ApplicationDataImportJobAllOfValueMap) GetImportTables() string {
+	if o == nil || IsNil(o.ImportTables) {
+		var ret string
+		return ret
+	}
+	return *o.ImportTables
+}
+
+// GetImportTablesOk returns a tuple with the ImportTables field value if set, nil otherwise
+// and a boolean to check if the value has been set.
+func (o *ApplicationDataImportJobAllOfValueMap) GetImportTablesOk() (*string, bool) {
+	if o == nil || IsNil(o.ImportTables) {
+		return nil, false
+	}
+	return o.ImportTables, true
+}
+
+// HasImportTables returns a boolean if a field has been set.
+func (o *ApplicationDataImportJobAllOfValueMap) HasImportTables() bool {
+	if o != nil && !IsNil(o.ImportTables) {
+		return true
+	}
+
+	return false
+}
+
+// SetImportTables gets a reference to the given string and assigns it to the ImportTables field.
+func (o *ApplicationDataImportJobAllOfValueMap) SetImportTables(v string) {
+	o.ImportTables = &v
+}
+
 func (o ApplicationDataImportJobAllOfValueMap) MarshalJSON() ([]byte, error) {
 	toSerialize, err := o.ToMap()
 	if err != nil {
@@ -186,6 +219,9 @@ func (o ApplicationDataImportJobAllOfValueMap) ToMap() (map[string]interface{}, 
 	}
 	if !IsNil(o.Fullorincremental) {
 		toSerialize["fullorincremental"] = o.Fullorincremental
+	}
+	if !IsNil(o.ImportTables) {
+		toSerialize["importTables"] = o.ImportTables
 	}
 	return toSerialize, nil
 }

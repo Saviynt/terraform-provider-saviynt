@@ -19,6 +19,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/diag"
 	"github.com/hashicorp/terraform-plugin-framework/resource"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema"
+	"github.com/hashicorp/terraform-plugin-framework/resource/schema/booldefault"
 	"github.com/hashicorp/terraform-plugin-framework/types"
 	"github.com/hashicorp/terraform-plugin-log/tflog"
 	openapi "github.com/saviynt/saviynt-api-go-client/job_control"
@@ -51,6 +52,18 @@ type ApplicationDataImportJobModel struct {
 	AccountsOrAccess  types.String `tfsdk:"accounts_or_access"`
 	ExternalConn      types.String `tfsdk:"external_conn"`
 	FullOrIncremental types.String `tfsdk:"full_or_incremental"`
+	ImportTables      types.String `tfsdk:"import_tables"`
+	SingleThreaded    types.Bool   `tfsdk:"single_threaded"`
+}
+
+// jobNameForApplicationDataImport returns the backend Quartz job class name for
+// the trigger. When single_threaded is true, Saviynt routes the trigger to the
+// SapImportJob class (used by the UI's "ApplicationDataImportJob (Single Threaded)" option).
+func jobNameForApplicationDataImport(singleThreaded types.Bool) string {
+	if !singleThreaded.IsNull() && !singleThreaded.IsUnknown() && singleThreaded.ValueBool() {
+		return "SapImportJob"
+	}
+	return "ApplicationDataImportJob"
 }
 
 func (r *ApplicationDataImportJobResource) Metadata(ctx context.Context, req resource.MetadataRequest, resp *resource.MetadataResponse) {
@@ -74,6 +87,16 @@ func ApplicationDataImportJobResourceSchema() map[string]schema.Attribute {
 		"full_or_incremental": schema.StringAttribute{
 			Optional:    true,
 			Description: "Full or incremental import type",
+		},
+		"import_tables": schema.StringAttribute{
+			Optional:    true,
+			Description: "Comma-separated list of tables to import. Sent to the Saviynt REST API as the `importTables` entry in the trigger's valueMap. Typically used for SAP connectors (e.g. \"USR02\").",
+		},
+		"single_threaded": schema.BoolAttribute{
+			Optional:    true,
+			Computed:    true,
+			Default:     booldefault.StaticBool(false),
+			Description: "If true, create a single-threaded import trigger. Saviynt routes these to the `SapImportJob` backend class (matching the UI's \"ApplicationDataImportJob (Single Threaded)\" option). Defaults to false, which uses the standard `ApplicationDataImportJob` class.",
 		},
 	}
 }
@@ -224,10 +247,15 @@ func (r *ApplicationDataImportJobResource) CreateOrUpdateApplicationDataImportJo
 			valueMap.Fullorincremental = &fullOrIncremental
 		}
 
+		if !job.ImportTables.IsNull() {
+			importTables := job.ImportTables.ValueString()
+			valueMap.ImportTables = &importTables
+		}
+
 		// Create the job
 		appDataImportJob := openapi.NewApplicationDataImportJob(
 			job.TriggerName.ValueString(),
-			"ApplicationDataImportJob",
+			jobNameForApplicationDataImport(job.SingleThreaded),
 			job.JobGroup.ValueString(),
 			job.CronExpression.ValueString(),
 		)
@@ -435,7 +463,7 @@ func (r *ApplicationDataImportJobResource) DeleteApplicationDataImportJobs(ctx c
 
 		deleteReq := openapi.DeleteTriggerRequest{
 			Triggername: triggerName,
-			Jobname:     "ApplicationDataImportJob",
+			Jobname:     jobNameForApplicationDataImport(job.SingleThreaded),
 			Jobgroup:    jobGroup,
 		}
 

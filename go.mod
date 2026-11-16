@@ -11,6 +11,7 @@ require (
 	github.com/hashicorp/terraform-plugin-testing v1.12.0
 	github.com/saviynt/saviynt-api-go-client v0.0.0
 	github.com/stretchr/testify v1.10.0
+	golang.org/x/oauth2 v0.34.0
 )
 
 replace github.com/saviynt/saviynt-api-go-client => ./saviynt-api-go-client
@@ -60,7 +61,6 @@ require (
 	golang.org/x/crypto v0.51.0 // indirect
 	golang.org/x/mod v0.35.0 // indirect
 	golang.org/x/net v0.55.0 // indirect
-	golang.org/x/oauth2 v0.34.0 // indirect
 	golang.org/x/sync v0.20.0 // indirect
 	golang.org/x/sys v0.45.0 // indirect
 	golang.org/x/text v0.37.0 // indirect
