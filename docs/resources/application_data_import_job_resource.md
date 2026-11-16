@@ -3,12 +3,12 @@
 page_title: "saviynt_application_data_import_job_resource Resource - saviynt"
 subcategory: ""
 description: |-
-  Create and manage Application Data Import Job triggers in Saviynt
+  Create and manage Application Data Import Job triggers in Saviynt. Set single_threaded = true on a job to create a single-threaded import trigger (backed by the Saviynt SapImportJob class).
 ---
 
 # saviynt_application_data_import_job_resource (Resource)
 
-Create and manage Application Data Import Job triggers in Saviynt
+Create and manage Application Data Import Job triggers in Saviynt. Set `single_threaded = true` on a job to create a single-threaded import trigger (backed by the Saviynt `SapImportJob` class).
 
 ## Example Usage
 
@@ -27,6 +27,7 @@ resource "saviynt_application_data_import_job_resource" "example" {
       accounts_or_access  = "access"                    # optional
       external_conn       = "4750"                      # optional
       full_or_incremental = "full"                      # optional
+      import_tables       = "USR02"                     # optional, SAP example
     },
     {
       trigger_name        = "app_data_import_trigger_2" # required
@@ -37,6 +38,19 @@ resource "saviynt_application_data_import_job_resource" "example" {
       accounts_or_access  = "access"                    # optional
       external_conn       = "4750"                      # optional
       full_or_incremental = "full"                      # optional
+    },
+    {
+      # Single-threaded import: routes to the backend `SapImportJob` class
+      # (equivalent to picking "ApplicationDataImportJob (Single Threaded)" in the UI).
+      trigger_name        = "app_data_import_trigger_single_threaded"
+      job_group           = "DATA"
+      cron_expression     = "0 0 2 * * ?"
+      trigger_group       = "GRAILS_JOBS"
+      security_system     = "sample-101"
+      accounts_or_access  = "accounts"
+      external_conn       = "4750"
+      full_or_incremental = "full"
+      single_threaded     = true
     }
   ]
 }
@@ -64,4 +78,6 @@ Optional:
 - `accounts_or_access` (String) Accounts or access configuration
 - `external_conn` (String) External connection configuration
 - `full_or_incremental` (String) Full or incremental import type
+- `import_tables` (String) Comma-separated list of tables to import. Sent to the Saviynt REST API as the `importTables` entry in the trigger's valueMap. Typically used for SAP connectors (e.g. "USR02").
+- `single_threaded` (Boolean) If true, create a single-threaded import trigger. Saviynt routes these to the `SapImportJob` backend class (matching the UI's "ApplicationDataImportJob (Single Threaded)" option). Defaults to false, which uses the standard `ApplicationDataImportJob` class.
 - `trigger_group` (String) Group classification for the trigger. Example: "GRAILS_JOBS"

@@ -8,6 +8,7 @@ Name | Type | Description | Notes
 **Accountsoraccess** | Pointer to **string** |  | [optional] 
 **Externalconn** | Pointer to **string** |  | [optional] 
 **Fullorincremental** | Pointer to **string** |  | [optional] 
+**ImportTables** | Pointer to **string** |  | [optional] 
 
 ## Methods
 
@@ -122,6 +123,31 @@ SetFullorincremental sets Fullorincremental field to given value.
 `func (o *ApplicationDataImportJobAllOfValueMap) HasFullorincremental() bool`
 
 HasFullorincremental returns a boolean if a field has been set.
+
+### GetImportTables
+
+`func (o *ApplicationDataImportJobAllOfValueMap) GetImportTables() string`
+
+GetImportTables returns the ImportTables field if non-nil, zero value otherwise.
+
+### GetImportTablesOk
+
+`func (o *ApplicationDataImportJobAllOfValueMap) GetImportTablesOk() (*string, bool)`
+
+GetImportTablesOk returns a tuple with the ImportTables field if it's non-nil, zero value otherwise
+and a boolean to check if the value has been set.
+
+### SetImportTables
+
+`func (o *ApplicationDataImportJobAllOfValueMap) SetImportTables(v string)`
+
+SetImportTables sets ImportTables field to given value.
+
+### HasImportTables
+
+`func (o *ApplicationDataImportJobAllOfValueMap) HasImportTables() bool`
+
+HasImportTables returns a boolean if a field has been set.
 
 
 [[Back to Model list]](../README.md#documentation-for-models) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to README]](../README.md)

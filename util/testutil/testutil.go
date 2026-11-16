@@ -14,6 +14,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/hashicorp/terraform-plugin-framework/datasource"
 	"github.com/hashicorp/terraform-plugin-framework/path"
 	"github.com/hashicorp/terraform-plugin-framework/resource"
 	"github.com/hashicorp/terraform-plugin-framework/tfsdk"
@@ -188,4 +189,216 @@ func PrepareTestDataWithReplacements(t *testing.T, templatePath string, extraRep
 
 	log.Printf("New file path: %v", tmpFile)
 	return tmpFile
+}
+
+// =============================================================================
+// Coverage test helpers (moved from unit_tests/internal/provider cross-cutting
+// coverage files so per-resource tests can use them from any package).
+// =============================================================================
+
+// SafeInvoke runs fn, recovering from any panic. Many CRUD handlers will
+// dereference a nil client once they get past the extraction guard; we only
+// need line coverage of the guard clauses themselves.
+func SafeInvoke(t *testing.T, name string, fn func()) {
+	t.Helper()
+	defer func() {
+		if rec := recover(); rec != nil {
+			t.Logf("recovered from panic in %s: %v", name, rec)
+		}
+	}()
+	fn()
+}
+
+// BlankStateForResource builds a schema-backed, empty tfsdk.State.
+func BlankStateForResource(t *testing.T, r resource.Resource) tfsdk.State {
+	t.Helper()
+	ctx := context.Background()
+	schemaResp := &resource.SchemaResponse{}
+	r.Schema(ctx, resource.SchemaRequest{}, schemaResp)
+	return BuildBlankState(t, schemaResp)
+}
+
+// BlankPlanForResource builds an empty but schema-backed tfsdk.Plan.
+func BlankPlanForResource(t *testing.T, r resource.Resource) tfsdk.Plan {
+	t.Helper()
+	ctx := context.Background()
+	schemaResp := &resource.SchemaResponse{}
+	r.Schema(ctx, resource.SchemaRequest{}, schemaResp)
+	return tfsdk.Plan{
+		Schema: schemaResp.Schema,
+		Raw:    tftypes.NewValue(schemaResp.Schema.Type().TerraformType(ctx), nil),
+	}
+}
+
+// BlankConfigForResource builds an empty but schema-backed tfsdk.Config.
+func BlankConfigForResource(t *testing.T, r resource.Resource) tfsdk.Config {
+	t.Helper()
+	ctx := context.Background()
+	schemaResp := &resource.SchemaResponse{}
+	r.Schema(ctx, resource.SchemaRequest{}, schemaResp)
+	return tfsdk.Config{
+		Schema: schemaResp.Schema,
+		Raw:    tftypes.NewValue(schemaResp.Schema.Type().TerraformType(ctx), nil),
+	}
+}
+
+// BuildPlanWithAttr constructs a schema-backed Plan with a single top-level
+// string attribute set to the given value. All other attributes are null.
+func BuildPlanWithAttr(t *testing.T, r resource.Resource, attrName, attrValue string) tfsdk.Plan {
+	t.Helper()
+	ctx := context.Background()
+	schemaResp := &resource.SchemaResponse{}
+	r.Schema(ctx, resource.SchemaRequest{}, schemaResp)
+	schemaType := schemaResp.Schema.Type().TerraformType(ctx).(tftypes.Object)
+
+	raw := map[string]tftypes.Value{}
+	for name, at := range schemaType.AttributeTypes {
+		if name == attrName {
+			raw[name] = tftypes.NewValue(at, attrValue)
+		} else {
+			raw[name] = tftypes.NewValue(at, nil)
+		}
+	}
+	return tfsdk.Plan{
+		Schema: schemaResp.Schema,
+		Raw:    tftypes.NewValue(schemaType, raw),
+	}
+}
+
+// BuildStateWithAttr constructs a schema-backed State with a single top-level
+// string attribute set to the given value. All other attributes are null.
+func BuildStateWithAttr(t *testing.T, r resource.Resource, attrName, attrValue string) tfsdk.State {
+	t.Helper()
+	ctx := context.Background()
+	schemaResp := &resource.SchemaResponse{}
+	r.Schema(ctx, resource.SchemaRequest{}, schemaResp)
+	schemaType := schemaResp.Schema.Type().TerraformType(ctx).(tftypes.Object)
+
+	raw := map[string]tftypes.Value{}
+	for name, at := range schemaType.AttributeTypes {
+		if name == attrName {
+			raw[name] = tftypes.NewValue(at, attrValue)
+		} else {
+			raw[name] = tftypes.NewValue(at, nil)
+		}
+	}
+	return tfsdk.State{
+		Schema: schemaResp.Schema,
+		Raw:    tftypes.NewValue(schemaType, raw),
+	}
+}
+
+// RunImportState invokes ImportState with a blank state built from the
+// resource schema and returns whether diagnostics contain an error.
+func RunImportState(t *testing.T, r resource.ResourceWithImportState, id string) bool {
+	t.Helper()
+	ctx := context.Background()
+
+	schemaResp := &resource.SchemaResponse{}
+	r.Schema(ctx, resource.SchemaRequest{}, schemaResp)
+
+	resp := &resource.ImportStateResponse{
+		State: BuildBlankState(t, schemaResp),
+	}
+	r.ImportState(ctx, resource.ImportStateRequest{ID: id}, resp)
+	return resp.Diagnostics.HasError()
+}
+
+// ConfigureResourceIfPossible calls r.Configure with the given ProviderData so
+// subsequent CRUD calls have a non-nil client wrapper. Failures are swallowed.
+func ConfigureResourceIfPossible(t *testing.T, r resource.Resource, providerData interface{}) {
+	t.Helper()
+	rc, ok := r.(resource.ResourceWithConfigure)
+	if !ok {
+		return
+	}
+	SafeInvoke(t, "Configure(for CRUD)", func() {
+		req := resource.ConfigureRequest{ProviderData: providerData}
+		resp := &resource.ConfigureResponse{}
+		rc.Configure(context.Background(), req, resp)
+	})
+}
+
+// RunCrud drives Create/Read/Update/Delete with empty schema-backed requests.
+// providerData is passed to Configure (typically *provider.SaviyntProvider).
+func RunCrud(t *testing.T, r resource.Resource, providerData interface{}) {
+	t.Helper()
+	ctx := context.Background()
+
+	ConfigureResourceIfPossible(t, r, providerData)
+
+	plan := BlankPlanForResource(t, r)
+	config := BlankConfigForResource(t, r)
+
+	SafeInvoke(t, "Create", func() {
+		createResp := &resource.CreateResponse{State: BlankStateForResource(t, r)}
+		r.Create(ctx, resource.CreateRequest{Plan: plan, Config: config}, createResp)
+	})
+
+	SafeInvoke(t, "Read", func() {
+		readResp := &resource.ReadResponse{State: BlankStateForResource(t, r)}
+		r.Read(ctx, resource.ReadRequest{State: BlankStateForResource(t, r)}, readResp)
+	})
+
+	SafeInvoke(t, "Update", func() {
+		updateResp := &resource.UpdateResponse{State: BlankStateForResource(t, r)}
+		r.Update(ctx, resource.UpdateRequest{Plan: plan, Config: config, State: BlankStateForResource(t, r)}, updateResp)
+	})
+
+	SafeInvoke(t, "Delete", func() {
+		deleteResp := &resource.DeleteResponse{State: BlankStateForResource(t, r)}
+		r.Delete(ctx, resource.DeleteRequest{State: BlankStateForResource(t, r)}, deleteResp)
+	})
+}
+
+// BlankConfigForDataSource builds an empty, schema-backed tfsdk.Config for a DataSource.
+func BlankConfigForDataSource(t *testing.T, d datasource.DataSource) tfsdk.Config {
+	t.Helper()
+	ctx := context.Background()
+	schemaResp := &datasource.SchemaResponse{}
+	d.Schema(ctx, datasource.SchemaRequest{}, schemaResp)
+	return tfsdk.Config{
+		Schema: schemaResp.Schema,
+		Raw:    tftypes.NewValue(schemaResp.Schema.Type().TerraformType(ctx), nil),
+	}
+}
+
+// RunDSRead drives DataSource.Read with an empty schema-backed Config.
+func RunDSRead(t *testing.T, name string, d datasource.DataSource) {
+	t.Helper()
+	ctx := context.Background()
+	cfg := BlankConfigForDataSource(t, d)
+
+	SafeInvoke(t, name+".Read", func() {
+		resp := &datasource.ReadResponse{State: tfsdk.State{Schema: cfg.Schema, Raw: tftypes.NewValue(cfg.Schema.Type().TerraformType(ctx), nil)}}
+		d.Read(ctx, datasource.ReadRequest{Config: cfg}, resp)
+	})
+}
+
+// ConfigureDataSourceWith invokes Configure on a DataSource with the given provider data.
+func ConfigureDataSourceWith(t *testing.T, d datasource.DataSource, providerData interface{}) {
+	t.Helper()
+	dc, ok := d.(datasource.DataSourceWithConfigure)
+	if !ok {
+		return
+	}
+	SafeInvoke(t, "ConfigureDS", func() {
+		req := datasource.ConfigureRequest{ProviderData: providerData}
+		resp := &datasource.ConfigureResponse{}
+		dc.Configure(context.Background(), req, resp)
+	})
+}
+
+// ConfigureResourceWith invokes Configure on a Resource with the given provider data.
+func ConfigureResourceWith(t *testing.T, r resource.Resource, providerData interface{}) {
+	t.Helper()
+	rc, ok := r.(resource.ResourceWithConfigure)
+	if !ok {
+		return
+	}
+	SafeInvoke(t, "Configure", func() {
+		req := resource.ConfigureRequest{ProviderData: providerData}
+		resp := &resource.ConfigureResponse{}
+		rc.Configure(context.Background(), req, resp)
+	})
 }

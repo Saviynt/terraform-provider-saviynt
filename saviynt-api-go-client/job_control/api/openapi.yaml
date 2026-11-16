@@ -761,6 +761,9 @@ components:
         fullorincremental:
           example: full
           type: string
+        importTables:
+          example: USR02
+          type: string
       required:
       - securitysystems
     EcmJob_allOf_valueMap:

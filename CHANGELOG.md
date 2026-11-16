@@ -1,3 +1,52 @@
+## 0.3.11 (released)
+
+ENHANCEMENTS:
+
+* **resource/saviynt_application_data_import_job_resource:** Added optional `single_threaded` (bool, default `false`) attribute on each `jobs` entry. When set to `true`, the trigger is created using the Saviynt backend `SapImportJob` class — matching the UI's "ApplicationDataImportJob (Single Threaded)" option. When `false` or unset, the existing `ApplicationDataImportJob` class is used, so existing configurations are unaffected.
+
+  ```hcl
+  resource "saviynt_application_data_import_job_resource" "single_threaded" {
+    jobs = [
+      {
+        trigger_name        = "sap_single_threaded_import"
+        job_group           = "DATA"
+        cron_expression     = "0 0 2 * * ?"
+        security_system     = "SAP_SYS1"
+        accounts_or_access  = "accounts"
+        external_conn       = "1"
+        full_or_incremental = "full"
+        single_threaded     = true
+      }
+    ]
+  }
+  ```
+
+
+
+* **resource/saviynt_application_data_import_job_resource:** Added optional `import_tables` attribute on each `jobs` entry. The value is sent to the Saviynt REST API as `importTables` in the trigger's `valueMap`, mirroring the UI's **Import Tables** field. Primarily used for SAP connectors, where the trigger needs to limit the import to a specific table (e.g. `"USR02"`). Previously, users had to set this value manually in the Saviynt UI after Terraform created the trigger.
+
+  ```hcl
+  resource "saviynt_application_data_import_job_resource" "sap" {
+    jobs = [
+      {
+        trigger_name        = "sap_user_master_import"
+        job_group           = "DATA"
+        cron_expression     = "0 33 14 * * ?"
+        security_system     = "SAP_SYS1"
+        accounts_or_access  = "accounts"
+        external_conn       = "1"
+        full_or_incremental = "full"
+        import_tables       = "USR02"
+      }
+    ]
+  }
+  ```
+
+
+BUG FIXES:
+
+* **resource/saviynt_endpoint_resource:** Fixed `terraform apply` failing with `Provider returned invalid result object after apply` when creating an endpoint without setting `status_for_unique_account` in HCL. Added StatusForUniqueAccount to the Optional+Computed normalization list.
+
 ## 0.3.10 (released)
 
 BUG FIXES:

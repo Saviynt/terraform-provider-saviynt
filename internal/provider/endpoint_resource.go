@@ -1882,6 +1882,7 @@ func (r *EndpointResource) UpdateModelFromCreateResponse(plan *EndpointResourceM
 	plan.AccountTypeNoPasswordChange = util.SafeString(plan.AccountTypeNoPasswordChange.ValueStringPointer())
 	plan.ChangePasswordAccessQuery = util.SafeString(plan.ChangePasswordAccessQuery.ValueStringPointer())
 	plan.StatusConfig = util.SafeString(plan.StatusConfig.ValueStringPointer())
+	plan.StatusForUniqueAccount = util.SafeString(plan.StatusForUniqueAccount.ValueStringPointer())
 	plan.PluginConfigs = util.SafeString(plan.PluginConfigs.ValueStringPointer())
 	plan.EndpointConfig = util.SafeString(plan.EndpointConfig.ValueStringPointer())
 	plan.CustomProperty1 = util.SafeString(plan.CustomProperty1.ValueStringPointer())
